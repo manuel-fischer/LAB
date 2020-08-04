@@ -1,0 +1,3 @@
+sdl
+sdl_image
+opengl

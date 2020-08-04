@@ -1,0 +1,199 @@
+#include "LAB_world_view.h"
+#include "LAB_world.h"
+
+#include "LAB_view_input.h"
+#include "LAB_window.h"
+#include "LAB_block.h"
+#include "LAB_chunk.h"
+
+#include "LAB_math.h"
+
+#include <SDL2/SDL.h>
+#include <math.h>
+
+static int LAB_ViewInputInteract(LAB_ViewInput* view_input, int right);
+
+int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
+{
+    LAB_ViewInput* view_input = (LAB_ViewInput*)user;
+    LAB_View* view = view_input->view;
+
+    switch(event->type)
+    {
+        case SDL_KEYDOWN:
+        {
+            SDL_Keycode key = ((SDL_KeyboardEvent*)event)->keysym.sym;
+
+            if(key == SDLK_ESCAPE)
+            {
+                int grab;
+                grab = SDL_GetWindowGrab(window->window);
+                SDL_SetWindowGrab(window->window, !grab);
+                SDL_ShowCursor(grab);
+                if(!grab)
+                {
+                    int w, h;
+                    SDL_GetWindowSize(window->window, &w, &h);
+                    SDL_WarpMouseInWindow(window->window, w/2, h/2);
+                }
+            }
+
+            if(key == SDLK_w) view_input->dir_set |= 1;
+            if(key == SDLK_a) view_input->dir_set |= 2;
+            if(key == SDLK_s) view_input->dir_set |= 4;
+            if(key == SDLK_d) view_input->dir_set |= 8;
+
+            if(key == SDLK_SPACE)  view_input->updown |= 1;
+            if(key == SDLK_LSHIFT) view_input->updown |= 2;
+        } break;
+        case SDL_KEYUP:
+        {
+            SDL_Keycode key = ((SDL_KeyboardEvent*)event)->keysym.sym;
+
+            if(key == SDLK_w) view_input->dir_set &= ~1;
+            if(key == SDLK_a) view_input->dir_set &= ~2;
+            if(key == SDLK_s) view_input->dir_set &= ~4;
+            if(key == SDLK_d) view_input->dir_set &= ~8;
+
+            if(key == SDLK_SPACE)  view_input->updown &= ~1;
+            if(key == SDLK_LSHIFT) view_input->updown &= ~2;
+        } break;
+
+
+        case SDL_MOUSEMOTION:
+        {
+            if(SDL_GetWindowGrab(window->window))
+            {
+                int w, h;
+                SDL_GetWindowSize(window->window, &w, &h);
+
+                SDL_MouseMotionEvent* mmevent = (SDL_MouseMotionEvent*)event;
+                view->ay+=(float)(mmevent->x-w/2) / 4.f;
+                view->ax+=(float)(mmevent->y-h/2) / 4.f;
+
+                if(view->ax < -90) view->ax = -90;
+                if(view->ax >  90) view->ax =  90;
+
+                SDL_WarpMouseInWindow(window->window, w/2, h/2);
+            }
+
+        } break;
+
+        case SDL_MOUSEBUTTONDOWN:
+        {
+            SDL_MouseButtonEvent* mbevent = (SDL_MouseButtonEvent*)event;
+
+            if(mbevent->button == SDL_BUTTON_LEFT || mbevent->button == SDL_BUTTON_RIGHT)
+            {
+                if(!SDL_GetWindowGrab(window->window))
+                {
+
+                    SDL_SetWindowGrab(window->window, 1);
+                    SDL_ShowCursor(0);
+
+                    int w, h;
+                    SDL_GetWindowSize(window->window, &w, &h);
+                    SDL_WarpMouseInWindow(window->window, w/2, h/2);
+                }
+                else
+                {
+                    LAB_ViewInputInteract(view_input, mbevent->button == SDL_BUTTON_RIGHT);
+                }
+            }
+
+        }
+
+    }
+    return 1;
+}
+
+static int LAB_ViewInputInteract(LAB_ViewInput* view_input, int right)
+{
+    LAB_View* view = view_input->view;
+
+    int target[3]; // targeted block
+    int prev[3]; // previous block
+    float hit[3]; // hit pos
+
+    // view-pos
+    float vpos[3];
+    // view-dir
+    float dir[3];
+
+    vpos[0] = view->x;
+    vpos[1] = view->y;
+    vpos[2] = view->z;
+    LAB_ViewGetDirection(view, dir);
+
+    if(LAB_TraceBlock(view->world, 10, vpos, dir, LAB_CHUNK_GENERATE, LAB_BLOCK_SOLID, target, prev, hit))
+    {
+        if(!right)
+        {
+            LAB_SetBlock(view->world, target[0], target[1], target[2], LAB_CHUNK_GENERATE, &LAB_BLOCK_AIR);
+        }
+        else
+        {
+            LAB_SetBlock(view->world, prev[0], prev[1], prev[2], LAB_CHUNK_GENERATE, &LAB_BLOCK_COBBLESTONE);
+        }
+        return 1;
+    }
+    return 0;
+}
+
+
+void LAB_ViewInputTick(LAB_ViewInput* view_input)
+{
+
+    LAB_View* view = view_input->view;
+
+    int kbstate_size;
+    const Uint8* kbstate = SDL_GetKeyboardState(&kbstate_size);
+    int mx, my;
+    Uint32 mbstate = SDL_GetMouseState(&mx, &my);
+
+    float speed = kbstate[SDL_SCANCODE_LCTRL] ? 0.3 : 0.1;
+
+    if(1)
+    {
+        //              w.w.w.w.w.w.w.w.
+        //              aa..aa..aa..aa..
+        //              ssss....ssss....
+        //              dddddddd........
+        int ang8th = (0xf4650f7623f4120full >> (view_input->dir_set*4)) & 0xf;
+        if(ang8th != 0xf)
+        {
+            float ang_rad = view->ay*LAB_PI/180.f - (float)ang8th*LAB_PI*2/8.f;
+
+            float s = sin(ang_rad);
+            float c = cos(ang_rad);
+
+            view->x += s*speed;
+            view->z -= c*speed;
+        }
+
+        if(view_input->updown&1) view->y+=speed;
+        if(view_input->updown&2) view->y-=speed;
+    }
+    else
+    {
+        if(view_input->dir_set&(1|4))
+        {
+            int bw = (view_input->dir_set&1) - !!(view_input->dir_set&4);
+            float dir[3];
+            LAB_ViewGetDirection(view, dir);
+            view->x += dir[0]*speed*bw;
+            view->y += dir[1]*speed*bw;
+            view->z += dir[2]*speed*bw;
+        }
+    }
+
+    if(kbstate[SDL_SCANCODE_LCTRL])
+    {
+        if(mbstate == SDL_BUTTON(SDL_BUTTON_LEFT) || mbstate == SDL_BUTTON(SDL_BUTTON_RIGHT))
+        {
+            //for(int i=0; i < 10; ++i)
+            //    if(LAB_ViewInputInteract(view_input, !!(mbstate & SDL_BUTTON(SDL_BUTTON_RIGHT)))) break;
+            LAB_ViewInputInteract(view_input, !!(mbstate & SDL_BUTTON(SDL_BUTTON_RIGHT)));
+        }
+    }
+}

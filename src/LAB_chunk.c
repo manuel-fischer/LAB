@@ -1,0 +1,23 @@
+#include "LAB_chunk.h"
+
+#include "LAB_memory.h"
+#include "LAB_error.h"
+
+#include "LAB_stdinc.h"
+
+LAB_Chunk* LAB_CreateChunk(LAB_Block* fill_block)
+{
+    LAB_Chunk* chunk;
+
+    chunk = LAB_Malloc(sizeof *chunk);
+    if(chunk == NULL) return (LAB_SetError("CreateChunk failed to allocate"), NULL);
+
+    for(int i = 0; i < LAB_CHUNK_LENGTH; ++i) chunk->blocks[i] = fill_block;
+
+    return chunk;
+}
+
+void LAB_DestroyChunk(LAB_Chunk* chunk)
+{
+    LAB_Free(chunk);
+}

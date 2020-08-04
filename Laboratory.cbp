@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="Laboratory" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/Laboratory" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Option use_console_runner="0" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/Laboratory" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add directory="$(#sdl2.include)" />
+			<Add directory="include" />
+		</Compiler>
+		<Linker>
+			<Add option="[[if(PLATFORM == PLATFORM_MSW )" />
+			<Add option='print(_(&quot;-lmingw32 -luser32 -lgdi32 -lwinmm -ldxguid&quot;));' />
+			<Add option="else if(PLATFORM == PLATFORM_X11 )" />
+			<Add option='printf(_(&quot;-lX11&quot;));' />
+			<Add option="]]" />
+			<Add library="SDL2main" />
+			<Add library="SDL2.dll" />
+			<Add library="SDL2_image" />
+			<Add library="SDL2_ttf" />
+			<Add library="opengl32" />
+		</Linker>
+		<Unit filename="TODO.txt" />
+		<Unit filename="include/HTL_hashmap.t.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="include/HTL_hashmap.t.h" />
+		<Unit filename="include/HTL_pp.h" />
+		<Unit filename="include/LAB.h" />
+		<Unit filename="include/LAB_block.h" />
+		<Unit filename="include/LAB_chunk.h" />
+		<Unit filename="include/LAB_error.h" />
+		<Unit filename="include/LAB_gl.h" />
+		<Unit filename="include/LAB_light_node.h" />
+		<Unit filename="include/LAB_math.h" />
+		<Unit filename="include/LAB_memory.h" />
+		<Unit filename="include/LAB_stdinc.h" />
+		<Unit filename="include/LAB_view_input.h" />
+		<Unit filename="include/LAB_window.h" />
+		<Unit filename="include/LAB_world.h" />
+		<Unit filename="include/LAB_world_view.h" />
+		<Unit filename="src/LAB.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_block.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_chunk.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_error.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_gl.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_light_node.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_memory.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_view_input.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_window.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_world.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_world_view.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="test.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Extensions>
+			<code_completion>
+				<search_path add="$(#sdl2.include)" />
+			</code_completion>
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
