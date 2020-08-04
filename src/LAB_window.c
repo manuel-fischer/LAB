@@ -2,6 +2,7 @@
 
 #include "LAB_memory.h"
 #include "LAB_error.h"
+#include "LAB_opt.h"
 
 #include <SDL2/SDL.h>
 #include <GL/gl.h>
@@ -75,16 +76,16 @@ int LAB_WindowLoop(LAB_Window* window)
 {
     SDL_Event event;
     while (SDL_PollEvent(&event) == 1) {
-        if (event.type == SDL_QUIT) {
+        if(event.type == SDL_QUIT) {
             return 0;
         }
-        if(window->onevent != NULL)
+        if(LAB_LIKELY(window->onevent != NULL))
             if(window->onevent(window->onevent_user, window, &event) == 0)
                 return 0;
 
     }
 
-    if(window->render != NULL)
+    if(LAB_LIKELY(window->render != NULL))
     {
         int w, h;
         SDL_GetWindowSize(window->window, &w, &h);

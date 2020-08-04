@@ -4,13 +4,15 @@
 #include "LAB_error.h"
 
 #include "LAB_stdinc.h"
+#include "LAB_opt.h"
 
 LAB_Chunk* LAB_CreateChunk(LAB_Block* fill_block)
 {
     LAB_Chunk* chunk;
 
     chunk = LAB_Malloc(sizeof *chunk);
-    if(chunk == NULL) return (LAB_SetError("CreateChunk failed to allocate"), NULL);
+    if(LAB_UNLIKELY(chunk == NULL))
+        return (LAB_SetError("CreateChunk failed to allocate"), NULL);
 
     for(int i = 0; i < LAB_CHUNK_LENGTH; ++i) chunk->blocks[i] = fill_block;
 

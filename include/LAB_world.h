@@ -3,11 +3,17 @@
 #include "LAB_chunk.h"
 #include "LAB_stdinc.h"
 
+#include "LAB_check.h"
+
 
 typedef struct LAB_ChunkPos
 {
-    int x, y, z;
+    //_Alignas(4) struct {
+    //int x, y, z;
+    int16_t x, y, z, unused;
+    //};
 } LAB_ChunkPos;
+LAB_CHECK_STRUCT_SIZE(LAB_ChunkPos);
 
 unsigned LAB_ChunkPosHash(LAB_ChunkPos);
 int LAB_ChunkPosComp(LAB_ChunkPos, LAB_ChunkPos);
@@ -36,11 +42,11 @@ typedef struct LAB_World LAB_World;
 typedef void(LAB_ChunkViewer)(void* user, LAB_World* world, int x, int y, int z);
 
 
-typedef struct LAB_ChunkEntry
+/*typedef struct LAB_ChunkEntry
 {
     int x, y, z;
     LAB_Chunk* chunk;
-} LAB_ChunkEntry;
+} LAB_ChunkEntry;*/
 
 typedef struct LAB_World
 {

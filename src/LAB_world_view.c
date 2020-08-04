@@ -15,6 +15,10 @@
 #include <GL/glu.h>
 #include <math.h>
 
+#include "LAB_perf.h"
+#include "LAB_bits.h"
+#include "LAB_opt.h"
+
 
 #define HTL_PARAM LAB_VIEW_CHUNK_MAP
 #include "HTL_hashmap.t.h"
@@ -37,7 +41,7 @@ void LAB_View_StaticInit()
     init = 1;
 
     SDL_Surface* img = IMG_Load("assets/terrain.png");
-    if(img == NULL) return;
+    if(LAB_UNLIKELY(img == NULL)) return;
 
     //if(img->format-> != SDL_PIXELFORMAT_RGBA32)
     {
@@ -105,7 +109,14 @@ static void LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, L
                              chunk_entry->x, chunk_entry->y, chunk_entry->z,
                              LAB_CHUNK_EXISTING);
 
-    LAB_ViewBuildMeshNeighbored(view, chunk_entry, chunk_neighborhood);
+    if(chunk_entry->x == 0 && chunk_entry->y == -1 && chunk_entry->z == 0)
+    {
+        LAB_PERF_BEGIN("build mesh", 100);
+            LAB_ViewBuildMeshNeighbored(view, chunk_entry, chunk_neighborhood);
+        LAB_PERF_END("build mesh");
+    }
+    else
+        LAB_ViewBuildMeshNeighbored(view, chunk_entry, chunk_neighborhood);
 }
 static void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_Chunk* cnk3x3x3[27])
 {
@@ -134,9 +145,54 @@ static void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chun
 
 
 
-__attribute__((hot))
+#if 1
+#define LAB_SetVertex(vert,  xx, yy, zz,  rr, gg, bb, aa,  uu, vv,   cr, cg, cb,  tx, ty) do \
+{                                                                      \
+    (vert)->x = xx; (vert)->y = yy; (vert)->z = zz;                    \
+    (vert)->r = ((int)cr)*(rr*256/255)/256;                            \
+    (vert)->g = ((int)cg)*(gg*256/255)/256;                            \
+    (vert)->b = ((int)cb)*(bb*256/255)/256;                            \
+    (vert)->a = aa;                                                    \
+    (vert)->u = uu + tx;                                               \
+    (vert)->v = vv + ty;                                               \
+} while(0)
+#else
+LAB_NOINLINE LAB_HOT
+static void LAB_SetVertex(LAB_ViewVertex* vert,  int xx, int yy, int zz,  int rr, int gg, int bb, int aa,  int uu, int vv,   int cr, int cg, int cb,  int tx, int ty)
+{
+    vert->x = xx; vert->y = yy; vert->z = zz;
+    vert->r = ((int)cr)*(rr*256/255)/256;
+    vert->g = ((int)cg)*(gg*256/255)/256;
+    vert->b = ((int)cb)*(bb*256/255)/256;
+    vert->a = aa;
+    vert->u = uu + tx;
+    vert->v = vv + ty;
+}
+#endif
+
+#define LAB_SetQuad(tri, x0, y0, z0,  r0, g0, b0, a0,  u0, v0, \
+                         x1, y1, z1,  r1, g1, b1, a1,  u1, v1, \
+                         x2, y2, z2,  r2, g2, b2, a2,  u2, v2, \
+                         x3, y3, z3,  r3, g3, b3, a3,  u3, v3) do \
+{ \
+    LAB_ViewVertex* restrict t0 = tri[0].v;                    \
+    LAB_ViewVertex* restrict t1 = tri[1].v;                    \
+    LAB_SetVertex(&t0[1],  x0, y0, z0,  r0, g0, b0, a0,  u0, v0,  cr, cg, cb, tx, ty); \
+    LAB_SetVertex(&t0[2],  x1, y1, z1,  r1, g1, b1, a1,  u1, v1,  cr, cg, cb, tx, ty); \
+    LAB_SetVertex(&t1[2],  x1, y1, z1,  r1, g1, b1, a1,  u1, v1,  cr, cg, cb, tx, ty); \
+    LAB_SetVertex(&t0[0],  x2, y2, z2,  r2, g2, b2, a2,  u2, v2,  cr, cg, cb, tx, ty); \
+    LAB_SetVertex(&t1[1],  x2, y2, z2,  r2, g2, b2, a2,  u2, v2,  cr, cg, cb, tx, ty); \
+    LAB_SetVertex(&t1[0],  x3, y3, z3,  r3, g3, b3, a3,  u3, v3,  cr, cg, cb, tx, ty); \
+} while(0)
+
+
+
+LAB_NOINLINE LAB_HOT
 static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_Block* blk3x3x3[27], int x, int y, int z)
 {
+
+//#define BRANCHLESS
+
     const int X = 1;
     const int Y = 3*1;
     const int Z = 3*3*1;
@@ -158,111 +214,178 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
     faces |= 16*(!(blk3x3x3[X+Y+0*Z]->flags&LAB_BLOCK_SOLID));
     faces |= 32*(!(blk3x3x3[X+Y+2*Z]->flags&LAB_BLOCK_SOLID));
 
+    /*int f0, f1, f2, f3, f4, f5;
+    f0 = !(blk3x3x3[0*X+Y+Z]->flags&LAB_BLOCK_SOLID);
+    f1 = !(blk3x3x3[2*X+Y+Z]->flags&LAB_BLOCK_SOLID);
+    f2 = !(blk3x3x3[X+0*Y+Z]->flags&LAB_BLOCK_SOLID);
+    f3 = !(blk3x3x3[X+2*Y+Z]->flags&LAB_BLOCK_SOLID);
+    f4 = !(blk3x3x3[X+Y+0*Z]->flags&LAB_BLOCK_SOLID);
+    f5 = !(blk3x3x3[X+Y+2*Z]->flags&LAB_BLOCK_SOLID);*/
+
+
+    if(faces == 0) return;
+
     // TODO: use popcount instead
-    int face_count = !!(faces &  1)
+    #ifndef BRANCHLESS
+    int face_count = LAB_PopCnt(faces);
+    #else
+    int face_count = LAB_PopCnt(faces|32);
+    #endif
+
+    /*int face_count = !!(faces &  1)
                    + !!(faces &  2)
                    + !!(faces &  4)
                    + !!(faces &  8)
                    + !!(faces & 16)
+    #ifndef BRANCHLESS
                    + !!(faces & 32);
+    #else
+                   + 1;
+    #endif*/
 
     LAB_ViewTriangle* tri;
-    tri = LAB_ViewMeshAlloc(chunk_entry, 2*face_count);
-    if(tri == NULL) return;
+    typedef LAB_ViewTriangle*(*funcptrT)(LAB_ViewChunkEntry*, size_t);
+    static volatile funcptrT ptr = LAB_ViewMeshAlloc;
+    tri = ptr(chunk_entry, 2*face_count);
+    if(LAB_UNLIKELY(tri == NULL)) return;
 
 
     float x0 = x,    y0 = y,    z0 = z;
     float x1 = x0+1, y1 = y0+1, z1 = z0+1;
 
-    /*#define LAB_SetVertex(vert, xx, yy, zz, rr, gg, bb, aa) \
-        (void)(((vert).x = xx), ((vert).y = yy), ((vert).z = zz), ((vert).r = rr), ((vert).g = gg), ((vert).b = bb), ((vert).a = aa))*/
 
-    /*#define LAB_SetVertex(vert, xx, yy, zz, rr, gg, bb, aa) do \
-    {                                                                \
-        (vert).x = xx; (vert).y = yy; (vert).z = zz;                 \
-        (vert).r = rr; (vert).g = gg; (vert).b = bb; (vert).a = aa; \
-        (vert).r = ((int)xx&0xf)*17*rr/255;                               \
-        (vert).g = ((int)yy&0xf)*17*gg/255;                               \
-        (vert).b = ((int)zz&0xf)*17*aa/255;                               \
-        (vert).a = aa;                                               \
-    } while(0)*/
 
-    #define LAB_SetVertex(vert,  xx, yy, zz,  rr, gg, bb, aa,  uu, vv) do \
-    {                                                                     \
-        (vert).x = xx; (vert).y = yy; (vert).z = zz;                      \
-        /*(vert).r = rr; (vert).g = gg; (vert).b = bb; (vert).a = aa;*/   \
-        (vert).r = ((int)cr)*rr/255;                                      \
-        (vert).g = ((int)cg)*gg/255;                                      \
-        (vert).b = ((int)cb)*bb/255;                                      \
-        (vert).a = aa;                                                    \
-        (vert).u = uu + tx;                                                    \
-        (vert).v = vv + ty;                                                    \
-    } while(0)
+    // shading
+    /*const int SHx = 235; // west east
+    const int SHy = 192; // bottom
+    const int SHz = 215; // north south */
+    #define SHx 235 // west east
+    #define SHy 192 // bottom
+    #define SHz 215 // north south
 
-    #define LAB_SetQuad(x0, y0, z0,  r0, g0, b0, a0,  u0, v0, \
-                        x1, y1, z1,  r1, g1, b1, a1,  u1, v1, \
-                        x2, y2, z2,  r2, g2, b2, a2,  u2, v2, \
-                        x3, y3, z3,  r3, g3, b3, a3,  u3, v3) do \
-    { \
-        LAB_ViewVertex* t0 = tri[0].v;                    \
-        LAB_ViewVertex* t1 = tri[1].v;                    \
-        LAB_SetVertex(t0[1],  x0, y0, z0,  r0, g0, b0, a0,  u0, v0); \
-        LAB_SetVertex(t0[2],  x1, y1, z1,  r1, g1, b1, a1,  u1, v1); \
-        LAB_SetVertex(t1[2],  x1, y1, z1,  r1, g1, b1, a1,  u1, v1); \
-        LAB_SetVertex(t0[0],  x2, y2, z2,  r2, g2, b2, a2,  u2, v2); \
-        LAB_SetVertex(t1[1],  x2, y2, z2,  r2, g2, b2, a2,  u2, v2); \
-        LAB_SetVertex(t1[0],  x3, y3, z3,  r3, g3, b3, a3,  u3, v3); \
-        /*int r, g, b;                                      \
-        r = x*17*r0/255;                                  \
-        g = y*17*g0/255;                                  \
-        b = z*17*b0/255;                                  \
-        LAB_SetVertex(v0[0], x0, y0, z0, r, g, b, a0); \
-        LAB_SetVertex(v0[1], x1, y1, z1, r, g, b, a1); \
-        LAB_SetVertex(v1[1], x1, y1, z1, r, g, b, a1); \
-        LAB_SetVertex(v0[2], x2, y2, z2, r, g, b, a2); \
-        LAB_SetVertex(v1[0], x2, y2, z2, r, g, b, a2); \
-        LAB_SetVertex(v1[2], x3, y3, z3, r, g, b, a3);*/ \
-        tri+=2;                                           \
-    } while(0)
-
+#ifdef BRANCHLESS
     // WEST
-    if(faces&1)   LAB_SetQuad(x0, y0, z0,  235, 235, 235, 255,  0, 1,
-                              x0, y1, z0,  235, 235, 235, 255,  0, 0,
-                              x0, y0, z1,  235, 235, 235, 255,  1, 1,
-                              x0, y1, z1,  235, 235, 235, 255,  1, 0);
+    {
+        LAB_SetQuad(tri, x0, y0, z0,  SHx, SHx, SHx, 255,  0, 1,
+                         x0, y1, z0,  SHx, SHx, SHx, 255,  0, 0,
+                         x0, y0, z1,  SHx, SHx, SHx, 255,  1, 1,
+                         x0, y1, z1,  SHx, SHx, SHx, 255,  1, 0);
+        tri+=2*!!(faces&1);
+    }
 
     // EAST
-    if(faces&2)   LAB_SetQuad(x1, y1, z0,  235, 235, 235, 255,  1, 0,
-                              x1, y0, z0,  235, 235, 235, 255,  1, 1,
-                              x1, y1, z1,  235, 235, 235, 255,  0, 0,
-                              x1, y0, z1,  235, 235, 235, 255,  0, 1);
+    {
+        LAB_SetQuad(tri, x1, y1, z0,  SHx, SHx, SHx, 255,  1, 0,
+                         x1, y0, z0,  SHx, SHx, SHx, 255,  1, 1,
+                         x1, y1, z1,  SHx, SHx, SHx, 255,  0, 0,
+                         x1, y0, z1,  SHx, SHx, SHx, 255,  0, 1);
+        tri+=2*!!(faces&2);
+    }
 
 
     // BOTTOM
-    if(faces&4)   LAB_SetQuad(x0, y0, z0,  192, 192, 192, 255,  1, 0,
-                              x0, y0, z1,  192, 192, 192, 255,  1, 1,
-                              x1, y0, z0,  192, 192, 192, 255,  0, 0,
-                              x1, y0, z1,  192, 192, 192, 255,  0, 1);
+    {
+        LAB_SetQuad(tri, x0, y0, z0,  SHy, SHy, SHy, 255,  1, 0,
+                         x0, y0, z1,  SHy, SHy, SHy, 255,  1, 1,
+                         x1, y0, z0,  SHy, SHy, SHy, 255,  0, 0,
+                         x1, y0, z1,  SHy, SHy, SHy, 255,  0, 1);
+        tri+=2*!!(faces&4);
+    }
 
     // TOP
-    if(faces&8)   LAB_SetQuad(x0, y1, z1,  255, 255, 255, 255,  1, 0,
-                              x0, y1, z0,  255, 255, 255, 255,  1, 1,
-                              x1, y1, z1,  255, 255, 255, 255,  0, 0,
-                              x1, y1, z0,  255, 255, 255, 255,  0, 1);
+    {
+        LAB_SetQuad(tri, x0, y1, z1,  255, 255, 255, 255,  1, 0,
+                         x0, y1, z0,  255, 255, 255, 255,  1, 1,
+                         x1, y1, z1,  255, 255, 255, 255,  0, 0,
+                         x1, y1, z0,  255, 255, 255, 255,  0, 1);
+        tri+=2*!!(faces&8);
+    }
 
 
     // NORTH
-    if(faces&16)  LAB_SetQuad(x0, y0, z0,  215, 215, 215, 255,  1, 1,
-                              x1, y0, z0,  215, 215, 215, 255,  0, 1,
-                              x0, y1, z0,  215, 215, 215, 255,  1, 0,
-                              x1, y1, z0,  215, 215, 215, 255,  0, 0);
+    {
+        LAB_SetQuad(tri, x0, y0, z0,  SHz, SHz, SHz, 255,  1, 1,
+                         x1, y0, z0,  SHz, SHz, SHz, 255,  0, 1,
+                         x0, y1, z0,  SHz, SHz, SHz, 255,  1, 0,
+                         x1, y1, z0,  SHz, SHz, SHz, 255,  0, 0);
+        tri+=2*!!(faces&16);
+    }
 
     // SOUTH
-    if(faces&32)  LAB_SetQuad(x1, y0, z1,  215, 215, 215, 255,  1, 1,
-                              x0, y0, z1,  215, 215, 215, 255,  0, 1,
-                              x1, y1, z1,  215, 215, 215, 255,  1, 0,
-                              x0, y1, z1,  215, 215, 215, 255,  0, 0);
+    {
+        LAB_SetQuad(tri, x1, y0, z1,  SHz, SHz, SHz, 255,  1, 1,
+                         x0, y0, z1,  SHz, SHz, SHz, 255,  0, 1,
+                         x1, y1, z1,  SHz, SHz, SHz, 255,  1, 0,
+                         x0, y1, z1,  SHz, SHz, SHz, 255,  0, 0);
+        tri+=2*!!(faces&32);
+    }
+    chunk_entry->mesh_count = tri-chunk_entry->mesh;
+#else
+// ORIGINAL
 
+    // WEST
+    if(faces&1)
+    {
+        LAB_SetQuad(tri, x0, y0, z0,  SHx, SHx, SHx, 255,  0, 1,
+                         x0, y1, z0,  SHx, SHx, SHx, 255,  0, 0,
+                         x0, y0, z1,  SHx, SHx, SHx, 255,  1, 1,
+                         x0, y1, z1,  SHx, SHx, SHx, 255,  1, 0);
+        tri+=2;
+    }
+
+    // EAST
+    if(faces&2)
+    {
+        LAB_SetQuad(tri, x1, y1, z0,  SHx, SHx, SHx, 255,  1, 0,
+                         x1, y0, z0,  SHx, SHx, SHx, 255,  1, 1,
+                         x1, y1, z1,  SHx, SHx, SHx, 255,  0, 0,
+                         x1, y0, z1,  SHx, SHx, SHx, 255,  0, 1);
+        tri+=2;
+    }
+
+
+    // BOTTOM
+    if(faces&4)
+    {
+        LAB_SetQuad(tri, x0, y0, z0,  SHy, SHy, SHy, 255,  1, 0,
+                         x0, y0, z1,  SHy, SHy, SHy, 255,  1, 1,
+                         x1, y0, z0,  SHy, SHy, SHy, 255,  0, 0,
+                         x1, y0, z1,  SHy, SHy, SHy, 255,  0, 1);
+        tri+=2;
+    }
+
+    // TOP
+    if(faces&8)
+    {
+        LAB_SetQuad(tri, x0, y1, z1,  255, 255, 255, 255,  1, 0,
+                         x0, y1, z0,  255, 255, 255, 255,  1, 1,
+                         x1, y1, z1,  255, 255, 255, 255,  0, 0,
+                         x1, y1, z0,  255, 255, 255, 255,  0, 1);
+        tri+=2;
+    }
+
+
+    // NORTH
+    if(faces&16)
+    {
+        LAB_SetQuad(tri, x0, y0, z0,  SHz, SHz, SHz, 255,  1, 1,
+                         x1, y0, z0,  SHz, SHz, SHz, 255,  0, 1,
+                         x0, y1, z0,  SHz, SHz, SHz, 255,  1, 0,
+                         x1, y1, z0,  SHz, SHz, SHz, 255,  0, 0);
+        tri+=2;
+    }
+
+    // SOUTH
+    if(faces&32)
+    {
+        LAB_SetQuad(tri, x1, y0, z1,  SHz, SHz, SHz, 255,  1, 1,
+                         x0, y0, z1,  SHz, SHz, SHz, 255,  0, 1,
+                         x1, y1, z1,  SHz, SHz, SHz, 255,  1, 0,
+                         x0, y1, z1,  SHz, SHz, SHz, 255,  0, 0);
+        tri+=2;
+    }
+
+#endif
 }
 
 
@@ -274,7 +397,7 @@ static LAB_ViewTriangle* LAB_ViewMeshAlloc(LAB_ViewChunkEntry* chunk_entry, size
     new_mesh_count = mesh_count+add_size;
     mesh_capacity = chunk_entry->mesh_capacity;
 
-    if(new_mesh_count > mesh_capacity)
+    if(LAB_UNLIKELY(new_mesh_count > mesh_capacity))
     {
         if(mesh_capacity == 0) mesh_capacity = 1;
         while(new_mesh_count > mesh_capacity) mesh_capacity *= 2;
@@ -442,7 +565,7 @@ LAB_ViewChunkEntry* LAB_ViewGetChunkEntry(LAB_View* view, int x, int y, int z)
             return &chunks[i];
     }
 
-    if(view->chunk_count >= chunk_capacity)
+    if(LAB_UNLIKELY(view->chunk_count >= chunk_capacity))
     {
         if(chunk_capacity == 0)
             chunk_capacity = 16;

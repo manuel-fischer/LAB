@@ -5,6 +5,7 @@
 #include "LAB_world.h"
 
 #include "LAB_stdinc.h"
+#include "LAB_opt.h"
 
 #include <math.h>
 
@@ -30,7 +31,7 @@ int LAB_ChunkPosComp(LAB_ChunkPos a, LAB_ChunkPos b)
 LAB_World* LAB_CreateWorld()
 {
     LAB_World* world = LAB_Calloc(1, sizeof *world); // filled with zeros
-    if(!world)
+    if(LAB_UNLIKELY(world==NULL))
     {
         LAB_SetError("LAB_CreateWorld failed to allocate");
         return NULL;
@@ -115,9 +116,9 @@ LAB_Chunk* LAB_GetChunk(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType
         // Create slot for chunk
         // Note that it does not really exist, because the value is NULL
         // Entry must be written before anything further happens
-        if(entry == NULL) return NULL;
+        if(LAB_UNLIKELY(entry == NULL)) return NULL;
         chunk = (*world->chunkgen)(world->chunkgen_user, world, x, y, z);
-        if(entry == NULL) return NULL;
+        if(LAB_UNLIKELY(chunk == NULL)) return NULL;
             // Because the inserted entry is not really existing
             // We can silently discard it
 
@@ -148,7 +149,7 @@ void LAB_GetChunkNeighborhood(LAB_World* world, LAB_Chunk* /*out*/ chunks[27], i
 
 void LAB_NotifyChunk(LAB_World* world, int x, int y, int z)
 {
-    if(world->chunkview != NULL)
+    if(LAB_LIKELY(world->chunkview != NULL))
     {
         (*world->chunkview)(world->chunkview_user, world, x, y, z);
     }
