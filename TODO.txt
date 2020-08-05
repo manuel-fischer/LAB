@@ -1,3 +1,4 @@
 - Implement hash-map for chunk-peeking
   - view!
 - colored light
+- use VBOs

@@ -24,11 +24,18 @@
 #include "HTL_hashmap.t.h"
 #undef HTL_PARAM
 
+///############################
+
+#define BLOCK_NEIGHBORHOOD 0
 
 static void LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_World* world);
 static void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_Chunk* chunk_neighborhood[27]);
+#if BLOCK_NEIGHBORHOOD
 static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_Block* block_neighborhood[27], int x, int y, int z);
 static void LAB_GetBlockNeighborhood(LAB_Chunk* chunk_neighborhood[27], LAB_Block* block_neighborhood[27], int x, int y, int z);
+#else
+static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_Chunk* chunk_neighborhood[27], int x, int y, int z);
+#endif
 static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
 
 static LAB_ViewTriangle* LAB_ViewMeshAlloc(LAB_ViewChunkEntry* chunk_entry, size_t add_size, size_t extra_size);
@@ -64,7 +71,6 @@ void LAB_View_StaticInit()
     glScalef(32.f / (float)img->w, 32.f / (float)img->h, 1);
 
     SDL_FreeSurface(img);
-    printf("SUCCESS\n");
 }
 
 LAB_View* LAB_CreateView(LAB_World* world)
@@ -101,6 +107,7 @@ void LAB_ViewChunkProc(void* user, LAB_World* world, int x, int y, int z)
 }
 
 
+
 static void LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_World* world)
 {
     LAB_Chunk* chunk_neighborhood[27];
@@ -109,7 +116,8 @@ static void LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, L
                              chunk_entry->x, chunk_entry->y, chunk_entry->z,
                              LAB_CHUNK_EXISTING);
 
-    /*if(chunk_entry->x == 0 && chunk_entry->y == -1 && chunk_entry->z == 0)
+#if 1
+    if(chunk_entry->x == 0 && chunk_entry->y == -1 && chunk_entry->z == 0)
     {
         LAB_PERF_BEGIN("build mesh", 333);
             LAB_ViewBuildMeshNeighbored(view, chunk_entry, chunk_neighborhood);
@@ -118,9 +126,11 @@ static void LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, L
     else
     {
         //LAB_ViewBuildMeshNeighbored(view, chunk_entry, chunk_neighborhood);
-    }*/
+    }
+#else
     if(chunk_neighborhood[1+3+9] != NULL)
         LAB_ViewBuildMeshNeighbored(view, chunk_entry, chunk_neighborhood);
+#endif
 }
 static void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_Chunk* cnk3x3x3[27])
 {
@@ -128,7 +138,9 @@ static void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chun
     const int Y = 3*1;
     const int Z = 3*3*1;
 
+    #if BLOCK_NEIGHBORHOOD
     LAB_Block* blk3x3x3[27];
+    #endif
 
     chunk_entry->mesh_count = 0;
 
@@ -141,14 +153,103 @@ static void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chun
 
                 if(cnk3x3x3[X+Y+Z]->blocks[LAB_CHUNK_OFFSET(x, y, z)]->flags & LAB_BLOCK_SOLID)
                 {
+                    #if BLOCK_NEIGHBORHOOD
                     LAB_GetBlockNeighborhood(cnk3x3x3, blk3x3x3, x, y, z);
                     LAB_ViewBuildMeshBlock(view, chunk_entry, blk3x3x3, x, y, z);
+                    #else
+                    LAB_ViewBuildMeshBlock(view, chunk_entry, cnk3x3x3, x, y, z);
+                    #endif
                 }
             }
         }
     }
 }
 
+
+/**
+ *  the origin of x,y,z is at (0,0,0) of the chunk at [1+3+3*3]
+ */
+LAB_INLINE
+LAB_Chunk* LAB_GetNeighborhoodRef(LAB_Chunk* neighborhood[27], int x, int y, int z, int* /*out*/ index)
+{
+    int cx, cy, cz,  ix, iy, iz;
+
+    cx = (x+16) >> LAB_CHUNK_SHIFT;
+    ix = LAB_CHUNK_X(x & LAB_CHUNK_MASK);
+
+    cy = 3*((y+16) >> LAB_CHUNK_SHIFT);
+    iy = LAB_CHUNK_Y(y & LAB_CHUNK_MASK);
+
+    cz = 3*3*((z+16) >> LAB_CHUNK_SHIFT);
+    iz = LAB_CHUNK_Z(z & LAB_CHUNK_MASK);
+
+    *index = ix+iy+iz;
+    return neighborhood[cx+cy+cz];
+}
+
+LAB_HOT LAB_INLINE
+LAB_Block* LAB_GetNeighborhoodBlock(LAB_Chunk* neighborhood[27], int x, int y, int z)
+{
+    int block_index;
+    LAB_Chunk* chunk;
+    chunk = LAB_GetNeighborhoodRef(neighborhood, x, y, z, &block_index);
+#if 0 // branchless
+    static LAB_Block*const ptr_outside = &LAB_BLOCK_OUTSIDE;
+
+    LAB_Block*const* ptr0 = &ptr_outside;
+    LAB_Block*const* ptr1 = &chunk->blocks[block_index];
+    //LAB_Block*const* ptr1 = chunk?&chunk->blocks[block_index]:NULL;
+    /*static volatile void* calc;
+    calc = ptr0;
+    calc = ptr1;*/
+    //if(__builtin_unpredictable(chunk == NULL)) ptr1 = ptr0; // cmov
+    //LAB_CMOV(chunk==NULL, ptr1, ptr0);
+    (void)LAB_UNLIKELY(chunk == NULL);
+    LAB_CMOV_NOT(chunk, ptr1, ptr0);
+    //if(LAB_UNLIKELY(chunk == NULL)) ptr1 = ptr0; // cmov
+
+    return *ptr1;
+#elif 0 // branchless
+    //block_index *= (chunk!=NULL);
+    block_index &= -(chunk!=NULL);
+    static LAB_Block*const ptr_outside = &LAB_BLOCK_OUTSIDE;
+
+    //LAB_Block** arrays = (chunk==NULL) ? &ptr_outside : chunk->blocks;
+    LAB_Block*const* arrays[2] = {&ptr_outside, &chunk->blocks[0]};
+
+    return arrays[chunk!=NULL][block_index];
+#else
+    if(LAB_UNLIKELY(chunk == NULL)) return &LAB_BLOCK_OUTSIDE;
+    return chunk->blocks[block_index];
+#endif
+}
+
+static void* void_mem[16] = {};
+
+LAB_HOT LAB_INLINE
+LAB_BlockFlags LAB_GetNeighborhoodBlockFlags(LAB_Chunk* neighborhood[27], int x, int y, int z)
+{
+    int block_index;
+    LAB_Chunk* chunk;
+    chunk = LAB_GetNeighborhoodRef(neighborhood, x, y, z, &block_index);
+#if 0 // branchless
+    LAB_BlockFlags flags = 0;
+
+    LAB_Block** blockaddr = (void*)void_mem;
+    LAB_Block* block = (void*)void_mem;
+
+    (void)LAB_UNLIKELY(chunk == NULL);
+
+    LAB_CMOV(chunk, blockaddr, &chunk->blocks[block_index]);
+    LAB_CMOV_FROM(chunk, block, blockaddr);
+    LAB_CMOV_FROM(chunk, flags, &block->flags);
+
+    return flags;
+#else
+    if(LAB_UNLIKELY(chunk == NULL)) return 0;
+    return chunk->blocks[block_index]->flags;
+#endif
+}
 
 
 #if 1
@@ -194,17 +295,35 @@ static void LAB_SetVertex(LAB_ViewVertex* vert,  int xx, int yy, int zz,  int rr
 
 
 LAB_HOT
+#if BLOCK_NEIGHBORHOOD
 static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_Block* blk3x3x3[27], int x, int y, int z)
+#else
+static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_Chunk* cnk3x3x3[27], int x, int y, int z)
+#endif
 {
 
 #define BRANCHLESS  0
 #define BITFIELD    1
 #define PRECOMP_PTR 0
+
+#if BLOCK_NEIGHBORHOOD
     const int X = 1;
     const int Y = 3*1;
     const int Z = 3*3*1;
+#define GET_BLOCK(bx, by, bz) blk3x3x3[X*((bx)+1) + Y*((by)+1) + Z*((bz)+1)]
+#else
+#define GET_BLOCK(bx, by, bz) LAB_GetNeighborhoodBlock(cnk3x3x3, x+(bx), y+(by), z+(bz))
+//#define GET_BLOCK_FLAGS(bx, by, bz) LAB_GetNeighborhoodBlockFlags(cnk3x3x3, x+(bx), y+(by), z+(bz))
+#endif
+#ifndef GET_BLOCK_FLAGS
+#define GET_BLOCK_FLAGS(bx, by, bz) (GET_BLOCK(bx, by, bz)->flags)
+#endif
 
-    LAB_Block* block = blk3x3x3[X+Y+Z];
+#if BLOCK_NEIGHBORHOOD
+    LAB_Block* block = GET_BLOCK( 0, 0, 0);
+#else
+    LAB_Block* block = cnk3x3x3[1+3+9]->blocks[LAB_CHUNK_OFFSET(x, y, z)];
+#endif
 
     int cr = block->r;
     int cg = block->g;
@@ -215,26 +334,26 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
 
     #if BITFIELD
     int faces = 0;
-    #if 1
-    faces |=  1*(!(blk3x3x3[0*X+Y+Z]->flags&LAB_BLOCK_SOLID));
-    faces |=  2*(!(blk3x3x3[2*X+Y+Z]->flags&LAB_BLOCK_SOLID));
-    faces |=  4*(!(blk3x3x3[X+0*Y+Z]->flags&LAB_BLOCK_SOLID));
-    faces |=  8*(!(blk3x3x3[X+2*Y+Z]->flags&LAB_BLOCK_SOLID));
-    faces |= 16*(!(blk3x3x3[X+Y+0*Z]->flags&LAB_BLOCK_SOLID));
-    faces |= 32*(!(blk3x3x3[X+Y+2*Z]->flags&LAB_BLOCK_SOLID));
+    #if 0
+    faces |=  1*(!(GET_BLOCK_FLAGS(-1, 0, 0)&LAB_BLOCK_SOLID));
+    faces |=  2*(!(GET_BLOCK_FLAGS( 1, 0, 0)&LAB_BLOCK_SOLID));
+    faces |=  4*(!(GET_BLOCK_FLAGS( 0,-1, 0)&LAB_BLOCK_SOLID));
+    faces |=  8*(!(GET_BLOCK_FLAGS( 0, 1, 0)&LAB_BLOCK_SOLID));
+    faces |= 16*(!(GET_BLOCK_FLAGS( 0, 0,-1)&LAB_BLOCK_SOLID));
+    faces |= 32*(!(GET_BLOCK_FLAGS( 0, 0, 1)&LAB_BLOCK_SOLID));
     #else
     faces = (
-                1*(!(blk3x3x3[0*X+Y+Z]->flags&LAB_BLOCK_SOLID))
-              | 2*(!(blk3x3x3[2*X+Y+Z]->flags&LAB_BLOCK_SOLID))
+                1*(!(GET_BLOCK_FLAGS(-1, 0, 0)&LAB_BLOCK_SOLID))
+              | 2*(!(GET_BLOCK_FLAGS( 1, 0, 0)&LAB_BLOCK_SOLID))
             )
           | (
-                4*(!(blk3x3x3[X+0*Y+Z]->flags&LAB_BLOCK_SOLID))
-              | 8*(!(blk3x3x3[X+2*Y+Z]->flags&LAB_BLOCK_SOLID))
+                4*(!(GET_BLOCK_FLAGS( 0,-1, 0)&LAB_BLOCK_SOLID))
+              | 8*(!(GET_BLOCK_FLAGS( 0, 1, 0)&LAB_BLOCK_SOLID))
             )
           |
             (
-               16*(!(blk3x3x3[X+Y+0*Z]->flags&LAB_BLOCK_SOLID))
-             | 32*(!(blk3x3x3[X+Y+2*Z]->flags&LAB_BLOCK_SOLID))
+               16*(!(GET_BLOCK_FLAGS( 0, 0,-1)&LAB_BLOCK_SOLID))
+             | 32*(!(GET_BLOCK_FLAGS( 0, 0, 1)&LAB_BLOCK_SOLID))
             );
     #endif
 
@@ -251,12 +370,12 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
     #else
 
     int f0, f1, f2, f3, f4, f5;
-    f0 = !(blk3x3x3[0*X+Y+Z]->flags&LAB_BLOCK_SOLID);
-    f1 = !(blk3x3x3[2*X+Y+Z]->flags&LAB_BLOCK_SOLID);
-    f2 = !(blk3x3x3[X+0*Y+Z]->flags&LAB_BLOCK_SOLID);
-    f3 = !(blk3x3x3[X+2*Y+Z]->flags&LAB_BLOCK_SOLID);
-    f4 = !(blk3x3x3[X+Y+0*Z]->flags&LAB_BLOCK_SOLID);
-    f5 = !(blk3x3x3[X+Y+2*Z]->flags&LAB_BLOCK_SOLID);
+    f0 = !(GET_BLOCK_FLAGS(-1, 0, 0)&LAB_BLOCK_SOLID);
+    f1 = !(GET_BLOCK_FLAGS( 1, 0, 0)&LAB_BLOCK_SOLID);
+    f2 = !(GET_BLOCK_FLAGS( 0,-1, 0)&LAB_BLOCK_SOLID);
+    f3 = !(GET_BLOCK_FLAGS( 0, 1, 0)&LAB_BLOCK_SOLID);
+    f4 = !(GET_BLOCK_FLAGS( 0, 0,-1)&LAB_BLOCK_SOLID);
+    f5 = !(GET_BLOCK_FLAGS( 0, 0, 1)&LAB_BLOCK_SOLID);
 
     // Shorter dependency chain by adding up boolean values
     // in parallel
@@ -450,38 +569,42 @@ static LAB_ViewTriangle* LAB_ViewMeshAlloc(LAB_ViewChunkEntry* chunk_entry, size
 }
 
 
-
+#if BLOCK_NEIGHBORHOOD
 LAB_HOT
 static void LAB_GetBlockNeighborhood(LAB_Chunk* cnk3x3x3[27], LAB_Block* blk3x3x3[27], int x, int y, int z)
 {
     int i = 0;
-    //int dbx, dby, dbz;
+    #define SWT(...) __VA_ARGS__
+    //#define SWT(...)
 
-    //dbz = -1;
+    SWT(int dbx, dby, dbz;)
+
+    SWT(dbz = -1;)
     for(int zz = z+15; zz <= z+17; ++zz)
     {
-        //dby = -1;
+        SWT(dby = -1;)
         int cz = 3*3*(zz >> LAB_CHUNK_SHIFT);
         int iz = LAB_CHUNK_Z(zz & LAB_CHUNK_MASK);
         for(int yy = y+15; yy <= y+17; ++yy)
         {
-            //dbx = -1;
+            SWT(dbx = -1;)
             int cy = 3*(yy >> LAB_CHUNK_SHIFT);
             int iy = LAB_CHUNK_Y(yy & LAB_CHUNK_MASK);
             for(int xx = x+15; xx <= x+17; ++xx)
             {
                 int cx = xx >> LAB_CHUNK_SHIFT;
                 int ix = LAB_CHUNK_X(xx & LAB_CHUNK_MASK);
-                //if(!dbx + !dby + !dbz >= 2)
+                SWT(if(!dbx + !dby + !dbz >= 2))
                     blk3x3x3[i] = cnk3x3x3[cx+cy+cz]!=NULL ? cnk3x3x3[cx+cy+cz]->blocks[ix+iy+iz] : &LAB_BLOCK_OUTSIDE;
                 ++i;
-                //dbx++;
+                SWT(dbx++;)
             }
-            //dby++;
+            SWT(dby++;)
         }
-        //dbz++;
+        SWT(dbz++;)
     }
 }
+#endif
 
 static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 {

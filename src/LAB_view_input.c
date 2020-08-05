@@ -33,20 +33,6 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
         {
             SDL_Keycode key = ((SDL_KeyboardEvent*)event)->keysym.sym;
 
-            if(key == SDLK_ESCAPE)
-            {
-                int grab;
-                grab = SDL_GetWindowGrab(window->window);
-                SDL_SetWindowGrab(window->window, !grab);
-                SDL_ShowCursor(grab);
-                if(!grab)
-                {
-                    int w, h;
-                    SDL_GetWindowSize(window->window, &w, &h);
-                    SDL_WarpMouseInWindow(window->window, w/2, h/2);
-                }
-            }
-
             if(key == SDLK_w) view_input->dir_set |= 1;
             if(key == SDLK_a) view_input->dir_set |= 2;
             if(key == SDLK_s) view_input->dir_set |= 4;
@@ -75,6 +61,30 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
 
             if(key == SDLK_SPACE)  view_input->updown &= ~1;
             if(key == SDLK_LSHIFT) view_input->updown &= ~2;
+
+
+            if(key == SDLK_ESCAPE)
+            {
+                int grab;
+                grab = SDL_GetWindowGrab(window->window);
+                SDL_SetWindowGrab(window->window, !grab);
+                SDL_ShowCursor(grab);
+                if(!grab)
+                {
+                    int w, h;
+                    SDL_GetWindowSize(window->window, &w, &h);
+                    SDL_WarpMouseInWindow(window->window, w/2, h/2);
+                }
+            }
+
+            if(key == SDLK_F11)
+            {
+                uint32_t fs_flags;
+                fs_flags = (SDL_GetWindowFlags(window->window) & SDL_WINDOW_FULLSCREEN)
+                         ? 0
+                         : SDL_WINDOW_FULLSCREEN_DESKTOP;
+                SDL_SetWindowFullscreen(window->window, fs_flags);
+            }
         } break;
 
 
@@ -205,7 +215,7 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input)
         }
     }
 
-    if(kbstate[SDL_SCANCODE_LCTRL])
+    if(kbstate[SDL_SCANCODE_LALT])
     {
         if(mbstate == SDL_BUTTON(SDL_BUTTON_LEFT) || mbstate == SDL_BUTTON(SDL_BUTTON_RIGHT))
         {
