@@ -26,3 +26,10 @@ LAB_Block LAB_BLOCK_GRASS = {
     .r = 50, 255, 100,
     .tx = 0, 0,
 };
+
+LAB_Block LAB_BLOCK_LIGHT = {
+    .flags = LAB_BLOCK_SOLID,
+    .r  = 255, 255, 255,
+    .lr = 255, 255, 255,
+    .tx = 0, 1,
+};

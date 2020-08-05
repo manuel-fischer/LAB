@@ -12,6 +12,15 @@
 #include <math.h>
 
 static int LAB_ViewInputInteract(LAB_ViewInput* view_input, int right);
+static LAB_Block* blocks[9] =
+{
+    &LAB_BLOCK_STONE,
+    &LAB_BLOCK_COBBLESTONE,
+    &LAB_BLOCK_GRASS,
+    &LAB_BLOCK_LIGHT
+};
+static int selected_block = 1;
+
 
 int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
 {
@@ -45,6 +54,15 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
 
             if(key == SDLK_SPACE)  view_input->updown |= 1;
             if(key == SDLK_LSHIFT) view_input->updown |= 2;
+
+            if(key >= '1' && key <= '9')
+            {
+                int id = key-'1';
+                if(blocks[id] != NULL)
+                {
+                    selected_block = id;
+                }
+            }
         } break;
         case SDL_KEYUP:
         {
@@ -133,7 +151,7 @@ static int LAB_ViewInputInteract(LAB_ViewInput* view_input, int right)
         }
         else
         {
-            LAB_SetBlock(view->world, prev[0], prev[1], prev[2], LAB_CHUNK_GENERATE, &LAB_BLOCK_COBBLESTONE);
+            LAB_SetBlock(view->world, prev[0], prev[1], prev[2], LAB_CHUNK_GENERATE, blocks[selected_block]);
         }
         return 1;
     }
