@@ -11,6 +11,7 @@
 #define LAB_UNLIKELY(cond) __builtin_expect(!!(cond), 0)
 #define LAB_LIKELY(cond) __builtin_expect(!!(cond), 1)
 
+#if 0
 
 //#define NO_ASM_OPTS
 
@@ -69,3 +70,4 @@
     do { if(!cond) (dst) = *(src); } while(0)
 #endif
 
+#endif

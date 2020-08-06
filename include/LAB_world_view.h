@@ -26,10 +26,13 @@ typedef struct LAB_ViewChunkEntry
 {
     int x, y, z;
 
+
     size_t mesh_count, mesh_capacity;
     LAB_ViewTriangle* mesh;
 
     unsigned dirty:1, used:1;
+
+    unsigned vbo;
 
 } LAB_ViewChunkEntry;
 
@@ -58,6 +61,8 @@ typedef struct LAB_ViewChunkEntry
 
 
 
+#define LAB_VIEW_USE_VBO 1u
+
 typedef struct LAB_View
 {
     // View position
@@ -72,6 +77,8 @@ typedef struct LAB_View
     //LAB_ViewChunkMap chunks;
 
     LAB_World* world;
+
+    uint32_t flags;
 } LAB_View;
 
 
@@ -83,5 +90,6 @@ void LAB_ViewChunkProc(void* user, LAB_World* world, int x, int y, int z);
 void LAB_ViewRenderProc(void* user, LAB_Window* window);
 
 LAB_ViewChunkEntry* LAB_ViewGetChunkEntry(LAB_View* view, int x, int y, int z);
+void LAB_ViewInvalidateEverything(LAB_View* view);
 
 void LAB_ViewGetDirection(LAB_View* view, /*out*/ float dir[3]);

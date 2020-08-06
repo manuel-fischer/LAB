@@ -21,6 +21,40 @@ LAB_Block LAB_BLOCK_COBBLESTONE = {
     .tx = 1, 0,
 };
 
+
+LAB_Block LAB_BLOCK_MARBLE = {
+    .flags = LAB_BLOCK_SOLID,
+    //.r = 200, 200, 200
+    //.r = 150, 150, 140
+    .r = 255, 255, 255,
+    .tx = 0, 0,
+};
+
+LAB_Block LAB_BLOCK_COBBLEMARBLE = {
+    .flags = LAB_BLOCK_SOLID,
+    .r = 255, 255, 255,
+    .tx = 1, 0,
+};
+
+LAB_Block LAB_BLOCK_WOOD = {
+    .flags = LAB_BLOCK_SOLID,
+    .r  = 93, 75, 60,
+    .tx = 2, 0,
+};
+
+LAB_Block LAB_BLOCK_WOOD_PLANKS = {
+    .flags = LAB_BLOCK_SOLID,
+    .r  = 220, 197, 162,
+    .tx = 3, 0,
+};
+
+LAB_Block LAB_BLOCK_WOOD_PLANKS_DARK = {
+    .flags = LAB_BLOCK_SOLID,
+    .r  = 120, 97, 80,
+    .tx = 3, 0,
+};
+
+
 LAB_Block LAB_BLOCK_GRASS = {
     .flags = LAB_BLOCK_SOLID,
     .r = 50, 255, 100,
@@ -28,7 +62,7 @@ LAB_Block LAB_BLOCK_GRASS = {
 };
 
 LAB_Block LAB_BLOCK_LIGHT = {
-    .flags = LAB_BLOCK_SOLID,
+    .flags = LAB_BLOCK_SOLID | LAB_BLOCK_EMISSIVE,
     .r  = 255, 255, 255,
     .lr = 255, 255, 255,
     .tx = 0, 1,

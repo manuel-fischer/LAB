@@ -1,3 +1,5 @@
 sdl
 sdl_image
+sdl_ttf
 opengl
+glew

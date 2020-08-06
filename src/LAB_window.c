@@ -5,8 +5,7 @@
 #include "LAB_opt.h"
 
 #include <SDL2/SDL.h>
-#include <GL/gl.h>
-
+#include "LAB_gl.h"
 
 
 LAB_Window* LAB_CreateWindow(int w, int h, uint32_t sdl_flags)
@@ -45,6 +44,13 @@ LAB_Window* LAB_CreateWindow(int w, int h, uint32_t sdl_flags)
     if(SDL_GL_SetSwapInterval(1) < 0) // VSYNC
     {
         LAB_SetError("SDL_GL_SetSwapInterval failed: %s", SDL_GetError());
+        goto INIT_ERROR;
+    }
+
+    GLenum err = glewInit();
+    if(err != GLEW_OK)
+    {
+        LAB_SetError("glewInit failed: %s", glewGetErrorString(err));
         goto INIT_ERROR;
     }
 

@@ -11,6 +11,7 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
+				<Option use_console_runner="0" />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>
@@ -18,8 +19,21 @@
 			<Target title="Release">
 				<Option output="bin/Release/Laboratory" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj/Release/" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-Ofast" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+			<Target title="Release -- Con">
+				<Option output="bin/Release/Laboratory" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
+				<Option use_console_runner="0" />
 				<Compiler>
 					<Add option="-Ofast" />
 				</Compiler>
@@ -29,15 +43,13 @@
 			</Target>
 			<Target title="Release -- Disassemble">
 				<Option output="bin/Release/Laboratory" prefix_auto="1" extension_auto="1" />
-				<Option object_output="obj/Release/" />
+				<Option object_output="obj/ReleaseNS/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-Ofast" />
+					<Add option="-g" />
 				</Compiler>
-				<Linker>
-					<Add option="-s" />
-				</Linker>
 				<ExtraCommands>
 					<Add after="cmd /c objdump -D bin\Release\Laboratory.exe &gt; whole.dis" />
 					<Mode after="always" />
@@ -60,6 +72,7 @@
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-march=native" />
+			<Add option="-DGL_GLEXT_PROTOTYPES" />
 			<Add directory="$(#sdl2.include)" />
 			<Add directory="include" />
 		</Compiler>
@@ -69,11 +82,13 @@
 			<Add option="else if(PLATFORM == PLATFORM_X11 )" />
 			<Add option='printf(_(&quot;-lX11&quot;));' />
 			<Add option="]]" />
+			<Add option="--verbose" />
 			<Add library="SDL2main" />
 			<Add library="SDL2.dll" />
 			<Add library="SDL2_image" />
 			<Add library="SDL2_ttf" />
 			<Add library="opengl32" />
+			<Add library="glew32" />
 		</Linker>
 		<Unit filename="TODO.txt" />
 		<Unit filename="include/HTL_hashmap.t.c">
@@ -84,14 +99,17 @@
 		<Unit filename="include/LAB.h" />
 		<Unit filename="include/LAB_bits.h" />
 		<Unit filename="include/LAB_block.h" />
+		<Unit filename="include/LAB_check.h" />
 		<Unit filename="include/LAB_chunk.h" />
 		<Unit filename="include/LAB_error.h" />
 		<Unit filename="include/LAB_gl.h" />
 		<Unit filename="include/LAB_light_node.h" />
 		<Unit filename="include/LAB_math.h" />
 		<Unit filename="include/LAB_memory.h" />
+		<Unit filename="include/LAB_opt.h" />
 		<Unit filename="include/LAB_perf.h" />
 		<Unit filename="include/LAB_stdinc.h" />
+		<Unit filename="include/LAB_util.h" />
 		<Unit filename="include/LAB_view_input.h" />
 		<Unit filename="include/LAB_window.h" />
 		<Unit filename="include/LAB_world.h" />
@@ -115,6 +133,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_memory.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_util.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_view_input.c">

@@ -2,18 +2,19 @@
 
 #include "LAB_memory.h"
 #include "LAB_error.h"
-#include "LAB_world.h"
 
 #include "LAB_stdinc.h"
 #include "LAB_opt.h"
+#include "LAB_util.h"
 
 #include <math.h>
-
 
 
 #define HTL_PARAM LAB_CHUNK_MAP
 #include "HTL_hashmap.t.c"
 #undef HTL_PARAM
+
+void LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int cz);
 
 unsigned LAB_ChunkPosHash(LAB_ChunkPos pos)
 {
@@ -151,6 +152,10 @@ void LAB_NotifyChunk(LAB_World* world, int x, int y, int z)
 {
     if(LAB_LIKELY(world->chunkview != NULL))
     {
+        LAB_Chunk* chunks[27];
+        LAB_GetChunkNeighborhood(world, chunks, x, y, z, LAB_CHUNK_EXISTING);
+        LAB_TickLight(world, chunks, x, y, z);
+
         (*world->chunkview)(world->chunkview_user, world, x, y, z);
     }
 }
@@ -226,6 +231,41 @@ int LAB_TraceBlock(LAB_World* world, int max_distance, float vpos[3], float dir[
 
 
 
+void LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int cz)
+{
+    LAB_Chunk* cnk = chunks[1+3+9];
+    if(!cnk) return;
+    for(int i = 0; i < 16; ++i)
+    for(int z = 0; z < 16; ++z)
+    for(int y = 0; y < 16; ++y)
+    for(int x = 0; x < 16; ++x)
+    {
+        int off = LAB_CHUNK_OFFSET(x, y, z);
+
+        int lum = 0;
+        if(!(cnk->blocks[off]->flags & LAB_BLOCK_SOLID))
+        {
+            for(int i = 0; i < 6; ++i)
+            {
+                const int* o = &LAB_offset[i];
+                int nlum;
+
+                LAB_Block* block = LAB_GetNeighborhoodBlock(chunks, x+o[0], y+o[1], z+o[2]);
+                if(block->flags & LAB_BLOCK_EMISSIVE)
+                    nlum = block->lr;
+                else
+                {
+                    nlum = LAB_GetNeighborhoodLight(chunks, x+o[0], y+o[1], z+o[2]);
+                    if(i!=3) nlum = nlum-(nlum>>4);
+                }
+                if(nlum > lum) lum = nlum;
+            }
+        }
+        if(lum < 16) lum = 16;
+        if(lum > 255) lum = 255;
+        cnk->light[off] = lum;
+    }
+}
 
 
 

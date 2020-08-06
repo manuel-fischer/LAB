@@ -11,13 +11,12 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
 #include <math.h>
 
 #include "LAB_perf.h"
 #include "LAB_bits.h"
 #include "LAB_opt.h"
+#include "LAB_util.h"
 
 
 #define HTL_PARAM LAB_VIEW_CHUNK_MAP
@@ -61,11 +60,15 @@ void LAB_View_StaticInit()
     glEnable(GL_TEXTURE_2D);
     glGenTextures(1, &LAB_gltextureid);
     glBindTexture(GL_TEXTURE_2D, LAB_gltextureid);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    glEnable(GL_MIPMAP);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 5);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img->w, img->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, img->pixels);
-    //glGenerateMipmap(GL_TEXTURE_2D);
+    glGenerateMipmap(GL_TEXTURE_2D);
 
     glMatrixMode(GL_TEXTURE);
     glScalef(32.f / (float)img->w, 32.f / (float)img->h, 1);
@@ -116,7 +119,7 @@ static void LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, L
                              chunk_entry->x, chunk_entry->y, chunk_entry->z,
                              LAB_CHUNK_EXISTING);
 
-#if 1
+#if 0
     if(chunk_entry->x == 0 && chunk_entry->y == -1 && chunk_entry->z == 0)
     {
         LAB_PERF_BEGIN("build mesh", 333);
@@ -166,65 +169,7 @@ static void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chun
 }
 
 
-/**
- *  the origin of x,y,z is at (0,0,0) of the chunk at [1+3+3*3]
- */
-LAB_INLINE
-LAB_Chunk* LAB_GetNeighborhoodRef(LAB_Chunk* neighborhood[27], int x, int y, int z, int* /*out*/ index)
-{
-    int cx, cy, cz,  ix, iy, iz;
-
-    cx = (x+16) >> LAB_CHUNK_SHIFT;
-    ix = LAB_CHUNK_X(x & LAB_CHUNK_MASK);
-
-    cy = 3*((y+16) >> LAB_CHUNK_SHIFT);
-    iy = LAB_CHUNK_Y(y & LAB_CHUNK_MASK);
-
-    cz = 3*3*((z+16) >> LAB_CHUNK_SHIFT);
-    iz = LAB_CHUNK_Z(z & LAB_CHUNK_MASK);
-
-    *index = ix+iy+iz;
-    return neighborhood[cx+cy+cz];
-}
-
-LAB_HOT LAB_INLINE
-LAB_Block* LAB_GetNeighborhoodBlock(LAB_Chunk* neighborhood[27], int x, int y, int z)
-{
-    int block_index;
-    LAB_Chunk* chunk;
-    chunk = LAB_GetNeighborhoodRef(neighborhood, x, y, z, &block_index);
-#if 0 // branchless
-    static LAB_Block*const ptr_outside = &LAB_BLOCK_OUTSIDE;
-
-    LAB_Block*const* ptr0 = &ptr_outside;
-    LAB_Block*const* ptr1 = &chunk->blocks[block_index];
-    //LAB_Block*const* ptr1 = chunk?&chunk->blocks[block_index]:NULL;
-    /*static volatile void* calc;
-    calc = ptr0;
-    calc = ptr1;*/
-    //if(__builtin_unpredictable(chunk == NULL)) ptr1 = ptr0; // cmov
-    //LAB_CMOV(chunk==NULL, ptr1, ptr0);
-    (void)LAB_UNLIKELY(chunk == NULL);
-    LAB_CMOV_NOT(chunk, ptr1, ptr0);
-    //if(LAB_UNLIKELY(chunk == NULL)) ptr1 = ptr0; // cmov
-
-    return *ptr1;
-#elif 0 // branchless
-    //block_index *= (chunk!=NULL);
-    block_index &= -(chunk!=NULL);
-    static LAB_Block*const ptr_outside = &LAB_BLOCK_OUTSIDE;
-
-    //LAB_Block** arrays = (chunk==NULL) ? &ptr_outside : chunk->blocks;
-    LAB_Block*const* arrays[2] = {&ptr_outside, &chunk->blocks[0]};
-
-    return arrays[chunk!=NULL][block_index];
-#else
-    if(LAB_UNLIKELY(chunk == NULL)) return &LAB_BLOCK_OUTSIDE;
-    return chunk->blocks[block_index];
-#endif
-}
-
-static void* void_mem[16] = {};
+//static void* void_mem[16] = {};
 
 LAB_HOT LAB_INLINE
 LAB_BlockFlags LAB_GetNeighborhoodBlockFlags(LAB_Chunk* neighborhood[27], int x, int y, int z)
@@ -395,15 +340,169 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
     if(LAB_UNLIKELY(tri == NULL)) return;
 
 
+    // shading
+    #define SHx 235u // west east
+    #define SHy 192u // bottom
+    #define SHz 215u // north south
+
+#if 1
+    typedef struct {
+        uint8_t x, y, z, l;
+    } DataSelect;
+
+
+    // Vertex order: Z
+    static const DataSelect data_select[6][4] = {
+        // WEST
+        { {0, 1, 0,  SHx},
+          {0, 1, 1,  SHx},
+          {0, 0, 0,  SHx},
+          {0, 0, 1,  SHx} },
+
+        // EAST
+        { {1, 1, 1,  SHx},
+          {1, 1, 0,  SHx},
+          {1, 0, 1,  SHx},
+          {1, 0, 0,  SHx} },
+
+
+        // BOTTOM
+        { {1, 0, 0,  SHy},
+          {0, 0, 0,  SHy},
+          {1, 0, 1,  SHy},
+          {0, 0, 1,  SHy} },
+
+        // TOP
+        { {0, 1, 0,  255},
+          {1, 1, 0,  255},
+          {0, 1, 1,  255},
+          {1, 1, 1,  255} },
+
+
+        // NORTH
+        { {1, 1, 0,  SHz},
+          {0, 1, 0,  SHz},
+          {1, 0, 0,  SHz},
+          {0, 0, 0,  SHz} },
+
+        // SOUTH
+        { {0, 1, 1,  SHz},
+          {1, 1, 1,  SHz},
+          {0, 0, 1,  SHz},
+          {1, 0, 1,  SHz} },
+    };
+
+
+
+    int i, face_itr;
+    face_itr = faces;
+    do {
+        i = LAB_Ctz(face_itr);
+
+        // remove last bit
+        face_itr &= face_itr-1;
+
+        DataSelect const* ds = data_select[i];
+
+        #if 0
+        uint8_t l = ds[0].l;
+        #else
+        typedef long long ll;
+        uint8_t l = (SHx | SHx << 8 | SHy << 16 | 255u << 24 | (ll)SHz << 32 | (ll)SHz << 40)>>(i<<3);
+        #endif
+
+        const int* o = &LAB_offset[i];
+
+        int lum = LAB_GetNeighborhoodLight(cnk3x3x3, x+o[0], y+o[1], z+o[2]);
+
+
+        l = (l*lum)>>8;
+
+
+        LAB_SetQuad(tri, x+ds[0].x, y+ds[0].y, z+ds[0].z,  l, l, l, 255,  0, 0,
+                         x+ds[1].x, y+ds[1].y, z+ds[1].z,  l, l, l, 255,  1, 0,
+                         x+ds[2].x, y+ds[2].y, z+ds[2].z,  l, l, l, 255,  0, 1,
+                         x+ds[3].x, y+ds[3].y, z+ds[3].z,  l, l, l, 255,  1, 1);
+
+        tri+=2;
+    } while(face_itr);
+#elif 0
+    typedef struct {
+        uint8_t x, y, z;
+        uint8_t r, g, b;
+        uint8_t u, v;
+    } DataSelect;
+
+    static const DataSelect data_select[6][4] = {
+        // WEST
+        { {0, 0, 0,  SHx, SHx, SHx,  0, 1 },
+          {0, 1, 0,  SHx, SHx, SHx,  0, 0 },
+          {0, 0, 1,  SHx, SHx, SHx,  1, 1 },
+          {0, 1, 1,  SHx, SHx, SHx,  1, 0 } },
+
+        // EAST
+        { {1, 1, 0,  SHx, SHx, SHx,  1, 0 },
+          {1, 0, 0,  SHx, SHx, SHx,  1, 1 },
+          {1, 1, 1,  SHx, SHx, SHx,  0, 0 },
+          {1, 0, 1,  SHx, SHx, SHx,  0, 1 } },
+
+
+        // BOTTOM
+        { {0, 0, 0,  SHy, SHy, SHy,  1, 0 },
+          {0, 0, 1,  SHy, SHy, SHy,  1, 1 },
+          {1, 0, 0,  SHy, SHy, SHy,  0, 0 },
+          {1, 0, 1,  SHy, SHy, SHy,  0, 1 } },
+
+        // TOP
+        { {0, 1, 1,  255, 255, 255,  1, 1 },
+          {0, 1, 0,  255, 255, 255,  1, 0 },
+          {1, 1, 1,  255, 255, 255,  0, 1 },
+          {1, 1, 0,  255, 255, 255,  0, 0 } },
+
+
+        // NORTH
+        { {0, 0, 0,  SHz, SHz, SHz,  1, 1 },
+          {1, 0, 0,  SHz, SHz, SHz,  0, 1 },
+          {0, 1, 0,  SHz, SHz, SHz,  1, 0 },
+          {1, 1, 0,  SHz, SHz, SHz,  0, 0 } },
+
+        // SOUTH
+        { {1, 0, 1,  SHz, SHz, SHz,  1, 1 },
+          {0, 0, 1,  SHz, SHz, SHz,  0, 1 },
+          {1, 1, 1,  SHz, SHz, SHz,  1, 0 },
+          {0, 1, 1,  SHz, SHz, SHz,  0, 0 } },
+    };
+
+    for(int face_itr=faces, i = 0; face_itr; face_itr>>=1, i++)
+    {
+        if(face_itr&1)
+        {
+            DataSelect* ds = data_select[i];
+
+            /*LAB_SetQuad(tri, x+ds[0].x, y+ds[0].y, z+ds[0].z,  ds[0].r, ds[0].g, ds[0].b, 255,  ds[0].u, ds[0].v,
+                             x+ds[1].x, y+ds[1].y, z+ds[1].z,  ds[1].r, ds[1].g, ds[1].b, 255,  ds[1].u, ds[1].v,
+                             x+ds[2].x, y+ds[2].y, z+ds[2].z,  ds[2].r, ds[2].g, ds[2].b, 255,  ds[2].u, ds[2].v,
+                             x+ds[3].x, y+ds[3].y, z+ds[3].z,  ds[3].r, ds[3].g, ds[3].b, 255,  ds[3].u, ds[3].v);*/
+
+            typedef long long ll;
+            uint8_t l = (SHx | SHx << 8 | SHy << 16 | 255u << 24 | (ll)SHz << 32 | (ll)SHz << 40)>>(i<<3);
+
+            LAB_SetQuad(tri, x+ds[0].x, y+ds[0].y, z+ds[0].z,  l, l, l, 255,  ds[0].u, ds[0].v,
+                             x+ds[1].x, y+ds[1].y, z+ds[1].z,  l, l, l, 255,  ds[1].u, ds[1].v,
+                             x+ds[2].x, y+ds[2].y, z+ds[2].z,  l, l, l, 255,  ds[2].u, ds[2].v,
+                             x+ds[3].x, y+ds[3].y, z+ds[3].z,  l, l, l, 255,  ds[3].u, ds[3].v);
+
+            tri+=2;
+        }
+    }
+
+#else
+
     float x0 = x,    y0 = y,    z0 = z;
     float x1 = x0+1, y1 = y0+1, z1 = z0+1;
 
 
 
-    // shading
-    #define SHx 235 // west east
-    #define SHy 192 // bottom
-    #define SHz 215 // north south
 
 
 #if BRANCHLESS
@@ -453,10 +552,10 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
     // TOP
     IF_DO(f3)
     {
-        LAB_SetQuad(tri3, x0, y1, z1,  255, 255, 255, 255,  1, 0,
-                          x0, y1, z0,  255, 255, 255, 255,  1, 1,
-                          x1, y1, z1,  255, 255, 255, 255,  0, 0,
-                          x1, y1, z0,  255, 255, 255, 255,  0, 1);
+        LAB_SetQuad(tri3, x0, y1, z1,  255, 255, 255, 255,  1, 1,
+                          x0, y1, z0,  255, 255, 255, 255,  1, 0,
+                          x1, y1, z1,  255, 255, 255, 255,  0, 1,
+                          x1, y1, z0,  255, 255, 255, 255,  0, 0);
     }
 
 
@@ -513,10 +612,10 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
     // TOP
     IF_DO(f3)
     {
-        LAB_SetQuad(tri, x0, y1, z1,  255, 255, 255, 255,  1, 0,
-                         x0, y1, z0,  255, 255, 255, 255,  1, 1,
-                         x1, y1, z1,  255, 255, 255, 255,  0, 0,
-                         x1, y1, z0,  255, 255, 255, 255,  0, 1);
+        LAB_SetQuad(tri, x0, y1, z1,  255, 255, 255, 255,  1, 1,
+                         x0, y1, z0,  255, 255, 255, 255,  1, 0,
+                         x1, y1, z1,  255, 255, 255, 255,  0, 1,
+                         x1, y1, z0,  255, 255, 255, 255,  0, 0);
         tri+=2*f3;
     }
 
@@ -540,6 +639,7 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
                          x0, y1, z1,  SHz, SHz, SHz, 255,  0, 0);
         //tri+=2;
     }
+#endif
 #endif
 }
 
@@ -606,24 +706,55 @@ static void LAB_GetBlockNeighborhood(LAB_Chunk* cnk3x3x3[27], LAB_Block* blk3x3x
 }
 #endif
 
+static void LAB_ViewUploadVBO(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
+{
+    LAB_ViewTriangle* mesh = chunk_entry->mesh;
+
+    if(!chunk_entry->vbo) glGenBuffers(1, &chunk_entry->vbo);
+
+    glBindBuffer(GL_ARRAY_BUFFER, chunk_entry->vbo);
+    glBufferData(GL_ARRAY_BUFFER, chunk_entry->mesh_count*sizeof *mesh, mesh, GL_DYNAMIC_DRAW);
+}
+
+
 static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 {
     if(chunk_entry->dirty)
     {
-        LAB_ViewBuildMesh(view, chunk_entry, view->world);
         chunk_entry->dirty = 0;
+        LAB_ViewBuildMesh(view, chunk_entry, view->world);
+
+        if(view->flags & LAB_VIEW_USE_VBO)
+            LAB_ViewUploadVBO(view, chunk_entry);
+    }
+    else
+    {
+        if(view->flags & LAB_VIEW_USE_VBO)
+        {
+            glBindBuffer(GL_ARRAY_BUFFER, chunk_entry->vbo);
+        }
     }
 
-
     if(chunk_entry->mesh_count == 0) return;
+
     glPushMatrix();
     glTranslatef(LAB_CHUNK_SIZE*chunk_entry->x, LAB_CHUNK_SIZE*chunk_entry->y, LAB_CHUNK_SIZE*chunk_entry->z);
-    LAB_ViewTriangle* mesh = chunk_entry->mesh;
+
+
+    LAB_ViewTriangle* mesh;
+
+    mesh = view->flags & LAB_VIEW_USE_VBO ? 0 /* Origin of vbo is at 0 */ : chunk_entry->mesh;
+
     glVertexPointer(3, GL_FLOAT, sizeof *mesh->v, &mesh->v[0].x);
     glColorPointer(4, GL_UNSIGNED_BYTE, sizeof *mesh->v, &mesh->v[0].r);
     glTexCoordPointer(2, GL_FLOAT, sizeof *mesh->v, &mesh->v[0].u);
+
     glDrawArrays(GL_TRIANGLES, 0, 3*chunk_entry->mesh_count);
     glPopMatrix();
+
+
+    if(view->flags & LAB_VIEW_USE_VBO)
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void LAB_ViewRenderProc(void* user, LAB_Window* window)
@@ -698,7 +829,6 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
         -0.1,     0, -5,
         -0.2, -0.05, -5,
         -0.2,  0.05, -5,
-
     };
 
     glColor3f(1,1,1);
@@ -756,6 +886,14 @@ LAB_ViewChunkEntry* LAB_ViewGetChunkEntry(LAB_View* view, int x, int y, int z)
 
     return &chunks[chunk_count];
     #endif
+}
+
+void LAB_ViewInvalidateEverything(LAB_View* view)
+{
+    for(size_t i = 0; i < view->chunk_count; ++i)
+    {
+        view->chunks[i].dirty = 1;
+    }
 }
 
 

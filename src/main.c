@@ -3,6 +3,7 @@
 #include <LAB.h>
 #include <SDL2/SDL.h>
 
+#include <math.h>
 
 
 static LAB_Chunk* ChunkGenerateFlat(void* user, LAB_World* world, int x, int y, int z)
@@ -82,11 +83,24 @@ int main(int argc, char** argv) {
 
     while(LAB_WindowLoop(main_window))
     {
-        LAB_Chunk* chunks[27];
+        /*LAB_Chunk* chunks[27];
         LAB_GetChunkNeighborhood(the_world, chunks, (int)(world_view->x / LAB_CHUNK_SIZE),
                                                     (int)(world_view->y / LAB_CHUNK_SIZE),
                                                     (int)(world_view->z / LAB_CHUNK_SIZE),
-                                                    LAB_CHUNK_GENERATE);
+                                                    LAB_CHUNK_GENERATE);*/
+
+        int dist = 3;
+
+        int px = (int)floorf(world_view->x) >> LAB_CHUNK_SHIFT;
+        int py = (int)floorf(world_view->y) >> LAB_CHUNK_SHIFT;
+        int pz = (int)floorf(world_view->z) >> LAB_CHUNK_SHIFT;
+
+        for(int z = -dist; z <= dist; ++z)
+        for(int y = -dist; y <= dist; ++y)
+        for(int x = -dist; x <= dist; ++x)
+        {
+            (void)LAB_GetChunk(the_world, px+x, py+y, pz+z, LAB_CHUNK_GENERATE_LATER);
+        }
 
         LAB_ViewInputTick(&view_input);
     };

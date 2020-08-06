@@ -10,12 +10,18 @@
 
 #include <SDL2/SDL.h>
 #include <math.h>
+#include <stdio.h>
 
 static int LAB_ViewInputInteract(LAB_ViewInput* view_input, int right);
 static LAB_Block* blocks[9] =
 {
     &LAB_BLOCK_STONE,
     &LAB_BLOCK_COBBLESTONE,
+    &LAB_BLOCK_MARBLE,
+    &LAB_BLOCK_COBBLEMARBLE,
+    &LAB_BLOCK_WOOD,
+    &LAB_BLOCK_WOOD_PLANKS,
+    &LAB_BLOCK_WOOD_PLANKS_DARK,
     &LAB_BLOCK_GRASS,
     &LAB_BLOCK_LIGHT
 };
@@ -75,6 +81,14 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                     SDL_GetWindowSize(window->window, &w, &h);
                     SDL_WarpMouseInWindow(window->window, w/2, h/2);
                 }
+            }
+
+            if(key == SDLK_F3)
+            {
+                view->flags ^= LAB_VIEW_USE_VBO;
+                printf("VBO turned %s\n", "off\0on"+4*!!(view->flags & LAB_VIEW_USE_VBO));
+                LAB_ViewInvalidateEverything(view);
+
             }
 
             if(key == SDLK_F11)
