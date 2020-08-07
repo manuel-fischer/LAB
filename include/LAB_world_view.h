@@ -1,6 +1,6 @@
 #pragma once
 #include "LAB_stdinc.h"
-
+#include "LAB_opt.h"
 
 // DEPEND
 typedef struct LAB_World LAB_World;
