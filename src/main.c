@@ -1,9 +1,10 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <LAB.h>
+#include "LAB.h"
 #include <SDL2/SDL.h>
 
 #include <math.h>
+#include "LAB_bits.h"
 
 
 static LAB_Chunk* ChunkGenerateFlat(void* user, LAB_World* world, int x, int y, int z)
@@ -90,10 +91,13 @@ int main(int argc, char** argv) {
                                                     LAB_CHUNK_GENERATE);*/
 
         int dist = 3;
+        dist = 0;
 
-        int px = (int)floorf(world_view->x) >> LAB_CHUNK_SHIFT;
-        int py = (int)floorf(world_view->y) >> LAB_CHUNK_SHIFT;
-        int pz = (int)floorf(world_view->z) >> LAB_CHUNK_SHIFT;
+
+        #if 0
+        int px = LAB_Sar((int)floorf(world_view->x+8), LAB_CHUNK_SHIFT);
+        int py = LAB_Sar((int)floorf(world_view->y+8), LAB_CHUNK_SHIFT);
+        int pz = LAB_Sar((int)floorf(world_view->z+8), LAB_CHUNK_SHIFT);
 
         for(int z = -dist; z <= dist; ++z)
         for(int y = -dist; y <= dist; ++y)
@@ -101,7 +105,27 @@ int main(int argc, char** argv) {
         {
             (void)LAB_GetChunk(the_world, px+x, py+y, pz+z, LAB_CHUNK_GENERATE_LATER);
         }
+        #else
+        int px = LAB_Sar((int)floorf(world_view->x+8), LAB_CHUNK_SHIFT);
+        int py = LAB_Sar((int)floorf(world_view->y+8), LAB_CHUNK_SHIFT);
+        int pz = LAB_Sar((int)floorf(world_view->z+8), LAB_CHUNK_SHIFT);
 
+        for(int z = 0; z <= dist; ++z)
+        for(int y = 0; y <= dist; ++y)
+        for(int x = 0; x <= dist; ++x)
+        {
+            for(int i = 0; i < 8; ++i)
+            {
+                int xx, yy, zz;
+                xx = i&1 ? px+x : px-x-1;
+                yy = i&2 ? py+y : py-y-1;
+                zz = i&4 ? pz+z : pz-z-1;
+                (void)LAB_GetChunk(the_world, xx, yy, zz, LAB_CHUNK_GENERATE_LATER);
+            }
+        }
+        #endif
+
+        LAB_WorldTick(the_world);
         LAB_ViewInputTick(&view_input);
     };
 
@@ -115,6 +139,8 @@ EXIT:
     if(main_window != NULL) LAB_DestroyWindow(main_window);
 
     if(init) LAB_Quit();
+
+    LAB_DbgMemShow();
 
     return return_value;
 

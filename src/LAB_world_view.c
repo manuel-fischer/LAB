@@ -84,6 +84,15 @@ LAB_View* LAB_CreateView(LAB_World* world)
 
 void LAB_DestroyView(LAB_View* world_view)
 {
+    for(int i = 0; i < world_view->chunk_count; ++i)
+    {
+        LAB_ViewChunkEntry* entry = &world_view->chunks[i];
+        if(entry->mesh)
+            LAB_Free(entry->mesh);
+        if(entry->vbo)
+            glDeleteBuffers(1, &entry->vbo);
+    }
+    LAB_Free(world_view->chunks);
     LAB_Free(world_view);
 }
 

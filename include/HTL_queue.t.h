@@ -56,12 +56,13 @@ int  HTL_MEMBER(IsEmpty)(HTL_P(NAME)* q);
 /**
  *  Creates room for an element at the back
  *
- *  Returns 1 on success, 0 on failure
+ *  Returns the allocated entry on success,
+ *  NULL on failure
  *  It fails, when the queue is full
  *
  *  The element can be inserted by writing to Back()
  */
-int  HTL_MEMBER(PushBack)(HTL_P(NAME)* q);
+HTL_P(TYPE)* HTL_MEMBER(PushBack)(HTL_P(NAME)* q);
 
 /**
  *  removes Element from the front

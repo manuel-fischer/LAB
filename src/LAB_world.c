@@ -14,6 +14,10 @@
 #include "HTL_hashmap.t.c"
 #undef HTL_PARAM
 
+#define HTL_PARAM LAB_CHUNKPOS_QUEUE
+#include "HTL_queue.t.c"
+#undef HTL_PARAM
+
 void LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int cz);
 
 unsigned LAB_ChunkPosHash(LAB_ChunkPos pos)
@@ -39,69 +43,54 @@ LAB_World* LAB_CreateWorld(void)
     }
 
     LAB_ChunkMap_Construct(&world->chunks);
+    LAB_ChunkPosQueue_Construct(&world->gen_queue);
     return world;
 }
 
 void LAB_DestroyWorld(LAB_World* world)
 {
+    LAB_ChunkPosQueue_Destruct(&world->gen_queue);
+    for(int i = 0; i < world->chunks.capacity; ++i)
+    {
+        LAB_ChunkMap_Entry* entry = &world->chunks.table[i];
+        if(entry->value)
+            LAB_DestroyChunk(entry->value);
+    }
+    LAB_ChunkMap_Destruct(&world->chunks);
     LAB_Free(world);
+}
+
+
+static LAB_Chunk* LAB_GenerateNotifyChunk(LAB_World* world, int x, int y, int z)
+{
+    printf("GEN %3i, %3i, %3i\n", x, y, z);
+    LAB_ChunkPos pos = { x, y, z };
+    LAB_ChunkMap_Entry* entry;
+    LAB_Chunk* chunk;
+    entry = LAB_ChunkMap_PutKey(&world->chunks, pos);
+    if(entry->value != NULL) // already generated
+        return entry->value;
+
+    // Create slot for chunk
+    // Note that it does not really exist, because the value is NULL
+    // Entry must be written before anything further happens
+    if(LAB_UNLIKELY(entry == NULL)) return NULL;
+    chunk = (*world->chunkgen)(world->chunkgen_user, world, x, y, z);
+    if(LAB_UNLIKELY(chunk == NULL)) return NULL;
+        // Because the inserted entry is not really existing
+        // We can silently discard it
+
+    // Slot gets occupied, because >chunk< is nonzero
+    entry->value = chunk;
+
+    LAB_NotifyChunk(world, x, y, z);
+
+    return chunk;
 }
 
 
 LAB_Chunk* LAB_GetChunk(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType flags)
 {
-#if 0
-    int chunk_count, chunk_capacity;
-    LAB_ChunkEntry* chunks;
-    LAB_Chunk* chunk;
-
-    chunk_count = world->chunk_count;
-    chunks = world->chunks;
-
-    for(int i = 0; i < chunk_count; ++i)
-    {
-        if(chunks[i].x == x && chunks[i].y == y && chunks[i].z == z)
-            return chunks[i].chunk;
-    }
-
-    chunk_capacity = world->chunk_capacity;
-
-    if(flags == LAB_CHUNK_GENERATE)
-    {
-        if(chunk_count >= chunk_capacity)
-        {
-            if(chunk_capacity == 0)
-                chunk_capacity = 16;
-            else
-                chunk_capacity *= 2;
-
-            chunks = LAB_ReallocN(chunks, chunk_capacity, sizeof *chunks);
-            if(!chunks) return NULL;
-            world->chunk_capacity = chunk_capacity;
-            world->chunks = chunks;
-        }
-
-        if(world->chunkgen == NULL) return NULL;
-
-        chunk = (*world->chunkgen)(world->chunkgen_user, world, x, y, z);
-        if(!chunk) return NULL;
-
-        chunks[chunk_count].x = x;
-        chunks[chunk_count].y = y;
-        chunks[chunk_count].z = z;
-        chunks[chunk_count].chunk = chunk;
-        world->chunk_count++;
-
-        LAB_NotifyChunk(world, x, y, z);
-
-        return chunk;
-    }
-    else
-    {
-        return NULL;
-    }
-#endif
-
     LAB_ChunkPos pos = { x, y, z };
     LAB_ChunkMap_Entry* entry = LAB_ChunkMap_Get(&world->chunks, pos);
     if(entry != NULL)
@@ -111,26 +100,23 @@ LAB_Chunk* LAB_GetChunk(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType
 
     if(flags == LAB_CHUNK_GENERATE)
     {
-        LAB_ChunkMap_Entry* entry;
-        LAB_Chunk* chunk;
-        entry = LAB_ChunkMap_PutKey(&world->chunks, pos);
-        // Create slot for chunk
-        // Note that it does not really exist, because the value is NULL
-        // Entry must be written before anything further happens
-        if(LAB_UNLIKELY(entry == NULL)) return NULL;
-        chunk = (*world->chunkgen)(world->chunkgen_user, world, x, y, z);
-        if(LAB_UNLIKELY(chunk == NULL)) return NULL;
-            // Because the inserted entry is not really existing
-            // We can silently discard it
-
-        // Slot gets occupied, because >chunk< is nonzero
-        entry->value = chunk;
-
-        LAB_NotifyChunk(world, x, y, z);
-
-        return chunk;
+        return LAB_GenerateNotifyChunk(world, x, y, z);
     }
-    return NULL;
+    else if(flags == LAB_CHUNK_GENERATE_LATER)
+    {
+        LAB_ChunkPos* entry;
+        entry = LAB_ChunkPosQueue_PushBack(&world->gen_queue);
+        if(entry != NULL) {
+            entry->x = x;
+            entry->y = y;
+            entry->z = z;
+        }
+        return NULL;
+    }
+    else
+    {
+        return NULL;
+    }
 }
 
 
@@ -229,6 +215,17 @@ int LAB_TraceBlock(LAB_World* world, int max_distance, float vpos[3], float dir[
 
 
 
+
+void LAB_WorldTick(LAB_World* world)
+{
+    while(!LAB_ChunkPosQueue_IsEmpty(&world->gen_queue))
+    {
+        LAB_ChunkPos* pos;
+        pos = LAB_ChunkPosQueue_Front(&world->gen_queue);
+        LAB_GenerateNotifyChunk(world, pos->x, pos->y, pos->z);
+        LAB_ChunkPosQueue_PopFront(&world->gen_queue);
+    }
+}
 
 
 void LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int cz)

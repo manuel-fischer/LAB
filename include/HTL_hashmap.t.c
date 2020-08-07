@@ -16,7 +16,6 @@ HTL_DEF HTL_MEMBER(Entry)* HTL_MEMBER(PutKey)(HTL_P(NAME)* hashmap, HTL_P(KEY_TY
 {
     if(hashmap->size * HTL_P(LOAD_DEN) >= hashmap->capacity * HTL_P(LOAD_NUM))
     {
-
         if(hashmap->capacity != 0)
         {
             HTL_MEMBER(Entry)* entry = HTL_MEMBER(Locate)(hashmap, key);
@@ -45,8 +44,11 @@ HTL_DEF HTL_MEMBER(Entry)* HTL_MEMBER(PutKey)(HTL_P(NAME)* hashmap, HTL_P(KEY_TY
     }
 
     HTL_MEMBER(Entry)* entry = HTL_MEMBER(Locate)(hashmap, key);
-    entry->key = key;
-    ++hashmap->size;
+    if(!HTL_MEMBER(IsEntry)(hashmap, entry))
+    {
+        entry->key = key;
+        ++hashmap->size;
+    }
     return entry;
 }
 

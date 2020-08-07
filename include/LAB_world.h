@@ -9,10 +9,7 @@
 
 typedef struct LAB_ChunkPos
 {
-    //_Alignas(4) struct {
-    //int x, y, z;
     int16_t x, y, z, unused;
-    //};
 } LAB_ChunkPos;
 LAB_CHECK_STRUCT_SIZE(LAB_ChunkPos);
 
@@ -36,6 +33,15 @@ int LAB_ChunkPosComp(LAB_ChunkPos, LAB_ChunkPos);
 #define HTL_PARAM LAB_CHUNK_MAP
 #include "HTL_hashmap.t.h"
 #undef HTL_PARAM
+
+#define LAB_CHUNKPOS_QUEUE_NAME     LAB_ChunkPosQueue
+#define LAB_CHUNKPOS_QUEUE_TYPE     LAB_ChunkPos
+#define LAB_CHUNKPOS_QUEUE_CAPACITY 64
+
+#define HTL_PARAM LAB_CHUNKPOS_QUEUE
+#include "HTL_queue.t.h"
+#undef HTL_PARAM
+
 
 
 
@@ -62,15 +68,14 @@ typedef struct LAB_World
     LAB_ChunkEntry* chunks;*/
     LAB_ChunkMap chunks;
 
-
+    LAB_ChunkPosQueue gen_queue;
 } LAB_World;
 
 
 typedef unsigned LAB_ChunkPeekType;
 #define LAB_CHUNK_EXISTING       0
 #define LAB_CHUNK_GENERATE       1
-#define LAB_CHUNK_GENERATE_LATER 1
-//#define LAB_CHUNK_GENERATE_LATER 2
+#define LAB_CHUNK_GENERATE_LATER 1//2
 
 
 
@@ -105,6 +110,7 @@ int LAB_TraceBlock(LAB_World* world, int max_distance, float vpos[3], float dir[
                    /*out*/ int target[3],/*out*/ int prev[3],/*out*/ float hit[3]);
 
 
+void LAB_WorldTick(LAB_World* world);
 
 
 
@@ -156,3 +162,5 @@ int LAB_GetNeighborhoodLight(LAB_Chunk* neighborhood[27], int x, int y, int z)
     if(LAB_UNLIKELY(chunk == NULL)) return 255;
     return chunk->light[block_index];
 }
+
+

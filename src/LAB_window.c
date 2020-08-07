@@ -10,7 +10,7 @@
 
 LAB_Window* LAB_CreateWindow(int w, int h, uint32_t sdl_flags)
 {
-    LAB_Window* window = LAB_Malloc(sizeof *window);
+    LAB_Window* window = LAB_Calloc(1, sizeof *window);
     if(window == NULL)
     {
         LAB_SetError("CreateWindow failed to allocate");

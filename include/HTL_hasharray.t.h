@@ -78,7 +78,8 @@ HTL_MEMBER(Entry)* HTL_MEMBER(Locate)(HTL_P(NAME)* hasharray, HTL_P(KEY_TYPE) ke
  *
  *  The entry itself is not inserted.
  *  To insert an entry, the caller should change the given entry to a
- *  representation, that is not an empty entry
+ *  representation, that is not an empty entry,
+ *  When the entry was not inserted, the caller should call Discard
  *
  *  POST: All references to entries get invalidated, because the array
  *        might have been relocated
@@ -114,3 +115,9 @@ void HTL_MEMBER(Remove)(HTL_P(NAME)* hasharray, HTL_P(KEY_TYPE) key);
  */
 int HTL_MEMBER(IsEntry)(HTL_P(NAME)* hasharray, HTL_MEMBER(Entry)* entry);
 
+/**
+ *  When an entry has been allocated, this function allows to do a fast
+ *  return of the memory. This should only be called when the last call
+ *  to the map was Put and the entry itself was empty.
+ */
+void HTL_MEMBER(Discard)(HTL_P(NAME)* hasharray, HTL_MEMBER(Entry)* entry);

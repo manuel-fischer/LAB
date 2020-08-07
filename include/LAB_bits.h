@@ -14,7 +14,7 @@
 
 #else
 LAB_PURE
-inline int LAB_PopCnt(unsigned v)
+static inline int LAB_PopCnt(unsigned v)
 {
     // Slightly modified:  https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetKernighan
 
@@ -29,7 +29,7 @@ inline int LAB_PopCnt(unsigned v)
 }
 
 LAB_PURE
-inline int LAB_Ctz(unsigned v)
+static inline int LAB_Ctz(unsigned v)
 {
     // Slightly modified:  https://graphics.stanford.edu/~seander/bithacks.html#ZerosOnRightParallel
     // v: 32-bit word input to count zero bits on right
@@ -44,4 +44,17 @@ inline int LAB_Ctz(unsigned v)
     return c;
 }
 
+#endif
+
+
+#if (-1 >> 1) == -1
+#define LAB_Sar(x, n) ((x) >> (n))
+#else
+// Because C does not guarantee that x >> n sign extends for
+// signed numbers, here is an implementation that does this
+LAB_PURE
+static inline int LAB_Sar(int x, int n)
+{
+    return x < 0 ? ~(~x >> n) : x >> n;
+}
 #endif
