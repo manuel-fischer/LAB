@@ -6,7 +6,7 @@
 
 static char LAB_error_buffer[LAB_ERROR_BUFFER_SIZE] = {};
 
-const char* LAB_GetError()
+const char* LAB_GetError(void)
 {
     return LAB_error_buffer;
 }

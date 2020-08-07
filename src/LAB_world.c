@@ -29,7 +29,7 @@ int LAB_ChunkPosComp(LAB_ChunkPos a, LAB_ChunkPos b)
 
 
 
-LAB_World* LAB_CreateWorld()
+LAB_World* LAB_CreateWorld(void)
 {
     LAB_World* world = LAB_Calloc(1, sizeof *world); // filled with zeros
     if(LAB_UNLIKELY(world==NULL))
@@ -247,7 +247,7 @@ void LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int 
         {
             for(int i = 0; i < 6; ++i)
             {
-                const int* o = &LAB_offset[i];
+                const int* o = LAB_offset[i];
                 int nlum;
 
                 LAB_Block* block = LAB_GetNeighborhoodBlock(chunks, x+o[0], y+o[1], z+o[2]);

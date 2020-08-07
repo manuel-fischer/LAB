@@ -13,6 +13,7 @@
 #define LAB_Ctz(intnum) __builtin_ctz(intnum)
 
 #else
+LAB_PURE
 inline int LAB_PopCnt(unsigned v)
 {
     // Slightly modified:  https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetKernighan
@@ -27,6 +28,7 @@ inline int LAB_PopCnt(unsigned v)
     return c;
 }
 
+LAB_PURE
 inline int LAB_Ctz(unsigned v)
 {
     // Slightly modified:  https://graphics.stanford.edu/~seander/bithacks.html#ZerosOnRightParallel

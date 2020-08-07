@@ -17,7 +17,7 @@
 #include <stdio.h>
 
 const char* LAB_GL_GetError(GLenum errorid);
-const char* LAB_GL_GetCurrentError();
+const char* LAB_GL_GetCurrentError(void);
 
 #define LAB_GL_CHECK() do \
 {                                                                                                              \

@@ -15,9 +15,8 @@
  *    LOAD_DEN   load factor denominator eg. 4
  *
  *    INITIAL_CAPACITY
+ *    NULL_REPR
  */
-
-#pragma once
 
 #include "HTL_pp.h"
 #include <stdlib.h>
@@ -48,3 +47,9 @@ HTL_MEMBER(Entry)* HTL_MEMBER(Put)(HTL_P(NAME)* hashmap, HTL_P(KEY_TYPE) key, HT
 HTL_MEMBER(Entry)* HTL_MEMBER(Get)(HTL_P(NAME)* hashmap, HTL_P(KEY_TYPE) key);
 void HTL_MEMBER(RemoveEntry)(HTL_P(NAME)* hashmap, HTL_MEMBER(Entry)* entry);
 void HTL_MEMBER(Remove)(HTL_P(NAME)* hashmap, HTL_P(KEY_TYPE) key);
+
+
+
+
+int HTL_MEMBER(IsEntry)(HTL_P(NAME)* hashmap, HTL_MEMBER(Entry)* entry);
+HTL_MEMBER(Entry)* HTL_MEMBER(Locate)(HTL_P(NAME)* hashmap, HTL_P(KEY_TYPE) key);

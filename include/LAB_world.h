@@ -20,17 +20,18 @@ unsigned LAB_ChunkPosHash(LAB_ChunkPos);
 int LAB_ChunkPosComp(LAB_ChunkPos, LAB_ChunkPos);
 
 
-#define LAB_CHUNK_MAP_NAME             LAB_ChunkMap
-#define LAB_CHUNK_MAP_KEY_TYPE         LAB_ChunkPos
-#define LAB_CHUNK_MAP_VALUE_TYPE       LAB_Chunk*
-#define LAB_CHUNK_MAP_HASH_FUNC        LAB_ChunkPosHash
-#define LAB_CHUNK_MAP_COMP_FUNC        LAB_ChunkPosComp
-#define LAB_CHUNK_MAP_CALLOC           LAB_Calloc
-#define LAB_CHUNK_MAP_FREE             LAB_Free
-#define LAB_CHUNK_MAP_LOAD_NUM         3
-#define LAB_CHUNK_MAP_LOAD_DEN         4
-#define LAB_CHUNK_MAP_INITIAL_CAPACITY 16
-#define LAB_CHUNK_MAP_NULL_REPR        entry->value == NULL
+#define LAB_CHUNK_MAP_NAME                 LAB_ChunkMap
+#define LAB_CHUNK_MAP_KEY_TYPE             LAB_ChunkPos
+#define LAB_CHUNK_MAP_VALUE_TYPE           LAB_Chunk*
+#define LAB_CHUNK_MAP_HASH_FUNC            LAB_ChunkPosHash
+#define LAB_CHUNK_MAP_COMP_FUNC            LAB_ChunkPosComp
+#define LAB_CHUNK_MAP_CALLOC               LAB_Calloc
+#define LAB_CHUNK_MAP_FREE                 LAB_Free
+#define LAB_CHUNK_MAP_LOAD_NUM             3
+#define LAB_CHUNK_MAP_LOAD_DEN             4
+#define LAB_CHUNK_MAP_GROW_FACTOR          2
+#define LAB_CHUNK_MAP_INITIAL_CAPACITY     16
+#define LAB_CHUNK_MAP_NULL_REPR            entry->value == NULL
 
 #define HTL_PARAM LAB_CHUNK_MAP
 #include "HTL_hashmap.t.h"
@@ -74,7 +75,7 @@ typedef unsigned LAB_ChunkPeekType;
 
 
 
-LAB_World* LAB_CreateWorld();
+LAB_World* LAB_CreateWorld(void);
 void       LAB_DestroyWorld(LAB_World* world);
 
 

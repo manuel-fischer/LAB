@@ -59,8 +59,6 @@ typedef struct LAB_ViewChunkEntry
 #undef HTL_PARAM*/
 
 
-
-
 #define LAB_VIEW_USE_VBO 1u
 
 typedef struct LAB_View
@@ -82,7 +80,7 @@ typedef struct LAB_View
 } LAB_View;
 
 
-LAB_View* LAB_CreateView();
+LAB_View* LAB_CreateView(LAB_World* world);
 void LAB_DestroyView(LAB_View* world_view);
 
 
@@ -92,4 +90,4 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window);
 LAB_ViewChunkEntry* LAB_ViewGetChunkEntry(LAB_View* view, int x, int y, int z);
 void LAB_ViewInvalidateEverything(LAB_View* view);
 
-void LAB_ViewGetDirection(LAB_View* view, /*out*/ float dir[3]);
+void LAB_ViewGetDirection(LAB_View* view, LAB_OUT float dir[3]);

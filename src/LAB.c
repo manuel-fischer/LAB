@@ -5,7 +5,7 @@
 
 
 // MAIN
-int LAB_Init()
+int LAB_Init(void)
 {
     uint32_t sdl_subsystems = 0u;
 
@@ -19,7 +19,7 @@ int LAB_Init()
     return 0;
 }
 
-void LAB_Quit()
+void LAB_Quit(void)
 {
     SDL_Quit();
 }

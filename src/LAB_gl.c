@@ -22,7 +22,7 @@ const char* LAB_GL_GetError(GLenum errorid)
     }
 }
 
-const char* LAB_GL_GetCurrentError()
+const char* LAB_GL_GetCurrentError(void)
 {
     return LAB_GL_GetError(glGetError());
 }

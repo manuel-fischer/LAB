@@ -91,11 +91,16 @@
 			<Add library="glew32" />
 		</Linker>
 		<Unit filename="TODO.txt" />
+		<Unit filename="include/HTL_hasharray.t.h" />
 		<Unit filename="include/HTL_hashmap.t.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="include/HTL_hashmap.t.h" />
 		<Unit filename="include/HTL_pp.h" />
+		<Unit filename="include/HTL_queue.t.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="include/HTL_queue.t.h" />
 		<Unit filename="include/LAB.h" />
 		<Unit filename="include/LAB_bits.h" />
 		<Unit filename="include/LAB_block.h" />

@@ -19,28 +19,28 @@
 #include "LAB_util.h"
 
 
-#define HTL_PARAM LAB_VIEW_CHUNK_MAP
+/*#define HTL_PARAM LAB_VIEW_CHUNK_MAP
 #include "HTL_hashmap.t.h"
-#undef HTL_PARAM
+#undef HTL_PARAM*/
 
 ///############################
 
 #define BLOCK_NEIGHBORHOOD 0
 
 static void LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_World* world);
-static void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_Chunk* chunk_neighborhood[27]);
+static void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_IN LAB_Chunk* chunk_neighborhood[27]);
 #if BLOCK_NEIGHBORHOOD
-static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_Block* block_neighborhood[27], int x, int y, int z);
-static void LAB_GetBlockNeighborhood(LAB_Chunk* chunk_neighborhood[27], LAB_Block* block_neighborhood[27], int x, int y, int z);
+static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_IN LAB_Block* block_neighborhood[27], int x, int y, int z);
+static void LAB_GetBlockNeighborhood(LAB_IN LAB_Chunk* chunk_neighborhood[27], LAB_OUT LAB_Block* block_neighborhood[27], int x, int y, int z);
 #else
-static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_Chunk* chunk_neighborhood[27], int x, int y, int z);
+static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_IN LAB_Chunk* chunk_neighborhood[27], int x, int y, int z);
 #endif
 static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
 
 static LAB_ViewTriangle* LAB_ViewMeshAlloc(LAB_ViewChunkEntry* chunk_entry, size_t add_size, size_t extra_size);
 
 GLuint LAB_gltextureid = 0;
-void LAB_View_StaticInit()
+void LAB_View_StaticInit(void)
 {
     static char init = 0;
     if(init) return;
@@ -49,7 +49,7 @@ void LAB_View_StaticInit()
     SDL_Surface* img = IMG_Load("assets/terrain.png");
     if(LAB_UNLIKELY(img == NULL)) return;
 
-    //if(img->format-> != SDL_PIXELFORMAT_RGBA32)
+    if(img->format->format != SDL_PIXELFORMAT_RGBA32)
     {
         SDL_Surface* nImg;
         nImg = SDL_ConvertSurfaceFormat(img, SDL_PIXELFORMAT_RGBA32, 0);
@@ -411,7 +411,7 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
         uint8_t l = (SHx | SHx << 8 | SHy << 16 | 255u << 24 | (ll)SHz << 32 | (ll)SHz << 40)>>(i<<3);
         #endif
 
-        const int* o = &LAB_offset[i];
+        const int* o = LAB_offset[i];
 
         int lum = LAB_GetNeighborhoodLight(cnk3x3x3, x+o[0], y+o[1], z+o[2]);
 
@@ -671,7 +671,7 @@ static LAB_ViewTriangle* LAB_ViewMeshAlloc(LAB_ViewChunkEntry* chunk_entry, size
 
 #if BLOCK_NEIGHBORHOOD
 LAB_HOT
-static void LAB_GetBlockNeighborhood(LAB_Chunk* cnk3x3x3[27], LAB_Block* blk3x3x3[27], int x, int y, int z)
+static void LAB_GetBlockNeighborhood(LAB_IN LAB_Chunk* cnk3x3x3[27], LAB_OUT LAB_Block* blk3x3x3[27], int x, int y, int z)
 {
     int i = 0;
     #define SWT(...) __VA_ARGS__
@@ -898,7 +898,7 @@ void LAB_ViewInvalidateEverything(LAB_View* view)
 
 
 
-void LAB_ViewGetDirection(LAB_View* view, /*out*/ float dir[3])
+void LAB_ViewGetDirection(LAB_View* view, LAB_OUT float dir[3])
 {
     float ax, ay;
     float sax, cax, say, cay;

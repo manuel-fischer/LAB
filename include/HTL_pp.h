@@ -8,3 +8,5 @@
 #define HTL_MEMBER_1(prefix, postfix) prefix ##_## postfix
 #define HTL_MEMBER_0(prefix, postfix) HTL_MEMBER_1(prefix, postfix)
 #define HTL_MEMBER(name) HTL_MEMBER_0(HTL_P(NAME), name)
+
+#define HTL_DEF

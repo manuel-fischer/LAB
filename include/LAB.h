@@ -13,10 +13,10 @@
  *  Init Lab
  *  Return nonzero value on Error
  */
-int LAB_Init();
+int LAB_Init(void);
 
 /**
  *  Quit Lab
  */
-void LAB_Quit();
+void LAB_Quit(void);
 

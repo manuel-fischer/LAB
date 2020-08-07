@@ -1,29 +1,31 @@
 #ifdef HTL_PARAM
-#include "HTL_hashmap.t.h"
+//#include "HTL_hashmap.t.h"
 #include <string.h>
 
-#define static
-
-static int HTL_MEMBER(IsEntry)(HTL_P(NAME)* hashmap, HTL_MEMBER(Entry)* entry);
-static HTL_MEMBER(Entry)* HTL_MEMBER(Locate)(HTL_P(NAME)* hashmap, HTL_P(KEY_TYPE) key);
-
-void HTL_MEMBER(Construct)(HTL_P(NAME)* hashmap)
+HTL_DEF void HTL_MEMBER(Construct)(HTL_P(NAME)* hashmap)
 {
     memset(hashmap, 0, sizeof *hashmap);
 }
 
-void HTL_MEMBER(Destruct)(HTL_P(NAME)* hashmap)
+HTL_DEF void HTL_MEMBER(Destruct)(HTL_P(NAME)* hashmap)
 {
     HTL_P(FREE)(hashmap->table);
 }
 
-HTL_MEMBER(Entry)* HTL_MEMBER(PutKey)(HTL_P(NAME)* hashmap, HTL_P(KEY_TYPE) key)
+HTL_DEF HTL_MEMBER(Entry)* HTL_MEMBER(PutKey)(HTL_P(NAME)* hashmap, HTL_P(KEY_TYPE) key)
 {
     if(hashmap->size * HTL_P(LOAD_DEN) >= hashmap->capacity * HTL_P(LOAD_NUM))
     {
+
+        if(hashmap->capacity != 0)
+        {
+            HTL_MEMBER(Entry)* entry = HTL_MEMBER(Locate)(hashmap, key);
+            if(HTL_MEMBER(IsEntry)(hashmap, entry)) return entry;
+        }
+
         size_t old_capacity, new_capacity;
         HTL_MEMBER(Entry)* old_table,* new_table;
-        new_capacity = (hashmap->capacity == 0) ? HTL_P(INITIAL_CAPACITY) : hashmap->capacity * 2;
+        new_capacity = (hashmap->capacity == 0) ? HTL_P(INITIAL_CAPACITY) : hashmap->capacity * HTL_P(GROW_FACTOR);
         new_table = HTL_P(CALLOC)(new_capacity, (sizeof *new_table));
         if(new_table == NULL) return NULL;
 
@@ -48,7 +50,7 @@ HTL_MEMBER(Entry)* HTL_MEMBER(PutKey)(HTL_P(NAME)* hashmap, HTL_P(KEY_TYPE) key)
     return entry;
 }
 
-HTL_MEMBER(Entry)* HTL_MEMBER(Put)(HTL_P(NAME)* hashmap, HTL_P(KEY_TYPE) key, HTL_P(VALUE_TYPE) value)
+HTL_DEF HTL_MEMBER(Entry)* HTL_MEMBER(Put)(HTL_P(NAME)* hashmap, HTL_P(KEY_TYPE) key, HTL_P(VALUE_TYPE) value)
 {
     HTL_MEMBER(Entry)* entry = HTL_MEMBER(PutKey)(hashmap, key) ;
     if(entry)
@@ -59,7 +61,7 @@ HTL_MEMBER(Entry)* HTL_MEMBER(Put)(HTL_P(NAME)* hashmap, HTL_P(KEY_TYPE) key, HT
 }
 
 
-HTL_MEMBER(Entry)* HTL_MEMBER(Get)(HTL_P(NAME)* hashmap, HTL_P(KEY_TYPE) key)
+HTL_DEF HTL_MEMBER(Entry)* HTL_MEMBER(Get)(HTL_P(NAME)* hashmap, HTL_P(KEY_TYPE) key)
 {
     if(hashmap->capacity)
     {
@@ -69,7 +71,7 @@ HTL_MEMBER(Entry)* HTL_MEMBER(Get)(HTL_P(NAME)* hashmap, HTL_P(KEY_TYPE) key)
     return NULL;
 }
 
-void HTL_MEMBER(RemoveEntry)(HTL_P(NAME)* hashmap, HTL_MEMBER(Entry)* entry)
+HTL_DEF void HTL_MEMBER(RemoveEntry)(HTL_P(NAME)* hashmap, HTL_MEMBER(Entry)* entry)
 {
     int i = entry-hashmap->table;
 
@@ -97,19 +99,19 @@ void HTL_MEMBER(RemoveEntry)(HTL_P(NAME)* hashmap, HTL_MEMBER(Entry)* entry)
     }
 }
 
-void HTL_MEMBER(Remove)(HTL_P(NAME)* hashmap, HTL_P(KEY_TYPE) key)
+HTL_DEF void HTL_MEMBER(Remove)(HTL_P(NAME)* hashmap, HTL_P(KEY_TYPE) key)
 {
     HTL_MEMBER(Entry)* entry = HTL_MEMBER(Locate)(hashmap, key);
-    if(entry != NULL)
+    if(entry != NULL && HTL_MEMBER(IsEntry)(hashmap, entry))
         HTL_MEMBER(RemoveEntry)(hashmap, entry);
 }
 
-static int HTL_MEMBER(IsEntry)(HTL_P(NAME)* hashmap, HTL_MEMBER(Entry)* entry)
+HTL_DEF int HTL_MEMBER(IsEntry)(HTL_P(NAME)* hashmap, HTL_MEMBER(Entry)* entry)
 {
     return !(HTL_P(NULL_REPR));
 }
 
-static HTL_MEMBER(Entry)* HTL_MEMBER(Locate)(HTL_P(NAME)* hashmap, HTL_P(KEY_TYPE) key)
+HTL_DEF HTL_MEMBER(Entry)* HTL_MEMBER(Locate)(HTL_P(NAME)* hashmap, HTL_P(KEY_TYPE) key)
 {
     int hashid = HTL_P(HASH_FUNC)(key)&(hashmap->capacity-1);
     //return hashmap->table+hashid;
