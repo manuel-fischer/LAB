@@ -142,35 +142,8 @@ LAB_Block* LAB_GetNeighborhoodBlock(LAB_Chunk* neighborhood[27], int x, int y, i
     int block_index;
     LAB_Chunk* chunk;
     chunk = LAB_GetNeighborhoodRef(neighborhood, x, y, z, &block_index);
-#if 0 // branchless
-    static LAB_Block*const ptr_outside = &LAB_BLOCK_OUTSIDE;
-
-    LAB_Block*const* ptr0 = &ptr_outside;
-    LAB_Block*const* ptr1 = &chunk->blocks[block_index];
-    //LAB_Block*const* ptr1 = chunk?&chunk->blocks[block_index]:NULL;
-    /*static volatile void* calc;
-    calc = ptr0;
-    calc = ptr1;*/
-    //if(__builtin_unpredictable(chunk == NULL)) ptr1 = ptr0; // cmov
-    //LAB_CMOV(chunk==NULL, ptr1, ptr0);
-    (void)LAB_UNLIKELY(chunk == NULL);
-    LAB_CMOV_NOT(chunk, ptr1, ptr0);
-    //if(LAB_UNLIKELY(chunk == NULL)) ptr1 = ptr0; // cmov
-
-    return *ptr1;
-#elif 0 // branchless
-    //block_index *= (chunk!=NULL);
-    block_index &= -(chunk!=NULL);
-    static LAB_Block*const ptr_outside = &LAB_BLOCK_OUTSIDE;
-
-    //LAB_Block** arrays = (chunk==NULL) ? &ptr_outside : chunk->blocks;
-    LAB_Block*const* arrays[2] = {&ptr_outside, &chunk->blocks[0]};
-
-    return arrays[chunk!=NULL][block_index];
-#else
     if(LAB_UNLIKELY(chunk == NULL)) return &LAB_BLOCK_OUTSIDE;
     return chunk->blocks[block_index];
-#endif
 }
 
 LAB_HOT LAB_INLINE
