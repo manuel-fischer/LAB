@@ -18,5 +18,5 @@ GitHub might be fooled by the use of template-headers, which involves a special
 syntax of declaring functions, that is completely based on the C-Preprocessor.
 The only thing that is not pure C is the use of GCCs attributes and builtins,
 which can even be used with Clang. When compiling with any other compiler,
-the attributes and builtins are disabled and replaced by a pure c alternative:
+the attributes and builtins are disabled and replaced by a pure C alternative:
 either by nothing or by an (inline) implementation.
