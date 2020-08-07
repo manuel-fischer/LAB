@@ -9,7 +9,9 @@ added).
 
 Why do I use C for this project? For me its clean compared to other commonly
 used languages. It forces you to write simpler code, that does not hide parts
-of the code, that are important.
+of the code, that are important.  
+In combination with the C-Preprocessor you can define Generic Datastructures
+in C.
 
 **Even if GitHub comes up with C++ or Objective C, the project is completely C.**
 GitHub might be fooled by the use of template-headers, which involves a special
