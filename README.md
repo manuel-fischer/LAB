@@ -25,7 +25,9 @@ with `inline` so that the template source can be included in a header. Note
 that both the template header and the template source need to be included for
 a given parameter set. A parameter set is selected by defining `HTL_PARAM`
 with the corresponding identifier prefix of the defined parameters. After
-the include it is recommended to undefine `HTL_PARAM` again.
+the include it is recommended to undefine `HTL_PARAM` again. The identifier
+prefix of the parameters could be the name of the structure to be defined.
+It should not be a macro that maps to something other than itself.
 
 **Even if GitHub comes up with C++ or Objective C, the project is completely C.**
 GitHub might be fooled by the use of template-headers, which involves a special
