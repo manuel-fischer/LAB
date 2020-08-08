@@ -6,37 +6,10 @@
 #include <math.h>
 #include "LAB_bits.h"
 
+#include "LAB_memory.h"
 
-static LAB_Chunk* ChunkGenerateFlat(void* user, LAB_World* world, int x, int y, int z)
-{
-    LAB_Block* block = y < 0 ? &LAB_BLOCK_STONE : &LAB_BLOCK_AIR;
-    LAB_Chunk* chunk = LAB_CreateChunk(block);
-    if(!chunk) return NULL;
-
-    #if 0
-    if(y == -1)
-    {
-        for(int zz = 0; zz < 16; ++zz)
-        for(int xx = 0; xx < 16; ++xx)
-        for(int yy = 0; yy < 16; ++yy)
-        {
-            //if(rand() & 1)
-            //    chunk->blocks[LAB_CHUNK_OFFSET(xx, yy, zz)] = &LAB_BLOCK_GRASS;
-            //chunk->blocks[LAB_CHUNK_OFFSET(xx, 15^yy, zz)] = &LAB_BLOCK_GRASS;
-            chunk->blocks[LAB_CHUNK_OFFSET(xx, 15^yy, zz)] = &LAB_BLOCK_COBBLESTONE;
-            /*if((rand() & 3) == 0) break;
-            if((rand() & 3) == 0) break;
-            if((rand() & 3) == 0) break;
-            if((rand() & 3) == 0) break;*/
-        }
-
-
-    }
-    #endif
-    return chunk;
-}
-
-
+#include "LAB_gen_flat.h"
+#include "LAB_gen_overworld.h"
 
 int main(int argc, char** argv) {
     #define CHECK_INIT(expr) if(expr) { init_msg = #expr; goto INIT_ERROR; }
@@ -49,6 +22,7 @@ int main(int argc, char** argv) {
     LAB_World*     the_world   = NULL;
     LAB_View*      world_view  = NULL;
     LAB_ViewInput  view_input  = {};
+    LAB_GenFlat    gen_flat    = {};
 
     CHECK_INIT(LAB_Init() != 0);
     init = 1;
@@ -63,11 +37,13 @@ int main(int argc, char** argv) {
     the_world = LAB_CreateWorld();
     CHECK_INIT(the_world == NULL);
 
-    the_world->chunkgen      = &ChunkGenerateFlat;
-    the_world->chunkgen_user = NULL;
+    gen_flat.block = &LAB_BLOCK_STONE;
+    the_world->chunkgen      = &LAB_GenFlatProc;
+    the_world->chunkgen_user = &gen_flat;
 
     world_view = LAB_CreateView(the_world);
     CHECK_INIT(world_view == NULL);
+    world_view->dist = 5;
 
     view_input.view = world_view;
 
@@ -90,40 +66,7 @@ int main(int argc, char** argv) {
                                                     (int)(world_view->z / LAB_CHUNK_SIZE),
                                                     LAB_CHUNK_GENERATE);*/
 
-        int dist = 3;
-        dist = 0;
-
-
-        #if 0
-        int px = LAB_Sar((int)floorf(world_view->x+8), LAB_CHUNK_SHIFT);
-        int py = LAB_Sar((int)floorf(world_view->y+8), LAB_CHUNK_SHIFT);
-        int pz = LAB_Sar((int)floorf(world_view->z+8), LAB_CHUNK_SHIFT);
-
-        for(int z = -dist; z <= dist; ++z)
-        for(int y = -dist; y <= dist; ++y)
-        for(int x = -dist; x <= dist; ++x)
-        {
-            (void)LAB_GetChunk(the_world, px+x, py+y, pz+z, LAB_CHUNK_GENERATE_LATER);
-        }
-        #else
-        int px = LAB_Sar((int)floorf(world_view->x+8), LAB_CHUNK_SHIFT);
-        int py = LAB_Sar((int)floorf(world_view->y+8), LAB_CHUNK_SHIFT);
-        int pz = LAB_Sar((int)floorf(world_view->z+8), LAB_CHUNK_SHIFT);
-
-        for(int z = 0; z <= dist; ++z)
-        for(int y = 0; y <= dist; ++y)
-        for(int x = 0; x <= dist; ++x)
-        {
-            for(int i = 0; i < 8; ++i)
-            {
-                int xx, yy, zz;
-                xx = i&1 ? px+x : px-x-1;
-                yy = i&2 ? py+y : py-y-1;
-                zz = i&4 ? pz+z : pz-z-1;
-                (void)LAB_GetChunk(the_world, xx, yy, zz, LAB_CHUNK_GENERATE_LATER);
-            }
-        }
-        #endif
+        LAB_ViewLoadNearChunks(world_view);
 
         LAB_WorldTick(the_world);
         LAB_ViewInputTick(&view_input);

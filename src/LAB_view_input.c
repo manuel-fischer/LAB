@@ -18,7 +18,7 @@ static LAB_Block* blocks[9] =
     &LAB_BLOCK_STONE,
     &LAB_BLOCK_COBBLESTONE,
     &LAB_BLOCK_MARBLE,
-    &LAB_BLOCK_COBBLEMARBLE,
+    &LAB_BLOCK_MARBLECOBBLE,
     &LAB_BLOCK_WOOD,
     &LAB_BLOCK_WOOD_PLANKS,
     &LAB_BLOCK_WOOD_PLANKS_DARK,
@@ -99,6 +99,18 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                          : SDL_WINDOW_FULLSCREEN_DESKTOP;
                 SDL_SetWindowFullscreen(window->window, fs_flags);
             }
+
+            if(key == SDLK_F4)
+            {
+                LAB_ChunkMap_Destruct(&view->world->chunks);
+                LAB_ChunkMap_Construct(&view->world->chunks);
+
+                for(int i = 0; i < view->chunk_count; ++i)
+                {
+                    view->chunks[i].mesh_count = 0;
+                }
+            }
+
         } break;
 
 

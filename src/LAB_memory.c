@@ -21,7 +21,7 @@ typedef unsigned u;
 
 void LAB_DbgMemPrint(const char* format, const char* file, int line, ...)
 {
-    #if 1
+    #if 0
     fprintf(stderr, "%-16s|%3i:\t", LAB_Filename(file), line);
     va_list args;
     va_start(args, line);

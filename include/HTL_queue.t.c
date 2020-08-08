@@ -26,7 +26,7 @@ HTL_DEF HTL_P(TYPE)* HTL_MEMBER(PushBack)(HTL_P(NAME)* q)
 
 HTL_DEF void HTL_MEMBER(PopFront)(HTL_P(NAME)* q)
 {
-    q->first = q->first % HTL_P(CAPACITY);
+    q->first = (q->first + 1) % HTL_P(CAPACITY);
     q->count--;
 }
 
@@ -37,7 +37,7 @@ HTL_DEF HTL_P(TYPE)* HTL_MEMBER(Front)(HTL_P(NAME)* q)
 
 HTL_DEF HTL_P(TYPE)* HTL_MEMBER(Back)(HTL_P(NAME)* q)
 {
-    int index = q->first+q->count % (size_t)(HTL_P(CAPACITY));
+    int index = (q->first+q->count) % (size_t)(HTL_P(CAPACITY));
     return &q->queue[index];
 }
 #endif // HTL_PARAM

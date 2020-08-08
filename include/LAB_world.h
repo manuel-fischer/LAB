@@ -28,7 +28,7 @@ int LAB_ChunkPosComp(LAB_ChunkPos, LAB_ChunkPos);
 #define LAB_CHUNK_MAP_LOAD_DEN             4
 #define LAB_CHUNK_MAP_GROW_FACTOR          2
 #define LAB_CHUNK_MAP_INITIAL_CAPACITY     16
-#define LAB_CHUNK_MAP_NULL_REPR            entry->value == NULL
+#define LAB_CHUNK_MAP_NULL_REPR            (entry->value == NULL)
 
 #define HTL_PARAM LAB_CHUNK_MAP
 #include "HTL_hashmap.t.h"
@@ -36,7 +36,7 @@ int LAB_ChunkPosComp(LAB_ChunkPos, LAB_ChunkPos);
 
 #define LAB_CHUNKPOS_QUEUE_NAME     LAB_ChunkPosQueue
 #define LAB_CHUNKPOS_QUEUE_TYPE     LAB_ChunkPos
-#define LAB_CHUNKPOS_QUEUE_CAPACITY 64
+#define LAB_CHUNKPOS_QUEUE_CAPACITY 16
 
 #define HTL_PARAM LAB_CHUNKPOS_QUEUE
 #include "HTL_queue.t.h"
@@ -75,7 +75,7 @@ typedef struct LAB_World
 typedef unsigned LAB_ChunkPeekType;
 #define LAB_CHUNK_EXISTING       0
 #define LAB_CHUNK_GENERATE       1
-#define LAB_CHUNK_GENERATE_LATER 1//2
+#define LAB_CHUNK_GENERATE_LATER 2
 
 
 
@@ -162,5 +162,4 @@ int LAB_GetNeighborhoodLight(LAB_Chunk* neighborhood[27], int x, int y, int z)
     if(LAB_UNLIKELY(chunk == NULL)) return 255;
     return chunk->light[block_index];
 }
-
 

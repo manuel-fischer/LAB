@@ -41,6 +41,18 @@
 					<Add option="-s" />
 				</Linker>
 			</Target>
+			<Target title="Release -- ConKeep">
+				<Option output="bin/Release/Laboratory" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-Ofast" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
 			<Target title="Release -- Disassemble">
 				<Option output="bin/Release/Laboratory" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj/ReleaseNS/" />
@@ -71,6 +83,7 @@
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
+			<Add option="-std=c17" />
 			<Add option="-march=native" />
 			<Add option="-DGL_GLEXT_PROTOTYPES" />
 			<Add directory="$(#sdl2.include)" />
@@ -107,6 +120,8 @@
 		<Unit filename="include/LAB_check.h" />
 		<Unit filename="include/LAB_chunk.h" />
 		<Unit filename="include/LAB_error.h" />
+		<Unit filename="include/LAB_gen_flat.h" />
+		<Unit filename="include/LAB_gen_overworld.h" />
 		<Unit filename="include/LAB_gl.h" />
 		<Unit filename="include/LAB_light_node.h" />
 		<Unit filename="include/LAB_math.h" />
@@ -129,6 +144,12 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_error.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_gen_flat.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_gen_overworld.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_gl.c">

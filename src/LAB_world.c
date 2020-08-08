@@ -63,18 +63,22 @@ void LAB_DestroyWorld(LAB_World* world)
 
 static LAB_Chunk* LAB_GenerateNotifyChunk(LAB_World* world, int x, int y, int z)
 {
-    printf("GEN %3i, %3i, %3i\n", x, y, z);
+    //printf("GEN %3i, %3i, %3i\n", x, y, z);
     LAB_ChunkPos pos = { x, y, z };
     LAB_ChunkMap_Entry* entry;
     LAB_Chunk* chunk;
     entry = LAB_ChunkMap_PutKey(&world->chunks, pos);
-    if(entry->value != NULL) // already generated
-        return entry->value;
 
     // Create slot for chunk
     // Note that it does not really exist, because the value is NULL
     // Entry must be written before anything further happens
     if(LAB_UNLIKELY(entry == NULL)) return NULL;
+
+    if(entry->value != NULL) // already generated
+    {
+        return entry->value;
+    }
+
     chunk = (*world->chunkgen)(world->chunkgen_user, world, x, y, z);
     if(LAB_UNLIKELY(chunk == NULL)) return NULL;
         // Because the inserted entry is not really existing
@@ -104,6 +108,7 @@ LAB_Chunk* LAB_GetChunk(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType
     }
     else if(flags == LAB_CHUNK_GENERATE_LATER)
     {
+        //printf("Enqueue %i, %i, %i\n", x, y, z);
         LAB_ChunkPos* entry;
         entry = LAB_ChunkPosQueue_PushBack(&world->gen_queue);
         if(entry != NULL) {
@@ -118,7 +123,6 @@ LAB_Chunk* LAB_GetChunk(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType
         return NULL;
     }
 }
-
 
 void LAB_GetChunkNeighborhood(LAB_World* world, LAB_Chunk* /*out*/ chunks[27], int x, int y, int z, LAB_ChunkPeekType flags)
 {

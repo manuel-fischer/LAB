@@ -30,11 +30,33 @@ LAB_Block LAB_BLOCK_MARBLE = {
     .tx = 0, 0,
 };
 
-LAB_Block LAB_BLOCK_COBBLEMARBLE = {
+LAB_Block LAB_BLOCK_MARBLECOBBLE = {
     .flags = LAB_BLOCK_SOLID,
     .r = 255, 255, 255,
     .tx = 1, 0,
 };
+
+
+LAB_Block LAB_BLOCK_SANDSTONE = {
+    .flags = LAB_BLOCK_SOLID,
+    .r = 236, 223, 179,
+    .tx = 0, 0,
+};
+
+LAB_Block LAB_BLOCK_SANDCOBBLE = {
+    .flags = LAB_BLOCK_SOLID,
+    //.r = 255, 230, 150,
+    .r = 236, 223, 179,
+    .tx = 1, 0,
+};
+
+LAB_Block LAB_BLOCK_SAND = {
+    .flags = LAB_BLOCK_SOLID,
+    //.r = 255, 230, 150,
+    .r = 255, 230, 130,
+    .tx = 3, 1,
+};
+
 
 LAB_Block LAB_BLOCK_WOOD = {
     .flags = LAB_BLOCK_SOLID,

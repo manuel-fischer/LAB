@@ -77,6 +77,7 @@ typedef struct LAB_View
     LAB_World* world;
 
     uint32_t flags;
+    uint32_t dist;
 } LAB_View;
 
 
@@ -91,3 +92,5 @@ LAB_ViewChunkEntry* LAB_ViewGetChunkEntry(LAB_View* view, int x, int y, int z);
 void LAB_ViewInvalidateEverything(LAB_View* view);
 
 void LAB_ViewGetDirection(LAB_View* view, LAB_OUT float dir[3]);
+
+void LAB_ViewLoadNearChunks(LAB_View* view);

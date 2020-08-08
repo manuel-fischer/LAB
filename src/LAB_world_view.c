@@ -554,3 +554,182 @@ void LAB_ViewGetDirection(LAB_View* view, LAB_OUT float dir[3])
     dir[1] = -sax;
     dir[2] = -cax*cay;
 }
+
+
+
+void LAB_ViewLoadNearChunks(LAB_View* view)
+{
+    // TODO: check if gen-queue is full: quit
+
+#if 0
+    int px = LAB_Sar((int)floorf(view->x+8), LAB_CHUNK_SHIFT);
+    int py = LAB_Sar((int)floorf(view->y+8), LAB_CHUNK_SHIFT);
+    int pz = LAB_Sar((int)floorf(view->z+8), LAB_CHUNK_SHIFT);
+
+    for(int z = 0; z <= view->dist; ++z)
+    for(int y = 0; y <= view->dist; ++y)
+    for(int x = 0; x <= view->dist; ++x)
+    {
+        for(int i = 0; i < 8; ++i)
+        {
+            int xx, yy, zz;
+            xx = i&1 ? px+x : px-x-1;
+            yy = i&2 ? py+y : py-y-1;
+            zz = i&4 ? pz+z : pz-z-1;
+            (void)LAB_GetChunk(view->world, xx, yy, zz, LAB_CHUNK_GENERATE_LATER);
+        }
+    }
+#elif 1
+    int px = LAB_Sar((int)floorf(view->x+8), LAB_CHUNK_SHIFT);
+    int py = LAB_Sar((int)floorf(view->y+8), LAB_CHUNK_SHIFT);
+    int pz = LAB_Sar((int)floorf(view->z+8), LAB_CHUNK_SHIFT);
+
+    /**
+
+        pyramid index i;
+
+        8 Quadrants
+        the following are crosssections
+
+        x 0 0 0 | 0 0 0 x     x 0 0 0 | 0 0 0 x
+        3 x 0 0 | 0 0 x 1     3 x 0 0 | 0 0 x 1
+        3 3 x 0 | 0 x 1 1     3 3 y x | x y 1 1
+        3 3 3 y | y 1 1 1     3 3 x 4 | 4 x 1 1
+        --------+--------     --------+--------
+        3 3 3 y | y 1 1 1     3 3 x 4 | 4 x 1 1
+        3 3 x 2 | 2 x 1 1     3 3 y x | x y 1 1
+        3 x 2 2 | 2 2 x 1     3 x 2 2 | 2 2 x 1
+        x 2 2 2 | 2 2 2 x     x 2 2 2 | 2 2 2 x
+
+
+        x 0 0 0 | 0 0 0 x     y x x x | x x x y
+        3 y x x | x x y 1     x 4 4 4 | 4 4 4 x
+        3 x 4 4 | 4 4 x 1     x 4 4 4 | 4 4 4 x
+        3 x 4 4 | 4 4 x 1     x 4 4 4 | 4 4 4 x
+        --------+--------     --------+--------
+        3 x 4 4 | 4 4 x 1     x 4 4 4 | 4 4 4 x
+        3 x 4 4 | 4 4 x 1     x 4 4 4 | 4 4 4 x
+        3 y x x | x x y 1     x 4 4 4 | 4 4 4 x
+        x 2 2 2 | 2 2 2 x     y x x x | x x x y
+
+
+
+        Each sector consists of three pyramids
+        (with a right angle corner at each center of a surface
+         and the tip at the origin, the other corners are either
+         at the center of an edge of the cube or at the corner of
+         the cube, all three pyramids share that corner)
+        and 3 diagnoal triangular planes (x) connecting
+        those pyramids, there is a diagonal line (y)
+        at the intersection of all triangular planes
+
+        logically the xs are iterated twice and
+        the ys are iterated thrice
+        the plane is guarded, if i <
+        the line is guarded, if i is 0
+
+        a: the offset in the lower axis (ordering: x <<< y <<< z)
+           that is not the outward direction (r)
+        b: the offset in the higher axis
+    **/
+
+    for(int r = 0; r < view->dist; ++r)
+    {
+        //for(int a = 0; a <= r/*+(i<=0)*/; ++a)
+        //for(int b = 0; b <= r/*+(i<=1)*/; ++b)
+        for(int i = 0; i <= r; ++i)
+        for(int j = 0; j <= i; ++j)
+        {
+            for(int k = 0; k <= 1; ++k)
+            {
+                int a, b;
+                if(k && i==j) break /*k*/;
+                a = k ? i : j;
+                b = k ? j : i;
+
+                for(int i = 0; i < 3; ++i)
+                {
+                    int x, y, z;
+                    switch(i)
+                    {
+                        case 0: x=r; y=a; z=b; break /*switch*/;
+                        case 1: x=a; y=b; z=r; break /*switch*/;
+                        case 2: x=b; y=r; z=a; break /*switch*/;
+                    }
+                    for(int q = 0; q < 8; ++q)
+                    {
+                        // ~x == -x-1
+                        int xx, yy, zz;
+                        xx = px+(q&1 ? ~x : x);
+                        yy = py+(q&2 ? ~y : y);
+                        zz = pz+(q&4 ? ~z : z);
+
+                        if(yy == -1)
+                        (void)LAB_GetChunk(view->world, xx, yy, zz, LAB_CHUNK_GENERATE_LATER);
+                        //(void)LAB_GetChunk(view->world, -xx-1, yy, zz, LAB_CHUNK_GENERATE_LATER);
+                    }
+                    if(a==r) break /*i*/;
+                    if(b==r && i==1) break /*i*/;
+                }
+            }
+        }
+    }
+#else
+    int px = LAB_Sar((int)floorf(view->x+8), LAB_CHUNK_SHIFT);
+    int py = LAB_Sar((int)floorf(view->y+8), LAB_CHUNK_SHIFT);
+    int pz = LAB_Sar((int)floorf(view->z+8), LAB_CHUNK_SHIFT);
+
+
+    /**
+
+    nums inside the table: i
+    arrows: b
+
+          0
+    <---+--->
+    0 0 0 0 0 1 ^
+    3 0 0 0 1 1 |
+    3 3 0 1 1 1 +
+    3 3 3 2 1 1 |  0
+    3 3 2 2 2 1 V
+    3 2 2 2 2 2
+
+    **/
+
+    for(int a = 0; a <= view->dist; ++a)
+    for(int b = 0; b <= 2*a; ++b)
+    //for(int c = 0; c <  c; ++c)
+    {
+        for(int i = 0; i < 4; ++i)
+        {
+            int x, y, z;
+            int xx, yy, zz;
+            switch(i)
+            {
+                case 0:
+                    x = b-a-1;
+                    y = -a-1;
+                    break;
+                case 1:
+                    x = a;
+                    y = b-a-1;
+                    break;
+                case 2:
+                    x = a-b;
+                    y = a;
+                    break;
+                case 3:
+                    x = -a-1;
+                    y = a-b;
+                    break;
+            }
+
+            xx = x+px;
+            yy = py-1;
+            zz = y+py;
+
+            (void)LAB_GetChunk(view->world, xx, yy, zz, LAB_CHUNK_GENERATE_LATER);
+        }
+    }
+#endif
+}
