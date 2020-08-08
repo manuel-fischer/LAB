@@ -664,7 +664,6 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
                         yy = py+(q&2 ? ~y : y);
                         zz = pz+(q&4 ? ~z : z);
 
-                        if(yy == -1)
                         (void)LAB_GetChunk(view->world, xx, yy, zz, LAB_CHUNK_GENERATE_LATER);
                         //(void)LAB_GetChunk(view->world, -xx-1, yy, zz, LAB_CHUNK_GENERATE_LATER);
                     }

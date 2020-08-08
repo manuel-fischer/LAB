@@ -12,6 +12,9 @@
 #include <math.h>
 #include <stdio.h>
 
+#include "LAB_memory.h"
+#include "LAB_gl.h"
+
 static int LAB_ViewInputInteract(LAB_ViewInput* view_input, int right);
 static LAB_Block* blocks[9] =
 {
@@ -100,16 +103,21 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                 SDL_SetWindowFullscreen(window->window, fs_flags);
             }
 
+            #if 1
             if(key == SDLK_F4)
             {
-                LAB_ChunkMap_Destruct(&view->world->chunks);
-                LAB_ChunkMap_Construct(&view->world->chunks);
+                //LAB_ChunkMap_Destruct(&view->world->chunks);
+                //LAB_ChunkMap_Construct(&view->world->chunks);
 
                 for(int i = 0; i < view->chunk_count; ++i)
                 {
-                    view->chunks[i].mesh_count = 0;
+                    LAB_Free(view->chunks[i].mesh);
+                    glDeleteBuffers(1, &view->chunks[i].vbo);
                 }
+                memset(view->chunks, 0, view->chunk_count);
+                view->chunk_count = 0;
             }
+            #endif
 
         } break;
 
