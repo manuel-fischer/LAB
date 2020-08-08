@@ -103,7 +103,7 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                 SDL_SetWindowFullscreen(window->window, fs_flags);
             }
 
-            #if 1
+            #if 0
             if(key == SDLK_F4)
             {
                 //LAB_ChunkMap_Destruct(&view->world->chunks);
