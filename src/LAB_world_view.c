@@ -54,6 +54,7 @@ void LAB_View_StaticInit(void)
     glGenTextures(1, &LAB_gltextureid);
     glBindTexture(GL_TEXTURE_2D, LAB_gltextureid);
 
+    #ifndef NO_GLEW
     glEnable(GL_MIPMAP);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
@@ -62,6 +63,12 @@ void LAB_View_StaticInit(void)
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img->w, img->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, img->pixels);
     glGenerateMipmap(GL_TEXTURE_2D);
+    #else
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img->w, img->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, img->pixels);
+    #endif
 
     glMatrixMode(GL_TEXTURE);
     glScalef(32.f / (float)img->w, 32.f / (float)img->h, 1);
@@ -89,8 +96,10 @@ void LAB_DestructView(LAB_View* view)
         LAB_ViewChunkEntry* entry = &view->chunks[i];
         if(entry->mesh)
             LAB_Free(entry->mesh);
+        #ifndef NO_GLEW
         if(entry->vbo)
             glDeleteBuffers(1, &entry->vbo);
+        #endif
     }
     LAB_Free(view->chunks);
 }
@@ -344,6 +353,7 @@ static LAB_ViewTriangle* LAB_ViewMeshAlloc(LAB_ViewChunkEntry* chunk_entry, size
     return &chunk_entry->mesh[mesh_count];
 }
 
+#ifndef NO_GLEW
 static void LAB_ViewUploadVBO(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 {
     LAB_ViewTriangle* mesh = chunk_entry->mesh;
@@ -353,7 +363,7 @@ static void LAB_ViewUploadVBO(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
     glBindBuffer(GL_ARRAY_BUFFER, chunk_entry->vbo);
     glBufferData(GL_ARRAY_BUFFER, chunk_entry->mesh_count*sizeof *mesh, mesh, GL_DYNAMIC_DRAW);
 }
-
+#endif
 
 static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 {
@@ -362,15 +372,19 @@ static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
         chunk_entry->dirty = 0;
         LAB_ViewBuildMesh(view, chunk_entry, view->world);
 
+        #ifndef NO_GLEW
         if(view->flags & LAB_VIEW_USE_VBO)
             LAB_ViewUploadVBO(view, chunk_entry);
+        #endif
     }
     else
     {
+        #ifndef NO_GLEW
         if(view->flags & LAB_VIEW_USE_VBO)
         {
             glBindBuffer(GL_ARRAY_BUFFER, chunk_entry->vbo);
         }
+        #endif
     }
 
     if(chunk_entry->mesh_count == 0) return;
@@ -391,8 +405,10 @@ static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
     glPopMatrix();
 
 
+    #ifndef NO_GLEW
     if(view->flags & LAB_VIEW_USE_VBO)
         glBindBuffer(GL_ARRAY_BUFFER, 0);
+    #endif
 }
 
 void LAB_ViewRenderProc(void* user, LAB_Window* window)

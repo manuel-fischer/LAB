@@ -40,12 +40,14 @@ int LAB_ConstructWindow(LAB_Window* window, int w, int h, uint32_t sdl_flags)
         goto INIT_ERROR;
     }
 
+#ifndef NO_GLEW
     GLenum err = glewInit();
     if(err != GLEW_OK)
     {
         LAB_SetError("glewInit failed: %s", glewGetErrorString(err));
         goto INIT_ERROR;
     }
+#endif
 
     return 1;
 
