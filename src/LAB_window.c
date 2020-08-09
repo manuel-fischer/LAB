@@ -8,14 +8,9 @@
 #include "LAB_gl.h"
 
 
-LAB_Window* LAB_CreateWindow(int w, int h, uint32_t sdl_flags)
+int LAB_ConstructWindow(LAB_Window* window, int w, int h, uint32_t sdl_flags)
 {
-    LAB_Window* window = LAB_Calloc(1, sizeof *window);
-    if(window == NULL)
-    {
-        LAB_SetError("CreateWindow failed to allocate");
-        return NULL;
-    }
+    memset(window, 0, sizeof *window);
 
     if(SDL_CreateWindowAndRenderer(w, h, sdl_flags, &window->window, &window->renderer) != 0)
     {
@@ -24,8 +19,6 @@ LAB_Window* LAB_CreateWindow(int w, int h, uint32_t sdl_flags)
     }
 
     SDL_SetWindowTitle(window->window, "LAB");
-
-
 
     SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
@@ -54,27 +47,20 @@ LAB_Window* LAB_CreateWindow(int w, int h, uint32_t sdl_flags)
         goto INIT_ERROR;
     }
 
-
-    //int i = -1;
-    //glGetIntegerv(GL_DEPTH_BITS, &i);
-    //printf("BITS: %i\n", i);
-
-    return window;
+    return 1;
 
 INIT_ERROR:
-    LAB_DestroyWindow(window);
-    return NULL;
+    LAB_DestructWindow(window);
+    return 0;
 }
 
 
-void LAB_DestroyWindow(LAB_Window* window)
+void LAB_DestructWindow(LAB_Window* window)
 {
     if(window->glcontext != NULL) SDL_GL_DeleteContext(window->glcontext);
 
     if(window->window != NULL)    SDL_DestroyWindow(window->window);
     if(window->renderer != NULL)  SDL_DestroyRenderer(window->renderer);
-
-    LAB_Free(window);
 }
 
 

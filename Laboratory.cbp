@@ -128,6 +128,7 @@
 		<Unit filename="include/LAB_memory.h" />
 		<Unit filename="include/LAB_opt.h" />
 		<Unit filename="include/LAB_perf.h" />
+		<Unit filename="include/LAB_random.h" />
 		<Unit filename="include/LAB_stdinc.h" />
 		<Unit filename="include/LAB_util.h" />
 		<Unit filename="include/LAB_view_input.h" />
@@ -159,6 +160,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_memory.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_random.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_util.c">

@@ -72,6 +72,12 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
             if(key == SDLK_LSHIFT) view_input->updown &= ~2;
 
 
+            if(key == SDLK_PLUS) view->dist++;
+            if(key == SDLK_MINUS) view->dist--;
+            if(view->dist == 0) view->dist = 1;
+            if(view->dist > 16) view->dist = 16;
+
+
             if(key == SDLK_ESCAPE)
             {
                 int grab;
@@ -213,7 +219,7 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input)
     int mx, my;
     Uint32 mbstate = SDL_GetMouseState(&mx, &my);
 
-    float speed = kbstate[SDL_SCANCODE_LCTRL] ? 0.3 : 0.1;
+    float speed = kbstate[SDL_SCANCODE_LCTRL] ? 0.75 : 0.1;
 
     if(1)
     {

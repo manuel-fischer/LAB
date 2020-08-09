@@ -69,31 +69,30 @@ void LAB_View_StaticInit(void)
     SDL_FreeSurface(img);
 }
 
-LAB_View* LAB_CreateView(LAB_World* world)
+int  LAB_ConstructView(LAB_View* view, LAB_World* world)
 {
     LAB_View_StaticInit();
 
-    LAB_View* world_view = LAB_Calloc(1, sizeof *world_view);
-    world_view->world = world;
+    memset(view, 0, sizeof *view);
+    view->world = world;
 
-    world_view->ax = 22;
-    world_view->y = 1.5;
+    view->ax = 22;
+    view->y = 1.5;
 
-    return world_view;
+    return 1;
 }
 
-void LAB_DestroyView(LAB_View* world_view)
+void LAB_DestructView(LAB_View* view)
 {
-    for(int i = 0; i < world_view->chunk_count; ++i)
+    for(int i = 0; i < view->chunk_count; ++i)
     {
-        LAB_ViewChunkEntry* entry = &world_view->chunks[i];
+        LAB_ViewChunkEntry* entry = &view->chunks[i];
         if(entry->mesh)
             LAB_Free(entry->mesh);
         if(entry->vbo)
             glDeleteBuffers(1, &entry->vbo);
     }
-    LAB_Free(world_view->chunks);
-    LAB_Free(world_view);
+    LAB_Free(view->chunks);
 }
 
 
@@ -437,9 +436,21 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
     glShadeModel(GL_SMOOTH);
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
+
+    int px = LAB_Sar((int)floorf(view->x), LAB_CHUNK_SHIFT);
+    int py = LAB_Sar((int)floorf(view->y), LAB_CHUNK_SHIFT);
+    int pz = LAB_Sar((int)floorf(view->z), LAB_CHUNK_SHIFT);
+
+
     for(size_t i = 0; i < view->chunk_count; ++i)
     {
-        LAB_ViewRenderChunk(view, &view->chunks[i]);
+        int cx, cy, cz;
+        cx = view->chunks[i].x;
+        cy = view->chunks[i].y;
+        cz = view->chunks[i].z;
+        int dist_sq = view->dist*view->dist;
+        if((cx-px)*(cx-px) + (cy-py)*(cy-py) + (cz-pz)*(cz-pz) <= dist_sq+3)
+            LAB_ViewRenderChunk(view, &view->chunks[i]);
     }
     glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -553,6 +564,14 @@ void LAB_ViewGetDirection(LAB_View* view, LAB_OUT float dir[3])
     dir[0] = cax*say;
     dir[1] = -sax;
     dir[2] = -cax*cay;
+}
+
+
+
+
+void LAB_ViewTick(LAB_View* view)
+{
+    LAB_ViewLoadNearChunks(view);
 }
 
 

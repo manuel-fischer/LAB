@@ -11,7 +11,7 @@
 
 /**
  *  Init Lab
- *  Return nonzero value on Error
+ *  Return 0 on Error
  */
 int LAB_Init(void);
 

@@ -80,8 +80,14 @@ typedef unsigned LAB_ChunkPeekType;
 
 
 
-LAB_World* LAB_CreateWorld(void);
-void       LAB_DestroyWorld(LAB_World* world);
+/**
+ *  Init world, return 0 on error
+ */
+int  LAB_ConstructWorld(LAB_World* world);
+/**
+ *  Destruct world
+ */
+void LAB_DestructWorld(LAB_World* world);
 
 
 /**

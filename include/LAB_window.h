@@ -23,8 +23,17 @@ typedef struct LAB_Window
     void*               render_user;
 } LAB_Window;
 
-LAB_Window* LAB_CreateWindow(int w, int h, uint32_t sdl_flags);
-void LAB_DestroyWindow(LAB_Window* window);
+/**
+ *  Construct window with width and height,
+ *  Pass sdl_flags to SDL_CreateWindowAndRenderer
+ *  return 0 on error
+ */
+int  LAB_ConstructWindow(LAB_Window* window, int w, int h, uint32_t sdl_flags);
+
+/**
+ *  Destruct window and its SDL resources
+ */
+void LAB_DestructWindow(LAB_Window* window);
 
 
 /**

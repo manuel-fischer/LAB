@@ -81,8 +81,16 @@ typedef struct LAB_View
 } LAB_View;
 
 
-LAB_View* LAB_CreateView(LAB_World* world);
-void LAB_DestroyView(LAB_View* world_view);
+/**
+ *  Create view, with given world
+ */
+int  LAB_ConstructView(LAB_View* view, LAB_World* world);
+
+/**
+ *  Destruct view
+ *  The view can be filled with 0 bytes
+ */
+void LAB_DestructView(LAB_View* view);
 
 
 void LAB_ViewChunkProc(void* user, LAB_World* world, int x, int y, int z);
@@ -93,4 +101,5 @@ void LAB_ViewInvalidateEverything(LAB_View* view);
 
 void LAB_ViewGetDirection(LAB_View* view, LAB_OUT float dir[3]);
 
+void LAB_ViewTick(LAB_View* view);
 void LAB_ViewLoadNearChunks(LAB_View* view);

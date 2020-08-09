@@ -4,6 +4,8 @@
 #define LAB_OUT
 #define LAB_INOUT
 
+#define LAB_DEPRECATED(msg) __attribute__((deprecated))
+
 #ifdef __GNUC__
 
 #define LAB_INLINE   __attribute__((always_inline)) inline

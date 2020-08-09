@@ -2,7 +2,7 @@
 
 #include "LAB_stdinc.h"
 #include <SDL2/SDL.h>
-
+#include "LAB_error.h"
 
 // MAIN
 int LAB_Init(void)
@@ -13,10 +13,11 @@ int LAB_Init(void)
     sdl_subsystems |= SDL_INIT_VIDEO;
     sdl_subsystems |= SDL_INIT_EVENTS;
 
-    SDL_Init(sdl_subsystems);
+    if(SDL_Init(sdl_subsystems) != 0)
+        return (LAB_SetError("SDL_Init failed %s", SDL_GetError()), 0);
 
 
-    return 0;
+    return 1;
 }
 
 void LAB_Quit(void)

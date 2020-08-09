@@ -33,21 +33,15 @@ int LAB_ChunkPosComp(LAB_ChunkPos a, LAB_ChunkPos b)
 
 
 
-LAB_World* LAB_CreateWorld(void)
+int LAB_ConstructWorld(LAB_World* world)
 {
-    LAB_World* world = LAB_Calloc(1, sizeof *world); // filled with zeros
-    if(LAB_UNLIKELY(world==NULL))
-    {
-        LAB_SetError("LAB_CreateWorld failed to allocate");
-        return NULL;
-    }
-
+    // those never fail
     LAB_ChunkMap_Construct(&world->chunks);
     LAB_ChunkPosQueue_Construct(&world->gen_queue);
-    return world;
+    return 1;
 }
 
-void LAB_DestroyWorld(LAB_World* world)
+void LAB_DestructWorld(LAB_World* world)
 {
     LAB_ChunkPosQueue_Destruct(&world->gen_queue);
     for(int i = 0; i < world->chunks.capacity; ++i)
@@ -57,7 +51,6 @@ void LAB_DestroyWorld(LAB_World* world)
             LAB_DestroyChunk(entry->value);
     }
     LAB_ChunkMap_Destruct(&world->chunks);
-    LAB_Free(world);
 }
 
 
