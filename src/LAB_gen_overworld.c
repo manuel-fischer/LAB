@@ -104,11 +104,11 @@ static void LAB_SmoothNoise(LAB_OUT uint32_t smooth[16*16],
     stack[0].n11 = noise[16*17+16];
 
     int recurr = 1;
-    while(depth >= 0)
+    do
     {
         Elem* t = &stack[depth];
 
-        if(x0+1 == x1)
+        if(x0+1 == x1) // depth == 4
         {
             smooth[x0|y0<<4] = ((uint64_t)t->n00+(uint64_t)t->n01+(uint64_t)t->n10+(uint64_t)t->n11) / 4;
             goto sidewards;
@@ -171,16 +171,17 @@ static void LAB_SmoothNoise(LAB_OUT uint32_t smooth[16*16],
 
         sidewards:
         {
-            int xi = x0 & 16 >> depth;
-            int yi = y0 & 16 >> depth;
+            int w = 16 >> depth;
+            int xi = x0 & w;
+            int yi = y0 & w;
 
             if(xi && yi) goto upwards;
 
             Elem* p = &stack[depth-1];
-            int w = 16 >> depth;
             if(!xi && !yi)
             {
-                x0 += w;
+                // move right
+                x0 |= w; // +=
                 x1 += w;
 
                 t->n00 = t->n01;
@@ -190,9 +191,10 @@ static void LAB_SmoothNoise(LAB_OUT uint32_t smooth[16*16],
             }
             if(xi)
             {
-                x0 -= w;
+                // move left down
+                x0 &=~w; // -=
                 x1 -= w;
-                y0 += w;
+                y0 |= w; // +=
                 y1 += w;
 
                 t->n00 = t->nc0;
@@ -202,7 +204,8 @@ static void LAB_SmoothNoise(LAB_OUT uint32_t smooth[16*16],
             }
             if(yi)
             {
-                x0 += w;
+                // move right
+                x0 |= w; // -=
                 x1 += w;
 
                 t->n00 = t->n01;
@@ -220,8 +223,9 @@ static void LAB_SmoothNoise(LAB_OUT uint32_t smooth[16*16],
             recurr = 0;
             x0 &= x0-1;
             y0 &= y0-1;
+            if(depth == 0) break;
         } continue;
-    }
+    } while(/*depth > 0 -- see 2 lines above*/1);
 }
 #endif
 
