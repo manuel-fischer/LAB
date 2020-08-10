@@ -77,7 +77,9 @@ typedef struct LAB_View
     LAB_World* world;
 
     uint32_t flags;
-    uint32_t dist;
+    uint32_t preload_dist,
+             render_dist,
+             keep_dist;
 } LAB_View;
 
 

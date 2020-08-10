@@ -15,6 +15,8 @@
 #include "LAB_memory.h"
 #include "LAB_gl.h"
 
+#include "LAB_ext.h"
+
 static int LAB_ViewInputInteract(LAB_ViewInput* view_input, int right);
 static LAB_Block* blocks[9] =
 {
@@ -42,89 +44,102 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
         {
             SDL_Keycode key = ((SDL_KeyboardEvent*)event)->keysym.sym;
 
-            if(key == SDLK_w) view_input->dir_set |= 1;
-            if(key == SDLK_a) view_input->dir_set |= 2;
-            if(key == SDLK_s) view_input->dir_set |= 4;
-            if(key == SDLK_d) view_input->dir_set |= 8;
-
-            if(key == SDLK_SPACE)  view_input->updown |= 1;
-            if(key == SDLK_LSHIFT) view_input->updown |= 2;
-
-            if(key >= '1' && key <= '9')
+            switch(key)
             {
-                int id = key-'1';
-                if(blocks[id] != NULL)
+                case SDLK_w: view_input->dir_set |= 1; break;
+                case SDLK_a: view_input->dir_set |= 2; break;
+                case SDLK_s: view_input->dir_set |= 4; break;
+                case SDLK_d: view_input->dir_set |= 8; break;
+
+                case SDLK_SPACE:  view_input->updown |= 1; break;
+                case SDLK_LSHIFT: view_input->updown |= 2; break;
+
+                LAB_CASE_RANGE('1', 9):
                 {
-                    selected_block = id;
-                }
+                    int id = key-'1';
+                    if(blocks[id] != NULL)
+                    {
+                        selected_block = id;
+                    }
+                } break;
             }
         } break;
         case SDL_KEYUP:
         {
             SDL_Keycode key = ((SDL_KeyboardEvent*)event)->keysym.sym;
 
-            if(key == SDLK_w) view_input->dir_set &= ~1;
-            if(key == SDLK_a) view_input->dir_set &= ~2;
-            if(key == SDLK_s) view_input->dir_set &= ~4;
-            if(key == SDLK_d) view_input->dir_set &= ~8;
-
-            if(key == SDLK_SPACE)  view_input->updown &= ~1;
-            if(key == SDLK_LSHIFT) view_input->updown &= ~2;
-
-
-            if(key == SDLK_PLUS) view->dist++;
-            if(key == SDLK_MINUS) view->dist--;
-            if(view->dist == 0) view->dist = 1;
-            if(view->dist > 16) view->dist = 16;
-
-
-            if(key == SDLK_ESCAPE)
+            switch(key)
             {
-                int grab;
-                grab = SDL_GetWindowGrab(window->window);
-                SDL_SetWindowGrab(window->window, !grab);
-                SDL_ShowCursor(grab);
-                if(!grab)
+                case SDLK_w: view_input->dir_set &= ~1; break;
+                case SDLK_a: view_input->dir_set &= ~2; break;
+                case SDLK_s: view_input->dir_set &= ~4; break;
+                case SDLK_d: view_input->dir_set &= ~8; break;
+
+                case SDLK_SPACE:  view_input->updown &= ~1; break;
+                case SDLK_LSHIFT: view_input->updown &= ~2; break;
+
+
+                case SDLK_PLUS:
+                case SDLK_MINUS:
                 {
-                    int w, h;
-                    SDL_GetWindowSize(window->window, &w, &h);
-                    SDL_WarpMouseInWindow(window->window, w/2, h/2);
-                }
-            }
+                    if(key == SDLK_PLUS) view->render_dist++;
+                    if(key == SDLK_MINUS) view->render_dist--;
+                    if(view->render_dist == 0) view->render_dist = 1;
+                    if(view->render_dist > 16) view->render_dist = 16;
+                    view->preload_dist = view->render_dist+0;
+                    view->keep_dist = view->render_dist+2;
+                } break;
 
-            if(key == SDLK_F3)
-            {
-                view->flags ^= LAB_VIEW_USE_VBO;
-                printf("VBO turned %s\n", "off\0on"+4*!!(view->flags & LAB_VIEW_USE_VBO));
-                LAB_ViewInvalidateEverything(view);
 
-            }
-
-            if(key == SDLK_F11)
-            {
-                uint32_t fs_flags;
-                fs_flags = (SDL_GetWindowFlags(window->window) & SDL_WINDOW_FULLSCREEN)
-                         ? 0
-                         : SDL_WINDOW_FULLSCREEN_DESKTOP;
-                SDL_SetWindowFullscreen(window->window, fs_flags);
-            }
-
-            #if 0
-            if(key == SDLK_F4)
-            {
-                //LAB_ChunkMap_Destruct(&view->world->chunks);
-                //LAB_ChunkMap_Construct(&view->world->chunks);
-
-                for(int i = 0; i < view->chunk_count; ++i)
+                case SDLK_ESCAPE:
                 {
-                    LAB_Free(view->chunks[i].mesh);
-                    glDeleteBuffers(1, &view->chunks[i].vbo);
-                }
-                memset(view->chunks, 0, view->chunk_count);
-                view->chunk_count = 0;
-            }
-            #endif
+                    int grab;
+                    grab = SDL_GetWindowGrab(window->window);
+                    SDL_SetWindowGrab(window->window, !grab);
+                    SDL_ShowCursor(grab);
+                    if(!grab)
+                    {
+                        int w, h;
+                        SDL_GetWindowSize(window->window, &w, &h);
+                        SDL_WarpMouseInWindow(window->window, w/2, h/2);
+                    }
+                } break;
 
+                case SDLK_F3:
+                {
+                    view->flags ^= LAB_VIEW_USE_VBO;
+                    printf("VBO turned %s\n", "off\0on"+4*!!(view->flags & LAB_VIEW_USE_VBO));
+                    LAB_ViewInvalidateEverything(view);
+
+                } break;
+
+                case SDLK_F11:
+                {
+                    uint32_t fs_flags;
+                    fs_flags = (SDL_GetWindowFlags(window->window) & SDL_WINDOW_FULLSCREEN)
+                             ? 0
+                             : SDL_WINDOW_FULLSCREEN_DESKTOP;
+                    SDL_SetWindowFullscreen(window->window, fs_flags);
+                } break;
+
+                #if 0
+                case SDLK_F4:
+                {
+                    //LAB_ChunkMap_Destruct(&view->world->chunks);
+                    //LAB_ChunkMap_Construct(&view->world->chunks);
+
+                    for(int i = 0; i < view->chunk_count; ++i)
+                    {
+                        LAB_Free(view->chunks[i].mesh);
+                        glDeleteBuffers(1, &view->chunks[i].vbo);
+                    }
+                    memset(view->chunks, 0, view->chunk_count);
+                    view->chunk_count = 0;
+                } break;
+                #endif
+
+                default: break;
+            }
         } break;
 
 

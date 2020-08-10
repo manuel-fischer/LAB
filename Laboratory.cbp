@@ -85,7 +85,6 @@
 			<Add option="-Wall" />
 			<Add option="-std=c17" />
 			<Add option="-march=native" />
-			<Add option="-DGL_GLEXT_PROTOTYPES" />
 			<Add directory="$(#sdl2.include)" />
 			<Add directory="include" />
 		</Compiler>
