@@ -1,6 +1,8 @@
 #include "LAB_gen_overworld.h"
 #include "LAB_random.h"
+#include "LAB_opt.h"
 
+#if 0
 
 #define DEF_NOISE_FUNC(me, rec)                                                          \
 LAB_HOT LAB_INLINE                                                                       \
@@ -56,14 +58,16 @@ void LAB_SmoothNoiseRec0(LAB_OUT uint32_t smooth[16*16],
                          LAB_IN uint64_t noise[17*17],
                          int x0, int y0, int x1, int y1,
                          uint32_t n00, uint32_t n01,
-                         uint32_t n10, uint32_t n11) {}
+                         uint32_t n10, uint32_t n11)
+{
+    LAB_UNREACHABLE();
+}
 
 DEF_NOISE_FUNC(1, 0)
 DEF_NOISE_FUNC(2, 1)
 DEF_NOISE_FUNC(4, 2)
 DEF_NOISE_FUNC(8, 4)
 DEF_NOISE_FUNC(16, 8)
-
 
 LAB_HOT LAB_INLINE
 static void LAB_SmoothNoise(LAB_OUT uint32_t smooth[16*16],
@@ -76,6 +80,150 @@ static void LAB_SmoothNoise(LAB_OUT uint32_t smooth[16*16],
     n11 = noise[16*17+16];
     LAB_SmoothNoiseRec16(smooth, noise, 0, 0, 16, 16, n00, n01, n10, n11);
 }
+#else
+
+
+
+LAB_HOT LAB_INLINE
+static void LAB_SmoothNoise(LAB_OUT uint32_t smooth[16*16],
+                     LAB_IN uint64_t noise[17*17])
+{
+    int depth = 0;
+    int x0 = 0, y0 = 0, x1 = 16, y1 = 16;
+    typedef struct Elem
+    {
+        uint32_t n00, n01, n10, n11;
+
+        uint32_t nc0, nc1, n1c, pad; // same level
+    } Elem;
+    Elem stack[5];
+
+    stack[0].n00 = noise[0];
+    stack[0].n01 = noise[16];
+    stack[0].n10 = noise[16*17];
+    stack[0].n11 = noise[16*17+16];
+
+    int recurr = 1;
+    while(depth >= 0)
+    {
+        Elem* t = &stack[depth];
+
+        if(x0+1 == x1)
+        {
+            smooth[x0|y0<<4] = ((uint64_t)t->n00+(uint64_t)t->n01+(uint64_t)t->n10+(uint64_t)t->n11) / 4;
+            goto sidewards;
+        }
+        else
+        {
+            if(recurr)
+                goto downwards;
+            else
+                goto sidewards;
+        }
+
+
+        downwards:
+        {
+            depth++;
+
+
+
+            int xc, yc;
+            uint64_t r0c, rc0, rcc, rc1, r1c;
+            uint32_t n0c, nc0, ncc, nc1, n1c;
+
+            xc = (x0+x1) >> 1;
+            yc = (y0+y1) >> 1;
+
+            r0c = noise[xc+17*y0] & 0xffffffff;
+            rc0 = noise[x0+17*yc] & 0xffffffff;
+            rcc = noise[xc+17*yc] & 0xffffffff;
+            rc1 = noise[x1+17*yc] & 0xffffffff;
+            r1c = noise[xc+17*y1] & 0xffffffff;
+
+            n0c = ((uint64_t)t->n00*(0x100000000ll-r0c)+(uint64_t)t->n01*r0c)>>32;
+            nc0 = ((uint64_t)t->n00*(0x100000000ll-rc0)+(uint64_t)t->n10*rc0)>>32;
+
+            nc1 = ((uint64_t)t->n01*(0x100000000ll-rc1)+(uint64_t)t->n11*rc1)>>32;
+            n1c = ((uint64_t)t->n10*(0x100000000ll-r1c)+(uint64_t)t->n11*r1c)>>32;
+
+            ncc = ((((uint64_t)t->n00*(0x100000000ll-rcc)+(uint64_t)t->n11*rcc)>>32)
+                + (((uint64_t)t->n01*(0x100000000ll-rcc)+(uint64_t)t->n10*rcc)>>32)
+            ) >> 1;
+
+
+
+            Elem* d = &stack[depth];
+            d->n00 = t->n00;
+            d->n01 = n0c;
+            d->n10 = nc0;
+            d->n11 = ncc;
+
+            d->nc0 = nc0;
+            d->nc1 = nc1;
+            d->n1c = n1c;
+
+            x1 = xc;
+            y1 = yc;
+        } continue;
+
+
+
+        sidewards:
+        {
+            int xi = x0 & 16 >> depth;
+            int yi = y0 & 16 >> depth;
+
+            if(xi && yi) goto upwards;
+
+            Elem* p = &stack[depth-1];
+            int w = 16 >> depth;
+            if(!xi && !yi)
+            {
+                x0 += w;
+                x1 += w;
+
+                t->n00 = t->n01;
+                t->n01 = p->n01;
+                t->n10 = t->n11;
+                t->n11 = t->nc1;
+            }
+            if(xi)
+            {
+                x0 -= w;
+                x1 -= w;
+                y0 += w;
+                y1 += w;
+
+                t->n00 = t->nc0;
+                t->n01 = t->n10;
+                t->n10 = p->n10;
+                t->n11 = t->n1c;
+            }
+            if(yi)
+            {
+                x0 += w;
+                x1 += w;
+
+                t->n00 = t->n01;
+                t->n01 = t->nc1;
+                t->n10 = t->n1c;
+                t->n11 = p->n11;
+            }
+            recurr = 1;
+        } continue;
+
+        upwards:
+        {
+            // upwards
+            --depth;
+            recurr = 0;
+            x0 &= x0-1;
+            y0 &= y0-1;
+        } continue;
+    }
+}
+#endif
 
 
 

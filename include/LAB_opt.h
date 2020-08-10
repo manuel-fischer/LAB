@@ -8,6 +8,9 @@
 
 #ifdef __GNUC__
 
+#define LAB_UNREACHABLE() __builtin_unreachable()
+
+// function attributes
 #define LAB_INLINE   __attribute__((always_inline)) inline
 #define LAB_NOINLINE __attribute__((noinline))
 #define LAB_HOT      __attribute__((hot))
@@ -28,6 +31,8 @@
 #ifndef __attribute__
 #define __attribute__(tuple)
 #endif
+
+#define LAB_UNREACHABLE() ((void)0)
 
 #define LAB_INLINE
 #define LAB_NOINLINE
