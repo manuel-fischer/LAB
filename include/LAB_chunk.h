@@ -2,6 +2,7 @@
 
 #include "LAB_block.h"
 #include "LAB_light_node.h"
+#include "LAB_color.h"
 
 typedef struct LAB_World LAB_World;
 
@@ -19,8 +20,8 @@ typedef struct LAB_World LAB_World;
 
 typedef struct LAB_Chunk
 {
-    LAB_Block*    blocks[LAB_CHUNK_LENGTH];
-    int light[LAB_CHUNK_LENGTH];
+    LAB_Block* blocks[LAB_CHUNK_LENGTH];
+    LAB_Color  light[LAB_CHUNK_LENGTH];
 } LAB_Chunk;
 
 typedef LAB_Chunk* (LAB_ChunkGenerator)(void* user, LAB_World* world, int x, int y, int z);

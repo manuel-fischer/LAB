@@ -60,6 +60,7 @@ typedef struct LAB_ViewChunkEntry
 
 
 #define LAB_VIEW_USE_VBO 1u
+#define LAB_VIEW_SHOW_GUI 2u
 
 typedef struct LAB_View
 {

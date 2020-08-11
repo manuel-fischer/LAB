@@ -105,6 +105,11 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                     }
                 } break;
 
+                case SDLK_F1:
+                {
+                    view->flags ^= LAB_VIEW_SHOW_GUI;
+                } break;
+
                 case SDLK_F3:
                 {
                     view->flags ^= LAB_VIEW_USE_VBO;

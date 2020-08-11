@@ -111,7 +111,15 @@ static void LAB_SmoothNoise(LAB_OUT uint32_t smooth[16*16],
         if(x0+1 == x1) // depth == 4
         {
             smooth[x0|y0<<4] = ((uint64_t)t->n00+(uint64_t)t->n01+(uint64_t)t->n10+(uint64_t)t->n11) / 4;
+
+            #if 1
             goto sidewards;
+            #else
+            smooth[(x0+1)|y0<<4] = smooth[x0|(y0+1)<<4] = smooth[(x0+1)|(y0+1)<<4] = smooth[x0|y0<<4];
+            //goto downwards;
+            x0++; x1++; y0++; y1++;
+            goto upwards;
+            #endif
         }
         else
         {
@@ -240,14 +248,14 @@ LAB_Chunk* LAB_GenOverworldProc(void* user, LAB_World* world, int x, int y, int 
     LAB_Chunk* chunk = LAB_CreateChunk(block);
     if(!chunk) return NULL;
 
-    uint64_t noise[17*17];
-    LAB_ChunkNoise2D(noise, gen->seed, x, z);
-    uint32_t smooth[16*16];
-    LAB_SmoothNoise(smooth, noise);
-
 
     if(y >= -2 && y <= -1)
     {
+        uint64_t noise[17*17];
+        LAB_ChunkNoise2D(noise, gen->seed, x, z);
+        uint32_t smooth[16*16];
+        LAB_SmoothNoise(smooth, noise);
+
         for(int zz = 0; zz < 16; ++zz)
         for(int xx = 0; xx < 16; ++xx)
         for(int yy = 0; yy < 16; ++yy)

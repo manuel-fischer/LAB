@@ -7,8 +7,6 @@
  *    CAPACITY   maximum amount of elements
  */
 
-#pragma once
-
 #include "HTL_pp.h"
 #include <stdlib.h>
 

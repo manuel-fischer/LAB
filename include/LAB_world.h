@@ -34,6 +34,7 @@ int LAB_ChunkPosComp(LAB_ChunkPos, LAB_ChunkPos);
 #include "HTL_hashmap.t.h"
 #undef HTL_PARAM
 
+
 #define LAB_CHUNKPOS_QUEUE_NAME     LAB_ChunkPosQueue
 #define LAB_CHUNKPOS_QUEUE_TYPE     LAB_ChunkPos
 #define LAB_CHUNKPOS_QUEUE_CAPACITY 16
@@ -43,6 +44,18 @@ int LAB_ChunkPosComp(LAB_ChunkPos, LAB_ChunkPos);
 #undef HTL_PARAM
 
 
+typedef struct LAB_LightUpdate
+{
+    int x, y, z;
+} LAB_LightUpdate;
+
+#define LAB_LIGHT_UPDATE_QUEUE_NAME LAB_LightUpdateQueue
+#define LAB_LIGHT_UPDATE_QUEUE_TYPE LAB_LightUpdate
+#define LAB_LIGHT_UPDATE_QUEUE_CAPACITY (16*16*16*4)
+
+#define HTL_PARAM LAB_LIGHT_UPDATE_QUEUE
+#include "HTL_queue.t.h"
+#undef HTL_PARAM
 
 
 typedef struct LAB_World LAB_World;
@@ -69,6 +82,8 @@ typedef struct LAB_World
     LAB_ChunkMap chunks;
 
     LAB_ChunkPosQueue gen_queue;
+
+    LAB_LightUpdateQueue light_queue;
 } LAB_World;
 
 
@@ -159,13 +174,13 @@ LAB_Block* LAB_GetNeighborhoodBlock(LAB_Chunk* neighborhood[27], int x, int y, i
 }
 
 LAB_HOT LAB_INLINE
-int LAB_GetNeighborhoodLight(LAB_Chunk* neighborhood[27], int x, int y, int z)
+LAB_Color LAB_GetNeighborhoodLight(LAB_Chunk* neighborhood[27], int x, int y, int z)
 {
     int block_index;
     LAB_Chunk* chunk;
     chunk = LAB_GetNeighborhoodRef(neighborhood, x, y, z, &block_index);
 
-    if(LAB_UNLIKELY(chunk == NULL)) return 255;
+    if(LAB_UNLIKELY(chunk == NULL)) return LAB_RGB(255, 255, 255);
     return chunk->light[block_index];
 }
 

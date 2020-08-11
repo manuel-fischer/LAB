@@ -229,6 +229,7 @@ void LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int 
 {
     LAB_Chunk* cnk = chunks[1+3+9];
     if(!cnk) return;
+    memset(cnk->light, 0, sizeof cnk->light);
     for(int i = 0; i < 16; ++i)
     for(int z = 0; z < 16; ++z)
     for(int y = 0; y < 16; ++y)
@@ -236,7 +237,9 @@ void LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int 
     {
         int off = LAB_CHUNK_OFFSET(x, y, z);
 
-        int lum = 0;
+        //int lum = 0;
+        LAB_Color lum;
+        lum = LAB_RGB(16, 16, 16);
         if(!(cnk->blocks[off]->flags & LAB_BLOCK_SOLID))
         {
             for(int i = 0; i < 6; ++i)
@@ -246,17 +249,24 @@ void LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int 
 
                 LAB_Block* block = LAB_GetNeighborhoodBlock(chunks, x+o[0], y+o[1], z+o[2]);
                 if(block->flags & LAB_BLOCK_EMISSIVE)
-                    nlum = block->lr;
+                    //nlum = block->lr;
+                    nlum = block->lum;
                 else
                 {
                     nlum = LAB_GetNeighborhoodLight(chunks, x+o[0], y+o[1], z+o[2]);
-                    if(i!=3) nlum = nlum-(nlum>>4);
+                    //if(i!=3) nlum = nlum-(nlum>>4);
+                    if(i!=3)
+                    {
+                        nlum = nlum - (nlum>>2 & 0x3f3f3f);
+                    }
+                    //if(i!=3) nlum = nlum >> 1 & 0x7f7f7f;
                 }
-                if(nlum > lum) lum = nlum;
+                //if(nlum > lum) lum = nlum;
+                lum = LAB_MaxColor(lum, nlum);
             }
         }
-        if(lum < 16) lum = 16;
-        if(lum > 255) lum = 255;
+        //if(lum < 16) lum = 16;
+        //if(lum > 255) lum = 255;
         cnk->light[off] = lum;
     }
 }

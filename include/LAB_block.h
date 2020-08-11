@@ -1,6 +1,7 @@
 #pragma once
 
 #include "LAB_stdinc.h"
+#include "LAB_color.h"
 
 typedef unsigned LAB_BlockFlags;
 
@@ -12,7 +13,8 @@ typedef struct LAB_Block
 {
     LAB_BlockFlags flags;
     uint8_t r, g, b, a;
-    uint8_t lr, lg, lb, la; // Emitted Light
+    //uint8_t lr, lg, lb, la; // Emitted Light
+    LAB_Color lum;
     uint8_t tx, ty; // Offset of the texture tile
 } LAB_Block;
 

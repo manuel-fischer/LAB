@@ -314,16 +314,18 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
 
         const int* o = LAB_offset[i];
 
-        int lum = LAB_GetNeighborhoodLight(cnk3x3x3, x+o[0], y+o[1], z+o[2]);
+        LAB_Color lum = LAB_GetNeighborhoodLight(cnk3x3x3, x+o[0], y+o[1], z+o[2]);
+
+        int r, g, b;
+        r = (l*LAB_RED(lum)) >> 8;
+        g = (l*LAB_GRN(lum)) >> 8;
+        b = (l*LAB_BLU(lum)) >> 8;
 
 
-        l = (l*lum)>>8;
-
-
-        LAB_SetQuad(tri, x+ds[0].x, y+ds[0].y, z+ds[0].z,  l, l, l, 255,  0, 0,
-                         x+ds[1].x, y+ds[1].y, z+ds[1].z,  l, l, l, 255,  1, 0,
-                         x+ds[2].x, y+ds[2].y, z+ds[2].z,  l, l, l, 255,  0, 1,
-                         x+ds[3].x, y+ds[3].y, z+ds[3].z,  l, l, l, 255,  1, 1);
+        LAB_SetQuad(tri, x+ds[0].x, y+ds[0].y, z+ds[0].z,  r, g, b, 255,  0, 0,
+                         x+ds[1].x, y+ds[1].y, z+ds[1].z,  r, g, b, 255,  1, 0,
+                         x+ds[2].x, y+ds[2].y, z+ds[2].z,  r, g, b, 255,  0, 1,
+                         x+ds[3].x, y+ds[3].y, z+ds[3].z,  r, g, b, 255,  1, 1);
 
         tri+=2;
     } while(face_itr);
@@ -413,6 +415,38 @@ static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
     #endif
 }
 
+
+void LAB_ViewRenderGui(LAB_View* view)
+{
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glEnable(GL_BLEND);
+    glDisable(GL_DEPTH_TEST);
+    glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_DST_COLOR);
+
+    static const float crosshair[3*3*4] = {
+            0, -0.1, -5,
+         0.05, -0.2, -5,
+        -0.05, -0.2, -5,
+
+         0.1,     0, -5,
+         0.2,  0.05, -5,
+         0.2, -0.05, -5,
+
+            0,  0.1, -5,
+        -0.05,  0.2, -5,
+         0.05,  0.2, -5,
+
+        -0.1,     0, -5,
+        -0.2, -0.05, -5,
+        -0.2,  0.05, -5,
+    };
+
+    glColor3f(1,1,1);
+    glVertexPointer(3, GL_FLOAT, 0, crosshair);
+    glDrawArrays(GL_TRIANGLES, 0, 3*4);
+}
+
 void LAB_ViewRenderProc(void* user, LAB_Window* window)
 {
     LAB_View* view = (LAB_View*)user;
@@ -464,33 +498,8 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
 
 
     // Render Crosshair
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    glEnable(GL_BLEND);
-    glDisable(GL_DEPTH_TEST);
-    glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_DST_COLOR);
-
-    static const float crosshair[3*3*4] = {
-            0, -0.1, -5,
-         0.05, -0.2, -5,
-        -0.05, -0.2, -5,
-
-         0.1,     0, -5,
-         0.2,  0.05, -5,
-         0.2, -0.05, -5,
-
-            0,  0.1, -5,
-        -0.05,  0.2, -5,
-         0.05,  0.2, -5,
-
-        -0.1,     0, -5,
-        -0.2, -0.05, -5,
-        -0.2,  0.05, -5,
-    };
-
-    glColor3f(1,1,1);
-    glVertexPointer(3, GL_FLOAT, 0, crosshair);
-    glDrawArrays(GL_TRIANGLES, 0, 3*4);
+    if(view->flags & LAB_VIEW_SHOW_GUI)
+        LAB_ViewRenderGui(view);
 }
 
 

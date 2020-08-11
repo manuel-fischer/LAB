@@ -1,6 +1,8 @@
 #include "LAB_block.h"
 
-LAB_Block LAB_BLOCK_OUTSIDE = {};
+LAB_Block LAB_BLOCK_OUTSIDE = {
+    .lum = LAB_RGB(255, 255, 255),
+};
 
 
 LAB_Block LAB_BLOCK_AIR = {
@@ -85,7 +87,9 @@ LAB_Block LAB_BLOCK_GRASS = {
 
 LAB_Block LAB_BLOCK_LIGHT = {
     .flags = LAB_BLOCK_SOLID | LAB_BLOCK_EMISSIVE,
-    .r  = 255, 255, 255,
-    .lr = 255, 255, 255,
+    //.r  = 255, 255, 255,
+    .r  = 64, 150, 255,
+    //.lr = 255, 255, 255,
+    .lum = LAB_RGB(16, 64, 255),
     .tx = 0, 1,
 };

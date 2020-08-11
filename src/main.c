@@ -45,9 +45,10 @@ int main(int argc, char** argv) {
     the_world.chunkgen_user = &gen_overworld;
 
     CHECK_INIT(LAB_ConstructView(&view, &the_world));
-    view.render_dist = 6;
+    view.render_dist = 5;
     view.preload_dist = view.render_dist+0;
     view.keep_dist = view.render_dist+2;
+    view.flags = LAB_VIEW_SHOW_GUI;
 
     view_input.view = &view;
 
