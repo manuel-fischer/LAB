@@ -44,3 +44,10 @@ void LAB_ChunkRandom(LAB_OUT LAB_Random* random, uint64_t world_seed, int x, int
  *  for continuous noise like perlin noise
  */
 void LAB_ChunkNoise2D(LAB_OUT uint64_t randoms[17*17], uint64_t world_seed, int x, int z);
+
+/**
+ *  Initialize chunk noise
+ *  The array is filled with random values, that can be used
+ *  for continuous noise like perlin noise
+ */
+void LAB_ChunkNoise3D(LAB_OUT uint64_t randoms[17*17*17], uint64_t world_seed, int x, int y, int z);

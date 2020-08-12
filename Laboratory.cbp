@@ -118,6 +118,7 @@
 		<Unit filename="include/LAB_block.h" />
 		<Unit filename="include/LAB_check.h" />
 		<Unit filename="include/LAB_chunk.h" />
+		<Unit filename="include/LAB_color.h" />
 		<Unit filename="include/LAB_error.h" />
 		<Unit filename="include/LAB_gen_flat.h" />
 		<Unit filename="include/LAB_gen_overworld.h" />
@@ -125,6 +126,7 @@
 		<Unit filename="include/LAB_light_node.h" />
 		<Unit filename="include/LAB_math.h" />
 		<Unit filename="include/LAB_memory.h" />
+		<Unit filename="include/LAB_noise.h" />
 		<Unit filename="include/LAB_opt.h" />
 		<Unit filename="include/LAB_perf.h" />
 		<Unit filename="include/LAB_random.h" />
@@ -159,6 +161,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_memory.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_noise.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_random.c">

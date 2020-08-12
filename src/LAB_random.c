@@ -34,9 +34,13 @@ uint64_t LAB_ChunkSeed(uint64_t world_seed, int x, int y, int z)
 {
     uint64_t s;
     s  = world_seed;
-    s ^= x * 23;
-    s ^= y * 17;
-    s ^= z * 26;
+    //s ^= x * 23;
+    //s ^= y * 17;
+    //s ^= z * 26;
+    s += x * 123456811;
+    s += y * 234567899;
+    s += z * 214365871;
+    s += (x * y * z)*127;
     return s;
 }
 
@@ -45,10 +49,10 @@ void LAB_ChunkRandom(LAB_OUT LAB_Random* random, uint64_t world_seed, int x, int
     LAB_SetRandom(random, LAB_ChunkSeed(world_seed, x, y, z));
 }
 
-void LAB_ChunkNoise2D(LAB_OUT uint64_t noise[17*17], uint64_t world_seed, int x, int z)
+void LAB_ChunkNoise2D(LAB_OUT uint64_t noise[17*17], uint64_t world_seed, int cx, int cz)
 {
     LAB_Random random;
-    LAB_ChunkRandom(&random, world_seed, x, 0, z);
+    LAB_ChunkRandom(&random, world_seed, cx, 0, cz);
 
     for(int x = 0; x < 16; ++x)
         noise[x] = LAB_NextRandom(&random);
@@ -61,7 +65,7 @@ void LAB_ChunkNoise2D(LAB_OUT uint64_t noise[17*17], uint64_t world_seed, int x,
             noise[x+z] = LAB_NextRandom(&random);
 
 
-    LAB_ChunkRandom(&random, world_seed, x+1, 0, z);
+    LAB_ChunkRandom(&random, world_seed, cx+1, 0, cz);
     noise[16] = LAB_NextRandom(&random);
     for(int x = 1; x < 16; ++x)
         LAB_NextRandom(&random);
@@ -70,11 +74,130 @@ void LAB_ChunkNoise2D(LAB_OUT uint64_t noise[17*17], uint64_t world_seed, int x,
         noise[16+z] = LAB_NextRandom(&random);
 
 
-    LAB_ChunkRandom(&random, world_seed, x, 0, z+1);
+    LAB_ChunkRandom(&random, world_seed, cx, 0, cz+1);
     for(int x = 0; x < 16; ++x)
         noise[16*17+x] = LAB_NextRandom(&random);
 
 
-    LAB_ChunkRandom(&random, world_seed, x+1, 0, z+1);
+    LAB_ChunkRandom(&random, world_seed, cx+1, 0, cz+1);
     noise[16*17+16] = LAB_NextRandom(&random);
+}
+
+
+LAB_HOT LAB_INLINE
+inline void LAB_ChunkNoise3D_Sub(LAB_OUT uint64_t* noise, uint64_t world_seed,
+                                 int cx, int cy, int cz,
+                                 int rx, int ry, int rz)
+{
+    LAB_Random random;
+    LAB_ChunkRandom(&random, world_seed, cx, cy, cz);
+
+    noise[0] = LAB_NextRandom(&random);
+
+
+    if(!rx)
+    {
+        for(int x = 1; x < 16; ++x)
+            noise[x] = LAB_NextRandom(&random);
+    }
+    else //if(!ry || !rz)
+    {
+        for(int x = 1; x < 16; ++x)
+            LAB_NextRandom(&random);
+    }
+
+
+
+    if(!ry)
+    {
+        for(int y = 17; y < 16*17; y+=17)
+            noise[y] = LAB_NextRandom(&random);
+    }
+    else //if(!rx || !rz)
+    {
+        for(int y = 17; y < 16*17; y+=17)
+            LAB_NextRandom(&random);
+    }
+
+
+
+    if(!rz)
+    {
+        for(int z = 17*17; z < 16*17*17; z+=17*17)
+            noise[z] = LAB_NextRandom(&random);
+    }
+    else //if(!rx && !ry)
+    {
+        for(int z = 17*17; z < 16*17*17; z+=17*17)
+            LAB_NextRandom(&random);
+    }
+
+
+
+
+
+    if(!rx && !ry)
+    {
+        for(int y = 17; y < 16*17; y+=17)
+            for(int x = 1; x < 16; ++x)
+                noise[x+y] = LAB_NextRandom(&random);
+    }
+    else //if((!ry && !rz) || (!ry && !rz))
+    {
+        for(int y = 17; y < 16*17; y+=17)
+            for(int x = 1; x < 16; ++x)
+                LAB_NextRandom(&random);
+    }
+
+
+
+    if(!ry && !rz)
+    {
+        for(int z = 17*17; z < 16*17*17; z+=17*17)
+            for(int x = 1; x < 16; ++x)
+                noise[x+z] = LAB_NextRandom(&random);
+    }
+    else //if(!ry && !rz)
+    {
+        for(int z = 17*17; z < 16*17*17; z+=17*17)
+            for(int x = 1; x < 16; ++x)
+                LAB_NextRandom(&random);
+    }
+
+
+
+    if(!ry && !rz)
+    {
+        for(int z = 17*17; z < 16*17*17; z+=17*17)
+            for(int y = 17; y < 16*17; y+=17)
+                noise[y+z] = LAB_NextRandom(&random);
+    }
+    //else
+    //    for(int z = 17*17; z < 16*17*17; z+=17*17)
+    //        for(int y = 17; y < 16*17; y+=17)
+    //            LAB_NextRandom(&random);
+
+
+
+
+
+
+    if(!rx && !ry && !rz)
+        for(int z = 17*17; z < 16*17*17; z+=17*17)
+            for(int y = 17; y < 16*17; y+=17)
+                for(int x = 1; x < 16; ++x)
+                    noise[x+y+z] = LAB_NextRandom(&random);
+}
+
+
+void LAB_ChunkNoise3D(LAB_OUT uint64_t noise[17*17*17], uint64_t world_seed, int cx, int cy, int cz)
+{
+    //for(int i = 0; i < 8; ++i)
+    for(int i = 7; i >= 0; --i)
+    {
+        int off = 16*(i&1) + 17*16*(!!(i&2)) + 17*17*16*(!!(i&4));
+        LAB_ChunkNoise3D_Sub(noise+off, world_seed,
+                             cx+!!(i&1), cy+!!(i&2), cz+!!(i&4),
+                             !!(i&1), !!(i&2), !!(i&4));
+    }
 }

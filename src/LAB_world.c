@@ -229,7 +229,8 @@ void LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int 
 {
     LAB_Chunk* cnk = chunks[1+3+9];
     if(!cnk) return;
-    memset(cnk->light, 0, sizeof cnk->light);
+    memset(cnk->light, 0xff, sizeof cnk->light);
+    //return;
     for(int i = 0; i < 16; ++i)
     for(int z = 0; z < 16; ++z)
     for(int y = 0; y < 16; ++y)
