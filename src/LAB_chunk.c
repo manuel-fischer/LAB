@@ -15,6 +15,7 @@ LAB_Chunk* LAB_CreateChunk(LAB_Block* fill_block)
         return (LAB_SetError("CreateChunk failed to allocate"), NULL);
 
     for(int i = 0; i < LAB_CHUNK_LENGTH; ++i) chunk->blocks[i] = fill_block;
+    memset(chunk->light, 0, sizeof chunk->light);
 
     return chunk;
 }

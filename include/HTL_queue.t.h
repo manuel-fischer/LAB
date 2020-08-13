@@ -52,6 +52,11 @@ void HTL_MEMBER(Destruct)(HTL_P(NAME)* q);
 int  HTL_MEMBER(IsEmpty)(HTL_P(NAME)* q);
 
 /**
+ *  Returns 1 if queue is full
+ */
+int  HTL_MEMBER(IsFull)(HTL_P(NAME)* q);
+
+/**
  *  Creates room for an element at the back
  *
  *  Returns the allocated entry on success,
@@ -84,3 +89,8 @@ HTL_P(TYPE)* HTL_MEMBER(Front)(HTL_P(NAME)* q);
  *  POST: Return value points to a valid memory location
  */
 HTL_P(TYPE)* HTL_MEMBER(Back)(HTL_P(NAME)* q);
+
+/**
+ *  Check if element that compares 0 is in queue, otherwise return
+ */
+HTL_P(TYPE)* HTL_MEMBER(Find)(HTL_P(NAME)* q, int (*comp1)(void* ctx, HTL_P(TYPE)* content), void* ctx);

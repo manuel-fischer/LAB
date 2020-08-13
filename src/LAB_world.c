@@ -18,7 +18,11 @@
 #include "HTL_queue.t.c"
 #undef HTL_PARAM
 
-void LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int cz);
+#define HTL_PARAM LAB_CHUNKPOS2_QUEUE
+#include "HTL_queue.t.c"
+#undef HTL_PARAM
+
+int LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int cz);
 
 unsigned LAB_ChunkPosHash(LAB_ChunkPos pos)
 {
@@ -38,11 +42,13 @@ int LAB_ConstructWorld(LAB_World* world)
     // those never fail
     LAB_ChunkMap_Construct(&world->chunks);
     LAB_ChunkPosQueue_Construct(&world->gen_queue);
+    LAB_ChunkPos2Queue_Construct(&world->update_queue);
     return 1;
 }
 
 void LAB_DestructWorld(LAB_World* world)
 {
+    LAB_ChunkPos2Queue_Destruct(&world->update_queue);
     LAB_ChunkPosQueue_Destruct(&world->gen_queue);
     for(int i = 0; i < world->chunks.capacity; ++i)
     {
@@ -137,10 +143,38 @@ void LAB_NotifyChunk(LAB_World* world, int x, int y, int z)
     {
         LAB_Chunk* chunks[27];
         LAB_GetChunkNeighborhood(world, chunks, x, y, z, LAB_CHUNK_EXISTING);
-        LAB_TickLight(world, chunks, x, y, z);
+        int borders = LAB_TickLight(world, chunks, x, y, z);
+        if(borders)
+        {
+            for(int zz = -1; zz <= 1; ++zz)
+            for(int yy = -1; yy <= 1; ++yy)
+            for(int xx = -1; xx <= 1; ++xx)
+                LAB_TickLight(world, chunks, xx+x, yy+y, zz+z);
+        }
 
         (*world->chunkview)(world->chunkview_user, world, x, y, z);
     }
+}
+
+
+int LAB_NotifyChunkLater_Comp(void* ctx, LAB_ChunkPos* a)
+{
+    LAB_ChunkPos* b = ctx;
+    return LAB_ChunkPosComp(*a, *b);
+}
+void LAB_NotifyChunkLater(LAB_World* world, int x, int y, int z)
+{
+    LAB_ChunkPos pos = {x, y, z};
+    if(LAB_ChunkPos2Queue_Find(&world->update_queue, LAB_NotifyChunkLater_Comp, &pos))
+        return;
+
+    LAB_ChunkPos* entry = LAB_ChunkPos2Queue_PushBack(&world->update_queue);
+    if(entry != NULL) {
+        entry->x = x;
+        entry->y = y;
+        entry->z = z;
+    }
+    return NULL;
 }
 
 
@@ -163,7 +197,7 @@ void LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType flags
     LAB_Chunk* chunk = LAB_GetChunk(world, cx, cy, cz, flags);
     if(chunk == NULL) return;
     chunk->blocks[LAB_CHUNK_OFFSET(x&LAB_CHUNK_MASK, y&LAB_CHUNK_MASK, z&LAB_CHUNK_MASK)] = block;
-    LAB_NotifyChunk(world, cx, cy, cz);
+    LAB_NotifyChunkLater(world, cx, cy, cz);
 }
 
 void LAB_FillBlocks(LAB_World* world, int x0, int y0, int z0, int x1, int y1, int z1, LAB_ChunkPeekType flags, LAB_Block* block)
@@ -222,18 +256,35 @@ void LAB_WorldTick(LAB_World* world)
         LAB_GenerateNotifyChunk(world, pos->x, pos->y, pos->z);
         LAB_ChunkPosQueue_PopFront(&world->gen_queue);
     }
+
+    while(!LAB_ChunkPos2Queue_IsEmpty(&world->update_queue))
+    {
+        LAB_ChunkPos* pos;
+        pos = LAB_ChunkPos2Queue_Front(&world->update_queue);
+        LAB_NotifyChunk(world, pos->x, pos->y, pos->z);
+        LAB_ChunkPos2Queue_PopFront(&world->update_queue);
+    }
 }
 
 
-void LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int cz)
+LAB_HOT
+int LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int cz)
 {
     LAB_Chunk* cnk = chunks[1+3+9];
     if(!cnk) return;
+    #if 1
     memset(cnk->light, 0xff, sizeof cnk->light);
+    return;
+    #endif
+    memset(cnk->light, 0, sizeof cnk->light);
+
+    LAB_Color default_color = cy <= -5 ? LAB_RGB(16, 16, 16) : LAB_RGB(255, 255, 255);
+
     //return;
-    for(int i = 0; i < 16; ++i)
+    //for(int i = 0; i < 16; ++i)
+    for(int i = 0; i < 1; ++i)
     for(int z = 0; z < 16; ++z)
-    for(int y = 0; y < 16; ++y)
+    for(int y =15; y >= 0; --y)
     for(int x = 0; x < 16; ++x)
     {
         int off = LAB_CHUNK_OFFSET(x, y, z);
@@ -254,7 +305,7 @@ void LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int 
                     nlum = block->lum;
                 else
                 {
-                    nlum = LAB_GetNeighborhoodLight(chunks, x+o[0], y+o[1], z+o[2]);
+                    nlum = LAB_GetNeighborhoodLight(chunks, x+o[0], y+o[1], z+o[2], default_color);
                     //if(i!=3) nlum = nlum-(nlum>>4);
                     if(i!=3)
                     {
@@ -270,6 +321,7 @@ void LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int 
         //if(lum > 255) lum = 255;
         cnk->light[off] = lum;
     }
+    return 1;
 }
 
 

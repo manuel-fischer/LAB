@@ -344,7 +344,6 @@ void LAB_SmoothNoise3D(LAB_OUT uint32_t smooth[16*16*16],
             int zi = !!(z0 & w);
             int ni = xi+3*yi+9*zi;
 
-            int ww = w>>1;
             Elem* d = &stack[depth];
             Elem* p = &stack[depth-1];
 
@@ -353,7 +352,7 @@ void LAB_SmoothNoise3D(LAB_OUT uint32_t smooth[16*16*16],
             for(int y = 0; y < 3; ++y)
             for(int x = 0; x < 3; ++x)
             {
-                uint32_t n;
+                uint64_t n;
                 //unsigned indx = xs+ww*x+17*(ys+ww*y)+17*17*(zs+ww*z);
                 unsigned indx =        x0 + (w*x)/2
                               +    17*(y0 + (w*y)/2)
@@ -366,18 +365,46 @@ void LAB_SmoothNoise3D(LAB_OUT uint32_t smooth[16*16*16],
                                        (uint64_t)(a)*(0x100000000ull-(uint64_t)(m)) \
                                      + (uint64_t)(b)*                (uint64_t)(m) \
                                    ) >> 32)
-                uint32_t n0 = LRP(XXX(x,y,z), XXX(x+1,y+1,z+1), r);
-                uint32_t n1 = LRP(XXX(x+1,y,z),XXX(x,y+1,z+1), r);
+                #if 0
+                uint32_t n0 = LRP(XXX(x,y,z),XXX(x+1,y+1,z+1), r);
+                /*uint32_t n1 = LRP(XXX(x+1,y,z),XXX(x,y+1,z+1), r);
                 uint32_t n2 = LRP(XXX(x,y+1,z),XXX(x+1,y,z+1), r);
-                uint32_t n3 = LRP(XXX(x,y,z+1),XXX(x+1,y+1,z), r);
+                uint32_t n3 = LRP(XXX(x,y,z+1),XXX(x+1,y+1,z), r);*/
 
-                //n = ((uint64_t)n0+(uint64_t)n1+(uint64_t)n2+(uint64_t)n3)/4;
+                //n = (XXX(x,y,z)+XXX(x+1,y+1,z+1))/2;
+                n = (uint64_t)n0;
+                #elif 0
                 n = ((uint64_t)XXX(x,   y,   z) + XXX(x,   y,   z+1)
                              + XXX(x+1, y,   z) + XXX(x+1, y,   z+1)
                              + XXX(x,   y+1, z) + XXX(x,   y+1, z+1)
                              + XXX(x+1, y+1, z) + XXX(x+1, y+1, z+1)) / 8;
-                //n = (XXX(x,y,z)+XXX(x+1,y+1,z+1))/2;
-                //n = (uint64_t)n0;
+                #else
+                int cc = (x&1)+(y&1)+(z&1);
+                n=0;
+                if(x&1)
+                    n += LRP(XXX(  x,   y,   z),XXX(1+x,   y,   z), r)
+                       + LRP(XXX(  x,   y, 1+z),XXX(1+x,   y, 1+z), r)
+                       + LRP(XXX(  x, 1+y,   z),XXX(1+x, 1+y,   z), r)
+                       + LRP(XXX(  x, 1+y, 1+z),XXX(1+x, 1+y, 1+z), r);
+                if(y&1)
+                    n += LRP(XXX(  x,   y,   z),XXX(  x, 1+y,   z), r)
+                       + LRP(XXX(1+x,   y,   z),XXX(1+x, 1+y,   z), r)
+                       + LRP(XXX(  x,   y, 1+z),XXX(  x, 1+y, 1+z), r)
+                       + LRP(XXX(1+x,   y, 1+z),XXX(1+x, 1+y, 1+z), r);
+                if(z&1)
+                    n += LRP(XXX(  x,   y,   z),XXX(  x,   y, 1+z), r)
+                       + LRP(XXX(  x, 1+y,   z),XXX(  x, 1+y, 1+z), r)
+                       + LRP(XXX(1+x,   y,   z),XXX(1+x,   y, 1+z), r)
+                       + LRP(XXX(1+x, 1+y,   z),XXX(1+x, 1+y, 1+z), r);
+                if(cc == 0) n = XXX(x, y, z);
+                else switch(cc)
+                {
+                    case 1: n /= 4u*1u; break;
+                    case 2: n /= 4u*2u; break;
+                    case 3: n /= 4u*3u; break;
+                    default: LAB_UNREACHABLE();
+                }
+                #endif
                 d->n[x+3*y+9*z] = n;
             }
             recurr = 1;

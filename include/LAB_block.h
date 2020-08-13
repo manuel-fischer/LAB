@@ -32,4 +32,8 @@ extern LAB_Block LAB_BLOCK_OUTSIDE,
                  LAB_BLOCK_WOOD_PLANKS,
                  LAB_BLOCK_WOOD_PLANKS_DARK,
                  LAB_BLOCK_GRASS,
-                 LAB_BLOCK_LIGHT;
+                 LAB_BLOCK_LIGHT,
+                 LAB_BLOCK_BLUE_LIGHT,
+                 LAB_BLOCK_YELLOW_LIGHT,
+                 LAB_BLOCK_GREEN_LIGHT,
+                 LAB_BLOCK_RED_LIGHT;

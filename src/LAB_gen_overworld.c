@@ -4,6 +4,7 @@
 #include "LAB_noise.h"
 
 
+#define SMTST(smth, prob, orig) ((smth) > (orig)-(prob)/2 && (smth) < (orig)+(prob)/2)
 
 LAB_HOT
 LAB_Chunk* LAB_GenOverworldProc(void* user, LAB_World* world, int x, int y, int z)
@@ -14,6 +15,9 @@ LAB_Chunk* LAB_GenOverworldProc(void* user, LAB_World* world, int x, int y, int 
     LAB_Chunk* chunk = LAB_CreateChunk(block);
     if(!chunk) return NULL;
 
+
+    uint64_t noise[17*17*17];
+    uint32_t smooth[16*16*16];
 
     if(y >= -2 && y <= -1)
     {
@@ -57,9 +61,8 @@ LAB_Chunk* LAB_GenOverworldProc(void* user, LAB_World* world, int x, int y, int 
     if(y <= -5)
     //if(0)
     {
-        uint64_t noise[17*17*17];
+        // Carve out
         LAB_ChunkNoise3D(noise, gen->seed, x, y, z);
-        uint32_t smooth[16*16*16];
         LAB_SmoothNoise3D(smooth, noise);
         for(int zz = 0; zz < 16*16*16; zz+=16*16)
         {
@@ -73,13 +76,64 @@ LAB_Chunk* LAB_GenOverworldProc(void* user, LAB_World* world, int x, int y, int 
                     //if(noise[(xx+yy+zz)&0xccc|0x333] < 0x03000000)
                     //if(smooth[xx+yy+zz] < 0x30000000)     '
                     //printf("%x\n", smooth[xx+yy+zz]);
-                    if(smooth[xx+yy+zz] < threshold)
+                    //if(smooth[xx+yy+zz] < threshold/3 && smooth[xx+yy+zz] > 0x08000000)
+                    if(smooth[xx+yy+zz] < threshold/2)
+                    //if(!SMTST(smooth[xx+yy+zz], 0xffffffff^threshold, 0x80000000))
                     {
                         chunk->blocks[xx+yy+zz] = &LAB_BLOCK_AIR;
                     }
                 }
             }
         }
+
+        LAB_Random random;
+        LAB_ChunkRandom(&random, gen->seed^0x12345, x, y, z);
+
+        if((LAB_NextRandom(&random)&0x7) < 3)
+        {
+            for(int i = LAB_NextRandom(&random)&0x15; i > 0; --i)
+            {
+                LAB_Block*const LIGHTS[4] = { &LAB_BLOCK_BLUE_LIGHT, &LAB_BLOCK_YELLOW_LIGHT, &LAB_BLOCK_GREEN_LIGHT, &LAB_BLOCK_RED_LIGHT };
+
+                LAB_Block* light = LIGHTS[LAB_NextRandom(&random)&3];
+                int xx = LAB_NextRandom(&random) & 0xf;
+                int zz = LAB_NextRandom(&random) & 0xf;
+                int yy;
+                for(yy = 0; yy < 16; ++yy)
+                    if(chunk->blocks[xx+16*yy+16*16*zz] == &LAB_BLOCK_STONE)
+                        break;
+                if(yy == 16) continue;
+
+                int h = (LAB_NextRandom(&random)&3)+2;
+                for(--yy; yy >= 0 && h > 0; --yy, --h)
+                {
+                    chunk->blocks[xx+16*yy+16*16*zz] = light;
+                }
+            }
+        }
     }
+
+
+    LAB_ChunkNoise3D(noise, gen->seed^0x12345, x, y, z);
+    LAB_SmoothNoise3D(smooth, noise);
+    for(int zz = 0; zz < 16*16*16; zz+=16*16)
+    {
+        for(int yy = 0; yy < 16*16;    yy+=16)
+        {
+            for(int xx = 0; xx < 16;       xx++)
+            {
+                //if(noise[(xx+yy+zz)&0xccc|0x333] < 0x03000000)
+                //if(smooth[xx+yy+zz] < 0x30000000)     '
+                //printf("%x\n", smooth[xx+yy+zz]);
+                uint32_t n = smooth[xx+yy+zz];
+                if(SMTST(n, 0x20000000, 0x80000000) && chunk->blocks[xx+yy+zz] == &LAB_BLOCK_STONE)
+                {
+                    chunk->blocks[xx+yy+zz] = &LAB_BLOCK_MARBLE;
+                }
+            }
+        }
+    }
+
+
     return chunk;
 }

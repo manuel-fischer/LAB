@@ -33,6 +33,22 @@ static LAB_Block* blocks[9] =
 static int selected_block = 1;
 
 
+int  LAB_ConstructViewInput(LAB_ViewInput* view_input, LAB_View* view)
+{
+    memset(view_input, 0, sizeof *view_input);
+    view_input->speed = 0.1f;
+    view_input->view = view;
+    view_input->brushsize = 3;
+    return 1;
+}
+
+void LAB_DestructViewInput(LAB_ViewInput* view_input)
+{
+
+}
+
+
+
 int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
 {
     LAB_ViewInput* view_input = (LAB_ViewInput*)user;
@@ -78,17 +94,54 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                 case SDLK_SPACE:  view_input->updown &= ~1; break;
                 case SDLK_LSHIFT: view_input->updown &= ~2; break;
 
-
-                case SDLK_PLUS:
-                case SDLK_MINUS:
+                case SDLK_x:
                 {
-                    if(key == SDLK_PLUS) view->render_dist++;
+                    view_input->flags ^= LAB_VIEWINPUT_DESTROY;
+                    view_input->flags &= ~LAB_VIEWINPUT_CREATE;
+                } break;
+                case SDLK_c:
+                {
+                    view_input->flags ^= LAB_VIEWINPUT_CREATE;
+                    view_input->flags &= ~LAB_VIEWINPUT_DESTROY;
+
+                } break;
+
+                case SDLK_MINUS:
+                case SDLK_PLUS:
+                {
                     if(key == SDLK_MINUS) view->render_dist--;
+                    if(key == SDLK_PLUS) view->render_dist++;
                     if(view->render_dist == 0) view->render_dist = 1;
                     if(view->render_dist > 16) view->render_dist = 16;
                     view->preload_dist = view->render_dist+0;
                     view->keep_dist = view->render_dist+2;
                 } break;
+
+                case SDLK_n:
+                case SDLK_m:
+                {
+                    if(key == SDLK_n) view_input->speed-=0.1;
+                    if(key == SDLK_m) view_input->speed+=0.1;
+                    if(view_input->speed < 0.1) view_input->speed = 0.1;
+                    if(view_input->speed > 16)  view_input->speed = 16;
+                } break;
+
+
+                case SDLK_v:
+                case SDLK_b:
+                {
+                    if(key == SDLK_v) view_input->brushsize--;
+                    if(key == SDLK_b) view_input->brushsize++;
+                    if(view_input->brushsize <  1) view_input->brushsize = 1;
+                    if(view_input->brushsize > 16) view_input->brushsize = 16;
+                } break;
+
+
+                case SDLK_y:
+                {
+                    view_input->flags ^= LAB_VIEWINPUT_FORWARD;
+                } break;
+
 
 
                 case SDLK_ESCAPE:
@@ -239,15 +292,31 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input)
     int mx, my;
     Uint32 mbstate = SDL_GetMouseState(&mx, &my);
 
-    float speed = kbstate[SDL_SCANCODE_LCTRL] ? 0.75 : 0.1;
+    float speed = view_input->speed * (kbstate[SDL_SCANCODE_LCTRL] ? 7.5 : 1);
 
-    if(1)
+    unsigned dir_set = view_input->dir_set;
+    if(view_input->flags & LAB_VIEWINPUT_FORWARD)
     {
+        if(dir_set&(1|4))
+        {
+            int bw = (dir_set&1) - !!(dir_set&4);
+            float dir[3];
+            LAB_ViewGetDirection(view, dir);
+            view->x += dir[0]*speed*bw;
+            view->y += dir[1]*speed*bw;
+            view->z += dir[2]*speed*bw;
+        }
+        dir_set&=(2|8);
+    }
+
+    {
+
+
         //              w.w.w.w.w.w.w.w.
         //              aa..aa..aa..aa..
         //              ssss....ssss....
         //              dddddddd........
-        int ang8th = (0xf4650f7623f4120full >> (view_input->dir_set*4)) & 0xf;
+        int ang8th = (0xf4650f7623f4120full >> (dir_set*4)) & 0xf;
         if(ang8th != 0xf)
         {
             float ang_rad = view->ay*LAB_PI/180.f - (float)ang8th*LAB_PI*2/8.f;
@@ -262,18 +331,6 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input)
         if(view_input->updown&1) view->y+=speed;
         if(view_input->updown&2) view->y-=speed;
     }
-    else
-    {
-        if(view_input->dir_set&(1|4))
-        {
-            int bw = (view_input->dir_set&1) - !!(view_input->dir_set&4);
-            float dir[3];
-            LAB_ViewGetDirection(view, dir);
-            view->x += dir[0]*speed*bw;
-            view->y += dir[1]*speed*bw;
-            view->z += dir[2]*speed*bw;
-        }
-    }
 
     if(kbstate[SDL_SCANCODE_LALT])
     {
@@ -284,4 +341,27 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input)
             LAB_ViewInputInteract(view_input, !!(mbstate & SDL_BUTTON(SDL_BUTTON_RIGHT)));
         }
     }
+
+
+
+    if(view_input->flags & (LAB_VIEWINPUT_DESTROY|LAB_VIEWINPUT_CREATE))
+    {
+        LAB_Block* block = view_input->flags & LAB_VIEWINPUT_CREATE ? blocks[selected_block] : &LAB_BLOCK_AIR;
+
+        int bx, by, bz;
+        bx = (int)floorf(view->x);
+        by = (int)floorf(view->y);
+        bz = (int)floorf(view->z);
+
+        int dist = view_input->brushsize;
+        for(int zz = -dist; zz <= dist; ++zz)
+        for(int yy = -dist; yy <= dist; ++yy)
+        for(int xx = -dist; xx <= dist; ++xx)
+        {
+            if(xx*xx+yy*yy+zz*zz <= dist*dist+dist)
+                LAB_SetBlock(view->world, bx+xx, by+yy, bz+zz, LAB_CHUNK_GENERATE, block);
+        }
+    }
+
+
 }

@@ -314,7 +314,7 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
 
         const int* o = LAB_offset[i];
 
-        LAB_Color lum = LAB_GetNeighborhoodLight(cnk3x3x3, x+o[0], y+o[1], z+o[2]);
+        LAB_Color lum = LAB_GetNeighborhoodLight(cnk3x3x3, x+o[0], y+o[1], z+o[2], LAB_RGB(255, 255, 255));
 
         int r, g, b;
         r = (l*LAB_RED(lum)) >> 8;
@@ -454,7 +454,11 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
     glEnable(GL_CULL_FACE);
     glCullFace(GL_FRONT);
 
-    glClearColor(0.5, 0.7, 0.9, 1);
+    if(view->y <= -16*4)
+        glClearColor(0.03, 0.03, 0.03, 1);
+    else
+        glClearColor(0.5, 0.7, 0.9, 1);
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();

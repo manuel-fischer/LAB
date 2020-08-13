@@ -22,8 +22,11 @@ int main(int argc, char** argv) {
     static LAB_World      the_world   = {};
     static LAB_View       view        = {};
     static LAB_ViewInput  view_input  = {};
-    //static LAB_GenFlat    gen_flat    = {};
+    #if 0
+    static LAB_GenFlat    gen_flat    = {};
+    #else
     static LAB_GenOverworld gen_overworld = {};
+    #endif
 
     CHECK_INIT(LAB_Init());
     init = 1;
@@ -35,14 +38,15 @@ int main(int argc, char** argv) {
 
 
     CHECK_INIT(LAB_ConstructWorld(&the_world));
-
-    /*gen_flat.block = &LAB_BLOCK_STONE;
-    the_world->chunkgen      = &LAB_GenFlatProc;
-    the_world->chunkgen_user = &gen_flat;*/
-
+    #if 0
+    gen_flat.block = &LAB_BLOCK_STONE;
+    the_world.chunkgen      = &LAB_GenFlatProc;
+    the_world.chunkgen_user = &gen_flat;
+    #else
     gen_overworld.seed = 0x13579bdf;
     the_world.chunkgen      = &LAB_GenOverworldProc;
     the_world.chunkgen_user = &gen_overworld;
+    #endif
 
     CHECK_INIT(LAB_ConstructView(&view, &the_world));
     view.render_dist = 5;
@@ -50,7 +54,7 @@ int main(int argc, char** argv) {
     view.keep_dist = view.render_dist+2;
     view.flags = LAB_VIEW_SHOW_GUI;
 
-    view_input.view = &view;
+    CHECK_INIT(LAB_ConstructViewInput(&view_input, &view));
 
     the_world.chunkview      = &LAB_ViewChunkProc;
     the_world.chunkview_user = &view;
@@ -76,6 +80,7 @@ int main(int argc, char** argv) {
 
 EXIT:
     // Null destructable
+    LAB_DestructViewInput(&view_input);
     LAB_DestructView(&view);
     LAB_DestructWorld(&the_world);
     LAB_DestructWindow(&main_window);
