@@ -184,6 +184,7 @@
 		<Unit filename="src/LAB_world_view.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="src/SDL_fix.h" />
 		<Unit filename="src/main.c">
 			<Option compilerVar="CC" />
 		</Unit>

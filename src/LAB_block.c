@@ -1,6 +1,7 @@
 #include "LAB_block.h"
 
 LAB_Block LAB_BLOCK_OUTSIDE = {
+    .flags = LAB_BLOCK_OPAQUE,
     .lum = LAB_RGB(255, 255, 255),
 };
 

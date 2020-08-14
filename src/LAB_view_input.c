@@ -115,8 +115,8 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                     if(key == SDLK_PLUS) view->render_dist++;
                     if(view->render_dist == 0) view->render_dist = 1;
                     if(view->render_dist > 16) view->render_dist = 16;
-                    view->preload_dist = view->render_dist+0;
-                    view->keep_dist = view->render_dist+2;
+                    view->preload_dist = LAB_PRELOAD_CHUNK(view->render_dist);
+                    view->keep_dist = LAB_KEEP_CHUNK(view->render_dist);
                 } break;
 
                 case SDLK_n:
@@ -205,7 +205,7 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
 
         case SDL_MOUSEMOTION:
         {
-            if(view_input->flags&LAB_VIEWINPUT_GRAB)
+            if(SDL_GetWindowGrab(window->window))
             {
                 int w, h;
                 SDL_GetWindowSize(window->window, &w, &h);
@@ -267,7 +267,7 @@ static int LAB_ViewInputInteract(LAB_ViewInput* view_input, int right)
     vpos[2] = view->z;
     LAB_ViewGetDirection(view, dir);
 
-    if(LAB_TraceBlock(view->world, 10, vpos, dir, LAB_CHUNK_GENERATE, LAB_BLOCK_SOLID, target, prev, hit))
+    if(LAB_TraceBlock(view->world, 10, vpos, dir, LAB_CHUNK_GENERATE, LAB_BLOCK_INTERACTABLE, target, prev, hit))
     {
         if(!right)
         {

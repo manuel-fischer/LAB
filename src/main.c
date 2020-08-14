@@ -10,6 +10,7 @@
 
 #include "LAB_gen_flat.h"
 #include "LAB_gen_overworld.h"
+#include "LAB_gl.h"
 
 int main(int argc, char** argv) {
     #define CHECK_INIT(expr) if(expr); else { init_msg = #expr; goto INIT_ERROR; }
@@ -34,6 +35,7 @@ int main(int argc, char** argv) {
 
     uint32_t sdl_window_flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL;
     CHECK_INIT(LAB_ConstructWindow(&main_window, 1024, 576, sdl_window_flags));
+    LAB_GL_CHECK();
     //SDL_SetWindowFullscreen(main_window->window, SDL_WINDOW_FULLSCREEN);
 
 
@@ -49,12 +51,14 @@ int main(int argc, char** argv) {
     #endif
 
     CHECK_INIT(LAB_ConstructView(&view, &the_world));
+    LAB_GL_CHECK();
     view.render_dist = 5;
-    view.preload_dist = view.render_dist+0;
-    view.keep_dist = view.render_dist+2;
+    view.preload_dist = LAB_PRELOAD_CHUNK(view.render_dist);
+    view.keep_dist = LAB_KEEP_CHUNK(view.render_dist);
     view.flags = LAB_VIEW_SHOW_GUI;
 
     CHECK_INIT(LAB_ConstructViewInput(&view_input, &view));
+    LAB_GL_CHECK();
 
     the_world.chunkview      = &LAB_ViewChunkProc;
     the_world.chunkview_user = &view;
@@ -67,8 +71,17 @@ int main(int argc, char** argv) {
     main_window.render_user  = &view;
 
 
+    int itr = 0;
     while(LAB_WindowLoop(&main_window))
     {
+        const char* labErr;
+        while((labErr = LAB_GetError())[0] != '\0')
+        {
+            fprintf(stderr, "[Error tick %i] %s\n", itr, labErr);
+            LAB_ClearError();
+        }
+        ++itr;
+
         LAB_ViewInputTick(&view_input);
         LAB_ViewTick(&view);
         LAB_WorldTick(&the_world);

@@ -5,8 +5,14 @@
 
 typedef unsigned LAB_BlockFlags;
 
-#define LAB_BLOCK_SOLID    1u
-#define LAB_BLOCK_EMISSIVE 2u
+#define LAB_BLOCK_MASSIVE      1u // Entities collide with this
+#define LAB_BLOCK_OPAQUE       2u // Other blocks get visually covered by this block
+#define LAB_BLOCK_VISUAL       4u // The block is rendered
+#define LAB_BLOCK_INTERACTABLE 8u // The block can be interacted with
+#define LAB_BLOCK_SOLID        (LAB_BLOCK_MASSIVE|LAB_BLOCK_OPAQUE|LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL)
+
+#define LAB_BLOCK_EMISSIVE     16u
+
 
 
 typedef struct LAB_Block

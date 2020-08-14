@@ -16,6 +16,11 @@ LAB_CHECK_STRUCT_SIZE(LAB_ChunkPos);
 unsigned LAB_ChunkPosHash(LAB_ChunkPos);
 int LAB_ChunkPosComp(LAB_ChunkPos, LAB_ChunkPos);
 
+#define LAB_MAX_LOAD_CHUNK 16
+#define LAB_PRELOAD_CHUNK(chunk_dist) ((chunk_dist)+1)
+#define LAB_KEEP_CHUNK(chunk_dist)    ((chunk_dist)+2)
+
+
 
 #define LAB_CHUNK_MAP_NAME                 LAB_ChunkMap
 #define LAB_CHUNK_MAP_KEY_TYPE             LAB_ChunkPos
@@ -37,7 +42,7 @@ int LAB_ChunkPosComp(LAB_ChunkPos, LAB_ChunkPos);
 
 #define LAB_CHUNKPOS_QUEUE_NAME     LAB_ChunkPosQueue
 #define LAB_CHUNKPOS_QUEUE_TYPE     LAB_ChunkPos
-#define LAB_CHUNKPOS_QUEUE_CAPACITY 16
+#define LAB_CHUNKPOS_QUEUE_CAPACITY LAB_MAX_LOAD_CHUNK
 
 #define HTL_PARAM LAB_CHUNKPOS_QUEUE
 #include "HTL_queue.t.h"

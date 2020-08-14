@@ -174,7 +174,6 @@ void LAB_NotifyChunkLater(LAB_World* world, int x, int y, int z)
         entry->y = y;
         entry->z = z;
     }
-    return NULL;
 }
 
 
@@ -271,10 +270,10 @@ LAB_HOT
 int LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int cz)
 {
     LAB_Chunk* cnk = chunks[1+3+9];
-    if(!cnk) return;
+    if(!cnk) return 0;
     #if 1
     memset(cnk->light, 0xff, sizeof cnk->light);
-    return;
+    return 0;
     #endif
     memset(cnk->light, 0, sizeof cnk->light);
 
@@ -292,7 +291,7 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int c
         //int lum = 0;
         LAB_Color lum;
         lum = LAB_RGB(16, 16, 16);
-        if(!(cnk->blocks[off]->flags & LAB_BLOCK_SOLID))
+        if(!(cnk->blocks[off]->flags & LAB_BLOCK_OPAQUE))
         {
             for(int i = 0; i < 6; ++i)
             {

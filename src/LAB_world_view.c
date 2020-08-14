@@ -58,8 +58,7 @@ void LAB_View_StaticInit(void)
     glBindTexture(GL_TEXTURE_2D, LAB_gltextureid);
 
     #ifndef NO_GLEW
-    glEnable(GL_MIPMAP);
-
+    // Mipmaps
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 5);
@@ -77,6 +76,7 @@ void LAB_View_StaticInit(void)
     glScalef(32.f / (float)img->w, 32.f / (float)img->h, 1);
 
     SDL_FreeSurface(img);
+    LAB_GL_CHECK();
 }
 
 int  LAB_ConstructView(LAB_View* view, LAB_World* world)
@@ -160,7 +160,7 @@ static void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chun
         {
             for(size_t x = 0; x < LAB_CHUNK_SIZE; ++x)
             {
-                if(cnk3x3x3[X+Y+Z]->blocks[LAB_CHUNK_OFFSET(x, y, z)]->flags & LAB_BLOCK_SOLID)
+                if(cnk3x3x3[X+Y+Z]->blocks[LAB_CHUNK_OFFSET(x, y, z)]->flags & LAB_BLOCK_VISUAL)
                 {
                     LAB_ViewBuildMeshBlock(view, chunk_entry, cnk3x3x3, x, y, z);
                 }
@@ -230,12 +230,12 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
     int ty = block->ty;
 
     int faces = 0;
-    faces |=  1*(!(GET_BLOCK_FLAGS(-1, 0, 0)&LAB_BLOCK_SOLID));
-    faces |=  2*(!(GET_BLOCK_FLAGS( 1, 0, 0)&LAB_BLOCK_SOLID));
-    faces |=  4*(!(GET_BLOCK_FLAGS( 0,-1, 0)&LAB_BLOCK_SOLID));
-    faces |=  8*(!(GET_BLOCK_FLAGS( 0, 1, 0)&LAB_BLOCK_SOLID));
-    faces |= 16*(!(GET_BLOCK_FLAGS( 0, 0,-1)&LAB_BLOCK_SOLID));
-    faces |= 32*(!(GET_BLOCK_FLAGS( 0, 0, 1)&LAB_BLOCK_SOLID));
+    faces |=  1*(!(GET_BLOCK_FLAGS(-1, 0, 0)&LAB_BLOCK_OPAQUE));
+    faces |=  2*(!(GET_BLOCK_FLAGS( 1, 0, 0)&LAB_BLOCK_OPAQUE));
+    faces |=  4*(!(GET_BLOCK_FLAGS( 0,-1, 0)&LAB_BLOCK_OPAQUE));
+    faces |=  8*(!(GET_BLOCK_FLAGS( 0, 1, 0)&LAB_BLOCK_OPAQUE));
+    faces |= 16*(!(GET_BLOCK_FLAGS( 0, 0,-1)&LAB_BLOCK_OPAQUE));
+    faces |= 32*(!(GET_BLOCK_FLAGS( 0, 0, 1)&LAB_BLOCK_OPAQUE));
 
     if(faces == 0) return;
 

@@ -2,7 +2,7 @@
 
 #define LAB_GL_ERRORS_X(X) \
     X(GL_NO_ERROR, "No error") \
-    X(GL_INVALID_ENUM, "Ab unacceptable value is specified for an enumerated argument") \
+    X(GL_INVALID_ENUM, "An unacceptable value is specified for an enumerated argument") \
     X(GL_INVALID_VALUE, "A numeric argument is out of range") \
     X(GL_INVALID_OPERATION, "The specified operation is not allowed in the current state") \
     /*X(GL_INVALID_FRAMEBUFFER_OPERATION, "The framebuffer object is not complete")*/ \
