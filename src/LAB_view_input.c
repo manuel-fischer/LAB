@@ -149,11 +149,9 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                 case SDLK_ESCAPE:
                 {
                     int grab;
-                    grab = !!(view_input->flags&LAB_VIEWINPUT_GRAB); //SDL_GetWindowGrab(window->window);
+                    grab = SDL_GetWindowGrab(window->window);
                     SDL_SetWindowGrab_Fix(window->window, !grab);
-                    printf("GRAB %u %u %p\n", !grab, SDL_GetWindowGrab(window->window), SDL_GetGrabbedWindow());
                     SDL_ShowCursor(grab);
-                    view_input->flags ^= LAB_VIEWINPUT_GRAB;
                     if(!grab)
                     {
                         int w, h;
@@ -230,14 +228,13 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
 
             if(mbevent->button == SDL_BUTTON_LEFT || mbevent->button == SDL_BUTTON_RIGHT)
             {
-                if(view_input->flags&LAB_VIEWINPUT_GRAB)
+                if(SDL_GetWindowGrab(window->window))
                 {
                     LAB_ViewInputInteract(view_input, mbevent->button == SDL_BUTTON_RIGHT);
                 }
                 else
                 {
                     SDL_SetWindowGrab_Fix(window->window, 1);
-                    view_input->flags |= LAB_VIEWINPUT_GRAB;
                     SDL_ShowCursor(0);
 
                     int w, h;
