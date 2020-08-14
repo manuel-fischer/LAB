@@ -14,9 +14,11 @@ typedef struct LAB_ViewInput
     unsigned brushsize;
 } LAB_ViewInput;
 
-#define LAB_VIEWINPUT_FORWARD 1u
-#define LAB_VIEWINPUT_DESTROY 2u
-#define LAB_VIEWINPUT_CREATE  4u
+#define LAB_VIEWINPUT_GRAB    1u
+
+#define LAB_VIEWINPUT_FORWARD 2u
+#define LAB_VIEWINPUT_DESTROY 4u
+#define LAB_VIEWINPUT_CREATE  8u
 
 
 /**
