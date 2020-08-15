@@ -10,6 +10,8 @@ static size_t mem_frees = 0;
 static size_t mem_fails = 0;
 static ptrdiff_t mem_checksum = 0; // all pointers xored together
 
+static inline void LAB_DbgMemPrint(const char* format, const char* file, int line, ...);
+
 void* LAB_RealReallocN(void* memory, size_t count, size_t size)
 {
     size_t size_bytes = count*size;

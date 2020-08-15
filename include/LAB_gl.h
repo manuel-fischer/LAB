@@ -25,3 +25,21 @@ const char* LAB_GL_GetCurrentError(void);
         fprintf(stderr, "OpenGL Error occurred [" __FILE__ ",%i]:  %s\n", __LINE__, LAB_GL_GetError(errorid)); \
     }                                                                                                          \
 } while(0)
+
+
+
+/**
+ *  Returns the OpenGL type index
+ */
+#define LAB_GL_TYPEOF(expr)               \
+    _Generic(expr,                        \
+             GLbyte:   GL_BYTE,           \
+             GLubyte:  GL_UNSIGNED_BYTE,  \
+             GLshort:  GL_SHORT,          \
+             GLushort: GL_UNSIGNED_SHORT, \
+             GLint:    GL_INT,            \
+             GLuint:   GL_UNSIGNED_INT,   \
+             GLfloat:  GL_FLOAT,          \
+             GLdouble: GL_DOUBLE)
+             //GLfixed:  GL_FIXED,
+             //GLhalf:   GL_HALF_FLOAT)

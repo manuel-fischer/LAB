@@ -6,7 +6,7 @@
 
 #define LAB_ERROR_BUFFER_SIZE 256
 
-static char LAB_error_buffer[LAB_ERROR_BUFFER_SIZE] = {};
+static char LAB_error_buffer[LAB_ERROR_BUFFER_SIZE] = {0};
 
 const char* LAB_GetError(void)
 {

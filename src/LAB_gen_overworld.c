@@ -21,9 +21,7 @@ LAB_Chunk* LAB_GenOverworldProc(void* user, LAB_World* world, int x, int y, int 
 
     if(y >= -2 && y <= -1)
     {
-        uint64_t noise[17*17];
         LAB_ChunkNoise2D(noise, gen->seed, x, z);
-        uint32_t smooth[16*16];
         LAB_SmoothNoise2D(smooth, noise);
 
         for(int zz = 0; zz < 16; ++zz)

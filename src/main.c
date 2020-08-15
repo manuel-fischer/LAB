@@ -19,14 +19,14 @@ int main(int argc, char** argv) {
     int return_value;
 
     int init = 0;
-    static LAB_Window     main_window = {};
-    static LAB_World      the_world   = {};
-    static LAB_View       view        = {};
-    static LAB_ViewInput  view_input  = {};
+    static LAB_Window     main_window = {0};
+    static LAB_World      the_world   = {0};
+    static LAB_View       view        = {0};
+    static LAB_ViewInput  view_input  = {0};
     #if 0
-    static LAB_GenFlat    gen_flat    = {};
+    static LAB_GenFlat    gen_flat    = {0};
     #else
-    static LAB_GenOverworld gen_overworld = {};
+    static LAB_GenOverworld gen_overworld = {0};
     #endif
 
     CHECK_INIT(LAB_Init());

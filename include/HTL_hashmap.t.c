@@ -35,7 +35,7 @@ HTL_DEF HTL_MEMBER(Entry)* HTL_MEMBER(PutKey)(HTL_P(NAME)* hashmap, HTL_P(KEY_TY
         hashmap->capacity = new_capacity;
         hashmap->size = 0;
 
-        for(int i = 0; i < old_capacity; ++i)
+        for(size_t i = 0; i < old_capacity; ++i)
         {
             if(HTL_MEMBER(IsEntry)(hashmap, &old_table[i]))
                 HTL_MEMBER(Put)(hashmap, old_table[i].key, old_table[i].value);
@@ -75,23 +75,23 @@ HTL_DEF HTL_MEMBER(Entry)* HTL_MEMBER(Get)(HTL_P(NAME)* hashmap, HTL_P(KEY_TYPE)
 
 HTL_DEF void HTL_MEMBER(RemoveEntry)(HTL_P(NAME)* hashmap, HTL_MEMBER(Entry)* entry)
 {
-    int i = entry-hashmap->table;
+    size_t i = entry-hashmap->table;
 
     memset(entry, 0, sizeof *entry);
     --hashmap->size;
 
-    int empty_pos = i;
+    size_t empty_pos = i;
     for(;;)
     {
         ++i;
         if(i == hashmap->capacity) i = 0;
         if(!HTL_MEMBER(IsEntry)(hashmap, &hashmap->table[i])) break;
 
-        int best_index = HTL_P(HASH_FUNC)(hashmap->table[i].key);
+        size_t best_index = HTL_P(HASH_FUNC)(hashmap->table[i].key);
         if(best_index==i)
             continue;
-        int relative_a = (hashmap->capacity+best_index-i) % hashmap->capacity;
-        int relative_b = (hashmap->capacity+empty_pos-i) % hashmap->capacity;
+        size_t relative_a = (hashmap->capacity+best_index-i) % hashmap->capacity;
+        size_t relative_b = (hashmap->capacity+empty_pos-i) % hashmap->capacity;
         if(relative_a > relative_b)
             continue; // Lasse Objekt hier
 
@@ -115,9 +115,9 @@ HTL_DEF int HTL_MEMBER(IsEntry)(HTL_P(NAME)* hashmap, HTL_MEMBER(Entry)* entry)
 
 HTL_DEF HTL_MEMBER(Entry)* HTL_MEMBER(Locate)(HTL_P(NAME)* hashmap, HTL_P(KEY_TYPE) key)
 {
-    int hashid = HTL_P(HASH_FUNC)(key)&(hashmap->capacity-1);
+    size_t hashid = HTL_P(HASH_FUNC)(key)&(hashmap->capacity-1);
     //return hashmap->table+hashid;
-    int i;
+    size_t i;
 
     for(i = hashid; i < hashmap->capacity; ++i)
     {

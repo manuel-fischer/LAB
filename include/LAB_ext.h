@@ -1,7 +1,7 @@
 #pragma once
 
-#ifdef __GNUC__
-#define LAB_CASE_RANGE(a, n) case (a)...(a+n)
+#if defined __GNUC__ && 0
+#define LAB_CASE_RANGE(a, n) case (a)...((a)+(n))
 #else
 #define LAB_CASE_RANGE_1(a)                      case (a)
 #define LAB_CASE_RANGE_2(a) LAB_CASE_RANGE_1(a): case (a)+1

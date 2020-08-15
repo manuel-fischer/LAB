@@ -106,3 +106,11 @@ void LAB_ViewGetDirection(LAB_View* view, LAB_OUT float dir[3]);
 
 void LAB_ViewTick(LAB_View* view);
 void LAB_ViewLoadNearChunks(LAB_View* view);
+
+
+
+void LAB_ViewRenderGui(LAB_View* view);
+
+
+LAB_ViewChunkEntry* LAB_ViewFindChunkEntry(LAB_View* view, int x, int y, int z);
+LAB_ViewChunkEntry* LAB_ViewNewChunkEntry(LAB_View* view, int x, int y, int z);

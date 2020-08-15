@@ -49,7 +49,7 @@ HTL_DEF HTL_P(TYPE)* HTL_MEMBER(Back)(HTL_P(NAME)* q)
 
 HTL_DEF HTL_P(TYPE)* HTL_MEMBER(Find)(HTL_P(NAME)* q, int (*comp1)(void* ctx, HTL_P(TYPE)* content), void* ctx)
 {
-    for(int i = 0; i < q->count; ++i)
+    for(size_t i = 0; i < q->count; ++i)
     {
         HTL_P(TYPE)* elem = &q->queue[i%HTL_P(CAPACITY)];
         if((*comp1)(elem, ctx) == 0) return elem;

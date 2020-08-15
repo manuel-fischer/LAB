@@ -50,7 +50,7 @@ void LAB_DestructWorld(LAB_World* world)
 {
     LAB_ChunkPos2Queue_Destruct(&world->update_queue);
     LAB_ChunkPosQueue_Destruct(&world->gen_queue);
-    for(int i = 0; i < world->chunks.capacity; ++i)
+    for(size_t i = 0; i < world->chunks.capacity; ++i)
     {
         LAB_ChunkMap_Entry* entry = &world->chunks.table[i];
         if(entry->value)
@@ -108,12 +108,12 @@ LAB_Chunk* LAB_GetChunk(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType
     else if(flags == LAB_CHUNK_GENERATE_LATER)
     {
         //printf("Enqueue %i, %i, %i\n", x, y, z);
-        LAB_ChunkPos* entry;
-        entry = LAB_ChunkPosQueue_PushBack(&world->gen_queue);
-        if(entry != NULL) {
-            entry->x = x;
-            entry->y = y;
-            entry->z = z;
+        LAB_ChunkPos* request;
+        request = LAB_ChunkPosQueue_PushBack(&world->gen_queue);
+        if(request != NULL) {
+            request->x = x;
+            request->y = y;
+            request->z = z;
         }
         return NULL;
     }
@@ -157,11 +157,12 @@ void LAB_NotifyChunk(LAB_World* world, int x, int y, int z)
 }
 
 
-int LAB_NotifyChunkLater_Comp(void* ctx, LAB_ChunkPos* a)
+static int LAB_NotifyChunkLater_Comp(void* ctx, LAB_ChunkPos* a)
 {
     LAB_ChunkPos* b = ctx;
     return LAB_ChunkPosComp(*a, *b);
 }
+
 void LAB_NotifyChunkLater(LAB_World* world, int x, int y, int z)
 {
     LAB_ChunkPos pos = {x, y, z};
@@ -280,8 +281,8 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int c
     LAB_Color default_color = cy <= -5 ? LAB_RGB(16, 16, 16) : LAB_RGB(255, 255, 255);
 
     //return;
-    //for(int i = 0; i < 16; ++i)
-    for(int i = 0; i < 1; ++i)
+    //for(int n = 0; n < 16; ++n)
+    for(int n = 0; n <  1; ++n)
     for(int z = 0; z < 16; ++z)
     for(int y =15; y >= 0; --y)
     for(int x = 0; x < 16; ++x)

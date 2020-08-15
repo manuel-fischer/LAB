@@ -9,7 +9,8 @@
 
 typedef struct LAB_ChunkPos
 {
-    int16_t x, y, z, unused;
+    int16_t x, y, z;
+    LAB_PAD(int16_t);
 } LAB_ChunkPos;
 LAB_CHECK_STRUCT_SIZE(LAB_ChunkPos);
 
@@ -134,7 +135,7 @@ void LAB_GetChunkNeighborhood(LAB_World* world, LAB_Chunk* chunks[27], int x, in
  *  Refresh a chunk by notifying the view
  */
 void LAB_NotifyChunk(LAB_World* world, int x, int y, int z);
-
+void LAB_NotifyChunkLater(LAB_World* world, int x, int y, int z);
 
 LAB_Block* LAB_GetBlock(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType flags);
 void LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType flags, LAB_Block* block);

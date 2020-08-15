@@ -36,8 +36,9 @@ static void LAB_ViewDestructChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entr
 static LAB_ViewTriangle* LAB_ViewMeshAlloc(LAB_ViewChunkEntry* chunk_entry, size_t add_size, size_t extra_size);
 
 GLuint LAB_gltextureid = 0;
-void LAB_View_StaticInit(void)
+static void LAB_View_StaticInit(void)
 {
+    // TODO
     static char init = 0;
     if(init) return;
     init = 1;
@@ -94,7 +95,7 @@ int  LAB_ConstructView(LAB_View* view, LAB_World* world)
 
 void LAB_DestructView(LAB_View* view)
 {
-    for(int i = 0; i < view->chunk_count; ++i)
+    for(size_t i = 0; i < view->chunk_count; ++i)
     {
         LAB_ViewDestructChunk(view, &view->chunks[i]);
     }
@@ -401,9 +402,9 @@ static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 
     mesh = view->flags & LAB_VIEW_USE_VBO ? 0 /* Origin of vbo is at 0 */ : chunk_entry->mesh;
 
-    glVertexPointer(3, GL_FLOAT, sizeof *mesh->v, &mesh->v[0].x);
-    glColorPointer(4, GL_UNSIGNED_BYTE, sizeof *mesh->v, &mesh->v[0].r);
-    glTexCoordPointer(2, GL_FLOAT, sizeof *mesh->v, &mesh->v[0].u);
+    glVertexPointer(3, LAB_GL_TYPEOF(mesh->v[0].x), sizeof *mesh->v, &mesh->v[0].x);
+    glColorPointer(4, LAB_GL_TYPEOF(mesh->v[0].r), sizeof *mesh->v, &mesh->v[0].r);
+    glTexCoordPointer(2, LAB_GL_TYPEOF(mesh->v[0].u), sizeof *mesh->v, &mesh->v[0].u);
 
     glDrawArrays(GL_TRIANGLES, 0, 3*chunk_entry->mesh_count);
     glPopMatrix();
@@ -443,7 +444,7 @@ void LAB_ViewRenderGui(LAB_View* view)
     };
 
     glColor3f(1,1,1);
-    glVertexPointer(3, GL_FLOAT, 0, crosshair);
+    glVertexPointer(3, LAB_GL_TYPEOF(crosshair[0]), 0, crosshair);
     glDrawArrays(GL_TRIANGLES, 0, 3*4);
 }
 
@@ -514,7 +515,7 @@ void LAB_ViewRemoveDistantChunks(LAB_View* view)
     int pz = LAB_Sar((int)floorf(view->z), LAB_CHUNK_SHIFT);
 
     int dist_sq = view->keep_dist*view->keep_dist + 3;
-    int a = 0;
+    size_t a = 0;
     for(size_t i = 0; i < view->chunk_count; ++i)
     {
 
@@ -712,7 +713,7 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
         b: the offset in the higher axis
     **/
 
-    for(int r = 0; r <= view->preload_dist; ++r)
+    for(int r = 0; r <= (int)view->preload_dist; ++r)
     {
         //for(int a = 0; a <= r/*+(i<=0)*/; ++a)
         //for(int b = 0; b <= r/*+(i<=1)*/; ++b)
@@ -726,10 +727,10 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
                 a = k ? i : j;
                 b = k ? j : i;
 
-                for(int i = 0; i < 3; ++i)
+                for(int f = 0; f < 3; ++f)
                 {
                     int x, y, z;
-                    switch(i)
+                    switch(f)
                     {
                         case 0: x=r; y=a; z=b; break /*switch*/;
                         case 1: x=a; y=b; z=r; break /*switch*/;
@@ -755,8 +756,8 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
 
                         //(void)LAB_GetChunk(view->world, -xx-1, yy, zz, LAB_CHUNK_GENERATE_LATER);
                     }
-                    if(a==r) break /*i*/;
-                    if(b==r && i==1) break /*i*/;
+                    if(a==r) break /*f*/;
+                    if(b==r && f==1) break /*f*/;
                 }
             }
         }
