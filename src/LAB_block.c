@@ -82,8 +82,15 @@ LAB_Block LAB_BLOCK_WOOD_PLANKS_DARK = {
 
 LAB_Block LAB_BLOCK_GRASS = {
     .flags = LAB_BLOCK_SOLID,
-    .r = 50, 255, 100,
-    .tx = 0, 0,
+    //.r = 50, 255, 100,
+    .r = 30, 200, 80,
+    .tx = 2, 1,
+};
+
+LAB_Block LAB_BLOCK_DIRT = {
+    .flags = LAB_BLOCK_SOLID,
+    .r = 120, 80, 50,
+    .tx = 3, 1,
 };
 
 LAB_Block LAB_BLOCK_LIGHT = {

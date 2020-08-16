@@ -19,6 +19,9 @@ LAB_Chunk* LAB_GenOverworldProc(void* user, LAB_World* world, int x, int y, int 
     uint64_t noise[17*17*17];
     uint32_t smooth[16*16*16];
 
+    LAB_Random random;
+    LAB_ChunkRandom(&random, gen->seed^0x12345, x, y, z);
+
     if(y >= -2 && y <= -1)
     {
         LAB_ChunkNoise2D(noise, gen->seed, x, z);
@@ -29,23 +32,26 @@ LAB_Chunk* LAB_GenOverworldProc(void* user, LAB_World* world, int x, int y, int 
         for(int yy = 0; yy < 16; ++yy)
         {
             //printf("%uL\n", noise[xx+17*zz]&15);
-            uint64_t height = (15^yy)+16*(y+2);
-            uint64_t sheight = smooth[xx|16*zz];//>>(32-5);
-            for(int i = 0; i < 0; ++i)
+            uint64_t height = (15^yy)+16*(y+2);          // Range [0, 32)
+            uint64_t sheight = smooth[xx|16*zz]>>(32-5); // Range [0, 32)
+
+            LAB_Block* b;
+
+            if(height == sheight)
+                b = &LAB_BLOCK_GRASS;
+            else if(height <= sheight)
             {
-                /*sheight = sheight < 0x80000000
-                        ? sheight*sheight
-                        : 0x7fffffffffffffff^((0xffffffff^sheight)*(0xffffffff^sheight));
-                sheight >>= 31;*/
-                sheight*=sheight;
-                sheight >>= 32;
+                //if(rng.random() >= (2*height-(sheight>>))/(16+8))
+                uint64_t fact = 0x100000000ll/(32+16);
+                if((~LAB_NextRandom(&random)>>32) >= (2u*(32-height)-(32-sheight))*fact)
+                    b = &LAB_BLOCK_DIRT;
+                else
+                    continue; // keep stone
             }
-            sheight >>= 32-5;
+            else
+                b = &LAB_BLOCK_AIR;
 
-            if(height <= sheight)
-                break /*yy*/;
-
-            chunk->blocks[LAB_CHUNK_OFFSET(xx, 15^yy, zz)] = &LAB_BLOCK_AIR;
+            chunk->blocks[LAB_CHUNK_OFFSET(xx, 15^yy, zz)] = b;
             //if(rand() & 1)
             //    chunk->blocks[LAB_CHUNK_OFFSET(xx, yy, zz)] = &LAB_BLOCK_GRASS;
             //chunk->blocks[LAB_CHUNK_OFFSET(xx, 15^yy, zz)] = &LAB_BLOCK_GRASS;
@@ -56,7 +62,12 @@ LAB_Chunk* LAB_GenOverworldProc(void* user, LAB_World* world, int x, int y, int 
             if((rand() & 3) == 0) break;*/
         }
     }
+    #define A
+    #ifdef A
     if(y <= -5)
+    #else
+    if(y <= 0)
+    #endif
     //if(0)
     {
         // Carve out
@@ -66,9 +77,13 @@ LAB_Chunk* LAB_GenOverworldProc(void* user, LAB_World* world, int x, int y, int 
         {
             for(int yy = 0; yy < 16*16;    yy+=16)
             {
+                #ifdef A
                 uint32_t threshold = y == -5
                                    ? 0x08000000ull*(15-yy/16)
                                    : 0x80000000ull;
+                #else
+                uint32_t threshold = 0x80000000ull;
+                #endif
                 for(int xx = 0; xx < 16;       xx++)
                 {
                     //if(noise[(xx+yy+zz)&0xccc|0x333] < 0x03000000)
@@ -83,9 +98,6 @@ LAB_Chunk* LAB_GenOverworldProc(void* user, LAB_World* world, int x, int y, int 
                 }
             }
         }
-
-        LAB_Random random;
-        LAB_ChunkRandom(&random, gen->seed^0x12345, x, y, z);
 
         if((LAB_NextRandom(&random)&0x7) < 3)
         {

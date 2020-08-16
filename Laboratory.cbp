@@ -202,9 +202,6 @@
 		<Unit filename="src/LAB_gl.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="src/LAB_light_node.c">
-			<Option compilerVar="CC" />
-		</Unit>
 		<Unit filename="src/LAB_memory.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -235,6 +232,8 @@
 		</Unit>
 		<Unit filename="test.c">
 			<Option compilerVar="CC" />
+			<Option compile="0" />
+			<Option link="0" />
 		</Unit>
 		<Extensions>
 			<code_completion>
