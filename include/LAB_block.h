@@ -3,6 +3,21 @@
 #include "LAB_stdinc.h"
 #include "LAB_color.h"
 
+/**
+ *  TODO Blockmodels:
+ *       - Each Triangle has an occlusion flag, that leads to
+ *         the triangle being disabled if all the neighboring blocks
+ *         have the flag LAB_BLOCK_SOLID set
+ *         +-+-+-+-+-+-+-+-+
+ *         | | |S|N|U|D|E|W|
+ *         +-+-+-+-+-+-+-+-+
+ *         If all flags are set to 0, the triangle is always visible
+ *       - Each vertex has a light position, that selects an interpolated color
+ *
+ *       Renderpasses:
+ *       - A model
+ */
+
 typedef unsigned LAB_BlockFlags;
 
 #define LAB_BLOCK_MASSIVE      1u // Entities collide with this
@@ -11,7 +26,10 @@ typedef unsigned LAB_BlockFlags;
 #define LAB_BLOCK_INTERACTABLE 8u // The block can be interacted with
 #define LAB_BLOCK_SOLID        (LAB_BLOCK_MASSIVE|LAB_BLOCK_OPAQUE|LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL)
 
-#define LAB_BLOCK_EMISSIVE     16u
+#define LAB_BLOCK_TRANSPARENT  16u // The block has some transparent pixels
+                                   // LAB_BLOCK_SOLID should not be set, otherwise it has an XRay-effect
+
+#define LAB_BLOCK_EMISSIVE     128u
 
 
 
@@ -21,6 +39,8 @@ typedef struct LAB_Block
     uint8_t r, g, b, a;
     //uint8_t lr, lg, lb, la; // Emitted Light
     LAB_Color lum;
+    LAB_Color dia; // diaphanety/transparency color of the block, the incoming light gets multiplied with this color,
+                   // should be #ffffff for completely transparent blocks.
     uint8_t tx, ty; // Offset of the texture tile
 } LAB_Block;
 
