@@ -33,7 +33,7 @@ static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 static void LAB_ViewRemoveDistantChunks(LAB_View* view);
 static void LAB_ViewDestructChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
 
-static LAB_ViewTriangle* LAB_ViewMeshAlloc(LAB_ViewChunkEntry* chunk_entry, size_t add_size, size_t extra_size);
+static LAB_Triangle* LAB_ViewMeshAlloc(LAB_ViewChunkEntry* chunk_entry, size_t add_size, size_t extra_size);
 
 GLuint LAB_gltextureid = 0;
 static void LAB_View_StaticInit(void)
@@ -198,8 +198,8 @@ LAB_BlockFlags LAB_GetNeighborhoodBlockFlags(LAB_Chunk* neighborhood[27], int x,
                          x2, y2, z2,  r2, g2, b2, a2,  u2, v2, \
                          x3, y3, z3,  r3, g3, b3, a3,  u3, v3) do \
 { \
-    LAB_ViewVertex* restrict t0 = tri[0].v;                    \
-    LAB_ViewVertex* restrict t1 = tri[1].v;                    \
+    LAB_Vertex* restrict t0 = tri[0].v;                    \
+    LAB_Vertex* restrict t1 = tri[1].v;                    \
     LAB_SetVertex(&t0[1],  x0, y0, z0,  r0, g0, b0, a0,  u0, v0,  cr, cg, cb, tx, ty); \
     LAB_SetVertex(&t0[2],  x1, y1, z1,  r1, g1, b1, a1,  u1, v1,  cr, cg, cb, tx, ty); \
     LAB_SetVertex(&t1[2],  x1, y1, z1,  r1, g1, b1, a1,  u1, v1,  cr, cg, cb, tx, ty); \
@@ -242,7 +242,7 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
 
     int face_count = LAB_PopCnt(faces);
 
-    LAB_ViewTriangle* tri;
+    LAB_Triangle* tri;
     tri = LAB_ViewMeshAlloc(chunk_entry, 2*face_count, !!BRANCHLESS);
     if(LAB_UNLIKELY(tri == NULL)) return;
 
@@ -333,7 +333,7 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
 }
 
 
-static LAB_ViewTriangle* LAB_ViewMeshAlloc(LAB_ViewChunkEntry* chunk_entry, size_t add_size, size_t extra_size)
+static LAB_Triangle* LAB_ViewMeshAlloc(LAB_ViewChunkEntry* chunk_entry, size_t add_size, size_t extra_size)
 {
     size_t mesh_count, new_mesh_count, mesh_capacity;
 
@@ -345,7 +345,7 @@ static LAB_ViewTriangle* LAB_ViewMeshAlloc(LAB_ViewChunkEntry* chunk_entry, size
     {
         if(mesh_capacity == 0) mesh_capacity = 1;
         while(new_mesh_count+extra_size > mesh_capacity) mesh_capacity *= 2;
-        LAB_ViewTriangle* mesh = LAB_ReallocN(chunk_entry->mesh, mesh_capacity, sizeof *mesh);
+        LAB_Triangle* mesh = LAB_ReallocN(chunk_entry->mesh, mesh_capacity, sizeof *mesh);
         if(!mesh) {
             return NULL;
         }
@@ -360,7 +360,7 @@ static LAB_ViewTriangle* LAB_ViewMeshAlloc(LAB_ViewChunkEntry* chunk_entry, size
 #ifndef NO_GLEW
 static void LAB_ViewUploadVBO(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 {
-    LAB_ViewTriangle* mesh = chunk_entry->mesh;
+    LAB_Triangle* mesh = chunk_entry->mesh;
 
     if(!chunk_entry->vbo) glGenBuffers(1, &chunk_entry->vbo);
 
@@ -398,7 +398,7 @@ static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
     glTranslatef(LAB_CHUNK_SIZE*chunk_entry->x, LAB_CHUNK_SIZE*chunk_entry->y, LAB_CHUNK_SIZE*chunk_entry->z);
 
 
-    LAB_ViewTriangle* mesh;
+    LAB_Triangle* mesh;
 
     mesh = view->flags & LAB_VIEW_USE_VBO ? 0 /* Origin of vbo is at 0 */ : chunk_entry->mesh;
 

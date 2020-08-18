@@ -1,6 +1,7 @@
 #pragma once
 #include "LAB_stdinc.h"
 #include "LAB_opt.h"
+#include "LAB_model.h" // LAB_Triangle
 
 // DEPEND
 typedef struct LAB_World LAB_World;
@@ -8,27 +9,13 @@ typedef struct LAB_Chunk LAB_Chunk;
 typedef struct LAB_Window LAB_Window;
 // END DEPEND
 
-typedef struct LAB_ViewVertex
-{
-    float x, y, z;
-    uint8_t r, g, b, a;
-
-    float u, v;
-    char padding[8];
-} LAB_ViewVertex;
-
-typedef struct LAB_ViewTriangle
-{
-    LAB_ViewVertex v[3];
-} LAB_ViewTriangle;
-
 typedef struct LAB_ViewChunkEntry
 {
     int x, y, z;
 
 
     size_t mesh_count, mesh_capacity;
-    LAB_ViewTriangle* mesh;
+    LAB_Triangle* mesh;
 
     unsigned dirty:1, used:1;
 
