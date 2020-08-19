@@ -5,7 +5,7 @@
 typedef uint32_t LAB_Color;
 
 #if 1
-#define LAB_RGB(r, g, b) ((r) << 16 | (g) << 8 | (b))
+#define LAB_RGB(r, g, b) ((r) << 16 | (g) << 8 | (b) | 0xff000000)
 #define LAB_RED(col) ((col) >> 16 & 0xff)
 #define LAB_GRN(col) ((col) >>  8 & 0xff)
 #define LAB_BLU(col) ((col)       & 0xff)

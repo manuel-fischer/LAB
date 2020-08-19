@@ -10,14 +10,13 @@
  */
 typedef struct LAB_Vertex   //     Size       Align
 {                           //-----------------------
-    float x, y, z;          //   3*4 Bytes   4 Bytes  \_ used as 4 floats
-    uint8_t r, g, b, a;     //     4 Bytes   1 Byte   /  -> 16 Byte == 128 bit
+    float x, y, z;          //   3*4 Bytes   4 Bytes  \_ could be used as 4 floats
+    uint8_t r, g, b, a;     //     4 Bytes   1 Byte   /  -> 16 Byte == 128 bit (vector intrinsics)
                             //
     float u, v;             //   2*4 Bytes   4 Bytes
     uint64_t flags;         //     8 Bytes   8 Bytes
 }                           //-----------------------
 LAB_Vertex;                 //    32 Bytes   8 Bytes
-
 
 typedef struct LAB_Triangle //     Size
 {                           //-------------
@@ -25,6 +24,8 @@ typedef struct LAB_Triangle //     Size
 }                           //-------------
 LAB_Triangle;               //    96 Bytes
 
+#define LAB_TRIANGLE_CULL(triangle) ((triangle).v[0].flags)
+#define LAB_TRIANGLE_LIGHT(triangle) ((triangle).v[1].flags)
 
 typedef struct LAB_Model
 {

@@ -272,7 +272,7 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int c
 {
     LAB_Chunk* cnk = chunks[1+3+9];
     if(!cnk) return 0;
-    #if 1
+    #if 0
     memset(cnk->light, 0xff, sizeof cnk->light);
     return 0;
     #endif
