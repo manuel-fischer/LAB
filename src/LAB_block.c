@@ -1,4 +1,5 @@
 #include "LAB_block.h"
+#include "LAB_blt_model.h"
 
 LAB_Block LAB_BLOCK_OUTSIDE = {
     .flags = LAB_BLOCK_OPAQUE,
@@ -10,128 +11,147 @@ LAB_Block LAB_BLOCK_AIR = {
     .flags = 0,
 };
 
+LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_STONE, 0, 0, LAB_RGB(180, 180, 170));
 LAB_Block LAB_BLOCK_STONE = {
     .flags = LAB_BLOCK_SOLID,
-    //.r = 200, 200, 200
-    //.r = 150, 150, 140
-    .r = 180, 180, 170,
+    .tint = LAB_RGB(180, 180, 170),
     .tx = 0, 0,
+    .model = &LAB_MODEL_STONE,
 };
 
+LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_COBBLESTONE, 1, 0, LAB_RGB(180, 180, 170));
 LAB_Block LAB_BLOCK_COBBLESTONE = {
     .flags = LAB_BLOCK_SOLID,
-    .r = 180, 180, 170,
+    .tint = LAB_RGB(180, 180, 170),
     .tx = 1, 0,
+    .model = &LAB_MODEL_COBBLESTONE,
 };
 
 
+LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_MARBLE, 0, 0, LAB_RGB(255, 255, 255));
 LAB_Block LAB_BLOCK_MARBLE = {
     .flags = LAB_BLOCK_SOLID,
-    //.r = 200, 200, 200
-    //.r = 150, 150, 140
-    .r = 255, 255, 255,
+    .tint = LAB_RGB(255, 255, 255),
     .tx = 0, 0,
+    .model = &LAB_MODEL_MARBLE,
 };
 
+LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_MARBLECOBBLE, 1, 0, LAB_RGB(255, 255, 255));
 LAB_Block LAB_BLOCK_MARBLECOBBLE = {
     .flags = LAB_BLOCK_SOLID,
-    .r = 255, 255, 255,
+    .tint = LAB_RGB(255, 255, 255),
     .tx = 1, 0,
+    .model = &LAB_MODEL_MARBLECOBBLE,
 };
 
 
+LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_SANDSTONE, 0, 0, LAB_RGB(236, 223, 179));
 LAB_Block LAB_BLOCK_SANDSTONE = {
     .flags = LAB_BLOCK_SOLID,
-    .r = 236, 223, 179,
+    .tint = LAB_RGB(236, 223, 179),
     .tx = 0, 0,
+    .model = &LAB_MODEL_SANDSTONE,
 };
 
+LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_SANDCOBBLE, 1, 0, LAB_RGB(236, 223, 179));
 LAB_Block LAB_BLOCK_SANDCOBBLE = {
     .flags = LAB_BLOCK_SOLID,
-    //.r = 255, 230, 150,
-    .r = 236, 223, 179,
+    .tint = LAB_RGB(236, 223, 179),
     .tx = 1, 0,
+    .model = &LAB_MODEL_SANDCOBBLE,
 };
 
+LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_SAND, 3, 1, LAB_RGB(255, 230, 130));
 LAB_Block LAB_BLOCK_SAND = {
     .flags = LAB_BLOCK_SOLID,
-    //.r = 255, 230, 150,
-    .r = 255, 230, 130,
+    .tint = LAB_RGB(255, 230, 130),
     .tx = 3, 1,
+    .model = &LAB_MODEL_SAND,
 };
 
 
+LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_WOOD, 2, 0, LAB_RGB(93, 75, 60));
 LAB_Block LAB_BLOCK_WOOD = {
     .flags = LAB_BLOCK_SOLID,
-    .r  = 93, 75, 60,
+    .tint = LAB_RGB(93, 75, 60),
     .tx = 2, 0,
+    .model = &LAB_MODEL_WOOD,
 };
 
+LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_WOOD_PLANKS, 3, 0, LAB_RGB(220, 197, 162));
 LAB_Block LAB_BLOCK_WOOD_PLANKS = {
     .flags = LAB_BLOCK_SOLID,
-    .r  = 220, 197, 162,
+    .tint = LAB_RGB(220, 197, 162),
     .tx = 3, 0,
+    .model = &LAB_MODEL_WOOD_PLANKS,
 };
 
+LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_WOOD_PLANKS_DARK, 3, 0, LAB_RGB(120, 97, 80));
 LAB_Block LAB_BLOCK_WOOD_PLANKS_DARK = {
     .flags = LAB_BLOCK_SOLID,
-    .r  = 120, 97, 80,
+    .tint = LAB_RGB(120, 97, 80),
     .tx = 3, 0,
+    .model = &LAB_MODEL_WOOD_PLANKS_DARK,
 };
 
 
+LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_GRASS, 2, 1, LAB_RGB(30, 200, 80));
 LAB_Block LAB_BLOCK_GRASS = {
     .flags = LAB_BLOCK_SOLID,
-    //.r = 50, 255, 100,
-    .r = 30, 200, 80,
+    .tint = LAB_RGB(30, 200, 80),
     .tx = 2, 1,
+    .model = &LAB_MODEL_GRASS,
 };
 
+LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_DIRT, 3, 1, LAB_RGB(120, 80, 50));
 LAB_Block LAB_BLOCK_DIRT = {
     .flags = LAB_BLOCK_SOLID,
-    .r = 120, 80, 50,
+    .tint = LAB_RGB(120, 80, 50),
     .tx = 3, 1,
+    .model = &LAB_MODEL_DIRT,
 };
 
+LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_LIGHT, 0, 1, LAB_RGB(255, 255, 255));
 LAB_Block LAB_BLOCK_LIGHT = {
     .flags = LAB_BLOCK_SOLID | LAB_BLOCK_EMISSIVE,
-    .r  = 255, 255, 255,
+    .tint = LAB_RGB(255, 255, 255),
     .lum = LAB_RGB(255, 255, 255),
     .tx = 0, 1,
+    .model = &LAB_MODEL_LIGHT,
 };
 
+LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_LIGHT_BLUE, 0, 1, LAB_RGB(64, 150, 255));
 LAB_Block LAB_BLOCK_BLUE_LIGHT = {
     .flags = LAB_BLOCK_SOLID | LAB_BLOCK_EMISSIVE,
-    //.r  = 255, 255, 255,
-    .r  = 64, 150, 255,
-    //.lr = 255, 255, 255,
+    .tint = LAB_RGB(64, 150, 255),
     .lum = LAB_RGB(16, 64, 255),
     .tx = 0, 1,
+    .model = &LAB_MODEL_LIGHT_BLUE,
 };
 
+LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_LIGHT_YELLOW, 0, 1, LAB_RGB(255, 240, 128));
 LAB_Block LAB_BLOCK_YELLOW_LIGHT = {
     .flags = LAB_BLOCK_SOLID | LAB_BLOCK_EMISSIVE,
-    //.r  = 255, 255, 255,
-    .r  = 255, 240, 128,
-    //.lr = 255, 255, 255,
+    .tint = LAB_RGB(255, 240, 128),
     .lum = LAB_RGB(255, 240, 16),
     .tx = 0, 1,
+    .model = &LAB_MODEL_LIGHT_YELLOW,
 };
 
+LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_LIGHT_GREEN, 0, 1, LAB_RGB(150, 255, 128));
 LAB_Block LAB_BLOCK_GREEN_LIGHT = {
     .flags = LAB_BLOCK_SOLID | LAB_BLOCK_EMISSIVE,
-    //.r  = 255, 255, 255,
-    .r  = 150, 255, 128,
-    //.lr = 255, 255, 255,
+    .tint = LAB_RGB(150, 255, 128),
     .lum = LAB_RGB(64, 255, 16),
     .tx = 0, 1,
+    .model = &LAB_MODEL_LIGHT_GREEN,
 };
 
+LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_LIGHT_RED, 0, 1, LAB_RGB(255, 150, 50));
 LAB_Block LAB_BLOCK_RED_LIGHT = {
     .flags = LAB_BLOCK_SOLID | LAB_BLOCK_EMISSIVE,
-    //.r  = 255, 255, 255,
-    .r  = 255, 150, 50,
-    //.lr = 255, 255, 255,
+    .tint = LAB_RGB(255, 150, 50),
     .lum = LAB_RGB(255, 64, 16),
     .tx = 0, 1,
+    .model = &LAB_MODEL_LIGHT_RED,
 };

@@ -2,6 +2,7 @@
 
 #include "LAB_stdinc.h"
 #include "LAB_color.h"
+#include "LAB_model.h"
 
 /**
  *  TODO Blockmodels:
@@ -36,12 +37,13 @@ typedef unsigned LAB_BlockFlags;
 typedef struct LAB_Block
 {
     LAB_BlockFlags flags;
-    uint8_t r, g, b, a;
-    //uint8_t lr, lg, lb, la; // Emitted Light
+    LAB_Color tint; // REMOVE
     LAB_Color lum;
     LAB_Color dia; // diaphanety/transparency color of the block, the incoming light gets multiplied with this color,
                    // should be #ffffff for completely transparent blocks.
-    uint8_t tx, ty; // Offset of the texture tile
+    uint8_t tx, ty; // Offset of the texture tile // REMOVE
+
+    LAB_Model const* model;
 } LAB_Block;
 
 

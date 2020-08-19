@@ -185,10 +185,10 @@ LAB_BlockFlags LAB_GetNeighborhoodBlockFlags(LAB_Chunk* neighborhood[27], int x,
 #define LAB_SetVertex(vert,  xx, yy, zz,  rr, gg, bb, aa,  uu, vv,   cr, cg, cb,  tx, ty) do \
 {                                                                      \
     (vert)->x = xx; (vert)->y = yy; (vert)->z = zz;                    \
-    (vert)->r = ((int)cr)*(rr*256/255)/256;                            \
-    (vert)->g = ((int)cg)*(gg*256/255)/256;                            \
-    (vert)->b = ((int)cb)*(bb*256/255)/256;                            \
-    (vert)->a = aa;                                                    \
+    (vert)->color = LAB_RGBA(((int)cr)*(rr*256/255)/256,               \
+                             ((int)cg)*(gg*256/255)/256,               \
+                             ((int)cb)*(bb*256/255)/256,               \
+                             aa);                                      \
     (vert)->u = uu + tx;                                               \
     (vert)->v = vv + ty;                                               \
 } while(0)
@@ -214,6 +214,7 @@ LAB_HOT
 static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_Chunk* cnk3x3x3[27], int x, int y, int z)
 {
 
+
 #define BRANCHLESS  0
 #define BITFIELD    1
 #define PRECOMP_PTR 0
@@ -222,13 +223,6 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
 #define GET_BLOCK_FLAGS(bx, by, bz) (GET_BLOCK(bx, by, bz)->flags)
 
     LAB_Block* block = cnk3x3x3[1+3+9]->blocks[LAB_CHUNK_OFFSET(x, y, z)];
-
-    int cr = block->r;
-    int cg = block->g;
-    int cb = block->b;
-
-    int tx = block->tx;
-    int ty = block->ty;
 
     int faces = 0;
     faces |=  1*(!(GET_BLOCK_FLAGS(-1, 0, 0)&LAB_BLOCK_OPAQUE));
@@ -239,6 +233,23 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
     faces |= 32*(!(GET_BLOCK_FLAGS( 0, 0, 1)&LAB_BLOCK_OPAQUE));
 
     if(faces == 0) return;
+
+
+#if 1
+    LAB_Model const* model = block->model;
+    if(!model) return;
+    LAB_Triangle* tri;
+    tri = LAB_ViewMeshAlloc(chunk_entry, model->size, !!BRANCHLESS);
+    if(LAB_UNLIKELY(tri == NULL)) return;
+    int count = LAB_PutModelAt(tri, model, x, y, z, faces);
+    chunk_entry->mesh_count -= model->size-count;
+#else
+    const int cr = LAB_RED(block->tint);
+    const int cg = LAB_GRN(block->tint);
+    const int cb = LAB_BLU(block->tint);
+
+    int tx = block->tx;
+    int ty = block->ty;
 
     int face_count = LAB_PopCnt(faces);
 
@@ -330,6 +341,8 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
 
         tri+=2;
     } while(face_itr);
+
+#endif
 }
 
 
@@ -403,7 +416,7 @@ static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
     mesh = view->flags & LAB_VIEW_USE_VBO ? 0 /* Origin of vbo is at 0 */ : chunk_entry->mesh;
 
     glVertexPointer(3, LAB_GL_TYPEOF(mesh->v[0].x), sizeof *mesh->v, &mesh->v[0].x);
-    glColorPointer(4, LAB_GL_TYPEOF(mesh->v[0].r), sizeof *mesh->v, &mesh->v[0].r);
+    glColorPointer(4, GL_UNSIGNED_BYTE, sizeof *mesh->v, &mesh->v[0].color);
     glTexCoordPointer(2, LAB_GL_TYPEOF(mesh->v[0].u), sizeof *mesh->v, &mesh->v[0].u);
 
     glDrawArrays(GL_TRIANGLES, 0, 3*chunk_entry->mesh_count);
@@ -713,6 +726,8 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
         b: the offset in the higher axis
     **/
 
+    int load_amount = 3; // should be configurable
+
     for(int r = 0; r <= (int)view->preload_dist; ++r)
     {
         //for(int a = 0; a <= r/*+(i<=0)*/; ++a)
@@ -752,7 +767,11 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
                             entry->dirty = 1;
                         }
                         if(entry->dirty)
+                        {
                             (void)LAB_GetChunk(view->world, xx, yy, zz, LAB_CHUNK_GENERATE_LATER);
+                            --load_amount;
+                            if(!load_amount) return;
+                        }
 
                         //(void)LAB_GetChunk(view->world, -xx-1, yy, zz, LAB_CHUNK_GENERATE_LATER);
                     }

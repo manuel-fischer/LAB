@@ -160,9 +160,11 @@
 		<Unit filename="include/LAB.h" />
 		<Unit filename="include/LAB_bits.h" />
 		<Unit filename="include/LAB_block.h" />
+		<Unit filename="include/LAB_blt_model.h" />
 		<Unit filename="include/LAB_check.h" />
 		<Unit filename="include/LAB_chunk.h" />
 		<Unit filename="include/LAB_color.h" />
+		<Unit filename="include/LAB_direction.h" />
 		<Unit filename="include/LAB_error.h" />
 		<Unit filename="include/LAB_ext.h" />
 		<Unit filename="include/LAB_gen_flat.h" />

@@ -1,6 +1,7 @@
 #pragma once
 #include "LAB_stdinc.h"
 #include "LAB_opt.h"
+#include "LAB_color.h"
 
 
 /**
@@ -11,7 +12,7 @@
 typedef struct LAB_Vertex   //     Size       Align
 {                           //-----------------------
     float x, y, z;          //   3*4 Bytes   4 Bytes  \_ could be used as 4 floats
-    uint8_t r, g, b, a;     //     4 Bytes   1 Byte   /  -> 16 Byte == 128 bit (vector intrinsics)
+    LAB_Color color;        //     4 Bytes   4 Bytes  /  -> 16 Byte == 128 bit (vector intrinsics)
                             //
     float u, v;             //   2*4 Bytes   4 Bytes
     uint64_t flags;         //     8 Bytes   8 Bytes
@@ -30,7 +31,7 @@ LAB_Triangle;               //    96 Bytes
 typedef struct LAB_Model
 {
     size_t size;
-    LAB_Triangle data[];
+    LAB_Triangle* data;
 } LAB_Model;
 
 
@@ -39,6 +40,7 @@ typedef struct LAB_Model
  *  The dst-array should have space for the whole model,
  *  - if the number of triangles is known, the space could be
  *    smaller but sufficient to the number of triangles
+ *  RETURN: the number of triangles written
  */
-void LAB_PutModelAt(LAB_OUT LAB_Triangle* dst, LAB_Model* model,
+int LAB_PutModelAt(LAB_OUT LAB_Triangle* dst, LAB_Model const* model,
                     float x, float y, float z, unsigned faces);
