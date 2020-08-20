@@ -157,6 +157,7 @@ void LAB_WorldTick(LAB_World* world);
 
 
 
+
 /**
  *  the origin of x,y,z is at (0,0,0) of the chunk at [1+3+3*3]
  */
@@ -198,4 +199,24 @@ LAB_Color LAB_GetNeighborhoodLight(LAB_Chunk* neighborhood[27], int x, int y, in
     //if(LAB_UNLIKELY(chunk == NULL)) return LAB_RGB(255, 255, 255);
     if(chunk == NULL) return default_color;
     return chunk->light[block_index];
+}
+
+LAB_HOT LAB_INLINE
+uint32_t LAB_World_PeekFlags3x3(LAB_Chunk* chunk, int x, int y, int z, unsigned flag)
+{
+    uint32_t bitset = 0, curbit = 1;
+    for(int zz = z-1; zz <= z+1; ++zz)
+    for(int yy = y-1; yy <= y+1; ++yy)
+    for(int xx = x-1; xx <= x+1; ++xx)
+    {
+        if(xx >= 0 && xx < 16 &&
+           yy >= 0 && yy < 16 &&
+           zz >= 0 && zz < 16)
+        {
+            if(chunk->blocks[xx|yy<<4|zz<<8]->flags & flag)
+                bitset |= curbit;
+        }
+        curbit <<= 1;
+    }
+    return bitset;
 }
