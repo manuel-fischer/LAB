@@ -45,6 +45,7 @@ static inline LAB_Color LAB_MaxColor(LAB_Color a, LAB_Color b)
              LAB_BLU(a)*LAB_BLU(b)/255, \
              LAB_ALP(a)*LAB_ALP(b)/255)
 
+#if 1
 static inline LAB_Color LAB_MulColor(LAB_Color a, LAB_Color b)
 {
     return LAB_RGBA(LAB_RED(a)*LAB_RED(b)/255,
@@ -52,3 +53,11 @@ static inline LAB_Color LAB_MulColor(LAB_Color a, LAB_Color b)
                     LAB_BLU(a)*LAB_BLU(b)/255,
                     LAB_ALP(a)*LAB_ALP(b)/255);
 }
+#else
+static inline LAB_Color LAB_MulColor(LAB_Color a, LAB_Color b)
+{
+    return LAB_RGBA(LAB_RED(a)*(LAB_RED(b)+1)/256,
+                    LAB_GRN(a)*(LAB_GRN(b)+1)/256,
+                    LAB_BLU(a)*(LAB_BLU(b)+1)/256)
+}
+#endif
