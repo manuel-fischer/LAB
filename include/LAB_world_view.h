@@ -56,6 +56,9 @@ typedef struct LAB_View
     // View angle
     double ax, ay, az;
 
+    // Velocity
+    double vx, vy, vz;
+
     // Cache
     size_t chunk_count, chunk_capacity;
     LAB_ViewChunkEntry* chunks;

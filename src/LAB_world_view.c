@@ -479,7 +479,7 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
     int w, h;
     SDL_GetWindowSize(window->window, &w, &h);
     float ratio = h?(float)w/(float)h:1;
-    float nearp = 0.1f;
+    float nearp = 0.075f;
     float fov = 1;
     glFrustum(-fov*nearp*ratio, fov*nearp*ratio, -fov*nearp, fov*nearp, nearp, 1000);
 

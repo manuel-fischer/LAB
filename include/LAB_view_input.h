@@ -18,6 +18,8 @@ typedef struct LAB_ViewInput
 #define LAB_VIEWINPUT_DESTROY 2u
 #define LAB_VIEWINPUT_CREATE  4u
 
+#define LAB_VIEWINPUT_NOCLIP  8u
+
 
 /**
  *  Create view input, with given world

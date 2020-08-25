@@ -18,6 +18,7 @@
 #include "LAB_gl.h"
 
 #include "LAB_ext.h"
+#include "LAB_util.h"
 
 static int LAB_ViewInputInteract(LAB_ViewInput* view_input, int right);
 static LAB_Block* blocks[9] =
@@ -105,7 +106,10 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                 {
                     view_input->flags ^= LAB_VIEWINPUT_CREATE;
                     view_input->flags &= ~LAB_VIEWINPUT_DESTROY;
-
+                } break;
+                case SDLK_f:
+                {
+                    view_input->flags ^= LAB_VIEWINPUT_NOCLIP;
                 } break;
 
                 case SDLK_MINUS:
@@ -122,9 +126,9 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                 case SDLK_n:
                 case SDLK_m:
                 {
-                    if(key == SDLK_n) view_input->speed-=0.1;
-                    if(key == SDLK_m) view_input->speed+=0.1;
-                    if(view_input->speed < 0.1) view_input->speed = 0.1;
+                    if(key == SDLK_n) view_input->speed-=0.02;
+                    if(key == SDLK_m) view_input->speed+=0.02;
+                    if(view_input->speed < 0.02) view_input->speed = 0.02;
                     if(view_input->speed > 16)  view_input->speed = 16;
                 } break;
 
@@ -287,13 +291,14 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input)
 {
 
     LAB_View* view = view_input->view;
+    float dx = 0, dy = 0, dz = 0;
 
     int kbstate_size;
     const Uint8* kbstate = SDL_GetKeyboardState(&kbstate_size);
     int mx, my;
     Uint32 mbstate = SDL_GetMouseState(&mx, &my);
 
-    float speed = view_input->speed * (kbstate[SDL_SCANCODE_LCTRL] ? 7.5 : 1);
+    float speed = view_input->speed * (kbstate[SDL_SCANCODE_LCTRL] ? 2.5 : 1);
 
     unsigned dir_set = view_input->dir_set;
     if(view_input->flags & LAB_VIEWINPUT_FORWARD)
@@ -303,9 +308,9 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input)
             int bw = (dir_set&1) - !!(dir_set&4);
             float dir[3];
             LAB_ViewGetDirection(view, dir);
-            view->x += dir[0]*speed*bw;
-            view->y += dir[1]*speed*bw;
-            view->z += dir[2]*speed*bw;
+            dx += dir[0]*speed*bw;
+            dy += dir[1]*speed*bw;
+            dz += dir[2]*speed*bw;
         }
         dir_set&=(2|8);
     }
@@ -325,12 +330,12 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input)
             float s = sin(ang_rad);
             float c = cos(ang_rad);
 
-            view->x += s*speed;
-            view->z -= c*speed;
+            dx += s*speed;
+            dz -= c*speed;
         }
 
-        if(view_input->updown&1) view->y+=speed;
-        if(view_input->updown&2) view->y-=speed;
+        if(view_input->updown&1) dy+=speed;
+        if(view_input->updown&2) dy-=speed;
     }
 
     if(kbstate[SDL_SCANCODE_LALT])
@@ -364,5 +369,126 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input)
         }
     }
 
+    if(view_input->flags & LAB_VIEWINPUT_NOCLIP)
+    {
+        view->x += dx;
+        view->y += dy;
+        view->z += dz;
+        view->vy += 0;
+    }
+    else
+    {
+        view->vy -= 0.018;
+        if(dy > 0) view->vy = dy;
+        dx += view->vx;
+        dy += view->vy;
+        dz += view->vz;
 
+        // TODO move this collision physics to the world itself
+        // clipping
+        int steps = (int)ceilf(LAB_MAX3(fabs(dx), fabs(dy), fabs(dz))/0.0625f + 1);
+        for(int step = 0; step < steps; ++step)
+        {
+            view->x += dx/(float)steps;
+            view->y += dy/(float)steps;
+            view->z += dz/(float)steps;
+
+            int bx, by, bz;
+            bx = (int)floorf(view->x);
+            by = (int)floorf(view->y);
+            bz = (int)floorf(view->z);
+
+            float fx, fy, fz;
+            fx = view->x-(float)bx;
+            fy = view->y-(float)by;
+            fz = view->z-(float)bz;
+
+            static const int8_t xz[8][2] = {
+                { -1,  0 },
+                {  0,  1 },
+                {  1,  0 },
+                {  0, -1 },
+                { -1, -1 },
+                { -1,  1 },
+                {  1, -1 },
+                {  1,  1 },
+            };
+
+            for(int i = 0; i < 2; ++i)
+            {
+                int yy = i ? 1 : -2;
+                for(int xx = -1; xx <= 1; ++xx)
+                for(int zz = -1; zz <= 1; ++zz)
+                {
+                    LAB_Block* block  = LAB_GetBlock(view->world, bx+xx, by+yy,   bz+zz, LAB_CHUNK_EXISTING);
+                    LAB_Block* block2 = LAB_GetBlock(view->world, bx+xx, by+yy/2, bz+zz, LAB_CHUNK_EXISTING);
+                    if((block->flags&LAB_BLOCK_MASSIVE) && !(block2->flags&LAB_BLOCK_MASSIVE))
+                    {
+                        int collides = 1;
+                        collides &= (xx < 0 && fx < 0.2) || (xx > 0 && fx > 0.8) || xx == 0;
+                        collides &= (zz < 0 && fz < 0.2) || (zz > 0 && fz > 0.8) || zz == 0;
+                        collides &= (yy <-1 && fy < 0.4) || (yy > 0 && fy > 0.8) || yy ==-1 || yy == 0;
+
+                        if(collides)
+                        {
+                            /**/ if(yy < 0) { view->y = by+0.4; view->vy = 0; }
+                            else if(yy > 0) { view->y = by+0.8; view->vy = 0; }
+
+
+                            fx = view->x-bx;
+                            fy = view->y-by;
+                            fz = view->z-bz;
+                        }
+                    }
+                }
+            }
+
+            int f = 0;
+            for(int i = 0; i < 8; ++i)
+            {
+                int xx = xz[i][0];
+                int zz = xz[i][1];
+                for(int yy = -2; yy <= 1; ++yy)
+                {
+                    LAB_Block* block = LAB_GetBlock(view->world, bx+xx, by+yy, bz+zz, LAB_CHUNK_EXISTING);
+                    if(block->flags&LAB_BLOCK_MASSIVE)
+                    {
+                        int collides = 1;
+                        collides &= (xx < 0 && fx < 0.2) || (xx > 0 && fx > 0.8) || xx == 0;
+                        collides &= (zz < 0 && fz < 0.2) || (zz > 0 && fz > 0.8) || zz == 0;
+                        collides &= (yy <-1 && fy < 0.4) || (yy > 0 && fy > 0.8) || yy ==-1 || yy == 0;
+
+
+                        if(collides)
+                        {
+                            if(fabs(fx-0.5f) < fabs(fz-0.5f))
+                            //if(abs(xx) > abs(zz))
+                            //if(0)
+                            {
+                              /**/ if(xx < 0) { view->x = bx+0.2; view->vx = 0; }
+                              else if(xx > 0) { view->x = bx+0.8; view->vx = 0; }
+                              else if(zz < 0) { view->z = bz+0.2; view->vz = 0; }
+                              else if(zz > 0) { view->z = bz+0.8; view->vz = 0; }
+                            }
+                            else
+                            {
+                                /**/ if(zz < 0) { view->z = bz+0.2; view->vz = 0; }
+                                else if(zz > 0) { view->z = bz+0.8; view->vz = 0; }
+                                else if(xx < 0) { view->x = bx+0.2; view->vx = 0; }
+                                else if(xx > 0) { view->x = bx+0.8; view->vx = 0; }
+                            }
+                            //if(yy < 0) view->y = by+0.5;
+                            //if(yy > 0) view->y = by+0.5;
+                            fx = view->x-bx;
+                            fy = view->y-by;
+                            fz = view->z-bz;
+                            f = 1;
+                        }
+                    }
+
+                }
+                if(f && i == 3) break;
+            }
+        }
+    }
 }
