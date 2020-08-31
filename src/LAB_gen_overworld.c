@@ -99,9 +99,9 @@ LAB_Chunk* LAB_GenOverworldProc(void* user, LAB_World* world, int x, int y, int 
             }
         }
 
-        if((LAB_NextRandom(&random)&0x7) < 3)
+        if((LAB_NextRandom(&random)&7) < 3)
         {
-            for(int i = LAB_NextRandom(&random)&0x15; i > 0; --i)
+            for(int i = LAB_NextRandom(&random)&15; i > 0; --i)
             {
                 LAB_Block*const LIGHTS[4] = { &LAB_BLOCK_BLUE_LIGHT, &LAB_BLOCK_YELLOW_LIGHT, &LAB_BLOCK_GREEN_LIGHT, &LAB_BLOCK_RED_LIGHT };
 

@@ -4,6 +4,8 @@
 #include "LAB_color.h"
 #include "LAB_model.h"
 
+#include "IXO/IXO_classdef.h"
+
 /**
  *  TODO Blockmodels:
  *       - Each Triangle has an occlusion flag, that leads to
@@ -19,7 +21,7 @@
  *       - A model
  */
 
-typedef unsigned LAB_BlockFlags;
+typedef uint32_t LAB_BlockFlags;
 
 #define LAB_BLOCK_MASSIVE      1u // Entities collide with this
 #define LAB_BLOCK_OPAQUE       2u // Other blocks get visually covered by this block
@@ -45,6 +47,8 @@ typedef struct LAB_Block
 
     LAB_Model const* model;
 } LAB_Block;
+
+IXO_DECLARE_CLASS(LAB_Block);
 
 
 extern LAB_Block LAB_BLOCK_OUTSIDE,

@@ -143,13 +143,35 @@ void LAB_NotifyChunk(LAB_World* world, int x, int y, int z)
     {
         LAB_Chunk* chunks[27];
         LAB_GetChunkNeighborhood(world, chunks, x, y, z, LAB_CHUNK_EXISTING);
-        int borders = LAB_TickLight(world, chunks, x, y, z);
-        if(borders)
+        for(int j = 0; j < 16; ++j)
         {
-            for(int zz = -1; zz <= 1; ++zz)
-            for(int yy = -1; yy <= 1; ++yy)
-            for(int xx = -1; xx <= 1; ++xx)
-                LAB_TickLight(world, chunks, xx+x, yy+y, zz+z);
+            int borders = LAB_TickLight(world, chunks, x, y, z);
+            int borders2 = 0;
+            if(borders)
+            {
+                #if 1
+                for(int zz = -1; zz <= 1; ++zz)
+                for(int yy = -1; yy <= 1; ++yy)
+                for(int xx = -1; xx <= 1; ++xx)
+                {
+                    if(!xx && !yy & !zz) continue;
+                    LAB_GetChunkNeighborhood(world, chunks, x+xx, y+yy, z+zz, LAB_CHUNK_EXISTING);
+                    borders2 |= LAB_TickLight(world, chunks, x+xx, y+yy, z+zz);
+                    (*world->chunkview)(world->chunkview_user, world, x, y, z);
+                }
+                #else
+                for(int i = 0; i < 6; ++i)
+                {
+                    const int* o = LAB_offset[i];
+                    //LAB_NotifyChunkLater(world, x+o[0], y+o[1], z+o[2]);
+                    LAB_GetChunkNeighborhood(world, chunks, x+o[0], y+o[1], z+o[2], LAB_CHUNK_EXISTING);
+                    LAB_TickLight(world, chunks, x+o[0], y+o[1], z+o[2]);
+                    //(*world->chunkview)(world->chunkview_user, world, x+o[0], y+o[1], z+o[2]);
+                }
+                #endif
+            }
+            if(!borders2 && !borders) break;
+            //break;
         }
 
         (*world->chunkview)(world->chunkview_user, world, x, y, z);
@@ -280,48 +302,67 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int c
 
     LAB_Color default_color = cy <= -5 ? LAB_RGB(16, 16, 16) : LAB_RGB(255, 255, 255);
 
-    //return;
-    //for(int n = 0; n < 16; ++n)
-    for(int n = 0; n <  1; ++n)
-    for(int z = 0; z < 16; ++z)
-    for(int y =15; y >= 0; --y)
+
+
+    /*for(int z = 0; z < 16; ++z)
+    for(int y = 0; y < 16; ++y)
     for(int x = 0; x < 16; ++x)
     {
         int off = LAB_CHUNK_OFFSET(x, y, z);
-
-        //int lum = 0;
-        LAB_Color lum;
-        lum = LAB_RGB(16, 16, 16);
         if(!(cnk->blocks[off]->flags & LAB_BLOCK_OPAQUE))
         {
-            for(int i = 0; i < 6; ++i)
-            {
-                const int* o = LAB_offset[i];
-                int nlum;
 
-                LAB_Block* block = LAB_GetNeighborhoodBlock(chunks, x+o[0], y+o[1], z+o[2]);
-                if(block->flags & LAB_BLOCK_EMISSIVE)
-                    //nlum = block->lr;
-                    nlum = block->lum;
-                else
+        }
+        else
+        {
+            cnk->light[off] = 0;
+        }
+    }*/
+
+    //return;
+    //for(int n = 0; n < 16; ++n)
+    int changed = 1;
+    int change_count = -1;
+    while(changed)
+    {
+        changed = 0;
+        for(int z = 0; z < 16; ++z)
+        for(int y =15; y >= 0; --y)
+        for(int x = 0; x < 16; ++x)
+        {
+            int off = LAB_CHUNK_OFFSET(x, y, z);
+
+            //int lum = 0;
+            LAB_Color lum;
+            lum = LAB_RGB(16, 16, 16);
+            if(!(cnk->blocks[off]->flags & LAB_BLOCK_OPAQUE))
+            {
+                for(int i = 0; i < 6; ++i)
                 {
-                    nlum = LAB_GetNeighborhoodLight(chunks, x+o[0], y+o[1], z+o[2], default_color);
-                    //if(i!=3) nlum = nlum-(nlum>>4);
-                    if(i!=3)
+                    const int* o = LAB_offset[i];
+                    int nlum;
+
+                    LAB_Block* block = LAB_GetNeighborhoodBlock(chunks, x+o[0], y+o[1], z+o[2]);
+                    if(block->flags & LAB_BLOCK_EMISSIVE)
+                        nlum = block->lum;
+                    else
                     {
-                        nlum = nlum - (nlum>>2 & 0x3f3f3f);
+                        nlum = LAB_GetNeighborhoodLight(chunks, x+o[0], y+o[1], z+o[2], default_color);
+                        if(i!=3)
+                            nlum = nlum - (nlum>>2 & 0x3f3f3f);
                     }
-                    //if(i!=3) nlum = nlum >> 1 & 0x7f7f7f;
+                    lum = LAB_MaxColor(lum, nlum);
                 }
-                //if(nlum > lum) lum = nlum;
-                lum = LAB_MaxColor(lum, nlum);
+            }
+            if(cnk->light[off] != lum)
+            {
+                cnk->light[off] = lum;
+                changed = 1;
             }
         }
-        //if(lum < 16) lum = 16;
-        //if(lum > 255) lum = 255;
-        cnk->light[off] = lum;
+        change_count++;
     }
-    return 1;
+    return change_count>0;
 }
 
 

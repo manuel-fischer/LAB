@@ -1,0 +1,149 @@
+{
+    "stone": {
+        "flags": ["SOLID"],
+        "model": {
+            "parent": "cube_all",
+            "tint": [180, 180, 170],
+            "texture": [0, 0]
+        }
+    },
+    "cobblestone": {
+        "flags": ["SOLID"],
+        "model": {
+            "parent": "cube_all",
+            "tint": [180, 180, 170],
+            "texture": [1, 0]
+        }
+    },
+    
+    "marble": {
+        "flags": ["SOLID"],
+        "model": {
+            "parent": "cube_all",
+            "tint": [255, 255, 255],
+            "texture": [0, 0]
+        }
+    },
+    "marblecobble": {
+        "flags": ["SOLID"],
+        "model": {
+            "parent": "cube_all",
+            "tint": [255, 255, 255],
+            "texture": [1, 0]
+        }
+    },
+
+    "sandstone": {
+        "flags": ["SOLID"],
+        "model": {
+            "parent": "cube_all",
+            "tint": [236, 223, 179],
+            "texture": [0, 0]
+        }
+    },
+    "sandcobble": {
+        "flags": ["SOLID"],
+        "model": {
+            "parent": "cube_all",
+            "tint": [236, 223, 179],
+            "texture": [1, 0]
+        }
+    },
+    "sand": {
+        "flags": ["SOLID"],
+        "model": {
+            "parent": "cube_all",
+            "tint": [255, 230, 130],
+            "texture": [3, 1]
+        }
+    },
+
+    "wood": {
+        "flags": ["SOLID"],
+        "model": {
+            "parent": "cube_all",
+            "tint": [93, 75, 60],
+            "texture": [2, 0]
+        }
+    },
+    "wood_planks": {
+        "flags": ["SOLID"],
+        "model": {
+            "parent": "cube_all",
+            "tint": [220, 197, 162],
+            "texture": [3, 0]
+        }
+    },
+    "wood_planks_dark": {
+        "flags": ["SOLID"],
+        "model": {
+            "parent": "cube_all",
+            "tint": [120, 97, 80],
+            "texture": [3, 0]
+        }
+    },
+    
+    "grass": {
+        "flags": ["SOLID"],
+        "model": {
+            "parent": "cube_all",
+            "tint": [30, 200, 80],
+            "texture": [2, 1]
+        }
+    },
+    "dirt": {
+        "flags": ["SOLID"],
+        "model": {
+            "parent": "cube_all",
+            "tint": [120, 80, 50],
+            "texture": [3, 1]
+        }
+    },
+    
+    
+    "light": {
+        "flags": ["SOLID", "EMISSIVE"],
+        "lum": [255, 255, 255],
+        "model": {
+            "parent": "cube_all",
+            "tint": [255, 255, 255],
+            "texture": [0, 1]
+        }
+    },
+    "light_blue": {
+        "flags": ["SOLID", "EMISSIVE"],
+        "lum": [16, 64, 255],
+        "model": {
+            "parent": "cube_all",
+            "tint": [64, 150, 255],
+            "texture": [0, 1]
+        }
+    },
+    "light_yellow": {
+        "flags": ["SOLID", "EMISSIVE"],
+        "lum": [255, 240, 16],
+        "model": {
+            "parent": "cube_all",
+            "tint": [255, 240, 128],
+            "texture": [0, 1]
+        }
+    },
+    "light_green": {
+        "flags": ["SOLID", "EMISSIVE"],
+        "lum": [64, 255, 16],
+        "model": {
+            "parent": "cube_all",
+            "tint": [150, 255, 128],
+            "texture": [0, 1]
+        }
+    },
+    "light_green": {
+        "flags": ["SOLID", "EMISSIVE"],
+        "lum": [255, 64, 16],
+        "model": {
+            "parent": "cube_all",
+            "tint": [255, 150, 50],
+            "texture": [0, 1]
+        }
+    }
+}

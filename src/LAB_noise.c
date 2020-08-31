@@ -358,6 +358,8 @@ void LAB_SmoothNoise3D(LAB_OUT uint32_t smooth[16*16*16],
                               +    17*(y0 + (w*y)/2)
                               + 17*17*(z0 + (w*z)/2);
                 uint64_t r = noise[indx]&0xffffffffull;
+                //r += 0x80000000ull;
+                //r>>=1;
                 #define XXX(x,y,z) (uint64_t)(pn[     (x)/2  \
                                                  + 3*((y)/2) \
                                                  + 9*((z)/2) ])

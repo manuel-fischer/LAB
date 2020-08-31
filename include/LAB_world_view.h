@@ -2,6 +2,7 @@
 #include "LAB_stdinc.h"
 #include "LAB_opt.h"
 #include "LAB_model.h" // LAB_Triangle
+#include <SDL2/SDL_ttf.h>
 
 // DEPEND
 typedef struct LAB_World LAB_World;
@@ -49,6 +50,14 @@ typedef struct LAB_ViewChunkEntry
 #define LAB_VIEW_USE_VBO 1u
 #define LAB_VIEW_SHOW_GUI 2u
 
+typedef struct LAB_ViewInfo
+{
+    int x, y, z;
+    unsigned gl_texture;
+    TTF_Font* font;
+    SDL_Surface* surf;
+} LAB_ViewInfo;
+
 typedef struct LAB_View
 {
     // View position
@@ -71,6 +80,12 @@ typedef struct LAB_View
     uint32_t preload_dist,
              render_dist,
              keep_dist;
+
+    uint32_t max_update,
+             rest_update;
+
+    LAB_ViewInfo info;
+    int w, h; // window size
 } LAB_View;
 
 

@@ -378,6 +378,7 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input)
     }
     else
     {
+        const float d = 0.001;
         view->vy -= 0.018;
         if(dy > 0) view->vy = dy;
         dx += view->vx;
@@ -420,9 +421,10 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input)
                 for(int xx = -1; xx <= 1; ++xx)
                 for(int zz = -1; zz <= 1; ++zz)
                 {
-                    LAB_Block* block  = LAB_GetBlock(view->world, bx+xx, by+yy,   bz+zz, LAB_CHUNK_EXISTING);
-                    LAB_Block* block2 = LAB_GetBlock(view->world, bx+xx, by+yy/2, bz+zz, LAB_CHUNK_EXISTING);
-                    if((block->flags&LAB_BLOCK_MASSIVE) && !(block2->flags&LAB_BLOCK_MASSIVE))
+                    LAB_Block* block  = LAB_GetBlock(view->world, bx+xx, by+yy, bz+zz, LAB_CHUNK_EXISTING);
+                    LAB_Block* block2 = LAB_GetBlock(view->world, bx+xx, by+0,  bz+zz, LAB_CHUNK_EXISTING);
+                    LAB_Block* block3 = LAB_GetBlock(view->world, bx+xx, by-1,  bz+zz, LAB_CHUNK_EXISTING);
+                    if((block->flags&LAB_BLOCK_MASSIVE) && !(block2->flags&LAB_BLOCK_MASSIVE)&& !(block3->flags&LAB_BLOCK_MASSIVE))
                     {
                         int collides = 1;
                         collides &= (xx < 0 && fx < 0.2) || (xx > 0 && fx > 0.8) || xx == 0;
@@ -431,8 +433,8 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input)
 
                         if(collides)
                         {
-                            /**/ if(yy < 0) { view->y = by+0.4; view->vy = 0; }
-                            else if(yy > 0) { view->y = by+0.8; view->vy = 0; }
+                            /**/ if(yy < 0) { view->y = by+0.4+d; view->vy = 0; }
+                            else if(yy > 0) { view->y = by+0.8-d; view->vy = 0; }
 
 
                             fx = view->x-bx;
@@ -465,17 +467,17 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input)
                             //if(abs(xx) > abs(zz))
                             //if(0)
                             {
-                              /**/ if(xx < 0) { view->x = bx+0.2; view->vx = 0; }
-                              else if(xx > 0) { view->x = bx+0.8; view->vx = 0; }
-                              else if(zz < 0) { view->z = bz+0.2; view->vz = 0; }
-                              else if(zz > 0) { view->z = bz+0.8; view->vz = 0; }
+                              /**/ if(xx < 0) { view->x = bx+0.2+d; view->vx = 0; }
+                              else if(xx > 0) { view->x = bx+0.8-d; view->vx = 0; }
+                              else if(zz < 0) { view->z = bz+0.2+d; view->vz = 0; }
+                              else if(zz > 0) { view->z = bz+0.8-d; view->vz = 0; }
                             }
                             else
                             {
-                                /**/ if(zz < 0) { view->z = bz+0.2; view->vz = 0; }
-                                else if(zz > 0) { view->z = bz+0.8; view->vz = 0; }
-                                else if(xx < 0) { view->x = bx+0.2; view->vx = 0; }
-                                else if(xx > 0) { view->x = bx+0.8; view->vx = 0; }
+                                /**/ if(zz < 0) { view->z = bz+0.2+d; view->vz = 0; }
+                                else if(zz > 0) { view->z = bz+0.8-d; view->vz = 0; }
+                                else if(xx < 0) { view->x = bx+0.2+d; view->vx = 0; }
+                                else if(xx > 0) { view->x = bx+0.8-d; view->vx = 0; }
                             }
                             //if(yy < 0) view->y = by+0.5;
                             //if(yy > 0) view->y = by+0.5;

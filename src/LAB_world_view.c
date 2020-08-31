@@ -11,6 +11,7 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 #include <math.h>
 
 #include "LAB_perf.h"
@@ -182,42 +183,9 @@ LAB_BlockFlags LAB_GetNeighborhoodBlockFlags(LAB_Chunk* neighborhood[27], int x,
 }
 
 
-#define LAB_SetVertex(vert,  xx, yy, zz,  rr, gg, bb, aa,  uu, vv,   cr, cg, cb,  tx, ty) do \
-{                                                                      \
-    (vert)->x = xx; (vert)->y = yy; (vert)->z = zz;                    \
-    (vert)->color = LAB_RGBA(((int)cr)*(rr*256/255)/256,               \
-                             ((int)cg)*(gg*256/255)/256,               \
-                             ((int)cb)*(bb*256/255)/256,               \
-                             aa);                                      \
-    (vert)->u = uu + tx;                                               \
-    (vert)->v = vv + ty;                                               \
-} while(0)
-
-#define LAB_SetQuad(tri, x0, y0, z0,  r0, g0, b0, a0,  u0, v0, \
-                         x1, y1, z1,  r1, g1, b1, a1,  u1, v1, \
-                         x2, y2, z2,  r2, g2, b2, a2,  u2, v2, \
-                         x3, y3, z3,  r3, g3, b3, a3,  u3, v3) do \
-{ \
-    LAB_Vertex* restrict t0 = tri[0].v;                    \
-    LAB_Vertex* restrict t1 = tri[1].v;                    \
-    LAB_SetVertex(&t0[1],  x0, y0, z0,  r0, g0, b0, a0,  u0, v0,  cr, cg, cb, tx, ty); \
-    LAB_SetVertex(&t0[2],  x1, y1, z1,  r1, g1, b1, a1,  u1, v1,  cr, cg, cb, tx, ty); \
-    LAB_SetVertex(&t1[2],  x1, y1, z1,  r1, g1, b1, a1,  u1, v1,  cr, cg, cb, tx, ty); \
-    LAB_SetVertex(&t0[0],  x2, y2, z2,  r2, g2, b2, a2,  u2, v2,  cr, cg, cb, tx, ty); \
-    LAB_SetVertex(&t1[1],  x2, y2, z2,  r2, g2, b2, a2,  u2, v2,  cr, cg, cb, tx, ty); \
-    LAB_SetVertex(&t1[0],  x3, y3, z3,  r3, g3, b3, a3,  u3, v3,  cr, cg, cb, tx, ty); \
-} while(0)
-
-
-
 LAB_HOT
 static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_Chunk* cnk3x3x3[27], int x, int y, int z)
 {
-
-
-#define BRANCHLESS  0
-#define BITFIELD    1
-#define PRECOMP_PTR 0
 
 #define GET_BLOCK(bx, by, bz) LAB_GetNeighborhoodBlock(cnk3x3x3, x+(bx), y+(by), z+(bz))
 #define GET_BLOCK_FLAGS(bx, by, bz) (GET_BLOCK(bx, by, bz)->flags)
@@ -231,118 +199,29 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
     faces |=  8*(!(GET_BLOCK_FLAGS( 0, 1, 0)&LAB_BLOCK_OPAQUE));
     faces |= 16*(!(GET_BLOCK_FLAGS( 0, 0,-1)&LAB_BLOCK_OPAQUE));
     faces |= 32*(!(GET_BLOCK_FLAGS( 0, 0, 1)&LAB_BLOCK_OPAQUE));
-
     if(faces == 0) return;
 
 
-#if 1
-    LAB_Model const* model = block->model;
+    LAB_Color light_sides[6];
+    for(int face_itr=faces; face_itr; face_itr &= face_itr-1)
+    {
+        int face = LAB_Ctz(face_itr);
+        const int* o = LAB_offset[face];
+        light_sides[face] = LAB_GetNeighborhoodLight(cnk3x3x3, x+o[0], y+o[1], z+o[2], LAB_RGB(255, 255, 255));
+    }
+
+
+    const LAB_Model* model = block->model;
     if(!model) return;
     LAB_Triangle* tri;
-    tri = LAB_ViewMeshAlloc(chunk_entry, model->size, !!BRANCHLESS);
+    tri = LAB_ViewMeshAlloc(chunk_entry, model->size, 0);
     if(LAB_UNLIKELY(tri == NULL)) return;
-    int count = LAB_PutModelAt(tri, model, x, y, z, faces);
+    int count = LAB_PutModelShadedAt(tri, model, x, y, z, faces, light_sides);
     chunk_entry->mesh_count -= model->size-count;
-#else
-    const int cr = LAB_RED(block->tint);
-    const int cg = LAB_GRN(block->tint);
-    const int cb = LAB_BLU(block->tint);
 
-    int tx = block->tx;
-    int ty = block->ty;
+#undef GET_BLOCK_FLAGS
+#undef GET_BLOCK
 
-    int face_count = LAB_PopCnt(faces);
-
-    LAB_Triangle* tri;
-    tri = LAB_ViewMeshAlloc(chunk_entry, 2*face_count, !!BRANCHLESS);
-    if(LAB_UNLIKELY(tri == NULL)) return;
-
-
-    // shading
-    #define SHx 235u // west east
-    #define SHy 192u // bottom
-    #define SHz 215u // north south
-
-    typedef struct {
-        uint8_t x, y, z, l;
-    } DataSelect;
-
-
-    // Vertex order: Z
-    static const DataSelect data_select[6][4] = {
-        // WEST
-        { {0, 1, 0,  SHx},
-          {0, 1, 1,  SHx},
-          {0, 0, 0,  SHx},
-          {0, 0, 1,  SHx} },
-
-        // EAST
-        { {1, 1, 1,  SHx},
-          {1, 1, 0,  SHx},
-          {1, 0, 1,  SHx},
-          {1, 0, 0,  SHx} },
-
-
-        // BOTTOM
-        { {1, 0, 0,  SHy},
-          {0, 0, 0,  SHy},
-          {1, 0, 1,  SHy},
-          {0, 0, 1,  SHy} },
-
-        // TOP
-        { {0, 1, 0,  255u},
-          {1, 1, 0,  255u},
-          {0, 1, 1,  255u},
-          {1, 1, 1,  255u} },
-
-
-        // NORTH
-        { {1, 1, 0,  SHz},
-          {0, 1, 0,  SHz},
-          {1, 0, 0,  SHz},
-          {0, 0, 0,  SHz} },
-
-        // SOUTH
-        { {0, 1, 1,  SHz},
-          {1, 1, 1,  SHz},
-          {0, 0, 1,  SHz},
-          {1, 0, 1,  SHz} },
-    };
-
-
-
-    int i, face_itr;
-    face_itr = faces;
-    do {
-        i = LAB_Ctz(face_itr);
-
-        // remove last bit
-        face_itr &= face_itr-1;
-
-        DataSelect const* ds = data_select[i];
-
-        typedef long long ll;
-        uint8_t l = (SHx | SHx << 8 | SHy << 16 | 255u << 24 | (ll)SHz << 32 | (ll)SHz << 40)>>(i<<3);
-
-        const int* o = LAB_offset[i];
-
-        LAB_Color lum = LAB_GetNeighborhoodLight(cnk3x3x3, x+o[0], y+o[1], z+o[2], LAB_RGB(255, 255, 255));
-
-        int r, g, b;
-        r = (l*LAB_RED(lum)) >> 8;
-        g = (l*LAB_GRN(lum)) >> 8;
-        b = (l*LAB_BLU(lum)) >> 8;
-
-
-        LAB_SetQuad(tri, x+ds[0].x, y+ds[0].y, z+ds[0].z,  r, g, b, 255,  0, 0,
-                         x+ds[1].x, y+ds[1].y, z+ds[1].z,  r, g, b, 255,  1, 0,
-                         x+ds[2].x, y+ds[2].y, z+ds[2].z,  r, g, b, 255,  0, 1,
-                         x+ds[3].x, y+ds[3].y, z+ds[3].z,  r, g, b, 255,  1, 1);
-
-        tri+=2;
-    } while(face_itr);
-
-#endif
 }
 
 
@@ -384,11 +263,12 @@ static void LAB_ViewUploadVBO(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 
 static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 {
-    if(chunk_entry->dirty)
+    if(view->rest_update && chunk_entry->dirty)
     {
         int chunk_available;
         chunk_available = LAB_ViewBuildMesh(view, chunk_entry, view->world);
         chunk_entry->dirty = !chunk_available;
+        view->rest_update -= chunk_available;
 
         #ifndef NO_GLEW
         if(view->flags & LAB_VIEW_USE_VBO)
@@ -436,7 +316,7 @@ void LAB_ViewRenderGui(LAB_View* view)
     glLoadIdentity();
     glEnable(GL_BLEND);
     glDisable(GL_DEPTH_TEST);
-    glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_DST_COLOR);
+    glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR);
 
     static const float crosshair[3*3*4] = {
             0, -0.1, -5,
@@ -459,6 +339,111 @@ void LAB_ViewRenderGui(LAB_View* view)
     glColor3f(1,1,1);
     glVertexPointer(3, LAB_GL_TYPEOF(crosshair[0]), 0, crosshair);
     glDrawArrays(GL_TRIANGLES, 0, 3*4);
+
+    {
+        const int INFO_WIDTH = 256;
+        const int INFO_HEIGHT = 16;
+
+        if(view->info.gl_texture == 0)
+        {
+            glGenTextures(1, &view->info.gl_texture);
+            glBindTexture(GL_TEXTURE_2D, view->info.gl_texture);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, INFO_WIDTH, INFO_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+        }
+        else
+        {
+            glBindTexture(GL_TEXTURE_2D, view->info.gl_texture);
+        }
+
+        if(view->info.font == NULL)
+        {
+            view->info.font = TTF_OpenFont("DejaVuSansMono.ttf", 13);
+            if(!view->info.font) return;
+        }
+
+        int rerender = 0;
+        int px, py, pz;
+        px = (int)floor(view->x);
+        py = (int)floor(view->y);
+        pz = (int)floor(view->z);
+        if(view->info.surf == NULL)
+        {
+            //view->info.surf = SDL_CreateRGBSurface(0, INFO_WIDTH, INFO_HEIGHT, 32, 0, 0, 0, 0);
+            //if(!view->info.surf) return;
+            rerender = 1;
+        }
+        else if(px!=view->info.x || py!=view->info.y || pz!=view->info.z)
+        {
+            rerender = 1;
+            view->info.x = px;
+            view->info.y = py;
+            view->info.z = pz;
+        }
+
+        if(rerender)
+        {
+            if(view->info.surf != NULL) SDL_FreeSurface(view->info.surf);
+
+            char buf[64];
+            snprintf(buf, sizeof(buf), "%3i %3i %3i", px, py, pz);
+
+            SDL_Color fg = { 255, 255, 255, 255 };
+            SDL_Color bg = {   0,   0,   0, 255 };
+
+            view->info.surf = TTF_RenderUTF8_Shaded(view->info.font, buf, fg, bg);
+            if(!view->info.surf) return;
+
+            if(view->info.surf->format->format != SDL_PIXELFORMAT_RGBA32)
+            {
+                SDL_Surface* nImg;
+                nImg = SDL_ConvertSurfaceFormat(view->info.surf, SDL_PIXELFORMAT_RGBA32, 0);
+                SDL_FreeSurface(view->info.surf);
+                view->info.surf = nImg;
+            }
+            SDL_Surface* surf = view->info.surf;
+
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, surf->w, surf->h, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
+            LAB_GL_CHECK();
+        }
+        glLoadIdentity();
+        glEnable(GL_TEXTURE_2D);
+
+        static const float info[5*3*2] = {
+                       0, INFO_HEIGHT, -1, 0, 0,
+              INFO_WIDTH,           0, -1, 1, 1,
+                       0,           0, -1, 0, 1,
+              //
+                       0, INFO_HEIGHT, -1, 0, 0,
+              INFO_WIDTH, INFO_HEIGHT, -1, 1, 0,
+              INFO_WIDTH,           0, -1, 1, 1,
+        };
+
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+
+        glMatrixMode(GL_TEXTURE);
+        glPushMatrix();
+        glLoadIdentity();
+
+        glMatrixMode(GL_MODELVIEW);
+        glPushMatrix();
+        glLoadIdentity();
+        float f = 2.f/view->h;
+        glScalef(f, f, 1);
+        glTranslatef(-view->w/2, +view->h/2-INFO_HEIGHT, 0);
+
+        glVertexPointer(3, LAB_GL_TYPEOF(*info), sizeof *info * 5, info);
+        glTexCoordPointer(2, LAB_GL_TYPEOF(*info), sizeof *info * 5, info+3);
+        glDrawArrays(GL_TRIANGLES, 0, 3*2);
+
+        LAB_GL_CHECK();
+        glPopMatrix();
+        glMatrixMode(GL_TEXTURE);
+        glPopMatrix();
+     }
+
 }
 
 void LAB_ViewRenderProc(void* user, LAB_Window* window)
@@ -478,6 +463,7 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
     glLoadIdentity();
     int w, h;
     SDL_GetWindowSize(window->window, &w, &h);
+    view->w = w; view->h = h;
     float ratio = h?(float)w/(float)h:1;
     float nearp = 0.075f;
     float fov = 1;
@@ -556,6 +542,8 @@ void LAB_ViewRemoveDistantChunks(LAB_View* view)
 
 void LAB_ViewRenderChunks(LAB_View* view)
 {
+    view->rest_update = view->max_update;
+
     int px = LAB_Sar((int)floorf(view->x), LAB_CHUNK_SHIFT);
     int py = LAB_Sar((int)floorf(view->y), LAB_CHUNK_SHIFT);
     int pz = LAB_Sar((int)floorf(view->z), LAB_CHUNK_SHIFT);

@@ -1,0 +1,12 @@
+{
+    "_comment_parent": "one of FLAT, OVERWORLD",
+    "parent": "OVERWORLD",
+    "blocks": {
+        "ground_top": "grass",
+        "ground": "dirt",
+        "rock": "stone",
+        "rock2": "marble",
+        
+        "lights": ["blue_light", "yellow_light", "green_light", "red_light"],
+    }
+}

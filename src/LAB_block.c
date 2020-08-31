@@ -1,5 +1,37 @@
 #include "LAB_block.h"
 #include "LAB_blt_model.h"
+#include "IXO/IXO_classdef.h"
+
+
+
+#define LAB_BLOCK_MASSIVE      1u // Entities collide with this
+#define LAB_BLOCK_OPAQUE       2u // Other blocks get visually covered by this block
+#define LAB_BLOCK_VISUAL       4u // The block is rendered
+#define LAB_BLOCK_INTERACTABLE 8u // The block can be interacted with
+#define LAB_BLOCK_SOLID        (LAB_BLOCK_MASSIVE|LAB_BLOCK_OPAQUE|LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL)
+
+#define LAB_BLOCK_TRANSPARENT  16u // The block has some transparent pixels
+                                   // LAB_BLOCK_SOLID should not be set, otherwise it has an XRay-effect
+
+#define LAB_BLOCK_EMISSIVE     128u
+IXO_BITDEF(LAB_BlockFlags,
+    (SOLID, LAB_BLOCK_SOLID),
+        (MASSIVE, LAB_BLOCK_MASSIVE),
+        (OPAQUE, LAB_BLOCK_OPAQUE),
+        (VISUAL, LAB_BLOCK_VISUAL),
+        (INTERACTABLE, LAB_BLOCK_INTERACTABLE),
+
+    (TRANSPARENT, LAB_BLOCK_TRANSPARENT),
+
+    (EMISSIVE, LAB_BLOCK_EMISSIVE)
+);
+
+#if 0
+IXO_STRUCTDEF(LAB_Block,
+    (flags, &LAB_BlockFlags_class)
+    ...
+);
+#endif
 
 LAB_Block LAB_BLOCK_OUTSIDE = {
     .flags = LAB_BLOCK_OPAQUE,

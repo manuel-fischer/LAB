@@ -16,6 +16,8 @@ int LAB_Init(void)
     if(SDL_Init(sdl_subsystems) != 0)
         return (LAB_SetError("SDL_Init failed %s", SDL_GetError()), 0);
 
+    if(TTF_Init() != 0)
+        return (LAB_SetError("TTF_Init failed %s", SDL_GetError()), 0);
 
     return 1;
 }
