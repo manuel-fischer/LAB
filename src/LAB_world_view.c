@@ -359,7 +359,7 @@ void LAB_ViewRenderGui(LAB_View* view)
 
         if(view->info.font == NULL)
         {
-            view->info.font = TTF_OpenFont("DejaVuSansMono.ttf", 13);
+            view->info.font = TTF_OpenFont("fonts/DejaVuSansMono.ttf", 13);
             if(!view->info.font) return;
         }
 
