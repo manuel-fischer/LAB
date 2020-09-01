@@ -14,13 +14,13 @@
 
 #else
 LAB_PURE
-static inline int LAB_PopCnt(unsigned v)
+static inline int LAB_PopCnt(uint32_t v)
 {
     // Slightly modified:  https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetKernighan
 
 
     // v: count the number of bits set in v
-    unsigned int c; // c accumulates the total bits set in v
+    uint32_t c; // c accumulates the total bits set in v
     for (c = 0; v; c++)
     {
         v &= v - 1; // clear the least significant bit set
@@ -29,11 +29,11 @@ static inline int LAB_PopCnt(unsigned v)
 }
 
 LAB_PURE
-static inline int LAB_Ctz(unsigned v)
+static inline int LAB_Ctz(uint32_t v)
 {
     // Slightly modified:  https://graphics.stanford.edu/~seander/bithacks.html#ZerosOnRightParallel
     // v: 32-bit word input to count zero bits on right
-    unsigned c = 32; // c will be the number of zero bits on the right
+    uint32_t c = 32; // c will be the number of zero bits on the right
     v &= -v;
     if (v) c--;
     if (v & 0x0000FFFF) c -= 16;
@@ -58,3 +58,16 @@ static inline int LAB_Sar(int x, int n)
     return x < 0 ? ~(~x >> n) : x >> n;
 }
 #endif
+
+LAB_PURE
+static inline uint32_t LAB_CeilPow2(uint32_t x)
+{
+    x--;
+    x |= x >> 1;
+    x |= x >> 2;
+    x |= x >> 4;
+    x |= x >> 8;
+    x |= x >> 16;
+    x++;
+    return x;
+}

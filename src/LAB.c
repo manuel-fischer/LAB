@@ -14,15 +14,23 @@ int LAB_Init(void)
     sdl_subsystems |= SDL_INIT_EVENTS;
 
     if(SDL_Init(sdl_subsystems) != 0)
-        return (LAB_SetError("SDL_Init failed %s", SDL_GetError()), 0);
+    {
+        LAB_SetError("SDL_Init failed %s", SDL_GetError());
+        return 0;
+    }
 
     if(TTF_Init() != 0)
-        return (LAB_SetError("TTF_Init failed %s", SDL_GetError()), 0);
+    {
+        LAB_SetError("TTF_Init failed %s", TTF_GetError());
+        SDL_Quit();
+        return 0;
+    }
 
     return 1;
 }
 
 void LAB_Quit(void)
 {
+    TTF_Quit();
     SDL_Quit();
 }

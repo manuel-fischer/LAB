@@ -157,16 +157,12 @@ static void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chun
     chunk_entry->mesh_count = 0;
 
     for(size_t z = 0; z < LAB_CHUNK_SIZE; ++z)
+    for(size_t y = 0; y < LAB_CHUNK_SIZE; ++y)
+    for(size_t x = 0; x < LAB_CHUNK_SIZE; ++x)
     {
-        for(size_t y = 0; y < LAB_CHUNK_SIZE; ++y)
+        if(cnk3x3x3[X+Y+Z]->blocks[LAB_CHUNK_OFFSET(x, y, z)]->flags & LAB_BLOCK_VISUAL)
         {
-            for(size_t x = 0; x < LAB_CHUNK_SIZE; ++x)
-            {
-                if(cnk3x3x3[X+Y+Z]->blocks[LAB_CHUNK_OFFSET(x, y, z)]->flags & LAB_BLOCK_VISUAL)
-                {
-                    LAB_ViewBuildMeshBlock(view, chunk_entry, cnk3x3x3, x, y, z);
-                }
-            }
+            LAB_ViewBuildMeshBlock(view, chunk_entry, cnk3x3x3, x, y, z);
         }
     }
 }
@@ -341,8 +337,14 @@ void LAB_ViewRenderGui(LAB_View* view)
     glDrawArrays(GL_TRIANGLES, 0, 3*4);
 
     {
-        const int INFO_WIDTH = 256;
-        const int INFO_HEIGHT = 16;
+        int info_width = 0;
+        int info_height = 0;
+
+        if(view->info.surf != NULL)
+        {
+            info_width  = LAB_CeilPow2(view->info.surf->w);
+            info_height = LAB_CeilPow2(view->info.surf->h);
+        }
 
         if(view->info.gl_texture == 0)
         {
@@ -350,7 +352,7 @@ void LAB_ViewRenderGui(LAB_View* view)
             glBindTexture(GL_TEXTURE_2D, view->info.gl_texture);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, INFO_WIDTH, INFO_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+            //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, INFO_WIDTH, INFO_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
         }
         else
         {
@@ -387,7 +389,7 @@ void LAB_ViewRenderGui(LAB_View* view)
             if(view->info.surf != NULL) SDL_FreeSurface(view->info.surf);
 
             char buf[64];
-            snprintf(buf, sizeof(buf), "%3i %3i %3i", px, py, pz);
+            snprintf(buf, sizeof(buf), "%i %i %i", px, py, pz);
 
             SDL_Color fg = { 255, 255, 255, 255 };
             SDL_Color bg = {   0,   0,   0, 255 };
@@ -404,21 +406,41 @@ void LAB_ViewRenderGui(LAB_View* view)
             }
             SDL_Surface* surf = view->info.surf;
 
+            int new_info_width  = LAB_CeilPow2(surf->w);
+            int new_info_height = LAB_CeilPow2(surf->h);
+            if(new_info_width != info_width || new_info_height != info_height)
+            {
+                info_width  = new_info_width;
+                info_height = new_info_height;
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, info_width, info_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+            }
+
             glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, surf->w, surf->h, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
             LAB_GL_CHECK();
         }
         glLoadIdentity();
         glEnable(GL_TEXTURE_2D);
 
-        static const float info[5*3*2] = {
-                       0, INFO_HEIGHT, -1, 0, 0,
-              INFO_WIDTH,           0, -1, 1, 1,
-                       0,           0, -1, 0, 1,
+        // partly const
+        static float info[5*3*2] = {
+                0, (0), -1,   0,   0,
+              (0),   0, -1, (1), (1),
+                0,   0, -1,   0, (1),
               //
-                       0, INFO_HEIGHT, -1, 0, 0,
-              INFO_WIDTH, INFO_HEIGHT, -1, 1, 0,
-              INFO_WIDTH,           0, -1, 1, 1,
+                0, (0), -1,   0,   0,
+              (0), (0), -1, (1),   0,
+              (0),   0, -1, (1), (1),
         };
+        int w, h;
+        w = view->info.surf->w;
+        h = view->info.surf->h;
+
+        info[5*1] = info[5*4] = info[5*5]   = w;
+        info[1] = info[5*3+1] = info[5*4+1] = h;
+
+        info[5*1+3] = info[5*4+3] = info[5*5+3] = (float)w/info_width;
+        info[5*1+4] = info[5*2+4] = info[5*5+4] = (float)h/info_height;
+
 
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
@@ -432,7 +454,7 @@ void LAB_ViewRenderGui(LAB_View* view)
         glLoadIdentity();
         float f = 2.f/view->h;
         glScalef(f, f, 1);
-        glTranslatef(-view->w/2, +view->h/2-INFO_HEIGHT, 0);
+        glTranslatef(-view->w/2, +view->h/2-h, 0);
 
         glVertexPointer(3, LAB_GL_TYPEOF(*info), sizeof *info * 5, info);
         glTexCoordPointer(2, LAB_GL_TYPEOF(*info), sizeof *info * 5, info+3);

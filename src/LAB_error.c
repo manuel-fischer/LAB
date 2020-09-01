@@ -4,7 +4,7 @@
 #include <LAB_gl.h>
 #include <SDL2/SDL.h>
 
-#define LAB_ERROR_BUFFER_SIZE 256
+#define LAB_ERROR_BUFFER_SIZE 1024
 
 static char LAB_error_buffer[LAB_ERROR_BUFFER_SIZE] = {0};
 
@@ -39,6 +39,6 @@ void LAB_SetError(const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    vsprintf_s(LAB_error_buffer, LAB_ERROR_BUFFER_SIZE, fmt, args);
+    vsnprintf(LAB_error_buffer, LAB_ERROR_BUFFER_SIZE, fmt, args);
     va_end(args);
 }

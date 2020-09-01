@@ -19,4 +19,3 @@ int LAB_Init(void);
  *  Quit Lab
  */
 void LAB_Quit(void);
-
