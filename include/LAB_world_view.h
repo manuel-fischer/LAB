@@ -119,3 +119,11 @@ void LAB_ViewRenderGui(LAB_View* view);
 
 LAB_ViewChunkEntry* LAB_ViewFindChunkEntry(LAB_View* view, int x, int y, int z);
 LAB_ViewChunkEntry* LAB_ViewNewChunkEntry(LAB_View* view, int x, int y, int z);
+
+
+
+
+
+void LAB_GL_ActivateTexture(unsigned* gl_id);
+void LAB_UploadSurf(unsigned gl_id, SDL_Surface* surf);
+void LAB_DrawSurf(LAB_View* view, unsigned gl_id, int x, int y, int w, int h);

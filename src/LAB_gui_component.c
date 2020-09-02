@@ -69,7 +69,7 @@ void LAB_GuiContainer_Render(LAB_GuiComponent* self, SDL_Surface* surf, int x, i
     //surf.paintpicture x, y, cself->w, cself->h, sp.x, sp.y, sp.w, sp.h;
     LAB_RenderRect(surf, 0, 0, self->w, self->h, 0, 3);
 
-    LAB_GuiContainer_Render(self, surf, x, y);
+    //LAB_GuiContainer_Render(self, surf, x, y);
 }
 
 

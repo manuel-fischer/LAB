@@ -12,6 +12,8 @@
 #include "LAB_gen_overworld.h"
 #include "LAB_gl.h"
 
+#include "LAB_gui.h"
+
 int main(int argc, char** argv) {
     #define CHECK_INIT(expr) if(expr); else { init_msg = #expr; goto INIT_ERROR; }
 
@@ -31,6 +33,8 @@ int main(int argc, char** argv) {
 
     CHECK_INIT(LAB_Init());
     init = 1;
+
+    CHECK_INIT(LAB_GuiInit());
 
 
     uint32_t sdl_window_flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL;
