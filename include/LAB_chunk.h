@@ -22,6 +22,7 @@ typedef struct LAB_Chunk
 {
     LAB_Block* blocks[LAB_CHUNK_LENGTH];
     LAB_Color  light[LAB_CHUNK_LENGTH];
+    int dirty;
 } LAB_Chunk;
 
 typedef LAB_Chunk* (LAB_ChunkGenerator)(void* user, LAB_World* world, int x, int y, int z);

@@ -17,6 +17,8 @@ LAB_Chunk* LAB_CreateChunk(LAB_Block* fill_block)
     for(int i = 0; i < LAB_CHUNK_LENGTH; ++i) chunk->blocks[i] = fill_block;
     memset(chunk->light, 0, sizeof chunk->light);
 
+    chunk->dirty = 1;
+
     return chunk;
 }
 

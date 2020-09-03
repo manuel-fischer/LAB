@@ -135,7 +135,8 @@ void LAB_GetChunkNeighborhood(LAB_World* world, LAB_Chunk* chunks[27], int x, in
  *  Refresh a chunk by notifying the view
  */
 void LAB_NotifyChunk(LAB_World* world, int x, int y, int z);
-void LAB_NotifyChunkLater(LAB_World* world, int x, int y, int z/*, LAB_ChunkPeekType flags*/);
+//void LAB_NotifyChunkLater(LAB_World* world, int x, int y, int z/*, LAB_ChunkPeekType flags*/);
+void LAB_UpdateChunkLater(LAB_World* world, int x, int y, int z);
 
 LAB_Block* LAB_GetBlock(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType flags);
 void LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType flags, LAB_Block* block);

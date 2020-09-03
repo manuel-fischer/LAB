@@ -171,7 +171,9 @@
 		<Unit filename="include/LAB_gen_overworld.h" />
 		<Unit filename="include/LAB_gl.h" />
 		<Unit filename="include/LAB_gui.h" />
+		<Unit filename="include/LAB_gui_button.h" />
 		<Unit filename="include/LAB_gui_component.h" />
+		<Unit filename="include/LAB_gui_label.h" />
 		<Unit filename="include/LAB_gui_menu.h" />
 		<Unit filename="include/LAB_light_node.h" />
 		<Unit filename="include/LAB_math.h" />
@@ -211,7 +213,13 @@
 		<Unit filename="src/LAB_gui.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="src/LAB_gui_button.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="src/LAB_gui_component.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_gui_label.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_gui_menu.c">
