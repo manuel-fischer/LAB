@@ -4,7 +4,7 @@
 
 static SDL_Surface* gui;
 
-int LAB_GuiInit()
+int LAB_GuiInit(void)
 {
     gui = IMG_Load("assets/gui.png");
     if(!gui) return 0;
@@ -12,7 +12,7 @@ int LAB_GuiInit()
     return 1;
 }
 
-void LAB_GuiQuit()
+void LAB_GuiQuit(void)
 {
     SDL_FreeSurface(gui);
 }
@@ -37,10 +37,28 @@ void LAB_RenderRect(SDL_Surface* surf, int x, int y, int w, int h, int i, int j)
             src.x = i*16 + (a==0?0:a==1?B:S-B);
             src.w = a==1?S-2*B:B;
 
-            dst.x = y + (a==0?0:a==1?B:w-B);
+            dst.x = x + (a==0?0:a==1?B:w-B);
             dst.w = a==1?w-2*B:B;
 
             SDL_BlitScaled(gui, &src, surf, &dst);
         }
     }
+}
+
+
+TTF_Font* LAB_GuiFont(void)
+{
+    static TTF_Font* ttf = NULL;
+    if(!ttf)
+        ttf = TTF_OpenFont("fonts/DejaVuSans.ttf", 12);
+    return ttf;
+}
+
+
+TTF_Font* LAB_GuiTitleFont(void)
+{
+    static TTF_Font* ttf = NULL;
+    if(!ttf)
+        ttf = TTF_OpenFont("fonts/DejaVuSans.ttf", 15);
+    return ttf;
 }

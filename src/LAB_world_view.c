@@ -547,10 +547,11 @@ void LAB_ViewRenderGui(LAB_View* view)
         glPopMatrix();
         glMatrixMode(GL_TEXTURE);
         glPopMatrix();*/
-     }
+    }
 
 
-     if(0){
+    if(0)
+    {
          LAB_GuiMenu menu;
          LAB_GuiMenu_Create(&menu);
 
@@ -563,7 +564,7 @@ void LAB_ViewRenderGui(LAB_View* view)
          if(!surf) return;
 
          LAB_GuiContainer_Render_Framed((LAB_GuiComponent*)&menu, surf, 0, 0);
-         LAB_RenderRect(surf, 10, 10, 80, 20, 2, 1);
+         //LAB_RenderRect(surf, 10, 10, 80, 20, 2, 1);
 
          glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
