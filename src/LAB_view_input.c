@@ -61,7 +61,7 @@ static void LAB_FixScreenImg(void* pixels, int w, int h)
 {
     char* pix = pixels;
     int c = 4*w*(h/2);
-    for(int y0 = 0, y1 = 4*w*(h-1); y0 <= c; y0+=4*w, y1-=4*w)
+    for(int y0 = 0, y1 = 4*w*(h-1); y0 < c; y0+=4*w, y1-=4*w)
     {
         for(int x = 0; x < 4*w; x+=4)
         {
@@ -73,6 +73,14 @@ static void LAB_FixScreenImg(void* pixels, int w, int h)
             }
             pix[y0+x+3] = 0xff;
             pix[y1+x+3] = 0xff;
+        }
+    }
+    if(h&1)
+    {
+        int y = c;
+        for(int x = 0; x < 4*w; x+=4)
+        {
+            pix[y+x+3] = 0xff;
         }
     }
 }
