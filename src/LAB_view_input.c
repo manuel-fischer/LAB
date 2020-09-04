@@ -9,10 +9,12 @@
 #include "LAB_math.h"
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include "SDL_fix.h"
 
 #include <math.h>
 #include <stdio.h>
+#include <time.h>
 
 #include "LAB_memory.h"
 #include "LAB_gl.h"
@@ -48,6 +50,31 @@ int  LAB_ConstructViewInput(LAB_ViewInput* view_input, LAB_View* view)
 void LAB_DestructViewInput(LAB_ViewInput* view_input)
 {
 
+}
+
+
+
+/**
+ *  flip image horizontally and set alpha channel to 255
+ */
+static void LAB_FixScreenImg(void* pixels, int w, int h)
+{
+    char* pix = pixels;
+    int c = 4*w*(h/2);
+    for(int y0 = 0, y1 = 4*w*(h-1); y0 <= c; y0+=4*w, y1-=4*w)
+    {
+        for(int x = 0; x < 4*w; x+=4)
+        {
+            for(int i = 0; i < 3; ++i)
+            {
+                char tmp = pix[y0+x+i];
+                pix[y0+x+i] = pix[y1+x+i];
+                pix[y1+x+i] = tmp;
+            }
+            pix[y0+x+3] = 0xff;
+            pix[y1+x+3] = 0xff;
+        }
+    }
 }
 
 
@@ -167,6 +194,26 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                 case SDLK_F1:
                 {
                     view->flags ^= LAB_VIEW_SHOW_GUI;
+                } break;
+
+                case SDLK_F2:
+                {
+                    // TODO detection if multiple screenshots are saved in the same second
+                    SDL_Surface* surf_screen = SDL_CreateRGBSurfaceWithFormat(0, view->w, view->h, 32, SDL_PIXELFORMAT_RGBA32);
+                    if(!surf_screen) break;
+                    glReadPixels(0, 0, view->w, view->h, GL_RGBA, GL_UNSIGNED_BYTE, surf_screen->pixels);
+                    LAB_FixScreenImg(surf_screen->pixels, view->w, view->h);
+
+                    time_t t;
+                    struct tm* tinf;
+
+                    time(&t);
+                    tinf = localtime(&t); // TODO: localtime_r C2x
+
+                    char fname[256];
+                    strftime(fname, sizeof fname, "screenshots/scr-%Y%m%d-%H%M%S.png", tinf);
+                    printf("Saving screenshot to %s\n", fname);
+                    IMG_SavePNG(surf_screen, fname);
                 } break;
 
                 case SDLK_F3:

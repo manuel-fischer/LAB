@@ -57,3 +57,6 @@ dkms.conf
 
 # Disassembly for debugging
 *.dis
+
+# Screenshots
+screenshots/scr-*

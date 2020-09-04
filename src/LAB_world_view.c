@@ -401,9 +401,9 @@ void LAB_DrawSurf(LAB_View* view, unsigned gl_id, int x, int y, int w, int h)
     glPushMatrix();
     glLoadIdentity();
 
-    float f = 2.f/view->h;
+    float f = 2.f/(float)view->h;
     glScalef(f, f, 1);
-    glTranslatef(-view->w/2+x, -view->h/2+y, 0);
+    glTranslatef(-(float)view->w/2+x, -(float)view->h/2+y, 0);
 
     glVertexPointer(3, LAB_GL_TYPEOF(*info), sizeof *info * 5, info);
     glTexCoordPointer(2, LAB_GL_TYPEOF(*info), sizeof *info * 5, info+3);
@@ -498,8 +498,11 @@ void LAB_ViewRenderGui(LAB_View* view)
 
             LAB_UploadSurf(view->info.gl_texture, view->info.surf);
         }
-
-        LAB_DrawSurf(view, view->info.gl_texture, 0, view->h-view->info.surf->h, view->info.surf->w, view->info.surf->h);
+        //static unsigned scale_i = 0;
+        //scale_i++; scale_i &= 0xff;
+        //int scale = scale_i > 0x80 ? 2 : 1;
+        int scale = 1;
+        LAB_DrawSurf(view, view->info.gl_texture, 0, view->h-scale*view->info.surf->h, scale*view->info.surf->w, scale*view->info.surf->h);
         /*glLoadIdentity();
         glEnable(GL_TEXTURE_2D);
 
