@@ -2,6 +2,9 @@
 
 const int LAB_offset[6][3];
 
+const int LAB_offsetA[3][3];
+const int LAB_offsetB[3][3];
+
 const char* LAB_Filename(const char* path);
 
 

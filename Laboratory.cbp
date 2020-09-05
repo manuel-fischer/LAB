@@ -164,6 +164,7 @@
 		<Unit filename="include/LAB_check.h" />
 		<Unit filename="include/LAB_chunk.h" />
 		<Unit filename="include/LAB_color.h" />
+		<Unit filename="include/LAB_debug.h" />
 		<Unit filename="include/LAB_direction.h" />
 		<Unit filename="include/LAB_error.h" />
 		<Unit filename="include/LAB_ext.h" />
@@ -196,6 +197,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_chunk.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_debug.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_error.c">

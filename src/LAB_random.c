@@ -34,13 +34,16 @@ uint64_t LAB_ChunkSeed(uint64_t world_seed, int x, int y, int z)
 {
     uint64_t s;
     s  = world_seed;
-    //s ^= x * 23;
-    //s ^= y * 17;
-    //s ^= z * 26;
-    s += x * 123456811;
-    s += y * 234567899;
-    s += z * 214365871;
-    s += (x * y * z)*127;
+    #if 0
+    s ^= (uint64_t)x * 23u;
+    s ^= (uint64_t)y * 17u;
+    s ^= (uint64_t)z * 26u;
+    #else
+    s += (uint64_t)x * 123456811u;
+    s += (uint64_t)y * 234567899u;
+    s += (uint64_t)z * 214365871u;
+    s += ((uint64_t)x * (uint64_t)y * (uint64_t)z)*127u;
+    #endif
     return s;
 }
 

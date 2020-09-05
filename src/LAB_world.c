@@ -5,7 +5,9 @@
 
 #include "LAB_stdinc.h"
 #include "LAB_opt.h"
+#include "LAB_debug.h"
 #include "LAB_util.h"
+#include "LAB_bits.h"
 
 #include <math.h>
 
@@ -22,6 +24,9 @@
 #include "HTL_queue.t.c"
 #undef HTL_PARAM
 
+/**
+ *  Return face bitset of faces of the chunk cube that were touched
+ */
 int LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int cz);
 
 unsigned LAB_ChunkPosHash(LAB_ChunkPos pos)
@@ -143,37 +148,12 @@ void LAB_NotifyChunk(LAB_World* world, int x, int y, int z)
     {
         LAB_Chunk* chunks[27];
         LAB_GetChunkNeighborhood(world, chunks, x, y, z, LAB_CHUNK_EXISTING);
-        //for(int j = 0; j < 16; ++j)
+        int faces = LAB_TickLight(world, chunks, x, y, z);
+        for(int face_itr=faces; face_itr; face_itr &= face_itr-1)
         {
-            int borders = LAB_TickLight(world, chunks, x, y, z);
-            //int borders2 = 0;
-            if(borders)
-            {
-                #if 1
-                for(int zz = -1; zz <= 1; ++zz)
-                for(int yy = -1; yy <= 1; ++yy)
-                for(int xx = -1; xx <= 1; ++xx)
-                {
-                    if(!xx && !yy && !zz) continue;
-                    LAB_UpdateChunkLater(world, x+xx, y+yy, z+zz);
-                    //LAB_GetChunkNeighborhood(world, chunks, x+xx, y+yy, z+zz, LAB_CHUNK_EXISTING);
-                    //borders2 |= LAB_TickLight(world, chunks, x+xx, y+yy, z+zz);
-                    //(*world->chunkview)(world->chunkview_user, world, x, y, z);
-                }
-                #else
-                for(int i = 0; i < 6; ++i)
-                {
-                    const int* o = LAB_offset[i];
-                    //LAB_NotifyChunkLater(world, x+o[0], y+o[1], z+o[2]);
-                    LAB_UpdateChunkLater(world, x+o[0], y+o[1], z+o[2]);
-                    LAB_GetChunkNeighborhood(world, chunks, x+o[0], y+o[1], z+o[2], LAB_CHUNK_EXISTING);
-                    LAB_TickLight(world, chunks, x+o[0], y+o[1], z+o[2]);
-                    //(*world->chunkview)(world->chunkview_user, world, x+o[0], y+o[1], z+o[2]);
-                }
-                #endif
-            }
-            //if(!borders2 && !borders) break;
-            //break;)
+            int face = LAB_Ctz(face_itr);
+            const int* o = LAB_offset[face];
+            LAB_UpdateChunkLater(world, x+o[0], y+o[1], z+o[2]);
         }
 
         (*world->chunkview)(world->chunkview_user, world, x, y, z);
@@ -313,33 +293,11 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int c
 {
     LAB_Chunk* cnk = chunks[1+3+9];
     if(!cnk) return 0;
-    #if 0
-    memset(cnk->light, 0xff, sizeof cnk->light);
-    return 0;
-    #endif
-    //memset(cnk->light, 0, sizeof cnk->light);
 
     LAB_Color default_color = cy <= -5 ? LAB_RGB(16, 16, 16) : LAB_RGB(255, 255, 255);
 
+    int faces_changed = 0;
 
-
-    /*for(int z = 0; z < 16; ++z)
-    for(int y = 0; y < 16; ++y)
-    for(int x = 0; x < 16; ++x)
-    {
-        int off = LAB_CHUNK_OFFSET(x, y, z);
-        if(!(cnk->blocks[off]->flags & LAB_BLOCK_OPAQUE))
-        {
-
-        }
-        else
-        {
-            cnk->light[off] = 0;
-        }
-    }*/
-
-    //return;
-    //for(int n = 0; n < 16; ++n)
     int chg = 0;
     int changed = 1;
     int change_count = -1;
@@ -352,7 +310,6 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int c
         {
             int off = LAB_CHUNK_OFFSET(x, y, z);
 
-            //int lum = 0;
             LAB_Color lum;
             lum = LAB_RGB(16, 16, 16);
             if(!(cnk->blocks[off]->flags & LAB_BLOCK_OPAQUE))
@@ -377,6 +334,12 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int c
             if(cnk->light[off] != lum)
             {
                 if(chg) cnk->light[off] = lum;
+                if(x==0)  faces_changed |=  1;
+                if(x==15) faces_changed |=  2;
+                if(y==0)  faces_changed |=  4;
+                if(y==15) faces_changed |=  8;
+                if(z==0)  faces_changed |= 16;
+                if(z==15) faces_changed |= 32;
                 changed = 1;
             }
         }
@@ -388,7 +351,9 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int c
             chg = 1;
         }
     }
-    return change_count>0;
+    LAB_ASSUME(faces_changed?change_count:1);
+    //return faces_changed;
+    return 63*(change_count > 0);
 }
 
 

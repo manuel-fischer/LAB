@@ -14,6 +14,8 @@
 
 #include "LAB_gui.h"
 
+#define GEN_FLAT 0
+
 int main(int argc, char** argv) {
     #define CHECK_INIT(expr) if(expr); else { init_msg = #expr; goto INIT_ERROR; }
 
@@ -25,7 +27,7 @@ int main(int argc, char** argv) {
     static LAB_World      the_world   = {0};
     static LAB_View       view        = {0};
     static LAB_ViewInput  view_input  = {0};
-    #if 0
+    #if GEN_FLAT
     static LAB_GenFlat    gen_flat    = {0};
     #else
     static LAB_GenOverworld gen_overworld = {0};
@@ -44,12 +46,13 @@ int main(int argc, char** argv) {
 
 
     CHECK_INIT(LAB_ConstructWorld(&the_world));
-    #if 0
+    #if GEN_FLAT
     gen_flat.block = &LAB_BLOCK_STONE;
     the_world.chunkgen      = &LAB_GenFlatProc;
     the_world.chunkgen_user = &gen_flat;
     #else
-    gen_overworld.seed = 0x13579bdf;
+    //gen_overworld.seed = 0x13579bdf;
+    gen_overworld.seed = 0;
     the_world.chunkgen      = &LAB_GenOverworldProc;
     the_world.chunkgen_user = &gen_overworld;
     #endif
@@ -105,7 +108,9 @@ EXIT:
 
     if(init) LAB_Quit();
 
+    #ifndef NDEBUG
     LAB_DbgMemShow();
+    #endif
 
     return return_value;
 

@@ -283,7 +283,8 @@ void LAB_SmoothNoise3D(LAB_OUT uint32_t smooth[16*16*16],
             Elem* t = &stack[depth];
 
             smooth[x0|y0<<4|z0<<8] = ((uint64_t)t->n[ 0]+(uint64_t)t->n[ 2]+(uint64_t)t->n[ 6]+(uint64_t)t->n[ 8]
-                                   +  (uint64_t)t->n[18]+(uint64_t)t->n[20]+(uint64_t)t->n[24]+(uint64_t)t->n[26]) / 8;
+                                   +  (uint64_t)t->n[18]+(uint64_t)t->n[20]+(uint64_t)t->n[24]+(uint64_t)t->n[26]) / 8u;
+            //smooth[x0+16*y0+256*z0] ^= 0x123456789abcdef;
             goto sidewards;
         }
         else
