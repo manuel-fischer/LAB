@@ -9,6 +9,8 @@
 #define LAB_SHADE_Y LAB_RGBX(C0C0C0) // bottom
 #define LAB_SHADE_Z LAB_RGBX(D7D7D7) // north south
 
+#define LAB_NO_SHADE LAB_RGBX(FFFFFF) // north south
+
 
 #define LAB_MK_TRI(x0, y0, z0,  u0, v0, \
                    x1, y1, z1,  u1, v1, \
@@ -40,30 +42,33 @@
                color, cull, light)
 
 
-#define LAB_DEF_MODEL_CUBE(name,  wu, wv, wc,  eu, ev, ec, \
-                                  du, dv, dc,  uu, uv, uc, \
-                                  nu, nv, nc,  su, sv, sc) \
+#define LAB_DEF_MODEL_CUBE_BASE(name,  wu, wv, wc,  eu, ev, ec, \
+                                       du, dv, dc,  uu, uv, uc, \
+                                       nu, nv, nc,  su, sv, sc, \
+                                       shade_x,                 \
+                                       shade_y,                 \
+                                       shade_z)                 \
 LAB_Triangle name##_data[] = {                             \
     /** WEST **/                                           \
     LAB_MK_QUAD(0, 1, 0,  (wu)+0, (wv)+0,                  \
                 0, 1, 1,  (wu)+1, (wv)+0,                  \
                 0, 0, 0,  (wu)+0, (wv)+1,                  \
                 0, 0, 1,  (wu)+1, (wv)+1,                  \
-                LAB_MUL_COLOR(wc, LAB_SHADE_X),            \
+                LAB_MUL_COLOR(wc, shade_x),                \
                 LAB_DIR_WEST, LAB_DIR_WEST),               \
     /** EAST **/                                           \
     LAB_MK_QUAD(1, 1, 1,  (wu)+0, (wv)+0,                  \
                 1, 1, 0,  (wu)+1, (wv)+0,                  \
                 1, 0, 1,  (wu)+0, (wv)+1,                  \
                 1, 0, 0,  (wu)+1, (wv)+1,                  \
-                LAB_MUL_COLOR(wc, LAB_SHADE_X),            \
+                LAB_MUL_COLOR(wc, shade_x),                \
                 LAB_DIR_EAST, LAB_DIR_EAST),               \
     /** DOWN **/                                           \
     LAB_MK_QUAD(1, 0, 0,  (wu)+0, (wv)+0,                  \
                 0, 0, 0,  (wu)+1, (wv)+0,                  \
                 1, 0, 1,  (wu)+0, (wv)+1,                  \
                 0, 0, 1,  (wu)+1, (wv)+1,                  \
-                LAB_MUL_COLOR(wc, LAB_SHADE_Y),            \
+                LAB_MUL_COLOR(wc, shade_y),                \
                 LAB_DIR_DOWN, LAB_DIR_DOWN),               \
     /** UP **/                                             \
     LAB_MK_QUAD(0, 1, 0,  (wu)+0, (wv)+0,                  \
@@ -77,14 +82,14 @@ LAB_Triangle name##_data[] = {                             \
                 0, 1, 0,  (wu)+1, (wv)+0,                  \
                 1, 0, 0,  (wu)+0, (wv)+1,                  \
                 0, 0, 0,  (wu)+1, (wv)+1,                  \
-                LAB_MUL_COLOR(wc, LAB_SHADE_Z),            \
+                LAB_MUL_COLOR(wc, shade_z),                \
                 LAB_DIR_NORTH, LAB_DIR_NORTH),             \
     /** SOUTH **/                                          \
     LAB_MK_QUAD(0, 1, 1,  (wu)+0, (wv)+0,                  \
                 1, 1, 1,  (wu)+1, (wv)+0,                  \
                 0, 0, 1,  (wu)+0, (wv)+1,                  \
                 1, 0, 1,  (wu)+1, (wv)+1,                  \
-                LAB_MUL_COLOR(wc, LAB_SHADE_Z),            \
+                LAB_MUL_COLOR(wc, shade_z),                \
                 LAB_DIR_SOUTH, LAB_DIR_SOUTH)              \
 };                                                         \
 LAB_Model name = {                                         \
@@ -94,6 +99,15 @@ LAB_Model name = {                                         \
 
 
 
+#define LAB_DEF_MODEL_CUBE(name,  wu, wv, wc,  eu, ev, ec, \
+                                  du, dv, dc,  uu, uv, uc, \
+                                  nu, nv, nc,  su, sv, sc) \
+   LAB_DEF_MODEL_CUBE_BASE(name,  wu, wv, wc,  eu, ev, ec, \
+                                  du, dv, dc,  uu, uv, uc, \
+                                  nu, nv, nc,  su, sv, sc, \
+                                  LAB_SHADE_X,             \
+                                  LAB_SHADE_Y,             \
+                                  LAB_SHADE_Z)
 
 
 #define LAB_DEF_MODEL_CUBE_ALL(name,  tu, tv, tc) \
@@ -105,5 +119,32 @@ LAB_Model name = {                                         \
 #define LAB_DEF_MODEL_CUBE_SIDES(name,  hu, hv, hc, \
                                         du, dv, dc,  uu, uv, uc) \
     LAB_DEF_MODEL_CUBE(name,  hu, hv, hc,  hu, hv, hc, \
+                              du, dv, dc,  uu, uv, uc, \
+                              hu, hv, hc,  hu, hv, hc)
+
+
+//---------
+
+
+#define LAB_DEF_MODEL_CUBE_SHADELESS(name,  wu, wv, wc,  eu, ev, ec, \
+                                            du, dv, dc,  uu, uv, uc, \
+                                            nu, nv, nc,  su, sv, sc) \
+   LAB_DEF_MODEL_CUBE_BASE(name,  wu, wv, wc,  eu, ev, ec, \
+                                  du, dv, dc,  uu, uv, uc, \
+                                  nu, nv, nc,  su, sv, sc, \
+                                  LAB_NO_SHADE,            \
+                                  LAB_NO_SHADE,            \
+                                  LAB_NO_SHADE)
+
+
+#define LAB_DEF_MODEL_CUBE_SHADELESS_ALL(name,  tu, tv, tc) \
+    LAB_DEF_MODEL_CUBE_SHADELESS(name,  tu, tv, tc,  tu, tv, tc, \
+                              tu, tv, tc,  tu, tv, tc, \
+                              tu, tv, tc,  tu, tv, tc)
+
+
+#define LAB_DEF_MODEL_CUBE_SHADELESS_SIDES(name,  hu, hv, hc, \
+                                                  du, dv, dc,  uu, uv, uc) \
+    LAB_DEF_MODEL_CUBE_SHADELESS(name,  hu, hv, hc,  hu, hv, hc, \
                               du, dv, dc,  uu, uv, uc, \
                               hu, hv, hc,  hu, hv, hc)
