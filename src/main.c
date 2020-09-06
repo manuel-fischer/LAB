@@ -51,8 +51,7 @@ int main(int argc, char** argv) {
     the_world.chunkgen      = &LAB_GenFlatProc;
     the_world.chunkgen_user = &gen_flat;
     #else
-    //gen_overworld.seed = 0x13579bdf;
-    gen_overworld.seed = 0;
+    gen_overworld.seed = 0x13579bdf;
     the_world.chunkgen      = &LAB_GenOverworldProc;
     the_world.chunkgen_user = &gen_overworld;
     #endif

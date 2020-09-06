@@ -3,17 +3,6 @@
 #include "IXO/IXO_classdef.h"
 
 
-
-#define LAB_BLOCK_MASSIVE      1u // Entities collide with this
-#define LAB_BLOCK_OPAQUE       2u // Other blocks get visually covered by this block
-#define LAB_BLOCK_VISUAL       4u // The block is rendered
-#define LAB_BLOCK_INTERACTABLE 8u // The block can be interacted with
-#define LAB_BLOCK_SOLID        (LAB_BLOCK_MASSIVE|LAB_BLOCK_OPAQUE|LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL)
-
-#define LAB_BLOCK_TRANSPARENT  16u // The block has some transparent pixels
-                                   // LAB_BLOCK_SOLID should not be set, otherwise it has an XRay-effect
-
-#define LAB_BLOCK_EMISSIVE     128u
 IXO_BITDEF(LAB_BlockFlags,
     (SOLID, LAB_BLOCK_SOLID),
         (MASSIVE, LAB_BLOCK_MASSIVE),
@@ -23,7 +12,9 @@ IXO_BITDEF(LAB_BlockFlags,
 
     (TRANSPARENT, LAB_BLOCK_TRANSPARENT),
 
-    (EMISSIVE, LAB_BLOCK_EMISSIVE)
+    (GLOWING, LAB_BLOCK_GLOWING),
+        (FLAT_SHADE, LAB_BLOCK_FLAT_SHADE),
+        (EMISSIVE, LAB_BLOCK_EMISSIVE)
 );
 
 #if 0
@@ -145,7 +136,7 @@ LAB_Block LAB_BLOCK_DIRT = {
 
 LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_LIGHT, 0, 1, LAB_RGB(255, 255, 255));
 LAB_Block LAB_BLOCK_LIGHT = {
-    .flags = LAB_BLOCK_SOLID | LAB_BLOCK_EMISSIVE,
+    .flags = LAB_BLOCK_SOLID | LAB_BLOCK_GLOWING,
     .tint = LAB_RGB(255, 255, 255),
     .lum = LAB_RGB(255, 255, 255),
     .tx = 0, 1,
@@ -154,7 +145,7 @@ LAB_Block LAB_BLOCK_LIGHT = {
 
 LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_LIGHT_BLUE, 0, 1, LAB_RGB(64, 150, 255));
 LAB_Block LAB_BLOCK_BLUE_LIGHT = {
-    .flags = LAB_BLOCK_SOLID | LAB_BLOCK_EMISSIVE,
+    .flags = LAB_BLOCK_SOLID | LAB_BLOCK_GLOWING,
     .tint = LAB_RGB(64, 150, 255),
     .lum = LAB_RGB(16, 64, 255),
     .tx = 0, 1,
@@ -163,7 +154,7 @@ LAB_Block LAB_BLOCK_BLUE_LIGHT = {
 
 LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_LIGHT_YELLOW, 0, 1, LAB_RGB(255, 240, 128));
 LAB_Block LAB_BLOCK_YELLOW_LIGHT = {
-    .flags = LAB_BLOCK_SOLID | LAB_BLOCK_EMISSIVE,
+    .flags = LAB_BLOCK_SOLID | LAB_BLOCK_GLOWING,
     .tint = LAB_RGB(255, 240, 128),
     .lum = LAB_RGB(255, 240, 16),
     .tx = 0, 1,
@@ -172,7 +163,7 @@ LAB_Block LAB_BLOCK_YELLOW_LIGHT = {
 
 LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_LIGHT_GREEN, 0, 1, LAB_RGB(150, 255, 128));
 LAB_Block LAB_BLOCK_GREEN_LIGHT = {
-    .flags = LAB_BLOCK_SOLID | LAB_BLOCK_EMISSIVE,
+    .flags = LAB_BLOCK_SOLID | LAB_BLOCK_GLOWING,
     .tint = LAB_RGB(150, 255, 128),
     .lum = LAB_RGB(64, 255, 16),
     .tx = 0, 1,
@@ -181,7 +172,7 @@ LAB_Block LAB_BLOCK_GREEN_LIGHT = {
 
 LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_LIGHT_RED, 0, 1, LAB_RGB(255, 150, 50));
 LAB_Block LAB_BLOCK_RED_LIGHT = {
-    .flags = LAB_BLOCK_SOLID | LAB_BLOCK_EMISSIVE,
+    .flags = LAB_BLOCK_SOLID | LAB_BLOCK_GLOWING,
     .tint = LAB_RGB(255, 150, 50),
     .lum = LAB_RGB(255, 64, 16),
     .tx = 0, 1,

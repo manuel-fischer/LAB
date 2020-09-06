@@ -177,7 +177,7 @@ static inline LAB_Color LAB_OversaturateColor(LAB_Color c)
 }
 
 
-static inline LAB_Color LAB_InterpolateColor2(LAB_Color a, LAB_Color b, float m)
+static inline LAB_Color LAB_InterpolateColor2f(LAB_Color a, LAB_Color b, float m)
 {
     return LAB_RGBA(
         (int)(LAB_RED(a)*(1-m) + LAB_RED(b)*m),
@@ -187,12 +187,33 @@ static inline LAB_Color LAB_InterpolateColor2(LAB_Color a, LAB_Color b, float m)
     );
 }
 
-static inline LAB_Color LAB_InterpolateColor4p(LAB_Color* colors,
+static inline LAB_Color LAB_InterpolateColor4vf(LAB_Color* colors,
                                                float u, float v)
 {
-    return LAB_InterpolateColor2(
-                LAB_InterpolateColor2(colors[0], colors[1], u),
-                LAB_InterpolateColor2(colors[2], colors[3], u),
+    return LAB_InterpolateColor2f(
+                LAB_InterpolateColor2f(colors[0], colors[1], u),
+                LAB_InterpolateColor2f(colors[2], colors[3], u),
+                v
+    );
+}
+
+
+static inline LAB_Color LAB_InterpolateColor2i(LAB_Color a, LAB_Color b, int m)
+{
+    return LAB_RGBA(
+        (int)(LAB_RED(a)*(256-m) + LAB_RED(b)*m)>>8&0xff,
+        (int)(LAB_GRN(a)*(256-m) + LAB_GRN(b)*m)>>8&0xff,
+        (int)(LAB_BLU(a)*(256-m) + LAB_BLU(b)*m)>>8&0xff,
+        (int)(LAB_ALP(a)*(256-m) + LAB_ALP(b)*m)>>8&0xff
+    );
+}
+
+static inline LAB_Color LAB_InterpolateColor4vi(LAB_Color* colors,
+                                               int u, int v)
+{
+    return LAB_InterpolateColor2i(
+                LAB_InterpolateColor2i(colors[0], colors[1], u),
+                LAB_InterpolateColor2i(colors[2], colors[3], u),
                 v
     );
 }

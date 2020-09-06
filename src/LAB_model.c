@@ -74,6 +74,7 @@ int LAB_PutModelSmoothShadedAt(LAB_OUT LAB_Triangle* dst,
             // Nightvision: LAB_OversaturateColor light_sides[light]
             for(int i = 0; i < 3; ++i)
             {
+                #if 0
                 float u, v;
                 u = LAB_offsetA[light>>1][0]*src->v[i].x +
                     LAB_offsetA[light>>1][1]*src->v[i].y +
@@ -81,10 +82,23 @@ int LAB_PutModelSmoothShadedAt(LAB_OUT LAB_Triangle* dst,
                 v = LAB_offsetB[light>>1][0]*src->v[i].x +
                     LAB_offsetB[light>>1][1]*src->v[i].y +
                     LAB_offsetB[light>>1][2]*src->v[i].z;
+                #else
+                int u, v;
+                u = LAB_offsetA[light>>1][0]*(int)(256*src->v[i].x) +
+                    LAB_offsetA[light>>1][1]*(int)(256*src->v[i].y) +
+                    LAB_offsetA[light>>1][2]*(int)(256*src->v[i].z);
+                v = LAB_offsetB[light>>1][0]*(int)(256*src->v[i].x) +
+                    LAB_offsetB[light>>1][1]*(int)(256*src->v[i].y) +
+                    LAB_offsetB[light>>1][2]*(int)(256*src->v[i].z);
+                #endif
                 //u = v = 0;
 
                 LAB_Color* l = light_sides[light];
-                LAB_Color lint = LAB_InterpolateColor4p(l, u, v);
+                #if 0
+                LAB_Color lint = LAB_InterpolateColor4vf(l, u, v);
+                #else
+                LAB_Color lint = LAB_InterpolateColor4vi(l, u, v);
+                #endif
                 dst->v[i].color = LAB_MulColor_Fast(dst->v[i].color, lint);
             }
             ++dst, ++count;

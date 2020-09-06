@@ -144,6 +144,7 @@ void LAB_GetChunkNeighborhood(LAB_World* world, LAB_Chunk* /*out*/ chunks[27], i
 
 void LAB_NotifyChunk(LAB_World* world, int x, int y, int z)
 {
+    // TODO when block was placed at chunk border
     if(LAB_LIKELY(world->chunkview != NULL))
     {
         LAB_Chunk* chunks[27];
@@ -311,9 +312,11 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int c
             int off = LAB_CHUNK_OFFSET(x, y, z);
 
             LAB_Color lum;
-            lum = LAB_RGB(16, 16, 16);
+            //lum = LAB_RGB(16, 16, 16);
+            //lum = LAB_GetNeighborhoodBlock(chunks, x,y,z)->lum;
             if(!(cnk->blocks[off]->flags & LAB_BLOCK_OPAQUE))
             {
+                lum = LAB_RGB(16, 16, 16);
                 for(int i = 0; i < 6; ++i)
                 {
                     const int* o = LAB_offset[i];
@@ -330,6 +333,10 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int c
                     }
                     lum = LAB_MaxColor(lum, nlum);
                 }
+            }
+            else
+            {
+                lum = LAB_GetNeighborhoodBlock(chunks, x,y,z)->lum;
             }
             if(cnk->light[off] != lum)
             {

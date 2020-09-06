@@ -32,7 +32,9 @@ typedef uint32_t LAB_BlockFlags;
 #define LAB_BLOCK_TRANSPARENT  16u // The block has some transparent pixels
                                    // LAB_BLOCK_SOLID should not be set, otherwise it has an XRay-effect
 
+#define LAB_BLOCK_FLAT_SHADE   64u
 #define LAB_BLOCK_EMISSIVE     128u
+#define LAB_BLOCK_GLOWING      (LAB_BLOCK_FLAT_SHADE|LAB_BLOCK_EMISSIVE)
 
 
 

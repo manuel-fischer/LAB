@@ -201,69 +201,71 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
     if(faces == 0) return;
 
 
-#if 0
-    LAB_Color light_sides[6];
-    for(int face_itr=faces; face_itr; face_itr &= face_itr-1)
+    if(block->flags&LAB_BLOCK_FLAT_SHADE)
     {
-        int face = LAB_Ctz(face_itr);
-        const int* o = LAB_offset[face];
-        light_sides[face] = LAB_GetNeighborhoodLight(cnk3x3x3, x+o[0], y+o[1], z+o[2], LAB_RGB(255, 255, 255));
-    }
-
-
-    const LAB_Model* model = block->model;
-    if(!model) return;
-    LAB_Triangle* tri;
-    tri = LAB_ViewMeshAlloc(chunk_entry, model->size, 0);
-    if(LAB_UNLIKELY(tri == NULL)) return;
-    int count = LAB_PutModelShadedAt(tri, model, x, y, z, faces, light_sides);
-    chunk_entry->mesh_count -= model->size-count;
-#else
-    LAB_Color light_sides[6][4];
-    for(int face_itr=faces; face_itr; face_itr &= face_itr-1)
-    {
-        int face = LAB_Ctz(face_itr);
-        const int* o = LAB_offset[face];
-
-        #define XX(xd, yd, zd) LAB_GetNeighborhoodLight(cnk3x3x3, x+o[0]+(xd), y+o[1]+(yd), z+o[2]+(zd), LAB_RGB(255, 255, 255))
-        int ax = LAB_offsetA[face>>1][0];
-        int ay = LAB_offsetA[face>>1][1];
-        int az = LAB_offsetA[face>>1][2];
-        int bx = LAB_offsetB[face>>1][0];
-        int by = LAB_offsetB[face>>1][1];
-        int bz = LAB_offsetB[face>>1][2];
-
-        LAB_Color tmp[9];
-        for(int v = -1; v <= 1; ++v)
-        for(int u = -1; u <= 1; ++u)
+        LAB_Color light_sides[6];
+        for(int face_itr=faces; face_itr; face_itr &= face_itr-1)
         {
-            int index = 3*(1+v) + 1+u;
-            tmp[index] = XX(u*ax+v*bx, u*ay+v*by, u*az+v*bz);
+            int face = LAB_Ctz(face_itr);
+            const int* o = LAB_offset[face];
+            light_sides[face] = LAB_GetNeighborhoodLight(cnk3x3x3, x+o[0], y+o[1], z+o[2], LAB_RGB(255, 255, 255));
         }
 
-        /*light_sides[face][0] = XX(    0,     0,     0);
-        light_sides[face][1] = XX(   ax,    ay,    az);
-        light_sides[face][2] = XX(bx   , by   , bz   );
-        light_sides[face][3] = XX(bx+ax, by+ay, bz+az);*/
 
-        light_sides[face][0] = LAB_MixColor4x25(tmp[0], tmp[1], tmp[3], tmp[4]);
-        light_sides[face][1] = LAB_MixColor4x25(tmp[1], tmp[2], tmp[4], tmp[5]);
-        light_sides[face][2] = LAB_MixColor4x25(tmp[3], tmp[4], tmp[6], tmp[7]);
-        light_sides[face][3] = LAB_MixColor4x25(tmp[4], tmp[5], tmp[7], tmp[8]);
-
-        #undef XX
+        const LAB_Model* model = block->model;
+        if(!model) return;
+        LAB_Triangle* tri;
+        tri = LAB_ViewMeshAlloc(chunk_entry, model->size, 0);
+        if(LAB_UNLIKELY(tri == NULL)) return;
+        int count = LAB_PutModelShadedAt(tri, model, x, y, z, faces, light_sides);
+        chunk_entry->mesh_count -= model->size-count;
     }
+    else
+    {
+        LAB_Color light_sides[6][4];
+        for(int face_itr=faces; face_itr; face_itr &= face_itr-1)
+        {
+            int face = LAB_Ctz(face_itr);
+            const int* o = LAB_offset[face];
+
+            #define XX(xd, yd, zd) LAB_GetNeighborhoodLight(cnk3x3x3, x+o[0]+(xd), y+o[1]+(yd), z+o[2]+(zd), LAB_RGB(16, 16, 16))
+            int ax = LAB_offsetA[face>>1][0];
+            int ay = LAB_offsetA[face>>1][1];
+            int az = LAB_offsetA[face>>1][2];
+            int bx = LAB_offsetB[face>>1][0];
+            int by = LAB_offsetB[face>>1][1];
+            int bz = LAB_offsetB[face>>1][2];
+
+            LAB_Color tmp[9];
+            for(int v = -1; v <= 1; ++v)
+            for(int u = -1; u <= 1; ++u)
+            {
+                int index = 3*(1+v) + 1+u;
+                tmp[index] = XX(u*ax+v*bx, u*ay+v*by, u*az+v*bz);
+            }
+
+            /*light_sides[face][0] = XX(    0,     0,     0);
+            light_sides[face][1] = XX(   ax,    ay,    az);
+            light_sides[face][2] = XX(bx   , by   , bz   );
+            light_sides[face][3] = XX(bx+ax, by+ay, bz+az);*/
+
+            light_sides[face][0] = LAB_MixColor4x25(tmp[0], tmp[1], tmp[3], tmp[4]);
+            light_sides[face][1] = LAB_MixColor4x25(tmp[1], tmp[2], tmp[4], tmp[5]);
+            light_sides[face][2] = LAB_MixColor4x25(tmp[3], tmp[4], tmp[6], tmp[7]);
+            light_sides[face][3] = LAB_MixColor4x25(tmp[4], tmp[5], tmp[7], tmp[8]);
+
+            #undef XX
+        }
 
 
-    const LAB_Model* model = block->model;
-    if(!model) return;
-    LAB_Triangle* tri;
-    tri = LAB_ViewMeshAlloc(chunk_entry, model->size, 0);
-    if(LAB_UNLIKELY(tri == NULL)) return;
-    int count = LAB_PutModelSmoothShadedAt(tri, model, x, y, z, faces, light_sides);
-    chunk_entry->mesh_count -= model->size-count;
-#endif
-
+        const LAB_Model* model = block->model;
+        if(!model) return;
+        LAB_Triangle* tri;
+        tri = LAB_ViewMeshAlloc(chunk_entry, model->size, 0);
+        if(LAB_UNLIKELY(tri == NULL)) return;
+        int count = LAB_PutModelSmoothShadedAt(tri, model, x, y, z, faces, light_sides);
+        chunk_entry->mesh_count -= model->size-count;
+    }
 
 
 #undef GET_BLOCK_FLAGS
