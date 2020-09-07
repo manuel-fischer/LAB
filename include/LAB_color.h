@@ -163,6 +163,19 @@ static inline LAB_Color LAB_HighColor(LAB_Color c)
     return LAB_MixColor50(c, LAB_MulColor2_Saturate(LAB_MixColor50(c, s)));
 }
 
+static inline LAB_Color LAB_HighColor2(LAB_Color c)
+{
+    c = LAB_HighColor(c);
+    uint32_t r, g, b;
+    r = LAB_RED(c);
+    g = LAB_GRN(c);
+    b = LAB_BLU(c);
+    r^=255; r=(r*(r+1))/256; r^=255;
+    g^=255; g=(g*(g+1))/256; g^=255;
+    b^=255; b=(b*(b+1))/256; b^=255;
+    return LAB_RGBA(r, g, b, LAB_ALP(c));
+}
+
 static inline LAB_Color LAB_OversaturateColor(LAB_Color c)
 {
     uint32_t r, g, b, m;

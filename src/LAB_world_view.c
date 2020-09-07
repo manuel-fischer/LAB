@@ -200,15 +200,15 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
     faces |= 32*(!(GET_BLOCK_FLAGS( 0, 0, 1)&LAB_BLOCK_OPAQUE));
     if(faces == 0) return;
 
-
-    if(block->flags&LAB_BLOCK_FLAT_SHADE)
+    #define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?LAB_HighColor2(x):(x))
+    if((view->flags&LAB_VIEW_FLAT_SHADE)||(block->flags&LAB_BLOCK_FLAT_SHADE))
     {
         LAB_Color light_sides[6];
         for(int face_itr=faces; face_itr; face_itr &= face_itr-1)
         {
             int face = LAB_Ctz(face_itr);
             const int* o = LAB_offset[face];
-            light_sides[face] = LAB_GetNeighborhoodLight(cnk3x3x3, x+o[0], y+o[1], z+o[2], LAB_RGB(255, 255, 255));
+            light_sides[face] = MAP_LIGHT(LAB_GetNeighborhoodLight(cnk3x3x3, x+o[0], y+o[1], z+o[2], LAB_RGB(255, 255, 255)));
         }
 
 
@@ -249,10 +249,10 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
             light_sides[face][2] = XX(bx   , by   , bz   );
             light_sides[face][3] = XX(bx+ax, by+ay, bz+az);*/
 
-            light_sides[face][0] = LAB_MixColor4x25(tmp[0], tmp[1], tmp[3], tmp[4]);
-            light_sides[face][1] = LAB_MixColor4x25(tmp[1], tmp[2], tmp[4], tmp[5]);
-            light_sides[face][2] = LAB_MixColor4x25(tmp[3], tmp[4], tmp[6], tmp[7]);
-            light_sides[face][3] = LAB_MixColor4x25(tmp[4], tmp[5], tmp[7], tmp[8]);
+            light_sides[face][0] = MAP_LIGHT(LAB_MixColor4x25(tmp[0], tmp[1], tmp[3], tmp[4]));
+            light_sides[face][1] = MAP_LIGHT(LAB_MixColor4x25(tmp[1], tmp[2], tmp[4], tmp[5]));
+            light_sides[face][2] = MAP_LIGHT(LAB_MixColor4x25(tmp[3], tmp[4], tmp[6], tmp[7]));
+            light_sides[face][3] = MAP_LIGHT(LAB_MixColor4x25(tmp[4], tmp[5], tmp[7], tmp[8]));
 
             #undef XX
         }
@@ -474,7 +474,7 @@ void LAB_DrawSurf(LAB_View* view, unsigned gl_id, int x, int y, int w, int h)
 
 
 
-void LAB_ViewRenderGui(LAB_View* view)
+void LAB_ViewRenderHud(LAB_View* view)
 {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -505,11 +505,8 @@ void LAB_ViewRenderGui(LAB_View* view)
     glDrawArrays(GL_TRIANGLES, 0, 3*4);
 
     {
-        if(view->info.font == NULL)
-        {
-            view->info.font = TTF_OpenFont("fonts/DejaVuSansMono.ttf", 13);
-            if(!view->info.font) return;
-        }
+        TTF_Font* font = TTF_OpenFont("fonts/DejaVuSansMono.ttf", 13);
+        if(!font) return;
 
         int rerender = 0;
         int px, py, pz;
@@ -542,7 +539,7 @@ void LAB_ViewRenderGui(LAB_View* view)
             SDL_Color fg = { 255, 255, 255, 255 };
             SDL_Color bg = {   0,   0,   0, 255 };
 
-            view->info.surf = TTF_RenderUTF8_Shaded(view->info.font, buf, fg, bg);
+            view->info.surf = TTF_RenderUTF8_Shaded(font, buf, fg, bg);
             if(!view->info.surf) return;
 
 
@@ -686,8 +683,8 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
 
 
     // Render Crosshair
-    if(view->flags & LAB_VIEW_SHOW_GUI)
-        LAB_ViewRenderGui(view);
+    if(view->flags & LAB_VIEW_SHOW_HUD)
+        LAB_ViewRenderHud(view);
 }
 
 

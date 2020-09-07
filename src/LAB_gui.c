@@ -62,3 +62,11 @@ TTF_Font* LAB_GuiTitleFont(void)
         ttf = TTF_OpenFont("fonts/DejaVuSans.ttf", 15);
     return ttf;
 }
+
+TTF_Font* LAB_GuiMonospaceFont(void)
+{
+    static TTF_Font* ttf = NULL;
+    if(!ttf)
+        ttf = TTF_OpenFont("fonts/DejaVuSansMono.ttf", 13);
+    return ttf;
+}

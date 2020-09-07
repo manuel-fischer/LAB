@@ -201,7 +201,7 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
 
                 case SDLK_F1:
                 {
-                    view->flags ^= LAB_VIEW_SHOW_GUI;
+                    view->flags ^= LAB_VIEW_SHOW_HUD;
                 } break;
 
                 case SDLK_F2:
@@ -228,6 +228,19 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                 {
                     view->flags ^= LAB_VIEW_USE_VBO;
                     printf("VBO turned %s\n", "off\0on"+4*!!(view->flags & LAB_VIEW_USE_VBO));
+                    LAB_ViewInvalidateEverything(view);
+
+                } break;
+
+                case SDLK_F6:
+                {
+                    view->flags ^= LAB_VIEW_BRIGHTER;
+                    LAB_ViewInvalidateEverything(view);
+
+                } break;
+                case SDLK_F7:
+                {
+                    view->flags ^= LAB_VIEW_FLAT_SHADE;
                     LAB_ViewInvalidateEverything(view);
 
                 } break;

@@ -5,8 +5,6 @@
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_surface.h>
 
-typedef struct LAB_GuiComponent LAB_GuiComponent;
-
 #define LAB_GUI_COMPONENT_INHERIT \
     /** \
      *  Return 1 if component got dirty and needs to be rerendered \

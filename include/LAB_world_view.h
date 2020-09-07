@@ -47,14 +47,15 @@ typedef struct LAB_ViewChunkEntry
 #undef HTL_PARAM*/
 
 
-#define LAB_VIEW_USE_VBO 1u
-#define LAB_VIEW_SHOW_GUI 2u
+#define LAB_VIEW_USE_VBO    1u
+#define LAB_VIEW_SHOW_HUD   2u
+#define LAB_VIEW_FLAT_SHADE 4u
+#define LAB_VIEW_BRIGHTER   8u
 
 typedef struct LAB_ViewInfo
 {
     int x, y, z;
     unsigned gl_texture;
-    TTF_Font* font;
     SDL_Surface* surf;
 } LAB_ViewInfo;
 
@@ -114,7 +115,7 @@ void LAB_ViewLoadNearChunks(LAB_View* view);
 
 
 
-void LAB_ViewRenderGui(LAB_View* view);
+void LAB_ViewRenderHud(LAB_View* view);
 
 
 LAB_ViewChunkEntry* LAB_ViewFindChunkEntry(LAB_View* view, int x, int y, int z);

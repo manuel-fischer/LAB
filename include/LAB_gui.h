@@ -3,6 +3,8 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
+typedef struct LAB_GuiComponent LAB_GuiComponent;
+
 /**
  *  Return nonzero on success
  */
