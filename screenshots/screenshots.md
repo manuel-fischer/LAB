@@ -4,8 +4,9 @@ More recent screenshots are at the top, so if you want to see the developement s
 ## Colored Lighting
 ![](009.png)
 A white and a blue light source, smooth lighting is enabled
+
 ![](008.png)
-a bunch of different light sources, smooth lighting is not implemented when this screenshot was taken
+a bunch of different light sources, smooth lighting was not implemented when this screenshot was taken
 
 ## Grassy terrain generation
 ![](007.png)
