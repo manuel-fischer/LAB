@@ -1,6 +1,7 @@
 # LAB
 
-![Colored Light](screenshots/004.png)
+![Colored Light](screenshots/009.png)
+[More screenshots](screenshots/screenshots.md)
 
 A Voxel-Engine, *infinite* world in all three spacial dimensions. Currently
 work in progress. After the main engine has been written, custom modding
