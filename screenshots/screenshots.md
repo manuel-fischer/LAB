@@ -1,7 +1,14 @@
 # Screenshots
 More recent screenshots are at the top, so if you want to see the developement stages from early on, you can start at the bottom and scroll up.
 
+## Grassy terrain generation
+![](011.png)
+Grassy terrain with smooth lighting
+
 ## Colored Lighting
+![](010.png)
+A cave with colorful crystals
+
 ![](009.png)
 A white and a blue light source, smooth lighting is enabled
 
