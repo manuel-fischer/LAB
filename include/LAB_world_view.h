@@ -110,7 +110,7 @@ void LAB_ViewInvalidateEverything(LAB_View* view);
 
 void LAB_ViewGetDirection(LAB_View* view, LAB_OUT float dir[3]);
 
-void LAB_ViewTick(LAB_View* view);
+void LAB_ViewTick(LAB_View* view, uint32_t delta_ms);
 void LAB_ViewLoadNearChunks(LAB_View* view);
 
 

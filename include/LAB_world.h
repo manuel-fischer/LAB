@@ -147,7 +147,7 @@ int LAB_TraceBlock(LAB_World* world, int max_distance, float vpos[3], float dir[
                    /*out*/ int target[3],/*out*/ int prev[3],/*out*/ float hit[3]);
 
 
-void LAB_WorldTick(LAB_World* world);
+void LAB_WorldTick(LAB_World* world, uint32_t delta_ms);
 
 
 

@@ -78,6 +78,8 @@ int main(int argc, char** argv) {
     main_window.render_user  = &view;
 
 
+    uint32_t time_ms = SDL_GetTicks();
+
     int itr = 0;
     while(LAB_WindowLoop(&main_window))
     {
@@ -89,9 +91,13 @@ int main(int argc, char** argv) {
         }
         ++itr;
 
-        LAB_ViewInputTick(&view_input);
-        LAB_ViewTick(&view);
-        LAB_WorldTick(&the_world);
+        uint32_t time2_ms = SDL_GetTicks();
+        uint32_t delta_ms = time2_ms-time_ms;
+        time_ms = time2_ms;
+
+        LAB_ViewInputTick(&view_input, delta_ms);
+        LAB_ViewTick(&view, delta_ms);
+        LAB_WorldTick(&the_world, delta_ms);
     };
 
 

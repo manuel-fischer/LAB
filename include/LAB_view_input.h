@@ -33,4 +33,4 @@ int  LAB_ConstructViewInput(LAB_ViewInput* view_input, LAB_View* view);
 void LAB_DestructViewInput(LAB_ViewInput* view_input);
 
 int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event);
-void LAB_ViewInputTick(LAB_ViewInput* view_input);
+void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms);

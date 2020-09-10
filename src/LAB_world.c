@@ -259,7 +259,7 @@ int LAB_TraceBlock(LAB_World* world, int max_distance, float vpos[3], float dir[
 
 
 
-void LAB_WorldTick(LAB_World* world)
+void LAB_WorldTick(LAB_World* world, uint32_t delta_ms)
 {
     while(!LAB_ChunkPosQueue_IsEmpty(&world->gen_queue))
     {

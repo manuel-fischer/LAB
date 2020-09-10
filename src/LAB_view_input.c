@@ -41,7 +41,7 @@ static int selected_block = 1;
 int  LAB_ConstructViewInput(LAB_ViewInput* view_input, LAB_View* view)
 {
     memset(view_input, 0, sizeof *view_input);
-    view_input->speed = 0.1f;
+    view_input->speed = 3.0f;
     view_input->view = view;
     view_input->brushsize = 3;
     return 1;
@@ -355,7 +355,7 @@ static int LAB_ViewInputInteract(LAB_ViewInput* view_input, int right)
 }
 
 
-void LAB_ViewInputTick(LAB_ViewInput* view_input)
+void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms)
 {
 
     LAB_View* view = view_input->view;
@@ -367,6 +367,7 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input)
     Uint32 mbstate = SDL_GetMouseState(&mx, &my);
 
     float speed = view_input->speed * (kbstate[SDL_SCANCODE_LCTRL] ? 2.5 : 1);
+    speed *= (float)delta_ms*(1.f/1000.f);
 
     unsigned dir_set = view_input->dir_set;
     if(view_input->flags & LAB_VIEWINPUT_FORWARD)
