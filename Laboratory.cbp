@@ -168,6 +168,7 @@
 		<Unit filename="include/LAB_direction.h" />
 		<Unit filename="include/LAB_error.h" />
 		<Unit filename="include/LAB_ext.h" />
+		<Unit filename="include/LAB_fps_graph.h" />
 		<Unit filename="include/LAB_gen_flat.h" />
 		<Unit filename="include/LAB_gen_overworld.h" />
 		<Unit filename="include/LAB_gl.h" />
@@ -203,6 +204,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_error.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_fps_graph.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_gen_flat.c">

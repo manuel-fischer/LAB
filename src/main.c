@@ -93,6 +93,7 @@ int main(int argc, char** argv) {
 
         uint32_t time2_ms = SDL_GetTicks();
         uint32_t delta_ms = time2_ms-time_ms;
+        /*if(itr%20 == 0)*/ printf("%i fps          \r", 1000/delta_ms);
         time_ms = time2_ms;
 
         LAB_ViewInputTick(&view_input, delta_ms);

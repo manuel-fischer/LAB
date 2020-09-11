@@ -3,6 +3,7 @@
 #include "LAB_memory.h"
 #include "LAB_error.h"
 #include "LAB_math.h"
+#include "LAB_debug.h"
 
 #include "LAB_world.h"
 #include "LAB_block.h"
@@ -93,6 +94,8 @@ int  LAB_ConstructView(LAB_View* view, LAB_World* world)
 
     view->ax = 22;
     view->y = 1.5;
+
+    LAB_FpsGraph_Create(&view->fps_graph);
 
     return 1;
 }
@@ -329,6 +332,7 @@ static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
         #ifndef NO_GLEW
         if(view->flags & LAB_VIEW_USE_VBO)
         {
+            if(!chunk_entry->vbo) return;
             glBindBuffer(GL_ARRAY_BUFFER, chunk_entry->vbo);
         }
         #endif
@@ -482,26 +486,27 @@ void LAB_ViewRenderHud(LAB_View* view)
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR);
 
-    static const float crosshair[3*3*4] = {
-            0, -0.1, -5,
-         0.05, -0.2, -5,
-        -0.05, -0.2, -5,
-
-         0.1,     0, -5,
-         0.2,  0.05, -5,
-         0.2, -0.05, -5,
-
-            0,  0.1, -5,
-        -0.05,  0.2, -5,
-         0.05,  0.2, -5,
-
-        -0.1,     0, -5,
-        -0.2, -0.05, -5,
-        -0.2,  0.05, -5,
+    static const float crosshair[2*3*4] = {
+            0, -0.1,
+         0.05, -0.2,
+        -0.05, -0.2,
+        //
+         0.1,     0,
+         0.2,  0.05,
+         0.2, -0.05,
+        //
+            0,  0.1,
+        -0.05,  0.2,
+         0.05,  0.2,
+        //
+        -0.1,     0,
+        -0.2, -0.05,
+        -0.2,  0.05,
     };
 
     glColor3f(1,1,1);
-    glVertexPointer(3, LAB_GL_TYPEOF(crosshair[0]), 0, crosshair);
+    glTranslatef(0,0,-5);
+    glVertexPointer(2, LAB_GL_TYPEOF(crosshair[0]), 0, crosshair);
     glDrawArrays(GL_TRIANGLES, 0, 3*4);
 
     {
@@ -685,6 +690,24 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
     // Render Crosshair
     if(view->flags & LAB_VIEW_SHOW_HUD)
         LAB_ViewRenderHud(view);
+
+    if(view->flags & LAB_VIEW_SHOW_FPS_GRAPH)
+    {
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glMatrixMode(GL_MODELVIEW);
+        int tmp;
+        LAB_ASSUME((glGetIntegerv(GL_MATRIX_MODE, &tmp), tmp) == GL_MODELVIEW);
+        glPushMatrix();
+        glLoadIdentity();
+        glScalef(2*(float)view->w/(float)view->h, 2, 1);
+        glTranslatef(-0.5,-0.5,-1);
+        glLineWidth(2);
+        glEnable(GL_LINE_SMOOTH);
+        LAB_FpsGraph_Render(&view->fps_graph);
+        glPopMatrix();
+    }
+
+    LAB_GL_CHECK();
 }
 
 
@@ -800,11 +823,22 @@ LAB_ViewChunkEntry* LAB_ViewGetChunkEntry(LAB_View* view, int x, int y, int z)
 
 }
 
-void LAB_ViewInvalidateEverything(LAB_View* view)
+void LAB_ViewInvalidateEverything(LAB_View* view, int free_buffers)
 {
     for(size_t i = 0; i < view->chunk_count; ++i)
     {
         view->chunks[i].dirty = 1;
+    }
+    if(free_buffers)
+    {
+        for(size_t i = 0; i < view->chunk_count; ++i)
+        {
+            if(view->chunks[i].vbo)
+            {
+                glDeleteBuffers(1, &view->chunks[i].vbo);
+                view->chunks[i].vbo = 0;
+            }
+        }
     }
 }
 
@@ -834,6 +868,7 @@ void LAB_ViewGetDirection(LAB_View* view, LAB_OUT float dir[3])
 void LAB_ViewTick(LAB_View* view, uint32_t delta_ms)
 {
     LAB_ViewLoadNearChunks(view);
+    LAB_FpsGraph_AddSample(&view->fps_graph, delta_ms);
 }
 
 

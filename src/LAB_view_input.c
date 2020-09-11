@@ -226,22 +226,28 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
 
                 case SDLK_F3:
                 {
+                    view->flags ^= LAB_VIEW_SHOW_FPS_GRAPH;
+
+                } break;
+
+                case SDLK_F4:
+                {
                     view->flags ^= LAB_VIEW_USE_VBO;
                     printf("VBO turned %s\n", "off\0on"+4*!!(view->flags & LAB_VIEW_USE_VBO));
-                    LAB_ViewInvalidateEverything(view);
+                    LAB_ViewInvalidateEverything(view, /*free_buffers*/1);
 
                 } break;
 
                 case SDLK_F6:
                 {
                     view->flags ^= LAB_VIEW_BRIGHTER;
-                    LAB_ViewInvalidateEverything(view);
+                    LAB_ViewInvalidateEverything(view, /*free_buffers*/0);
 
                 } break;
                 case SDLK_F7:
                 {
                     view->flags ^= LAB_VIEW_FLAT_SHADE;
-                    LAB_ViewInvalidateEverything(view);
+                    LAB_ViewInvalidateEverything(view, /*free_buffers*/0);
 
                 } break;
 

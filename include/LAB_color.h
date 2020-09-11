@@ -2,13 +2,13 @@
 
 #include "LAB_util.h"
 
-#include <stdlib.h>
+#include "LAB_stdinc.h"
 
 typedef uint32_t LAB_Color;
 
 #if 1
-#define LAB_RGB(r, g, b) ((r) | (g) << 8 | (b) << 16 | 0xff000000u)
-#define LAB_RGBA(r, g, b, a) ((r) | (g) << 8 | (b) << 16 | (a) << 24)
+#define LAB_RGB(r, g, b) ((uint32_t)(r) | (uint32_t)(g) << 8 | (uint32_t)(b) << 16 | 0xff000000u)
+#define LAB_RGBA(r, g, b, a) ((uint32_t)(r) | (uint32_t)(g) << 8 | (uint32_t)(b) << 16 | (uint32_t)(a) << 24)
 // LAB_RGBX(RRGGBB)
 #define LAB_RGBX(hex) LAB_RGB((0x##hex) >> 16 & 0xff, (0x##hex) >> 8 & 0xff, (0x##hex) & 0xff)
 // LAB_RGBAX(RRGGBBAA)
@@ -17,6 +17,14 @@ typedef uint32_t LAB_Color;
 #define LAB_GRN(col) ((col) >>  8 & 0xffu)
 #define LAB_BLU(col) ((col) >> 16 & 0xffu)
 #define LAB_ALP(col) ((col) >> 24 & 0xffu)
+
+#define LAB_RED_MASK 0x000000ffu
+#define LAB_GRN_MASK 0x0000ff00u
+#define LAB_BLU_MASK 0x00ff0000u
+#define LAB_ALP_MASK 0xff000000u
+
+#define LAB_COL_MASK 0x00ffffffu
+
 #else
 #error RGB-Format not implemented
 #endif

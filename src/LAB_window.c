@@ -34,11 +34,11 @@ int LAB_ConstructWindow(LAB_Window* window, int w, int h, uint32_t sdl_flags)
         goto INIT_ERROR;
     }
 
-    if(SDL_GL_SetSwapInterval(1) < 0) // VSYNC
+    /*if(SDL_GL_SetSwapInterval(1) < 0) // VSYNC
     {
         LAB_SetError("SDL_GL_SetSwapInterval failed: %s", SDL_GetError());
         goto INIT_ERROR;
-    }
+    }*/
 
 #ifndef NO_GLEW
     GLenum err = glewInit();

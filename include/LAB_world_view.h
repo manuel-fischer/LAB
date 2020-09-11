@@ -1,6 +1,7 @@
 #pragma once
 #include "LAB_stdinc.h"
 #include "LAB_opt.h"
+#include "LAB_fps_graph.h"
 #include "LAB_model.h" // LAB_Triangle
 #include <SDL2/SDL_ttf.h>
 
@@ -47,10 +48,11 @@ typedef struct LAB_ViewChunkEntry
 #undef HTL_PARAM*/
 
 
-#define LAB_VIEW_USE_VBO    1u
-#define LAB_VIEW_SHOW_HUD   2u
-#define LAB_VIEW_FLAT_SHADE 4u
-#define LAB_VIEW_BRIGHTER   8u
+#define LAB_VIEW_USE_VBO           1u
+#define LAB_VIEW_SHOW_HUD          2u
+#define LAB_VIEW_SHOW_FPS_GRAPH    4u
+#define LAB_VIEW_FLAT_SHADE        8u
+#define LAB_VIEW_BRIGHTER         16u
 
 typedef struct LAB_ViewInfo
 {
@@ -87,6 +89,8 @@ typedef struct LAB_View
 
     LAB_ViewInfo info;
     int w, h; // window size
+
+    LAB_FpsGraph fps_graph;
 } LAB_View;
 
 
@@ -106,7 +110,7 @@ void LAB_ViewChunkProc(void* user, LAB_World* world, int x, int y, int z);
 void LAB_ViewRenderProc(void* user, LAB_Window* window);
 
 LAB_ViewChunkEntry* LAB_ViewGetChunkEntry(LAB_View* view, int x, int y, int z);
-void LAB_ViewInvalidateEverything(LAB_View* view);
+void LAB_ViewInvalidateEverything(LAB_View* view, int free_buffers);
 
 void LAB_ViewGetDirection(LAB_View* view, LAB_OUT float dir[3]);
 
