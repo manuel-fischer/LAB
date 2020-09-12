@@ -930,7 +930,7 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
         b: the offset in the higher axis
     **/
 
-    int load_amount = 3; // should be configurable
+    int load_amount = view->load_amount; // should be configurable
 
     for(int r = 0; r <= (int)view->preload_dist; ++r)
     {

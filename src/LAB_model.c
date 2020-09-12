@@ -82,7 +82,7 @@ int LAB_PutModelSmoothShadedAt(LAB_OUT LAB_Triangle* dst,
                 v = LAB_offsetB[light>>1][0]*src->v[i].x +
                     LAB_offsetB[light>>1][1]*src->v[i].y +
                     LAB_offsetB[light>>1][2]*src->v[i].z;
-                #else
+                #elif 0
                 int u, v;
                 u = LAB_offsetA[light>>1][0]*(int)(256*src->v[i].x) +
                     LAB_offsetA[light>>1][1]*(int)(256*src->v[i].y) +
@@ -90,6 +90,22 @@ int LAB_PutModelSmoothShadedAt(LAB_OUT LAB_Triangle* dst,
                 v = LAB_offsetB[light>>1][0]*(int)(256*src->v[i].x) +
                     LAB_offsetB[light>>1][1]*(int)(256*src->v[i].y) +
                     LAB_offsetB[light>>1][2]*(int)(256*src->v[i].z);
+                #else
+                int u, v;
+                int li = light>>1;
+                #if 0
+                int ui = li+1; ui&=-(ui!=3); // mod 3 inc
+                int vi = li-1; vi&=3; vi-=vi==3; // mod 3 dec
+                #elif 0
+                int ui = (1 | 2<<2 | 0<<4) >> (2*li) & 3;
+                int vi = (2 | 0<<2 | 1<<4) >> (2*li) & 3;
+                #else
+                static const uint8_t iota3[] = {0, 1, 2, 0, 1, 2};
+                int ui = iota3[li+1];
+                int vi = iota3[li+2];
+                #endif
+                u = (int)(256*(&src->v[i].x)[ui]);
+                v = (int)(256*(&src->v[i].x)[vi]);
                 #endif
                 //u = v = 0;
 

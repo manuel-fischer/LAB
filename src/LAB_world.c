@@ -27,7 +27,7 @@
 /**
  *  Return face bitset of faces of the chunk cube that were touched
  */
-int LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int cz);
+int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, int cz);
 
 unsigned LAB_ChunkPosHash(LAB_ChunkPos pos)
 {
@@ -289,19 +289,87 @@ void LAB_WorldTick(LAB_World* world, uint32_t delta_ms)
 }
 
 
+static LAB_Color LAB_CalcLight(LAB_World* world, LAB_Chunk*const chunks[27], int x, int y, int z, LAB_Color default_color)
+{
+    LAB_Color lum;
+    //lum = LAB_RGB(16, 16, 16);
+    //lum = LAB_GetNeighborhoodBlock(chunks, x,y,z)->lum;
+    LAB_Chunk* cnk = chunks[1+3+9];
+    int off = LAB_CHUNK_OFFSET(x, y, z);
+    if(!(cnk->blocks[off]->flags & LAB_BLOCK_OPAQUE))
+    {
+        lum = LAB_RGB(16, 16, 16);
+        for(int i = 0; i < 6; ++i)
+        {
+            const int* o = LAB_offset[i];
+            int nlum;
+
+            LAB_Block* block = LAB_GetNeighborhoodBlock(chunks, x+o[0], y+o[1], z+o[2]);
+            if(block->flags & LAB_BLOCK_EMISSIVE)
+                nlum = block->lum;
+            else
+            {
+                nlum = LAB_GetNeighborhoodLight(chunks, x+o[0], y+o[1], z+o[2], default_color);
+                if(i!=3)
+                    nlum = nlum - (nlum>>2 & 0x3f3f3f);
+            }
+            lum = LAB_MaxColor(lum, nlum);
+        }
+    }
+    else
+    {
+        lum = LAB_GetNeighborhoodBlock(chunks, x,y,z)->lum;
+    }
+    return lum;
+}
+
+/**
+ *  Return format: ?SNUDEW in binary
+ *  ?: Any light changed
+ *  S, N, U, D, E, W: Neighboring chunk needs to be updated
+ */
 LAB_HOT
-int LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int cz)
+static int LAB_CheckLight(LAB_World* world, LAB_Chunk*const chunks[27], LAB_Color default_color)
+{
+    int changed = 0;
+
+    LAB_Chunk* cnk = chunks[1+3+9];
+    for(int z = 0; z < 16; ++z)
+    for(int y =15; y >= 0; --y)
+    for(int x = 0; x < 16; ++x)
+    {
+        int off = LAB_CHUNK_OFFSET(x, y, z);
+
+        if(cnk->light[off] != LAB_CalcLight(world, chunks, x, y, z, default_color))
+        {
+            if(x==0)  changed |=  1;
+            if(x==15) changed |=  2;
+            if(y==0)  changed |=  4;
+            if(y==15) changed |=  8;
+            if(z==0)  changed |= 16;
+            if(z==15) changed |= 32;
+            changed |= 64;
+        }
+    }
+    return changed;
+}
+
+LAB_HOT                                           // TODO: |--------------------| not used
+int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, int cz)
 {
     LAB_Chunk* cnk = chunks[1+3+9];
     if(!cnk) return 0;
 
     LAB_Color default_color = cy <= -5 ? LAB_RGB(16, 16, 16) : LAB_RGB(255, 255, 255);
 
-    int faces_changed = 0;
+    int faces_changed = LAB_CheckLight(world, chunks, default_color);
+    if(!faces_changed) return 0;
+    faces_changed &= 63; // remove change bit
 
-    int chg = 0;
+    memset(cnk->light, 0, sizeof cnk->light);
+
     int changed = 1;
-    int change_count = -1;
+    int change_count = 0;
     while(changed)
     {
         changed = 0;
@@ -340,7 +408,7 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int c
             }
             if(cnk->light[off] != lum)
             {
-                if(chg) cnk->light[off] = lum;
+                cnk->light[off] = lum;
                 if(x==0)  faces_changed |=  1;
                 if(x==15) faces_changed |=  2;
                 if(y==0)  faces_changed |=  4;
@@ -351,16 +419,10 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk* chunks[27], int cx, int cy, int c
             }
         }
         change_count++;
-        if(!chg)
-        {
-            if(!changed) return 0;
-            memset(cnk->light, 0, sizeof cnk->light);
-            chg = 1;
-        }
     }
     LAB_ASSUME(faces_changed?change_count:1);
-    //return faces_changed;
-    return 63*(change_count > 0);
+    return faces_changed;
+    //return 63*(change_count > 0);
 }
 
 

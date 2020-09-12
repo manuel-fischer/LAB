@@ -454,11 +454,13 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms)
     else
     {
         const float d = 0.001;
-        view->vy -= 0.018;
+
+        float dt = (float)delta_ms*(1.f/1000.f);
+        const float accel = -9.81;
+
+        dy += accel*dt*dt*0.5 + view->vy*dt;
+        view->vy += accel*dt;
         if(dy > 0) view->vy = dy;
-        dx += view->vx;
-        dy += view->vy;
-        dz += view->vz;
 
         // TODO move this collision physics to the world itself
         // clipping

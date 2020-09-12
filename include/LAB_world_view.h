@@ -11,6 +11,9 @@ typedef struct LAB_Chunk LAB_Chunk;
 typedef struct LAB_Window LAB_Window;
 // END DEPEND
 
+#define LAB_CHUNK_DIRTY_BLOCKS
+#define LAB_CHUNK_DIRTY_LIGHT
+
 typedef struct LAB_ViewChunkEntry
 {
     int x, y, z;
@@ -20,6 +23,8 @@ typedef struct LAB_ViewChunkEntry
     LAB_Triangle* mesh;
 
     unsigned dirty:1, used:1;
+    /*unsigned dirty_flags;
+    unsigned used:1;*/
 
     unsigned vbo;
 
@@ -86,6 +91,8 @@ typedef struct LAB_View
 
     uint32_t max_update,
              rest_update;
+
+    uint32_t load_amount;
 
     LAB_ViewInfo info;
     int w, h; // window size

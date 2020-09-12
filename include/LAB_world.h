@@ -18,6 +18,7 @@ unsigned LAB_ChunkPosHash(LAB_ChunkPos);
 int LAB_ChunkPosComp(LAB_ChunkPos, LAB_ChunkPos);
 
 #define LAB_MAX_LOAD_CHUNK 16
+
 #define LAB_PRELOAD_CHUNK(chunk_dist) ((chunk_dist)+1)
 #define LAB_KEEP_CHUNK(chunk_dist)    ((chunk_dist)+2)
 
@@ -163,7 +164,7 @@ void LAB_WorldTick(LAB_World* world, uint32_t delta_ms);
  *  the origin of x,y,z is at (0,0,0) of the chunk at [1+3+3*3]
  */
 LAB_INLINE
-LAB_Chunk* LAB_GetNeighborhoodRef(LAB_Chunk* neighborhood[27], int x, int y, int z, int* /*out*/ index)
+LAB_Chunk* LAB_GetNeighborhoodRef(LAB_Chunk*const neighborhood[27], int x, int y, int z, int* /*out*/ index)
 {
     int cx, cy, cz,  ix, iy, iz;
 
@@ -181,7 +182,7 @@ LAB_Chunk* LAB_GetNeighborhoodRef(LAB_Chunk* neighborhood[27], int x, int y, int
 }
 
 LAB_HOT LAB_INLINE
-LAB_Block* LAB_GetNeighborhoodBlock(LAB_Chunk* neighborhood[27], int x, int y, int z)
+LAB_Block* LAB_GetNeighborhoodBlock(LAB_Chunk*const neighborhood[27], int x, int y, int z)
 {
     int block_index;
     LAB_Chunk* chunk;
@@ -191,7 +192,7 @@ LAB_Block* LAB_GetNeighborhoodBlock(LAB_Chunk* neighborhood[27], int x, int y, i
 }
 
 LAB_HOT LAB_INLINE
-LAB_Color LAB_GetNeighborhoodLight(LAB_Chunk* neighborhood[27], int x, int y, int z, LAB_Color default_color)
+LAB_Color LAB_GetNeighborhoodLight(LAB_Chunk*const neighborhood[27], int x, int y, int z, LAB_Color default_color)
 {
     int block_index;
     LAB_Chunk* chunk;

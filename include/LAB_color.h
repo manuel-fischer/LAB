@@ -35,9 +35,11 @@ typedef uint32_t LAB_Color;
 static inline LAB_Color LAB_MaxColor(LAB_Color a, LAB_Color b)
 {
     // TODO: Alpha
-    #if 0
-    LAB_Color  g_mask = ((a&0xff00)-(b&0xff00)) >> 8 & 0xff;
-    LAB_Color rb_mask = ((((a&0xff00ff)|0x1000)-(b&0xff00ff)) >> 8 & 0x1)*0xff;
+    #if 1
+    //LAB_Color  g_mask = ((a&0xff00)-(b&0xff00)) >> 8 & 0xff;
+    //LAB_Color rb_mask = ((((a&0xff00ff)|0x1000)-(b&0xff00ff)) >> 8 & 0x1)*0xff;
+    LAB_Color  g_mask = (((a&0xff00)-(b&0xff00)) >> 8 & 0x100)*0xff;
+    LAB_Color rb_mask = ((((a&0xff00ff)|0x1000)-(b&0xff00ff)) >> 8 & 0x10001)*0xff;
 
     return a ^ ((a^b) & (rb_mask|g_mask));
     #else
