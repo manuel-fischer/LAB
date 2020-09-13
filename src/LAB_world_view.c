@@ -693,6 +693,7 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
 
     if(view->flags & LAB_VIEW_SHOW_FPS_GRAPH)
     {
+        glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glMatrixMode(GL_MODELVIEW);
         int tmp;

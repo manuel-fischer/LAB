@@ -62,9 +62,10 @@ LAB_Chunk* LAB_GenOverworldProc(void* user, LAB_World* world, int x, int y, int 
             if((rand() & 3) == 0) break;*/
         }
     }
-    #define A
+    //#define A -5
+    #define A -1
     #ifdef A
-    if(y <= -5)
+    if(y <= A)
     #else
     if(y <= 0)
     #endif
@@ -78,7 +79,7 @@ LAB_Chunk* LAB_GenOverworldProc(void* user, LAB_World* world, int x, int y, int 
             for(int yy = 0; yy < 16*16;    yy+=16)
             {
                 #ifdef A
-                uint32_t threshold = y == -5
+                uint32_t threshold = y == A
                                    ? 0x08000000ull*(15-yy/16)
                                    : 0x80000000ull;
                 #else
