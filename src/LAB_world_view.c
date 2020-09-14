@@ -342,7 +342,8 @@ static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 
     glPushMatrix();
     glTranslatef(LAB_CHUNK_SIZE*chunk_entry->x, LAB_CHUNK_SIZE*chunk_entry->y, LAB_CHUNK_SIZE*chunk_entry->z);
-
+    glScalef(1.00001, 1.00001, 1.00001); // Reduces gaps/lines between chunks
+    //glScalef(0.9990, 0.9990, 0.9990);
 
     LAB_Triangle* mesh;
 
