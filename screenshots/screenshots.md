@@ -1,6 +1,9 @@
 # Screenshots
 More recent screenshots are at the top, so if you want to see the developement stages from early on, you can start at the bottom and scroll up.
 
+## Cave with Surface Entrance
+![](012.png)
+
 ## Grassy terrain generation
 ![](011.png)
 Grassy terrain with smooth lighting
