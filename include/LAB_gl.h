@@ -14,6 +14,8 @@
 
 #include <stdio.h>
 
+#include <SDL2/SDL.h>
+
 const char* LAB_GL_GetError(GLenum errorid);
 const char* LAB_GL_GetCurrentError(void);
 
@@ -43,3 +45,9 @@ const char* LAB_GL_GetCurrentError(void);
              GLdouble: GL_DOUBLE)
              //GLfixed:  GL_FIXED,
              //GLhalf:   GL_HALF_FLOAT)
+
+
+void LAB_GL_ActivateTexture(unsigned* gl_id);
+
+void LAB_GL_UploadSurf(unsigned gl_id, SDL_Surface* surf);
+void LAB_GL_DrawSurf(unsigned gl_id, int x, int y, int w, int h, int sw, int sh);

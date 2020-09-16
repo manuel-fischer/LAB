@@ -9,7 +9,7 @@ void LAB_GuiLabel_Create(LAB_GuiLabel* label,
     label->x = x; label->y = y;
     label->w = w; label->h = h;
 
-    label->on_event = NULL;
+    label->on_event = &LAB_Gui_OnEvent_Ignore;
     label->render = &LAB_GuiLabel_Render;
 
     label->title = title;

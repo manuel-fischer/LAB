@@ -21,3 +21,6 @@ void LAB_GuiButton_Create(LAB_GuiButton* button,
 
 void LAB_GuiButton_Render(LAB_GuiComponent* self, SDL_Surface* surf,
                           int x, int y);
+
+
+int LAB_GuiButton_OnEvent(LAB_GuiComponent* self, SDL_Event* event);

@@ -11,7 +11,7 @@ void LAB_GuiButton_Create(LAB_GuiButton* button,
     button->x = x; button->y = y;
     button->w = w; button->h = h;
 
-    button->on_event = NULL;
+    button->on_event = &LAB_GuiButton_OnEvent;
     button->render = &LAB_GuiButton_Render;
 
     button->title = title;
@@ -47,4 +47,25 @@ void LAB_GuiButton_Render(LAB_GuiComponent* self, SDL_Surface* surf,
     dst.h = cself->text_surf->h;
 
     SDL_BlitSurface(cself->text_surf, NULL, surf, &dst);
+}
+
+
+
+int LAB_GuiButton_OnEvent(LAB_GuiComponent* self, SDL_Event* event)
+{
+    LAB_GuiButton* cself = (LAB_GuiButton*)self;
+    switch(event->type)
+    {
+        case SDL_MOUSEBUTTONUP:
+        {
+            cself->on_click(cself->user);
+        } break;
+
+        case SDL_KEYUP:
+        {
+            if(event->key.keysym.sym == SDLK_RETURN)
+                cself->on_click(cself->user);
+        } break;
+    }
+    return 0;
 }

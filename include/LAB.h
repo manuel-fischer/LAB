@@ -5,7 +5,7 @@
 #include "LAB_error.h"
 #include "LAB_window.h"
 #include "LAB_world.h"
-#include "LAB_world_view.h"
+#include "LAB_view.h"
 #include "LAB_view_input.h"
 
 

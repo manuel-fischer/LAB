@@ -1,4 +1,5 @@
 #include "LAB_gl.h"
+#include "LAB_bits.h"
 
 #define LAB_GL_ERRORS_X(X) \
     X(GL_NO_ERROR, "No error") \
@@ -25,4 +26,100 @@ const char* LAB_GL_GetError(GLenum errorid)
 const char* LAB_GL_GetCurrentError(void)
 {
     return LAB_GL_GetError(glGetError());
+}
+
+void LAB_GL_ActivateTexture(unsigned* gl_id)
+{
+    if(*gl_id == 0)
+    {
+        glGenTextures(1, gl_id);
+        glBindTexture(GL_TEXTURE_2D, *gl_id);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, INFO_WIDTH, INFO_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    }
+    else
+    {
+        glBindTexture(GL_TEXTURE_2D, *gl_id);
+    }
+}
+
+void LAB_GL_UploadSurf(unsigned gl_id, SDL_Surface* surf)
+{
+    int info_width  = LAB_CeilPow2(surf->w);
+    int info_height = LAB_CeilPow2(surf->h);
+
+    int free_surf = 0;
+    if(surf->format->format != SDL_PIXELFORMAT_RGBA32)
+    {
+        SDL_Surface* nImg;
+        nImg = SDL_ConvertSurfaceFormat(surf, SDL_PIXELFORMAT_RGBA32, 0);
+        if(nImg == NULL) return;
+        surf = nImg;
+        free_surf = 1;
+        //printf("Conv\n");
+    }
+
+    /*for(int x = 0; x < 16; ++x)
+    {
+        printf("%08x\n", ((uint32_t*)surf->pixels)[x]);
+    }*/
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, info_width, info_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, surf->w, surf->h, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
+    if(free_surf) SDL_FreeSurface(surf);
+}
+
+void LAB_GL_DrawSurf(unsigned gl_id, int x, int y, int w, int h, int sw, int sh)
+{
+    int rw, rh;
+    rw = LAB_CeilPow2(w);
+    rh = LAB_CeilPow2(h);
+
+
+    // partly const
+    static float info[5*3*2] = {
+          0, (0), -1,   0,   0,
+        (0),   0, -1, (1), (1),
+          0,   0, -1,   0, (1),
+        //
+          0, (0), -1,   0,   0,
+        (0), (0), -1, (1),   0,
+        (0),   0, -1, (1), (1),
+    };
+
+    info[5*1] = info[5*4] = info[5*5]   = w;
+    info[1] = info[5*3+1] = info[5*4+1] = h;
+
+    info[5*1+3] = info[5*4+3] = info[5*5+3] = (float)w/rw;
+    info[5*1+4] = info[5*2+4] = info[5*5+4] = (float)h/rh;
+
+
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+    glEnable(GL_TEXTURE_2D);
+
+    glMatrixMode(GL_TEXTURE);
+    glPushMatrix();
+    glLoadIdentity();
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    float f = 2.f/(float)sh;
+    glScalef(f, f, 1);
+    glTranslatef(-(float)sw/2+x, -(float)sh/2+y, 0);
+
+    glVertexPointer(3, LAB_GL_TYPEOF(*info), sizeof *info * 5, info);
+    glTexCoordPointer(2, LAB_GL_TYPEOF(*info), sizeof *info * 5, info+3);
+    glDrawArrays(GL_TRIANGLES, 0, 3*2);
+
+    LAB_GL_CHECK();
+
+    //glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+
+    glMatrixMode(GL_TEXTURE);
+    glPopMatrix();
 }

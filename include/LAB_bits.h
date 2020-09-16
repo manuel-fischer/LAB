@@ -1,5 +1,7 @@
 #pragma once
 
+#include "LAB_opt.h"
+
 #ifdef __GNUC__
 
 // Count set bits

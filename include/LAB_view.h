@@ -2,6 +2,7 @@
 #include "LAB_stdinc.h"
 #include "LAB_opt.h"
 #include "LAB_fps_graph.h"
+#include "LAB_gui_manager.h"
 #include "LAB_model.h" // LAB_Triangle
 #include <SDL2/SDL_ttf.h>
 
@@ -98,6 +99,7 @@ typedef struct LAB_View
     int w, h; // window size
 
     LAB_FpsGraph fps_graph;
+    LAB_GuiManager gui_mgr;
 } LAB_View;
 
 
@@ -134,8 +136,3 @@ LAB_ViewChunkEntry* LAB_ViewNewChunkEntry(LAB_View* view, int x, int y, int z);
 
 
 
-
-
-void LAB_GL_ActivateTexture(unsigned* gl_id);
-void LAB_UploadSurf(unsigned gl_id, SDL_Surface* surf);
-void LAB_DrawSurf(LAB_View* view, unsigned gl_id, int x, int y, int w, int h);

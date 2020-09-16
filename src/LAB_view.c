@@ -1,4 +1,4 @@
-#include "LAB_world_view.h"
+#include "LAB_view.h"
 
 #include "LAB_memory.h"
 #include "LAB_error.h"
@@ -96,12 +96,16 @@ int  LAB_ConstructView(LAB_View* view, LAB_World* world)
     view->y = 1.5;
 
     LAB_FpsGraph_Create(&view->fps_graph);
+    LAB_GuiManager_Create(&view->gui_mgr);
 
     return 1;
 }
 
 void LAB_DestructView(LAB_View* view)
 {
+    LAB_GuiManager_Destroy(&view->gui_mgr);
+    LAB_FpsGraph_Destroy(&view->fps_graph);
+
     for(size_t i = 0; i < view->chunk_count; ++i)
     {
         LAB_ViewDestructChunk(view, &view->chunks[i]);
@@ -377,101 +381,8 @@ static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 
 
 
-void LAB_GL_ActivateTexture(unsigned* gl_id)
-{
-    if(*gl_id == 0)
-    {
-        glGenTextures(1, gl_id);
-        glBindTexture(GL_TEXTURE_2D, *gl_id);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, INFO_WIDTH, INFO_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    }
-    else
-    {
-        glBindTexture(GL_TEXTURE_2D, *gl_id);
-    }
-}
-
-void LAB_UploadSurf(unsigned gl_id, SDL_Surface* surf)
-{
-    int info_width  = LAB_CeilPow2(surf->w);
-    int info_height = LAB_CeilPow2(surf->h);
-
-    int free_surf = 0;
-    if(surf->format->format != SDL_PIXELFORMAT_RGBA32)
-    {
-        SDL_Surface* nImg;
-        nImg = SDL_ConvertSurfaceFormat(surf, SDL_PIXELFORMAT_RGBA32, 0);
-        if(nImg == NULL) return;
-        surf = nImg;
-        free_surf = 1;
-        //printf("Conv\n");
-    }
-
-    /*for(int x = 0; x < 16; ++x)
-    {
-        printf("%08x\n", ((uint32_t*)surf->pixels)[x]);
-    }*/
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, info_width, info_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, surf->w, surf->h, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
-    if(free_surf) SDL_FreeSurface(surf);
-}
-
-void LAB_DrawSurf(LAB_View* view, unsigned gl_id, int x, int y, int w, int h)
-{
-    int rw, rh;
-    rw = LAB_CeilPow2(w);
-    rh = LAB_CeilPow2(h);
 
 
-    // partly const
-    static float info[5*3*2] = {
-          0, (0), -1,   0,   0,
-        (0),   0, -1, (1), (1),
-          0,   0, -1,   0, (1),
-        //
-          0, (0), -1,   0,   0,
-        (0), (0), -1, (1),   0,
-        (0),   0, -1, (1), (1),
-    };
-
-    info[5*1] = info[5*4] = info[5*5]   = w;
-    info[1] = info[5*3+1] = info[5*4+1] = h;
-
-    info[5*1+3] = info[5*4+3] = info[5*5+3] = (float)w/rw;
-    info[5*1+4] = info[5*2+4] = info[5*5+4] = (float)h/rh;
-
-
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
-    glEnable(GL_TEXTURE_2D);
-
-    glMatrixMode(GL_TEXTURE);
-    glPushMatrix();
-    glLoadIdentity();
-
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-
-    float f = 2.f/(float)view->h;
-    glScalef(f, f, 1);
-    glTranslatef(-(float)view->w/2+x, -(float)view->h/2+y, 0);
-
-    glVertexPointer(3, LAB_GL_TYPEOF(*info), sizeof *info * 5, info);
-    glTexCoordPointer(2, LAB_GL_TYPEOF(*info), sizeof *info * 5, info+3);
-    glDrawArrays(GL_TRIANGLES, 0, 3*2);
-
-    LAB_GL_CHECK();
-
-    //glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-
-    glMatrixMode(GL_TEXTURE);
-    glPopMatrix();
-}
 
 
 
@@ -549,13 +460,13 @@ void LAB_ViewRenderHud(LAB_View* view)
             if(!view->info.surf) return;
 
 
-            LAB_UploadSurf(view->info.gl_texture, view->info.surf);
+            LAB_GL_UploadSurf(view->info.gl_texture, view->info.surf);
         }
         //static unsigned scale_i = 0;
         //scale_i++; scale_i &= 0xff;
         //int scale = scale_i > 0x80 ? 2 : 1;
         int scale = 1;
-        LAB_DrawSurf(view, view->info.gl_texture, 0, view->h-scale*view->info.surf->h, scale*view->info.surf->w, scale*view->info.surf->h);
+        LAB_GL_DrawSurf(view->info.gl_texture, 0, view->h-scale*view->info.surf->h, scale*view->info.surf->w, scale*view->info.surf->h, view->w, view->h);
         /*glLoadIdentity();
         glEnable(GL_TEXTURE_2D);
 
@@ -606,7 +517,8 @@ void LAB_ViewRenderHud(LAB_View* view)
     }
 
 
-    if(0)
+    LAB_GuiManager_Render(&view->gui_mgr, view->w, view->h);
+    /*if(1)
     {
          LAB_GuiMenu menu;
          LAB_GuiMenu_Create(&menu);
@@ -626,11 +538,11 @@ void LAB_ViewRenderHud(LAB_View* view)
 
          static unsigned gl_id = 0;
          LAB_GL_ActivateTexture(&gl_id);
-         LAB_UploadSurf(gl_id, surf);
-         LAB_DrawSurf(view, gl_id, menu.x*scale, menu.y*scale, menu.w*scale, menu.h*scale);
+         LAB_GL_UploadSurf(gl_id, surf);
+         LAB_GL_DrawSurf(gl_id, menu.x*scale, menu.y*scale, menu.w*scale, menu.h*scale, view->w, view->h);
 
          SDL_FreeSurface(surf);
-     }
+     }*/
 }
 
 void LAB_ViewRenderProc(void* user, LAB_Window* window)

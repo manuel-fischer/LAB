@@ -1,10 +1,11 @@
-#include "LAB_world_view.h"
+#include "LAB_view.h"
 #include "LAB_world.h"
 
 #include "LAB_view_input.h"
 #include "LAB_window.h"
 #include "LAB_block.h"
 #include "LAB_chunk.h"
+#include "LAB_gui_menu.h"
 
 #include "LAB_math.h"
 
@@ -86,13 +87,40 @@ static void LAB_FixScreenImg(void* pixels, int w, int h)
 }
 
 
+static void LAB_ShowGuiMenu(LAB_View* view)
+{
+    LAB_GuiMenu* menu = malloc(sizeof *menu);
+    if(!menu) return;
+    LAB_GuiMenu_Create(menu);
+    LAB_GuiManager_ShowDialog(&view->gui_mgr, (LAB_GuiComponent*)menu);
+}
+
+static void LAB_GrabMouse(LAB_View* view, LAB_Window* window, int grab)
+{
+    //int grab;
+    //grab = !SDL_GetWindowGrab(window->window);
+    SDL_SetWindowGrab_Fix(window->window, grab);
+    SDL_ShowCursor(!grab);
+    if(grab)
+    {
+        int w, h;
+        SDL_GetWindowSize(window->window, &w, &h);
+        SDL_WarpMouseInWindow(window->window, w/2, h/2);
+    }
+}
+
 
 int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
 {
     LAB_ViewInput* view_input = (LAB_ViewInput*)user;
     LAB_View* view = view_input->view;
 
-    switch(event->type)
+    if(LAB_GuiManager_HandleEvent(&view->gui_mgr, event))
+    {
+        if(!view->gui_mgr.component)
+            LAB_GrabMouse(view, window, 1);
+    }
+    else switch(event->type)
     {
         case SDL_KEYDOWN:
         {
@@ -187,16 +215,8 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
 
                 case SDLK_ESCAPE:
                 {
-                    int grab;
-                    grab = SDL_GetWindowGrab(window->window);
-                    SDL_SetWindowGrab_Fix(window->window, !grab);
-                    SDL_ShowCursor(grab);
-                    if(!grab)
-                    {
-                        int w, h;
-                        SDL_GetWindowSize(window->window, &w, &h);
-                        SDL_WarpMouseInWindow(window->window, w/2, h/2);
-                    }
+                    LAB_ShowGuiMenu(view);
+                    LAB_GrabMouse(view, window, 0);
                 } break;
 
                 case SDLK_F1:

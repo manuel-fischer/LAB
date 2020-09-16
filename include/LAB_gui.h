@@ -16,3 +16,4 @@ void LAB_RenderRect(SDL_Surface* surf, int x, int y, int w, int h, int i, int j)
 
 TTF_Font* LAB_GuiFont(void);
 TTF_Font* LAB_GuiTitleFont(void);
+TTF_Font* LAB_GuiMonospaceFont(void);
