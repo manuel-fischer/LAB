@@ -1,11 +1,14 @@
 #pragma once
 
 #include "LAB_gui.h"
+#include <SDL2/SDL.h>
 
 typedef struct LAB_GuiManager
 {
     LAB_GuiComponent* component;
     unsigned gl_id;
+    SDL_Surface* surf;
+    bool rerender;
 } LAB_GuiManager;
 
 void LAB_GuiManager_Create(LAB_GuiManager* manager);
@@ -16,4 +19,4 @@ void LAB_GuiManager_Dismiss(LAB_GuiManager* manager);
 
 void LAB_GuiManager_Render(LAB_GuiManager* manager, int w, int h);
 
-int LAB_GuiManager_HandleEvent(LAB_GuiManager* manager, SDL_Event* event);
+bool LAB_GuiManager_HandleEvent(LAB_GuiManager* manager, SDL_Event* event);

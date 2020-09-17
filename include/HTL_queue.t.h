@@ -9,6 +9,7 @@
 
 #include "HTL_pp.h"
 #include <stdlib.h>
+#include <stdbool.h>
 
 typedef struct HTL_P(NAME)
 {
@@ -31,7 +32,7 @@ typedef struct HTL_P(NAME)
  *
  *  Alternatively the bytes could be set to 0
  */
-int  HTL_MEMBER(Construct)(HTL_P(NAME)* q);
+bool HTL_MEMBER(Construct)(HTL_P(NAME)* q);
 
 /**
  *  Destruct a queue at the referenced location
@@ -49,12 +50,12 @@ void HTL_MEMBER(Destruct)(HTL_P(NAME)* q);
 /**
  *  Returns 1 if queue is empty
  */
-int  HTL_MEMBER(IsEmpty)(HTL_P(NAME)* q);
+bool HTL_MEMBER(IsEmpty)(HTL_P(NAME)* q);
 
 /**
  *  Returns 1 if queue is full
  */
-int  HTL_MEMBER(IsFull)(HTL_P(NAME)* q);
+bool HTL_MEMBER(IsFull)(HTL_P(NAME)* q);
 
 /**
  *  Creates room for an element at the back

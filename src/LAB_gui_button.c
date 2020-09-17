@@ -5,7 +5,7 @@
 void LAB_GuiButton_Create(LAB_GuiButton* button,
                           int x, int y, int w, int h,
                           const char* title,
-                          void(*on_click)(void* user),
+                          void(*on_click)(void* user, LAB_GuiManager* mgr),
                           void* user)
 {
     button->x = x; button->y = y;
@@ -20,6 +20,7 @@ void LAB_GuiButton_Create(LAB_GuiButton* button,
     button->on_click = on_click;
     button->user = user;
 
+    button->state = LAB_GUI_BUTTON_NORMAL;
 }
 
 
@@ -28,14 +29,14 @@ void LAB_GuiButton_Render(LAB_GuiComponent* self, SDL_Surface* surf,
 {
     LAB_GuiButton* cself = (LAB_GuiButton*)self;
 
-    LAB_RenderRect(surf, x, y, self->w, self->h, 0, 1);
+    int cx = cself->state;
+    LAB_RenderRect(surf, x, y, self->w, self->h, cx, 1);
 
     if(!cself->text_surf)
     {
         SDL_Color fg = { 255, 255, 255, 255 };
         TTF_Font* ttf = LAB_GuiFont();
         if(!ttf) return;
-        //cself->text_surf = TTF_RenderUTF8_Solid(ttf, cself->title, fg);
         cself->text_surf = TTF_RenderUTF8_Blended(ttf, cself->title, fg);
         if(!cself->text_surf) return;
     }
@@ -45,27 +46,76 @@ void LAB_GuiButton_Render(LAB_GuiComponent* self, SDL_Surface* surf,
     dst.y = y + (self->h-cself->text_surf->h)/2;
     dst.w = cself->text_surf->w;
     dst.h = cself->text_surf->h;
+    if(cself->state == LAB_GUI_BUTTON_PRESSED)
+        dst.y++;
 
     SDL_BlitSurface(cself->text_surf, NULL, surf, &dst);
 }
 
 
 
-int LAB_GuiButton_OnEvent(LAB_GuiComponent* self, SDL_Event* event)
+bool LAB_GuiButton_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Event* event)
 {
     LAB_GuiButton* cself = (LAB_GuiButton*)self;
     switch(event->type)
     {
+        case SDL_MOUSEBUTTONDOWN:
+        {
+            cself->state = LAB_GUI_BUTTON_PRESSED;
+            return 1;
+        } break;
         case SDL_MOUSEBUTTONUP:
         {
-            cself->on_click(cself->user);
+            if(cself->state == LAB_GUI_BUTTON_PRESSED)
+            {
+                cself->on_click(cself->user, mgr);
+                cself->state = LAB_GUI_BUTTON_FOCUSED;
+                return 1;
+            }
         } break;
 
+        case SDL_KEYDOWN:
+        {
+            if(event->key.keysym.sym == SDLK_RETURN)
+            {
+                cself->state = LAB_GUI_BUTTON_PRESSED;
+                return 1;
+            }
+        } break;
         case SDL_KEYUP:
         {
             if(event->key.keysym.sym == SDLK_RETURN)
-                cself->on_click(cself->user);
+            {
+                if(cself->state == LAB_GUI_BUTTON_PRESSED)
+                {
+                    cself->on_click(cself->user, mgr);
+                    cself->state = LAB_GUI_BUTTON_FOCUSED;
+                    return 1;
+                }
+            }
         } break;
+    }
+    if(LAB_IS_GUI_EVENT(event->type))
+    {
+        switch(LAB_GUI_EVENT(event->type))
+        {
+            case LAB_GUI_EVENT_FOCUS:
+            {
+                if(cself->state != LAB_GUI_BUTTON_FOCUSED)
+                {
+                    cself->state = LAB_GUI_BUTTON_FOCUSED;
+                    return 1;
+                }
+            } break;
+            case LAB_GUI_EVENT_UNFOCUS:
+            {
+                if(cself->state != LAB_GUI_BUTTON_NORMAL)
+                {
+                    cself->state = LAB_GUI_BUTTON_NORMAL;
+                    return 1;
+                }
+            } break;
+        }
     }
     return 0;
 }

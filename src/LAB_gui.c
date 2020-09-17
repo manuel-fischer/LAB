@@ -4,10 +4,15 @@
 
 static SDL_Surface* gui;
 
-int LAB_GuiInit(void)
+Uint32 LAB_GuiEvent_base;
+
+bool LAB_GuiInit(void)
 {
     gui = IMG_Load("assets/gui.png");
     if(!gui) return 0;
+
+    LAB_GuiEvent_base = SDL_RegisterEvents(LAB_GUI_EVENT_COUNT);
+    if(LAB_GuiEvent_base == (Uint32)-1) return 0;
 
     return 1;
 }

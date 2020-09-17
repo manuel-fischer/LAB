@@ -17,7 +17,7 @@ static void LAB_FpsGraph_Shift(LAB_FpsGraph* graph)
     }
 }
 
-int LAB_FpsGraph_Create(LAB_FpsGraph* graph)
+bool LAB_FpsGraph_Create(LAB_FpsGraph* graph)
 {
     graph->start_pos = LAB_FPS_GRAPH_MAX_SAMPLES;
     // Fill in constant values

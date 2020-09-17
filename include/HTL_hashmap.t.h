@@ -20,6 +20,7 @@
 
 #include "HTL_pp.h"
 #include <stdlib.h>
+#include <stdbool.h>
 
 typedef struct HTL_P(NAME) HTL_P(NAME);
 typedef struct HTL_MEMBER(Entry) HTL_MEMBER(Entry);
@@ -51,4 +52,4 @@ void HTL_MEMBER(Remove)(HTL_P(NAME)* hashmap, HTL_P(KEY_TYPE) key);
 
 
 
-int HTL_MEMBER(IsEntry)(HTL_P(NAME)* hashmap, HTL_MEMBER(Entry)* entry);
+bool HTL_MEMBER(IsEntry)(HTL_P(NAME)* hashmap, HTL_MEMBER(Entry)* entry);

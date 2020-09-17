@@ -6,6 +6,7 @@
 #include "LAB_block.h"
 #include "LAB_chunk.h"
 #include "LAB_gui_menu.h"
+#include "LAB_gui_inventory.h"
 
 #include "LAB_math.h"
 
@@ -39,7 +40,7 @@ static LAB_Block* blocks[9] =
 static int selected_block = 1;
 
 
-int  LAB_ConstructViewInput(LAB_ViewInput* view_input, LAB_View* view)
+bool LAB_ConstructViewInput(LAB_ViewInput* view_input, LAB_View* view)
 {
     memset(view_input, 0, sizeof *view_input);
     view_input->speed = 3.0f;
@@ -89,11 +90,20 @@ static void LAB_FixScreenImg(void* pixels, int w, int h)
 
 static void LAB_ShowGuiMenu(LAB_View* view)
 {
-    LAB_GuiMenu* menu = malloc(sizeof *menu);
-    if(!menu) return;
-    LAB_GuiMenu_Create(menu);
-    LAB_GuiManager_ShowDialog(&view->gui_mgr, (LAB_GuiComponent*)menu);
+    LAB_GuiMenu* gui = malloc(sizeof *gui);
+    if(!gui) return;
+    LAB_GuiMenu_Create(gui, view->world);
+    LAB_GuiManager_ShowDialog(&view->gui_mgr, (LAB_GuiComponent*)gui);
 }
+
+static void LAB_ShowGuiInventory(LAB_View* view)
+{
+    LAB_GuiInventory* gui = malloc(sizeof *gui);
+    if(!gui) return;
+    LAB_GuiInventory_Create(gui);
+    LAB_GuiManager_ShowDialog(&view->gui_mgr, (LAB_GuiComponent*)gui);
+}
+
 
 static void LAB_GrabMouse(LAB_View* view, LAB_Window* window, int grab)
 {
@@ -216,6 +226,12 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                 case SDLK_ESCAPE:
                 {
                     LAB_ShowGuiMenu(view);
+                    LAB_GrabMouse(view, window, 0);
+                } break;
+
+                case SDLK_e:
+                {
+                    LAB_ShowGuiInventory(view);
                     LAB_GrabMouse(view, window, 0);
                 } break;
 

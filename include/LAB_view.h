@@ -106,7 +106,7 @@ typedef struct LAB_View
 /**
  *  Create view, with given world
  */
-int  LAB_ConstructView(LAB_View* view, LAB_World* world);
+bool LAB_ConstructView(LAB_View* view, LAB_World* world);
 
 /**
  *  Destruct view

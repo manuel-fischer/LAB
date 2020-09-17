@@ -30,7 +30,7 @@
 
 ///############################
 
-static int  LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_World* world);
+static bool LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_World* world);
 static void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_IN LAB_Chunk* chunk_neighborhood[27]);
 static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_IN LAB_Chunk* chunk_neighborhood[27], int x, int y, int z);
 static void LAB_ViewRenderChunks(LAB_View* view);
@@ -44,7 +44,7 @@ GLuint LAB_gltextureid = 0;
 static void LAB_View_StaticInit(void)
 {
     // TODO
-    static char init = 0;
+    static bool init = 0;
     if(init) return;
     init = 1;
 
@@ -85,7 +85,7 @@ static void LAB_View_StaticInit(void)
     LAB_GL_CHECK();
 }
 
-int  LAB_ConstructView(LAB_View* view, LAB_World* world)
+bool LAB_ConstructView(LAB_View* view, LAB_World* world)
 {
     LAB_View_StaticInit();
 
@@ -133,7 +133,7 @@ void LAB_ViewChunkProc(void* user, LAB_World* world, int x, int y, int z)
 /**
  *  Return 1 if the chunk was available
  */
-static int LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_World* world)
+static bool LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_World* world)
 {
     LAB_Chunk* chunk_neighborhood[27];
 
@@ -158,6 +158,8 @@ static int LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LA
 #endif
     return 1;
 }
+
+
 static void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_Chunk* cnk3x3x3[27])
 {
     const int X = 1;

@@ -108,7 +108,7 @@ HTL_DEF void HTL_MEMBER(Remove)(HTL_P(NAME)* hashmap, HTL_P(KEY_TYPE) key)
         HTL_MEMBER(RemoveEntry)(hashmap, entry);
 }
 
-HTL_DEF int HTL_MEMBER(IsEntry)(HTL_P(NAME)* hashmap, HTL_MEMBER(Entry)* entry)
+HTL_DEF bool HTL_MEMBER(IsEntry)(HTL_P(NAME)* hashmap, HTL_MEMBER(Entry)* entry)
 {
     return !(HTL_P(NULL_REPR));
 }

@@ -1,7 +1,7 @@
 #include "LAB_gui_component.h"
 #include "LAB_debug.h"
 
-int LAB_GetMouseCoordPtr(SDL_Event* event, int** x, int** y)
+bool LAB_GetMouseCoordPtr(SDL_Event* event, int** x, int** y)
 {
     switch(event->type)
     {
@@ -21,15 +21,19 @@ int LAB_GetMouseCoordPtr(SDL_Event* event, int** x, int** y)
     }
 }
 
-int  LAB_Gui_OnEvent_Ignore(LAB_GuiComponent* self, SDL_Event* event)
+bool LAB_Gui_OnEvent_Ignore(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Event* event)
 {
     return 0;
 }
 
-int  LAB_GuiContainer_OnEvent(LAB_GuiComponent* self, SDL_Event* event)
+bool LAB_GuiContainer_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Event* event)
 {
     LAB_GuiContainer* cself = (LAB_GuiContainer*)self;
     LAB_GuiComponent** c;
+
+    int rerender = 0;
+
+    SDL_Event tmp_event;
 
     int *x, *y;
     if(LAB_GetMouseCoordPtr(event, &x, &y))
@@ -38,22 +42,38 @@ int  LAB_GuiContainer_OnEvent(LAB_GuiComponent* self, SDL_Event* event)
         {
             if(LAB_GuiHitTest(*c, *x, *y))
             {
-                cself->current = *c;
+                if(cself->current != *c)
+                {
+                    if(cself->current)
+                    {
+                        tmp_event.type = LAB_GUI_EVENT2SDL(LAB_GUI_EVENT_UNFOCUS);
+                        rerender |= (cself->current)->on_event(cself->current, mgr, &tmp_event);
+                    }
+                    cself->current = *c;
+                    tmp_event.type = LAB_GUI_EVENT2SDL(LAB_GUI_EVENT_FOCUS);
+                    rerender |= (*c)->on_event(*c, mgr, &tmp_event);
+                }
                 *x -= (*c)->x;
                 *y -= (*c)->y;
                 LAB_ASSUME((*c)->on_event);
-                return (*c)->on_event(*c, event);
+                return rerender | (*c)->on_event(*c, mgr, event);
             }
+        }
+        if(cself->current)
+        {
+            tmp_event.type = LAB_GUI_EVENT2SDL(LAB_GUI_EVENT_UNFOCUS);
+            rerender |= (cself->current)->on_event(cself->current, mgr, &tmp_event);
+            cself->current = NULL;
         }
     }
     else
     {
-        /*for(c = cself->components; *c; ++c)
+        if(cself->current)
         {
-
-        }*/
+            rerender |= (cself->current)->on_event(cself->current, mgr, event);
+        }
     }
-    return 0;
+    return rerender;
 }
 
 // Does not clip

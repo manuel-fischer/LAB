@@ -24,7 +24,7 @@ typedef struct LAB_ViewInput
 /**
  *  Create view input, with given world
  */
-int  LAB_ConstructViewInput(LAB_ViewInput* view_input, LAB_View* view);
+bool LAB_ConstructViewInput(LAB_ViewInput* view_input, LAB_View* view);
 
 /**
  *  Destruct view input

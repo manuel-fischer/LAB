@@ -1,6 +1,7 @@
 #pragma once
 
 #include "LAB_color.h"
+#include "LAB_stdinc.h"
 #define LAB_FPS_GRAPH_MAX_SAMPLES 256
 
 typedef struct LAB_FpsGraphSample
@@ -19,7 +20,7 @@ typedef struct LAB_FpsGraph
 /**
  *  Return 1 on success
  */
-int LAB_FpsGraph_Create(LAB_FpsGraph* graph);
+bool LAB_FpsGraph_Create(LAB_FpsGraph* graph);
 void LAB_FpsGraph_Destroy(LAB_FpsGraph* graph);
 
 void LAB_FpsGraph_AddSample(LAB_FpsGraph* graph, int frame_ms);

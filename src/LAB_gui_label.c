@@ -27,7 +27,6 @@ void LAB_GuiLabel_Render(LAB_GuiComponent* self, SDL_Surface* surf,
         SDL_Color fg = { 255, 255, 255, 255 };
         TTF_Font* ttf = LAB_GuiTitleFont();
         if(!ttf) return;
-        //cself->text_surf = TTF_RenderUTF8_Solid(ttf, cself->title, fg);
         cself->text_surf = TTF_RenderUTF8_Blended(ttf, cself->title, fg);
         if(!cself->text_surf) return;
     }

@@ -161,6 +161,7 @@
 		<Unit filename="include/LAB_bits.h" />
 		<Unit filename="include/LAB_block.h" />
 		<Unit filename="include/LAB_blt_model.h" />
+		<Unit filename="include/LAB_bool.h" />
 		<Unit filename="include/LAB_check.h" />
 		<Unit filename="include/LAB_chunk.h" />
 		<Unit filename="include/LAB_color.h" />
@@ -175,7 +176,9 @@
 		<Unit filename="include/LAB_gui.h" />
 		<Unit filename="include/LAB_gui_button.h" />
 		<Unit filename="include/LAB_gui_component.h" />
+		<Unit filename="include/LAB_gui_inventory.h" />
 		<Unit filename="include/LAB_gui_label.h" />
+		<Unit filename="include/LAB_gui_manager.h" />
 		<Unit filename="include/LAB_gui_menu.h" />
 		<Unit filename="include/LAB_light_node.h" />
 		<Unit filename="include/LAB_math.h" />
@@ -187,14 +190,17 @@
 		<Unit filename="include/LAB_random.h" />
 		<Unit filename="include/LAB_stdinc.h" />
 		<Unit filename="include/LAB_util.h" />
+		<Unit filename="include/LAB_view.h" />
 		<Unit filename="include/LAB_view_input.h" />
 		<Unit filename="include/LAB_window.h" />
 		<Unit filename="include/LAB_world.h" />
-		<Unit filename="include/LAB_world_view.h" />
 		<Unit filename="src/LAB.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_block.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_blt_model.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_chunk.c">
@@ -227,7 +233,13 @@
 		<Unit filename="src/LAB_gui_component.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="src/LAB_gui_inventory.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="src/LAB_gui_label.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_gui_manager.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_gui_menu.c">
@@ -248,6 +260,9 @@
 		<Unit filename="src/LAB_util.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="src/LAB_view.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="src/LAB_view_input.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -255,9 +270,6 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_world.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/LAB_world_view.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/SDL_fix.h" />

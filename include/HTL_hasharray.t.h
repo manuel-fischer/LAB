@@ -24,6 +24,7 @@
 
 #include "HTL_pp.h"
 #include <stdlib.h>
+#include <stdbool.h>
 
 typedef struct HTL_P(NAME)
 {
@@ -45,7 +46,7 @@ typedef struct HTL_P(NAME)
  *
  *  Alternatively the bytes could be set to 0
  */
-int  HTL_MEMBER(Construct)(HTL_P(NAME)* hasharray);
+bool HTL_MEMBER(Construct)(HTL_P(NAME)* hasharray);
 
 /**
  *  Destruct a hasharray at the referenced location
