@@ -9,6 +9,7 @@ void LAB_GuiManager_Create(LAB_GuiManager* manager)
 {
     manager->component = NULL;
     manager->surf = NULL;
+    manager->dismiss = 0;
 }
 
 void LAB_GuiManager_Destroy(LAB_GuiManager* manager)
@@ -25,13 +26,26 @@ void LAB_GuiManager_ShowDialog(LAB_GuiManager* manager, LAB_GuiComponent* compon
     manager->rerender = 1;
 }
 
-void LAB_GuiManager_Dismiss(LAB_GuiManager* manager)
+void LAB_GuiManager_Dismiss_(LAB_GuiManager* manager)
 {
     LAB_Free(manager->component);
     manager->component = NULL;
-    //memset(manager, 0, sizeof*manager);
 }
 
+void LAB_GuiManager_Dismiss(LAB_GuiManager* manager)
+{
+    manager->dismiss = 1;
+}
+
+
+void LAB_GuiManager_Tick(LAB_GuiManager* manager)
+{
+    if(manager->dismiss)
+    {
+        LAB_GuiManager_Dismiss_(manager);
+        manager->dismiss = 0;
+    }
+}
 
 
 void LAB_GuiManager_Render(LAB_GuiManager* mgr, int sw, int sh)

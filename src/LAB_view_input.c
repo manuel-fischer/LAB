@@ -7,6 +7,7 @@
 #include "LAB_chunk.h"
 #include "LAB_gui_menu.h"
 #include "LAB_gui_inventory.h"
+#include "LAB_inventory.h"
 
 #include "LAB_math.h"
 
@@ -25,19 +26,8 @@
 #include "LAB_util.h"
 
 static int LAB_ViewInputInteract(LAB_ViewInput* view_input, int right);
-static LAB_Block* blocks[9] =
-{
-    &LAB_BLOCK_STONE,
-    &LAB_BLOCK_COBBLESTONE,
-    &LAB_BLOCK_MARBLE,
-    &LAB_BLOCK_MARBLECOBBLE,
-    &LAB_BLOCK_WOOD,
-    &LAB_BLOCK_WOOD_PLANKS,
-    &LAB_BLOCK_WOOD_PLANKS_DARK,
-    &LAB_BLOCK_GRASS,
-    &LAB_BLOCK_LIGHT
-};
-static int selected_block = 1;
+
+//static int selected_block = 1;
 
 
 bool LAB_ConstructViewInput(LAB_ViewInput* view_input, LAB_View* view)
@@ -46,6 +36,7 @@ bool LAB_ConstructViewInput(LAB_ViewInput* view_input, LAB_View* view)
     view_input->speed = 3.0f;
     view_input->view = view;
     view_input->brushsize = 3;
+    view_input->selected_block = &LAB_BLOCK_COBBLESTONE;
     return 1;
 }
 
@@ -96,11 +87,11 @@ static void LAB_ShowGuiMenu(LAB_View* view)
     LAB_GuiManager_ShowDialog(&view->gui_mgr, (LAB_GuiComponent*)gui);
 }
 
-static void LAB_ShowGuiInventory(LAB_View* view)
+static void LAB_ShowGuiInventory(LAB_View* view, LAB_Block** block)
 {
     LAB_GuiInventory* gui = malloc(sizeof *gui);
     if(!gui) return;
-    LAB_GuiInventory_Create(gui);
+    LAB_GuiInventory_Create(gui, &LAB_cheat_inventory, block);
     LAB_GuiManager_ShowDialog(&view->gui_mgr, (LAB_GuiComponent*)gui);
 }
 
@@ -127,6 +118,7 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
 
     if(LAB_GuiManager_HandleEvent(&view->gui_mgr, event))
     {
+        LAB_GuiManager_Tick(&view->gui_mgr);
         if(!view->gui_mgr.component)
             LAB_GrabMouse(view, window, 1);
     }
@@ -149,10 +141,7 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                 LAB_CASE_RANGE('1', 9):
                 {
                     int id = key-'1';
-                    if(blocks[id] != NULL)
-                    {
-                        selected_block = id;
-                    }
+                    view_input->selected_block = LAB_blocks[id];
                 } break;
             }
         } break;
@@ -231,7 +220,7 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
 
                 case SDLK_e:
                 {
-                    LAB_ShowGuiInventory(view);
+                    LAB_ShowGuiInventory(view, &view_input->selected_block);
                     LAB_GrabMouse(view, window, 0);
                 } break;
 
@@ -389,7 +378,7 @@ static int LAB_ViewInputInteract(LAB_ViewInput* view_input, int right)
         }
         else
         {
-            LAB_SetBlock(view->world, prev[0], prev[1], prev[2], LAB_CHUNK_GENERATE, blocks[selected_block]);
+            LAB_SetBlock(view->world, prev[0], prev[1], prev[2], LAB_CHUNK_GENERATE, view_input->selected_block);
         }
         return 1;
     }
@@ -463,7 +452,7 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms)
 
     if(view_input->flags & (LAB_VIEWINPUT_DESTROY|LAB_VIEWINPUT_CREATE))
     {
-        LAB_Block* block = view_input->flags & LAB_VIEWINPUT_CREATE ? blocks[selected_block] : &LAB_BLOCK_AIR;
+        LAB_Block* block = view_input->flags & LAB_VIEWINPUT_CREATE ? view_input->selected_block : &LAB_BLOCK_AIR;
 
         int bx, by, bz;
         bx = (int)floorf(view->x);

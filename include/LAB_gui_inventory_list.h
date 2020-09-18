@@ -1,0 +1,28 @@
+#pragma once
+
+#include "LAB_gui_component.h"
+#include "LAB_i_inventory.h"
+#include "LAB_render_item.h"
+
+#define LAB_SLOT_BORDER 4
+#define LAB_SLOT_SIZE (2*LAB_SLOT_BORDER+LAB_ITEM_SIZE)
+
+typedef struct LAB_Block LAB_Block;
+
+typedef struct LAB_GuiInventoryList
+{
+    LAB_GUI_COMPONENT_INHERIT;
+    LAB_IInventory const* inventory;
+    void* inventory_user;
+
+} LAB_GuiInventoryList;
+
+void LAB_GuiInventoryList_Create(LAB_GuiInventoryList* lst,
+                                 int x, int y, int w, int h,
+                                 LAB_IInventory const* inventory,
+                                 void* inventory_user);
+
+void LAB_GuiInventoryList_Create_Columns(LAB_GuiInventoryList* lst,
+                                 int x, int y, int columns,
+                                 LAB_IInventory const* inventory,
+                                 void* inventory_user);

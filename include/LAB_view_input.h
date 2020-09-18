@@ -12,6 +12,7 @@ typedef struct LAB_ViewInput
     unsigned flags;
     float speed;
     unsigned brushsize;
+    LAB_Block* selected_block;
 } LAB_ViewInput;
 
 #define LAB_VIEWINPUT_FORWARD 1u

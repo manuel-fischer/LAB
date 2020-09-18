@@ -9,6 +9,7 @@
 #include "LAB_block.h"
 #include "LAB_window.h"
 #include "LAB_gl.h"
+#include "LAB_asset_manager.h"
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -40,54 +41,9 @@ static void LAB_ViewDestructChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entr
 
 static LAB_Triangle* LAB_ViewMeshAlloc(LAB_ViewChunkEntry* chunk_entry, size_t add_size, size_t extra_size);
 
-GLuint LAB_gltextureid = 0;
-static void LAB_View_StaticInit(void)
-{
-    // TODO
-    static bool init = 0;
-    if(init) return;
-    init = 1;
-
-    SDL_Surface* img = IMG_Load("assets/terrain.png");
-    if(LAB_UNLIKELY(img == NULL)) return;
-
-    if(img->format->format != SDL_PIXELFORMAT_RGBA32)
-    {
-        SDL_Surface* nImg;
-        nImg = SDL_ConvertSurfaceFormat(img, SDL_PIXELFORMAT_RGBA32, 0);
-        SDL_FreeSurface(img);
-        img = nImg;
-    }
-
-    glEnable(GL_TEXTURE_2D);
-    glGenTextures(1, &LAB_gltextureid);
-    glBindTexture(GL_TEXTURE_2D, LAB_gltextureid);
-
-    #ifndef NO_GLEW
-    // Mipmaps
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 5);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img->w, img->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, img->pixels);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    #else
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img->w, img->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, img->pixels);
-    #endif
-
-    glMatrixMode(GL_TEXTURE);
-    glScalef(32.f / (float)img->w, 32.f / (float)img->h, 1);
-
-    SDL_FreeSurface(img);
-    LAB_GL_CHECK();
-}
-
 bool LAB_ConstructView(LAB_View* view, LAB_World* world)
 {
-    LAB_View_StaticInit();
+    LAB_InitAssets();
 
     memset(view, 0, sizeof *view);
     view->world = world;
@@ -469,82 +425,7 @@ void LAB_ViewRenderHud(LAB_View* view)
         //int scale = scale_i > 0x80 ? 2 : 1;
         int scale = 1;
         LAB_GL_DrawSurf(view->info.gl_texture, 0, view->h-scale*view->info.surf->h, scale*view->info.surf->w, scale*view->info.surf->h, view->w, view->h);
-        /*glLoadIdentity();
-        glEnable(GL_TEXTURE_2D);
-
-        // partly const
-        static float info[5*3*2] = {
-                0, (0), -1,   0,   0,
-              (0),   0, -1, (1), (1),
-                0,   0, -1,   0, (1),
-              //
-                0, (0), -1,   0,   0,
-              (0), (0), -1, (1),   0,
-              (0),   0, -1, (1), (1),
-        };
-        int w, h;
-        w = view->info.surf->w;
-        h = view->info.surf->h;
-
-        info[5*1] = info[5*4] = info[5*5]   = w;
-        info[1] = info[5*3+1] = info[5*4+1] = h;
-
-        info[5*1+3] = info[5*4+3] = info[5*5+3] = (float)w/info_width;
-        info[5*1+4] = info[5*2+4] = info[5*5+4] = (float)h/info_height;
-
-
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
-
-        glMatrixMode(GL_TEXTURE);
-        glPushMatrix();
-        glLoadIdentity();
-
-        glMatrixMode(GL_MODELVIEW);
-        glPushMatrix();
-        glLoadIdentity();
-
-        float f = 2.f/view->h;
-        glScalef(f, f, 1);
-        glTranslatef(-view->w/2, +view->h/2-h, 0);
-
-        glVertexPointer(3, LAB_GL_TYPEOF(*info), sizeof *info * 5, info);
-        glTexCoordPointer(2, LAB_GL_TYPEOF(*info), sizeof *info * 5, info+3);
-        glDrawArrays(GL_TRIANGLES, 0, 3*2);
-
-        LAB_GL_CHECK();
-        glPopMatrix();
-        glMatrixMode(GL_TEXTURE);
-        glPopMatrix();*/
     }
-
-
-    LAB_GuiManager_Render(&view->gui_mgr, view->w, view->h);
-    /*if(1)
-    {
-         LAB_GuiMenu menu;
-         LAB_GuiMenu_Create(&menu);
-
-         int scale = 2;
-
-         menu.x = (view->w/scale-menu.w)/2;
-         menu.y = (view->h/scale-menu.h)/2;
-
-         SDL_Surface* surf = SDL_CreateRGBSurfaceWithFormat(0, menu.w, menu.h, 32, SDL_PIXELFORMAT_RGBA32);
-         if(!surf) return;
-
-         LAB_GuiContainer_Render_Framed((LAB_GuiComponent*)&menu, surf, 0, 0);
-         //LAB_RenderRect(surf, 10, 10, 80, 20, 2, 1);
-
-         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-         static unsigned gl_id = 0;
-         LAB_GL_ActivateTexture(&gl_id);
-         LAB_GL_UploadSurf(gl_id, surf);
-         LAB_GL_DrawSurf(gl_id, menu.x*scale, menu.y*scale, menu.w*scale, menu.h*scale, view->w, view->h);
-
-         SDL_FreeSurface(surf);
-     }*/
 }
 
 void LAB_ViewRenderProc(void* user, LAB_Window* window)
@@ -582,7 +463,7 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
     glDepthFunc(GL_LEQUAL);
 
     glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, LAB_gltextureid);
+    glBindTexture(GL_TEXTURE_2D, LAB_block_terrain_gl_id);
 
 
     glEnableClientState(GL_VERTEX_ARRAY); // TODO once
@@ -605,6 +486,11 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
     // Render Crosshair
     if(view->flags & LAB_VIEW_SHOW_HUD)
         LAB_ViewRenderHud(view);
+
+    glEnable(GL_BLEND);
+    glDisable(GL_DEPTH_TEST);
+    glColor4f(1,1,1,1);
+    LAB_GuiManager_Render(&view->gui_mgr, view->w, view->h);
 
     if(view->flags & LAB_VIEW_SHOW_FPS_GRAPH)
     {
@@ -785,6 +671,7 @@ void LAB_ViewTick(LAB_View* view, uint32_t delta_ms)
 {
     LAB_ViewLoadNearChunks(view);
     LAB_FpsGraph_AddSample(&view->fps_graph, delta_ms);
+    LAB_GuiManager_Tick(&view->gui_mgr);
 }
 
 

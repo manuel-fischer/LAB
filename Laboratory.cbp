@@ -158,10 +158,10 @@
 		</Unit>
 		<Unit filename="include/HTL_queue.t.h" />
 		<Unit filename="include/LAB.h" />
+		<Unit filename="include/LAB_asset_manager.h" />
 		<Unit filename="include/LAB_bits.h" />
 		<Unit filename="include/LAB_block.h" />
 		<Unit filename="include/LAB_blt_model.h" />
-		<Unit filename="include/LAB_bool.h" />
 		<Unit filename="include/LAB_check.h" />
 		<Unit filename="include/LAB_chunk.h" />
 		<Unit filename="include/LAB_color.h" />
@@ -177,9 +177,12 @@
 		<Unit filename="include/LAB_gui_button.h" />
 		<Unit filename="include/LAB_gui_component.h" />
 		<Unit filename="include/LAB_gui_inventory.h" />
+		<Unit filename="include/LAB_gui_inventory_list.h" />
 		<Unit filename="include/LAB_gui_label.h" />
 		<Unit filename="include/LAB_gui_manager.h" />
 		<Unit filename="include/LAB_gui_menu.h" />
+		<Unit filename="include/LAB_i_inventory.h" />
+		<Unit filename="include/LAB_inventory.h" />
 		<Unit filename="include/LAB_light_node.h" />
 		<Unit filename="include/LAB_math.h" />
 		<Unit filename="include/LAB_memory.h" />
@@ -188,6 +191,7 @@
 		<Unit filename="include/LAB_opt.h" />
 		<Unit filename="include/LAB_perf.h" />
 		<Unit filename="include/LAB_random.h" />
+		<Unit filename="include/LAB_render_item.h" />
 		<Unit filename="include/LAB_stdinc.h" />
 		<Unit filename="include/LAB_util.h" />
 		<Unit filename="include/LAB_view.h" />
@@ -195,6 +199,9 @@
 		<Unit filename="include/LAB_window.h" />
 		<Unit filename="include/LAB_world.h" />
 		<Unit filename="src/LAB.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_asset_manager.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_block.c">
@@ -236,6 +243,9 @@
 		<Unit filename="src/LAB_gui_inventory.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="src/LAB_gui_inventory_list.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="src/LAB_gui_label.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -243,6 +253,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_gui_menu.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_inventory.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_memory.c">
@@ -255,6 +268,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_random.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_render_item.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_util.c">
