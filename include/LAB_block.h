@@ -55,6 +55,10 @@ IXO_DECLARE_CLASS(LAB_Block);
 
 extern LAB_Block LAB_BLOCK_OUTSIDE,
                  LAB_BLOCK_AIR,
+                 LAB_BLOCK_BASALT,
+                 LAB_BLOCK_BASALTCOBBLE,
+                 LAB_BLOCK_BASALTBRICKS,
+                 LAB_BLOCK_SMOOTHBASALT,
                  LAB_BLOCK_STONE,
                  LAB_BLOCK_COBBLESTONE,
                  LAB_BLOCK_STONEBRICKS,

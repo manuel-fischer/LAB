@@ -237,6 +237,13 @@ int LAB_TraceBlock(LAB_World* world, int max_distance, float vpos[3], float dir[
     prev[1] = (int)floor(p[1]);
     prev[2] = (int)floor(p[2]);
 
+    if(LAB_GetBlock(world, prev[0], prev[1], prev[2], flags)->flags&block_flags)
+    {
+        target[0] = prev[0];
+        target[1] = prev[1];
+        target[2] = prev[2];
+        return 1;
+    }
     for(int i = 0; i < max_distance*16; ++i)
     {
         p[0] += dir[0]/16;

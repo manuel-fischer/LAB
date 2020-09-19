@@ -344,12 +344,80 @@ static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 
 
 
+static void LAB_RenderBlockSelection(int x, int y, int z)
+{
+#define O (-0.001f)
+#define I ( 1.001f)
+//#define O 0
+//#define I 1
+    static const float box[] = {
+        O, O, O, /*--*/ I, O, O,
+        O, O, O, /*--*/ O, I, O,
+        O, O, O, /*--*/ O, O, I,
+
+        I, I, O, /*--*/ O, I, O,
+        I, I, O, /*--*/ I, O, O,
+        I, I, O, /*--*/ I, I, I,
+
+        O, I, I, /*--*/ I, I, I,
+        O, I, I, /*--*/ O, O, I,
+        O, I, I, /*--*/ O, I, O,
+
+        I, O, I, /*--*/ O, O, I,
+        I, O, I, /*--*/ I, I, I,
+        I, O, I, /*--*/ I, O, O,
+    };
+#undef I
+#undef O
+
+    glPushMatrix();
+    glTranslatef(x, y, z);
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glVertexPointer(3, GL_FLOAT, 0, box);
+    glLineWidth(2);
+    glDepthRange(0, 0.9999);
+    glDrawArrays(GL_LINES, 0, sizeof(box)/sizeof(*box)/3);
+    glDepthRange(0, 1);
+    glPopMatrix();
+}
 
 
+static void LAB_View_RenderBlockSelection(LAB_View* view)
+{
+    int target[3]; // targeted block
+    int prev[3]; // previous block
+    float hit[3]; // hit pos
 
+    // view-pos
+    float vpos[3];
+    // view-dir
+    float dir[3];
+
+    vpos[0] = view->x;
+    vpos[1] = view->y;
+    vpos[2] = view->z;
+    LAB_ViewGetDirection(view, dir);
+
+    if(LAB_TraceBlock(view->world, 10, vpos, dir, LAB_CHUNK_GENERATE, LAB_BLOCK_INTERACTABLE, target, prev, hit))
+    {
+        glEnable(GL_BLEND);
+        //glEnable(GL_LINE_SMOOTH);
+        //glHint(GL_LINE_SMOOTH, GL_NICEST);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glColor4f(0, 0, 0, 0.7);
+        if(memcmp(target, prev, sizeof target) != 0)
+            LAB_RenderBlockSelection(target[0], target[1], target[2]);
+        //glColor4f(0, 0, 0, 0.1);
+        //LAB_RenderBlockSelection(prev[0], prev[1], prev[2]);
+    }
+}
 
 void LAB_ViewRenderHud(LAB_View* view)
 {
+
+    LAB_View_RenderBlockSelection(view);
+
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glEnable(GL_BLEND);

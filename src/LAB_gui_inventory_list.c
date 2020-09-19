@@ -16,6 +16,8 @@ void LAB_GuiInventoryList_Create(LAB_GuiInventoryList* lst,
     lst->on_event = &LAB_GuiInventoryList_OnEvent;
     lst->render = &LAB_GuiInventoryList_Render;
 
+    lst->selected_slot = -1;
+
     lst->inventory = inventory;
     lst->inventory_user = inventory_user;
 }
@@ -46,7 +48,8 @@ void LAB_GuiInventoryList_Render(LAB_GuiComponent* self, SDL_Surface* surf, int 
         int cx, cy;
         cx = x+xi*LAB_SLOT_SIZE;
         cy = y+yi*LAB_SLOT_SIZE;
-        LAB_RenderRect(surf, cx, cy, LAB_SLOT_SIZE, LAB_SLOT_SIZE, 0, 0);
+        int tx = cself->selected_slot == i ? 1 : 0;
+        LAB_RenderRect(surf, cx, cy, LAB_SLOT_SIZE, LAB_SLOT_SIZE, tx, 2);
         LAB_Block* b = cself->inventory->get_slot(cself->inventory_user, i);
         SDL_Surface* bsurf = LAB_RenderBlock2D(b);
 
@@ -86,6 +89,19 @@ bool LAB_GuiInventoryList_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, S
                 cself->inventory->take_slot(cself->inventory_user, slot);
                 LAB_GuiManager_Dismiss(mgr);
             }
+            return 1;
+        } break;
+        case SDL_MOUSEMOTION:
+        {
+            cself->selected_slot = slot;
+            return 1;
+        } break;
+    }
+    if(LAB_IS_GUI_EVENT(event->type)) switch(LAB_GUI_EVENT(event->type))
+    {
+        case LAB_GUI_EVENT_UNFOCUS:
+        {
+            cself->selected_slot = -1;
             return 1;
         } break;
     }

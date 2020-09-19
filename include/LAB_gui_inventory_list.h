@@ -12,6 +12,7 @@ typedef struct LAB_Block LAB_Block;
 typedef struct LAB_GuiInventoryList
 {
     LAB_GUI_COMPONENT_INHERIT;
+    size_t selected_slot;
     LAB_IInventory const* inventory;
     void* inventory_user;
 

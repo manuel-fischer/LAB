@@ -36,6 +36,10 @@ SDL_Surface* LAB_RenderBlock2D(LAB_Block* block)
         *c = LAB_MulColor(*c, block_color);
 
     }
+    ((LAB_Color*)surf->pixels)[0] =
+    ((LAB_Color*)surf->pixels)[31] =
+    ((LAB_Color*)surf->pixels)[32*31] =
+    ((LAB_Color*)surf->pixels)[32*31+31] = 0;
     //SDL_BlitScaled()
     //memset(surf->pixels, rand()&0xff, 16*16*4);
     return surf;

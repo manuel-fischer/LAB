@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
     view.preload_dist = LAB_PRELOAD_CHUNK(view.render_dist);
     view.keep_dist = LAB_KEEP_CHUNK(view.render_dist);
     view.flags = LAB_VIEW_SHOW_HUD;
-    view.max_update = 16;
+    view.max_update = 1000;//16;
     view.load_amount = 3;
 
     CHECK_INIT(LAB_ConstructViewInput(&view_input, &view));
