@@ -34,11 +34,17 @@ int LAB_ConstructWindow(LAB_Window* window, int w, int h, uint32_t sdl_flags)
         goto INIT_ERROR;
     }
 
-    /*if(SDL_GL_SetSwapInterval(1) < 0) // VSYNC
+    //  0 for immediate updates,
+    //  1 for updates synchronized with the vertical retrace,
+    // -1 for adaptive vsync
+    if(SDL_GL_SetSwapInterval(-1) < 0) // Adaptive VSync
     {
-        LAB_SetError("SDL_GL_SetSwapInterval failed: %s", SDL_GetError());
-        goto INIT_ERROR;
-    }*/
+        if(SDL_GL_SetSwapInterval(1) < 0) // VSync
+        {
+            LAB_SetError("SDL_GL_SetSwapInterval failed twice: %s", SDL_GetError());
+            goto INIT_ERROR;
+        }
+    }
 
 #ifndef NO_GLEW
     GLenum err = glewInit();
@@ -81,12 +87,13 @@ int LAB_WindowLoop(LAB_Window* window)
 
     if(LAB_LIKELY(window->render != NULL))
     {
+        // TODO: pass w, h to hook, remove glViewport from here
         int w, h;
         SDL_GetWindowSize(window->window, &w, &h);
         glViewport(0, 0, w, h);
         window->render(window->render_user, window);
         SDL_GL_SwapWindow(window->window);
-        SDL_Delay(16);
+        //SDL_Delay(16);
     }
 
     return 1;

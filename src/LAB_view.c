@@ -70,18 +70,23 @@ void LAB_DestructView(LAB_View* view)
 }
 
 
-void LAB_ViewChunkProc(void* user, LAB_World* world, int x, int y, int z)
+void LAB_ViewChunkProc(void* user, LAB_World* world, int x, int y, int z, LAB_ChunkUpdate update)
 {
     LAB_View* view = (LAB_View*)user;
 
+    /*LAB_ViewChunkEntry* entry = LAB_ViewGetChunkEntry(view, x, y, z);
+    if(entry)
+        entry->dirty = update;*/
+
+    // Handle block update at border correctly
     for(int iz = -1; iz <= 1; ++iz)
     for(int iy = -1; iy <= 1; ++iy)
     for(int ix = -1; ix <= 1; ++ix)
     {
         LAB_ViewChunkEntry* entry = LAB_ViewGetChunkEntry(view, x+ix, y+iy, z+iz);
-        entry->dirty = 1;
+        if(entry)
+            entry->dirty |= update;
     }
-
 }
 
 
@@ -98,24 +103,12 @@ static bool LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, L
                              LAB_CHUNK_EXISTING);
 
     if(chunk_neighborhood[1+3+9] == NULL) return 0;
-#if 0
-    if(chunk_entry->x == 0 && chunk_entry->y == -1 && chunk_entry->z == 0)
-    {
-        LAB_PERF_BEGIN("build mesh", 333);
-            LAB_ViewBuildMeshNeighbored(view, chunk_entry, chunk_neighborhood);
-        LAB_PERF_END("build mesh");
-    }
-    else
-    {
-        //LAB_ViewBuildMeshNeighbored(view, chunk_entry, chunk_neighborhood);
-    }
-#else
     LAB_ViewBuildMeshNeighbored(view, chunk_entry, chunk_neighborhood);
-#endif
     return 1;
 }
 
 
+LAB_HOT
 static void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_Chunk* cnk3x3x3[27])
 {
     const int X = 1;
@@ -147,7 +140,7 @@ LAB_BlockFlags LAB_GetNeighborhoodBlockFlags(LAB_Chunk* neighborhood[27], int x,
 }
 
 
-LAB_HOT
+LAB_HOT LAB_INLINE
 static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_Chunk* cnk3x3x3[27], int x, int y, int z)
 {
 
@@ -247,7 +240,8 @@ static LAB_Triangle* LAB_ViewMeshAlloc(LAB_ViewChunkEntry* chunk_entry, size_t a
     new_mesh_count = mesh_count+add_size;
     mesh_capacity = chunk_entry->mesh_capacity;
 
-    if(LAB_UNLIKELY(new_mesh_count+extra_size > mesh_capacity))
+    //if(LAB_UNLIKELY(new_mesh_count+extra_size > mesh_capacity))
+    if(new_mesh_count+extra_size > mesh_capacity)
     {
         if(mesh_capacity == 0) mesh_capacity = 1;
         while(new_mesh_count+extra_size > mesh_capacity) mesh_capacity *= 2;
@@ -277,12 +271,13 @@ static void LAB_ViewUploadVBO(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 
 static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 {
-    if(view->rest_update && chunk_entry->dirty)
+    // TODO enshure light update after at most 1 sec
+    if(view->rest_update && ( (chunk_entry->dirty&2) || ((chunk_entry->dirty&1) && (rand()&0x1f)==0) ))
     {
-        int chunk_available;
-        chunk_available = LAB_ViewBuildMesh(view, chunk_entry, view->world);
-        chunk_entry->dirty = !chunk_available;
-        view->rest_update -= chunk_available;
+        bool chunk_available = LAB_ViewBuildMesh(view, chunk_entry, view->world);
+        if(!chunk_available) return;
+        chunk_entry->dirty = 0;
+        view->rest_update--;
 
         #ifndef NO_GLEW
         if(view->flags & LAB_VIEW_USE_VBO)
@@ -372,6 +367,7 @@ static void LAB_RenderBlockSelection(int x, int y, int z)
 
     glPushMatrix();
     glTranslatef(x, y, z);
+    glDisable(GL_LINE_SMOOTH);
     glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glVertexPointer(3, GL_FLOAT, 0, box);
@@ -500,15 +496,19 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
 {
     LAB_View* view = (LAB_View*)user;
 
+    // Block rendering settings
     glEnable(GL_CULL_FACE);
     glCullFace(GL_FRONT);
 
+    // Sky color
     if(view->y <= -16*4)
         glClearColor(0.03, 0.03, 0.03, 1);
     else
         glClearColor(0.5, 0.7, 0.9, 1);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Setup projection matrix
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     int w, h;
@@ -519,6 +519,7 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
     float fov = 1;
     glFrustum(-fov*nearp*ratio, fov*nearp*ratio, -fov*nearp, fov*nearp, nearp, 1000);
 
+    // Setup world matrix
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glRotatef(view->ax, 1, 0, 0);
@@ -526,7 +527,7 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
     glRotatef(view->az, 0, 0, 1);
     glTranslatef(-view->x, -view->y, -view->z);
 
-
+    // Block rendering settings
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
@@ -544,17 +545,16 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
 
     LAB_ViewRenderChunks(view);
 
+    // TODO: remove this
     glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-
-
-    LAB_ViewRemoveDistantChunks(view);
 
 
     // Render Crosshair
     if(view->flags & LAB_VIEW_SHOW_HUD)
         LAB_ViewRenderHud(view);
 
+    // Gui rendering settings
     glEnable(GL_BLEND);
     glDisable(GL_DEPTH_TEST);
     glColor4f(1,1,1,1);
@@ -565,8 +565,6 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glMatrixMode(GL_MODELVIEW);
-        int tmp;
-        LAB_ASSUME((glGetIntegerv(GL_MATRIX_MODE, &tmp), tmp) == GL_MODELVIEW);
         glPushMatrix();
         glLoadIdentity();
         glScalef(2*(float)view->w/(float)view->h, 2, 1);
@@ -697,7 +695,7 @@ void LAB_ViewInvalidateEverything(LAB_View* view, int free_buffers)
 {
     for(size_t i = 0; i < view->chunk_count; ++i)
     {
-        view->chunks[i].dirty = 1;
+        view->chunks[i].dirty = ~0;
     }
     if(free_buffers)
     {
@@ -737,6 +735,7 @@ void LAB_ViewGetDirection(LAB_View* view, LAB_OUT float dir[3])
 
 void LAB_ViewTick(LAB_View* view, uint32_t delta_ms)
 {
+    LAB_ViewRemoveDistantChunks(view);
     LAB_ViewLoadNearChunks(view);
     LAB_FpsGraph_AddSample(&view->fps_graph, delta_ms);
     LAB_GuiManager_Tick(&view->gui_mgr);
@@ -839,7 +838,7 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
                         {
                             entry = LAB_ViewNewChunkEntry(view, xx, yy, zz);
                             if(entry == NULL) return; // NO MEMORY
-                            entry->dirty = 1;
+                            entry->dirty = ~0;
                         }
                         if(entry->dirty)
                         {

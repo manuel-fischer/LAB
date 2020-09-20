@@ -81,7 +81,7 @@ static void LAB_FixScreenImg(void* pixels, int w, int h)
 
 static void LAB_ShowGuiMenu(LAB_View* view)
 {
-    LAB_GuiMenu* gui = malloc(sizeof *gui);
+    LAB_GuiMenu* gui = LAB_Malloc(sizeof *gui);
     if(!gui) return;
     LAB_GuiMenu_Create(gui, view->world);
     LAB_GuiManager_ShowDialog(&view->gui_mgr, (LAB_GuiComponent*)gui);
@@ -89,7 +89,7 @@ static void LAB_ShowGuiMenu(LAB_View* view)
 
 static void LAB_ShowGuiInventory(LAB_View* view, LAB_Block** block)
 {
-    LAB_GuiInventory* gui = malloc(sizeof *gui);
+    LAB_GuiInventory* gui = LAB_Malloc(sizeof *gui);
     if(!gui) return;
     LAB_GuiInventory_Create(gui, &LAB_cheat_inventory, block);
     LAB_GuiManager_ShowDialog(&view->gui_mgr, (LAB_GuiComponent*)gui);
@@ -130,19 +130,13 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
 
             switch(key)
             {
-                case SDLK_w: view_input->dir_set |= 1; break;
+                /*case SDLK_w: view_input->dir_set |= 1; break;
                 case SDLK_a: view_input->dir_set |= 2; break;
                 case SDLK_s: view_input->dir_set |= 4; break;
                 case SDLK_d: view_input->dir_set |= 8; break;
 
                 case SDLK_SPACE:  view_input->updown |= 1; break;
-                case SDLK_LSHIFT: view_input->updown |= 2; break;
-
-                LAB_CASE_RANGE('1', 9):
-                {
-                    int id = key-'1';
-                    view_input->selected_block = LAB_blocks[id];
-                } break;
+                case SDLK_LSHIFT: view_input->updown |= 2; break;*/
             }
         } break;
         case SDL_KEYUP:
@@ -151,13 +145,13 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
 
             switch(key)
             {
-                case SDLK_w: view_input->dir_set &= ~1; break;
+                /*case SDLK_w: view_input->dir_set &= ~1; break;
                 case SDLK_a: view_input->dir_set &= ~2; break;
                 case SDLK_s: view_input->dir_set &= ~4; break;
                 case SDLK_d: view_input->dir_set &= ~8; break;
 
                 case SDLK_SPACE:  view_input->updown &= ~1; break;
-                case SDLK_LSHIFT: view_input->updown &= ~2; break;
+                case SDLK_LSHIFT: view_input->updown &= ~2; break;*/
 
                 case SDLK_x:
                 {
@@ -188,10 +182,14 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                 case SDLK_n:
                 case SDLK_m:
                 {
-                    if(key == SDLK_n) view_input->speed-=0.02;
+                    /*if(key == SDLK_n) view_input->speed-=0.02;
                     if(key == SDLK_m) view_input->speed+=0.02;
                     if(view_input->speed < 0.02) view_input->speed = 0.02;
-                    if(view_input->speed > 16)  view_input->speed = 16;
+                    if(view_input->speed > 16)  view_input->speed = 16;*/
+                    if(key == SDLK_n) view_input->speed-=1;
+                    if(key == SDLK_m) view_input->speed+=1;
+                    if(view_input->speed < 1) view_input->speed = 1;
+                    if(view_input->speed > 100)  view_input->speed = 100;
                 } break;
 
 
@@ -301,6 +299,12 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                 } break;
                 #endif
 
+                LAB_CASE_RANGE('1', 9):
+                {
+                    int id = key-'1';
+                    view_input->selected_block = LAB_blocks[id];
+                } break;
+
                 default: break;
             }
         } break;
@@ -400,7 +404,11 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms)
     float speed = view_input->speed * (kbstate[SDL_SCANCODE_LCTRL] ? 2.5 : 1);
     speed *= (float)delta_ms*(1.f/1000.f);
 
-    unsigned dir_set = view_input->dir_set;
+    //unsigned dir_set = view_input->dir_set;
+    unsigned dir_set = (kbstate[SDL_SCANCODE_W]?1:0)
+                     | (kbstate[SDL_SCANCODE_A]?2:0)
+                     | (kbstate[SDL_SCANCODE_S]?4:0)
+                     | (kbstate[SDL_SCANCODE_D]?8:0);
     if(view_input->flags & LAB_VIEWINPUT_FORWARD)
     {
         if(dir_set&(1|4))
@@ -434,8 +442,9 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms)
             dz -= c*speed;
         }
 
-        if(view_input->updown&1) dy+=speed;
-        if(view_input->updown&2) dy-=speed;
+
+        if(kbstate[SDL_SCANCODE_SPACE]) dy+=speed;
+        if(kbstate[SDL_SCANCODE_LSHIFT]) dy-=speed;
     }
 
     if(kbstate[SDL_SCANCODE_LALT])

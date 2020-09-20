@@ -55,6 +55,8 @@ int main(int argc, char** argv) {
     the_world.chunkgen      = &LAB_GenOverworldProc;
     the_world.chunkgen_user = &gen_overworld;
     #endif
+    the_world.max_gen = 0;
+    the_world.max_update = 0;
 
     CHECK_INIT(LAB_ConstructView(&view, &the_world));
     LAB_GL_CHECK();
@@ -62,8 +64,9 @@ int main(int argc, char** argv) {
     view.preload_dist = LAB_PRELOAD_CHUNK(view.render_dist);
     view.keep_dist = LAB_KEEP_CHUNK(view.render_dist);
     view.flags = LAB_VIEW_SHOW_HUD;
-    view.max_update = 1000;//16;
-    view.load_amount = 3;
+    view.max_update = 160;
+    //view.load_amount = 3;
+    view.load_amount = 10;
 
     CHECK_INIT(LAB_ConstructViewInput(&view_input, &view));
     LAB_GL_CHECK();
@@ -94,13 +97,21 @@ int main(int argc, char** argv) {
 
         uint32_t time2_ms = SDL_GetTicks();
         uint32_t delta_ms = time2_ms-time_ms;
-        /*if(itr%20 == 0)*/ printf("%i fps          \r", 1000/delta_ms);
+        ///*if(itr%20 == 0)*/ printf("%i fps          \r", 1000/delta_ms);
         time_ms = time2_ms;
 
+            uint32_t t0 = SDL_GetTicks();
         LAB_ViewInputTick(&view_input, delta_ms);
-        LAB_ViewTick(&view, delta_ms);
+            uint32_t t1 = SDL_GetTicks();
         LAB_WorldTick(&the_world, delta_ms);
-    };
+            uint32_t t2 = SDL_GetTicks();
+        LAB_ViewTick(&view, delta_ms);
+            uint32_t t3 = SDL_GetTicks();
+        if(itr%16==0)
+        {
+            printf("ViewInput %i\nWorld %i\nView %i\n\n", (int)t1-t0, (int)t2-t1, (int)t3-t2);
+        }
+    }
 
 
     return_value = EXIT_SUCCESS;

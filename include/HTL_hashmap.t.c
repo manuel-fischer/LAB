@@ -119,18 +119,22 @@ HTL_DEF HTL_MEMBER(Entry)* HTL_MEMBER(Locate)(HTL_P(NAME)* hashmap, HTL_P(KEY_TY
     //return hashmap->table+hashid;
     size_t i;
 
+    //int collisions = 0;
     for(i = hashid; i < hashmap->capacity; ++i)
     {
         if(!HTL_MEMBER(IsEntry)(hashmap, &hashmap->table[i])) goto ENTRY_FOUND;
         if(HTL_P(COMP_FUNC)(key, hashmap->table[i].key) == 0) goto ENTRY_FOUND;
+        //++collisions;
     }
     for(i = 0; /*i < hashid*/; ++i)
     {
         if(!HTL_MEMBER(IsEntry)(hashmap, &hashmap->table[i])) goto ENTRY_FOUND;
         if(HTL_P(COMP_FUNC)(key, hashmap->table[i].key) == 0) goto ENTRY_FOUND;
+        //++collisions;
     }
 
 ENTRY_FOUND:
+    //printf("Collisions %i: %i in [%i]\n", collisions, (int)hashmap->size, (int)hashmap->capacity);
 
     return &hashmap->table[i];
 }

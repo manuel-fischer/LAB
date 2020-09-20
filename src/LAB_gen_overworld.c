@@ -16,8 +16,8 @@ LAB_Chunk* LAB_GenOverworldProc(void* user, LAB_World* world, int x, int y, int 
     if(!chunk) return NULL;
 
 
-    uint64_t noise[17*17*17];
-    uint32_t smooth[16*16*16];
+    static uint64_t noise[17*17*17];
+    static uint32_t smooth[16*16*16];
 
     LAB_Random random;
     LAB_ChunkRandom(&random, gen->seed^0x12345, x, y, z);

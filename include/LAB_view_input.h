@@ -7,8 +7,8 @@ typedef union SDL_Event SDL_Event;
 typedef struct LAB_ViewInput
 {
     LAB_View* view;
-    int dir_set;
-    int updown;
+    //int dir_set;
+    //int updown;
     unsigned flags;
     float speed;
     unsigned brushsize;

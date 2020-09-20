@@ -6,10 +6,18 @@
 #include "LAB_model.h" // LAB_Triangle
 #include <SDL2/SDL_ttf.h>
 
+/**
+ *  Hooks
+ *  - LAB_ViewChunkProc
+ *  - LAB_ViewRenderProc
+ *  - LAB_ViewTick
+ */
+
 // DEPEND
 typedef struct LAB_World LAB_World;
 typedef struct LAB_Chunk LAB_Chunk;
 typedef struct LAB_Window LAB_Window;
+typedef int LAB_ChunkUpdate;
 // END DEPEND
 
 #define LAB_CHUNK_DIRTY_BLOCKS
@@ -23,7 +31,7 @@ typedef struct LAB_ViewChunkEntry
     size_t mesh_count, mesh_capacity;
     LAB_Triangle* mesh;
 
-    unsigned dirty:1, used:1;
+    unsigned dirty:2, used:1;
     /*unsigned dirty_flags;
     unsigned used:1;*/
 
@@ -115,7 +123,7 @@ bool LAB_ConstructView(LAB_View* view, LAB_World* world);
 void LAB_DestructView(LAB_View* view);
 
 
-void LAB_ViewChunkProc(void* user, LAB_World* world, int x, int y, int z);
+void LAB_ViewChunkProc(void* user, LAB_World* world, int x, int y, int z, LAB_ChunkUpdate update);
 void LAB_ViewRenderProc(void* user, LAB_Window* window);
 
 LAB_ViewChunkEntry* LAB_ViewGetChunkEntry(LAB_View* view, int x, int y, int z);

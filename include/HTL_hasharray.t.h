@@ -20,6 +20,8 @@
  *    LOAD_DEN   load factor denominator eg. 4
  *    GROW_FACTOR    the grow factor, with which the array gets resized, eg. 2
  *    INITIAL_CAPACITY  the initial capacity of the array, when the first element gets pushed
+ *
+ *    CACHE_LAST 0 or 1, used in #if-#else to enable fast cached check (NOT multithreading compatible)
  */
 
 #include "HTL_pp.h"

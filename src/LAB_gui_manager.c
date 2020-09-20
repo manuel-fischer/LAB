@@ -2,6 +2,7 @@
 #include "LAB_gui_component.h"
 #include "LAB_memory.h"
 #include "LAB_gl.h"
+#include "LAB_debug.h"
 
 #define GUI_SCALE 2
 
@@ -21,6 +22,7 @@ void LAB_GuiManager_Destroy(LAB_GuiManager* manager)
 
 void LAB_GuiManager_ShowDialog(LAB_GuiManager* manager, LAB_GuiComponent* component)
 {
+    LAB_ASSUME(manager->component != component);
     if(manager->component) LAB_Free(manager->component);
     manager->component = component;
     manager->rerender = 1;

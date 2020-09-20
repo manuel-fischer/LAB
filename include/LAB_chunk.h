@@ -6,6 +6,12 @@
 
 typedef struct LAB_World LAB_World;
 
+enum LAB_ChunkUpdate
+{
+    LAB_CHUNK_UPDATE_LIGHT = 1,   // light changed, usually by neighboring chunk
+    LAB_CHUNK_UPDATE_BLOCK = 2|1, // block changed, light is usually also updated
+};
+typedef int LAB_ChunkUpdate;
 
 #define LAB_CHUNK_SHIFT  4
 #define LAB_CHUNK_SIZE   (1 << LAB_CHUNK_SHIFT)

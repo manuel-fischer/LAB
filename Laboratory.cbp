@@ -176,6 +176,7 @@
 		<Unit filename="include/LAB_gui.h" />
 		<Unit filename="include/LAB_gui_button.h" />
 		<Unit filename="include/LAB_gui_component.h" />
+		<Unit filename="include/LAB_gui_container.h" />
 		<Unit filename="include/LAB_gui_inventory.h" />
 		<Unit filename="include/LAB_gui_inventory_list.h" />
 		<Unit filename="include/LAB_gui_label.h" />
@@ -238,6 +239,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_gui_component.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_gui_container.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_gui_inventory.c">

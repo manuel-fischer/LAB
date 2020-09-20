@@ -59,7 +59,7 @@ int LAB_ChunkPosComp(LAB_ChunkPos, LAB_ChunkPos);
 #undef HTL_PARAM
 
 
-typedef struct LAB_LightUpdate
+/*typedef struct LAB_LightUpdate
 {
     int x, y, z;
 } LAB_LightUpdate;
@@ -70,12 +70,12 @@ typedef struct LAB_LightUpdate
 
 #define HTL_PARAM LAB_LIGHT_UPDATE_QUEUE
 #include "HTL_queue.t.h"
-#undef HTL_PARAM
+#undef HTL_PARAM*/
 
 
 typedef struct LAB_World LAB_World;
 
-typedef void(LAB_ChunkViewer)(void* user, LAB_World* world, int x, int y, int z);
+typedef void(LAB_ChunkViewer)(void* user, LAB_World* world, int x, int y, int z, LAB_ChunkUpdate update);
 
 
 /*typedef struct LAB_ChunkEntry
@@ -95,11 +95,15 @@ typedef struct LAB_World
     /*size_t chunk_count, chunk_capacity;
     LAB_ChunkEntry* chunks;*/
     LAB_ChunkMap chunks;
+    LAB_ChunkMap_Entry* last_entry;
 
     LAB_ChunkPosQueue gen_queue;
     LAB_ChunkPos2Queue update_queue;
 
-    LAB_LightUpdateQueue light_queue;
+    size_t max_gen,
+           max_update;
+
+    //LAB_LightUpdateQueue light_queue;
 } LAB_World;
 
 
@@ -135,9 +139,10 @@ void LAB_GetChunkNeighborhood(LAB_World* world, LAB_Chunk* chunks[27], int x, in
 /**
  *  Refresh a chunk by notifying the view
  */
-void LAB_NotifyChunk(LAB_World* world, int x, int y, int z);
+//void LAB_NotifyChunk(LAB_World* world, int x, int y, int z);
+void LAB_UpdateChunk(LAB_World* world, int x, int y, int z, LAB_ChunkUpdate update);
 //void LAB_NotifyChunkLater(LAB_World* world, int x, int y, int z/*, LAB_ChunkPeekType flags*/);
-void LAB_UpdateChunkLater(LAB_World* world, int x, int y, int z);
+void LAB_UpdateChunkLater(LAB_World* world, int x, int y, int z, LAB_ChunkUpdate update);
 
 LAB_Block* LAB_GetBlock(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType flags);
 void LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType flags, LAB_Block* block);
@@ -152,6 +157,10 @@ void LAB_WorldTick(LAB_World* world, uint32_t delta_ms);
 
 
 
+LAB_INLINE LAB_Chunk* LAB_GetNeighborhoodRef(LAB_Chunk*const neighborhood[27], int x, int y, int z, int* /*out*/ index);
+LAB_INLINE LAB_Block* LAB_GetNeighborhoodBlock(LAB_Chunk*const neighborhood[27], int x, int y, int z);
+LAB_INLINE LAB_Color LAB_GetNeighborhoodLight(LAB_Chunk*const neighborhood[27], int x, int y, int z, LAB_Color default_color);
+LAB_INLINE uint32_t LAB_World_PeekFlags3x3(LAB_Chunk* chunk, int x, int y, int z, unsigned flag);
 
 
 
