@@ -54,6 +54,7 @@ dkms.conf
 # Code::Blocks files
 *.depend
 *.layout
+*.cscope_file_list
 
 # Disassembly for debugging
 *.dis
