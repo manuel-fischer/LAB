@@ -271,6 +271,17 @@ LAB_Block LAB_BLOCK_RED_LIGHT = {
     .model = &LAB_MODEL_LIGHT_RED,
 };
 
+// TODO: different texture
+LAB_Block LAB_BLOCK_INVISIBLE_LIGHT = {
+    .flags = LAB_BLOCK_INTERACTABLE | LAB_BLOCK_EMISSIVE,
+    .lum = LAB_RGB(255, 255, 255),
+    .model = &LAB_MODEL_LIGHT
+};
+
+LAB_Block LAB_BLOCK_BARRIER = {
+    .flags = LAB_BLOCK_INTERACTABLE | LAB_BLOCK_MASSIVE,
+    .model = &LAB_MODEL_LIGHT_RED,
+};
 
 
 LAB_Block* LAB_blocks_arr[] =
@@ -302,7 +313,9 @@ LAB_Block* LAB_blocks_arr[] =
     &LAB_BLOCK_BLUE_LIGHT,
     &LAB_BLOCK_YELLOW_LIGHT,
     &LAB_BLOCK_GREEN_LIGHT,
-    &LAB_BLOCK_RED_LIGHT
+    &LAB_BLOCK_RED_LIGHT,
+    &LAB_BLOCK_INVISIBLE_LIGHT,
+    &LAB_BLOCK_BARRIER,
 };
 LAB_Block** LAB_blocks = LAB_blocks_arr;
 size_t LAB_block_count = sizeof LAB_blocks_arr/sizeof *LAB_blocks_arr;

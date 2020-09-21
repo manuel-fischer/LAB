@@ -17,7 +17,8 @@ LAB_CHECK_STRUCT_SIZE(LAB_ChunkPos);
 unsigned LAB_ChunkPosHash(LAB_ChunkPos);
 int LAB_ChunkPosComp(LAB_ChunkPos, LAB_ChunkPos);
 
-#define LAB_MAX_LOAD_CHUNK 16
+//#define LAB_MAX_LOAD_CHUNK 16
+#define LAB_MAX_LOAD_CHUNK 256
 
 #define LAB_PRELOAD_CHUNK(chunk_dist) ((chunk_dist)+1)
 #define LAB_KEEP_CHUNK(chunk_dist)    ((chunk_dist)+2)

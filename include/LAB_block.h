@@ -82,7 +82,9 @@ extern LAB_Block LAB_BLOCK_OUTSIDE,
                  LAB_BLOCK_BLUE_LIGHT,
                  LAB_BLOCK_YELLOW_LIGHT,
                  LAB_BLOCK_GREEN_LIGHT,
-                 LAB_BLOCK_RED_LIGHT;
+                 LAB_BLOCK_RED_LIGHT,
+                 LAB_BLOCK_INVISIBLE_LIGHT,
+                 LAB_BLOCK_BARRIER;
 
 LAB_Block** LAB_blocks;
 extern size_t LAB_block_count;

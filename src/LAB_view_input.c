@@ -174,7 +174,7 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                     if(key == SDLK_MINUS) view->render_dist--;
                     if(key == SDLK_PLUS) view->render_dist++;
                     if(view->render_dist == 0) view->render_dist = 1;
-                    if(view->render_dist > 16) view->render_dist = 16;
+                    if(view->render_dist > 64) view->render_dist = 64;
                     view->preload_dist = LAB_PRELOAD_CHUNK(view->render_dist);
                     view->keep_dist = LAB_KEEP_CHUNK(view->render_dist);
                 } break;

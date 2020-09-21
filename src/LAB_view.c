@@ -36,6 +36,9 @@ static void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chun
 static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_IN LAB_Chunk* chunk_neighborhood[27], int x, int y, int z);
 static void LAB_ViewRenderChunks(LAB_View* view);
 static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
+static bool LAB_View_HasChunkVisibleNeighbors(LAB_View* view, int x, int y, int z);
+static void LAB_View_QueryChunks(LAB_View* view);
+static void LAB_View_QueryChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
 static void LAB_ViewRemoveDistantChunks(LAB_View* view);
 static void LAB_ViewDestructChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
 
@@ -74,6 +77,8 @@ void LAB_ViewChunkProc(void* user, LAB_World* world, int x, int y, int z, LAB_Ch
 {
     LAB_View* view = (LAB_View*)user;
 
+    // TODO: ignore far away chunks
+
     /*LAB_ViewChunkEntry* entry = LAB_ViewGetChunkEntry(view, x, y, z);
     if(entry)
         entry->dirty = update;*/
@@ -83,7 +88,7 @@ void LAB_ViewChunkProc(void* user, LAB_World* world, int x, int y, int z, LAB_Ch
     for(int iy = -1; iy <= 1; ++iy)
     for(int ix = -1; ix <= 1; ++ix)
     {
-        LAB_ViewChunkEntry* entry = LAB_ViewGetChunkEntry(view, x+ix, y+iy, z+iz);
+        LAB_ViewChunkEntry* entry = LAB_ViewFindChunkEntry(view, x+ix, y+iy, z+iz);
         if(entry)
             entry->dirty |= update;
     }
@@ -277,6 +282,7 @@ static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
         bool chunk_available = LAB_ViewBuildMesh(view, chunk_entry, view->world);
         if(!chunk_available) return;
         chunk_entry->dirty = 0;
+        chunk_entry->exist = 1;
         view->rest_update--;
 
         #ifndef NO_GLEW
@@ -321,7 +327,104 @@ static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 }
 
 
+static void LAB_View_QueryChunks(LAB_View* view)
+{
+    int px = LAB_Sar((int)floorf(view->x), LAB_CHUNK_SHIFT);
+    int py = LAB_Sar((int)floorf(view->y), LAB_CHUNK_SHIFT);
+    int pz = LAB_Sar((int)floorf(view->z), LAB_CHUNK_SHIFT);
 
+
+    int dist_sq = view->render_dist*view->render_dist + 3;
+    for(size_t i = 0; i < view->chunk_count; ++i)
+    {
+        LAB_ViewChunkEntry* entry = &view->chunks[i];
+        int cx, cy, cz;
+        cx = entry->x;
+        cy = entry->y;
+        cz = entry->z;
+        int c_dist_sq = (cx-px)*(cx-px) + (cy-py)*(cy-py) + (cz-pz)*(cz-pz);
+
+
+        if(c_dist_sq <= 1*1+3)
+            entry->visible = 1;
+        else if(c_dist_sq <= dist_sq)
+        {
+            #if 0
+            if(entry->do_query || LAB_View_HasChunkVisibleNeighbors(view, cx, cy, cz))
+            {
+                entry->do_query = 0;
+                LAB_View_QueryChunk(view, entry);
+            }
+            #else
+            if(!LAB_View_HasChunkVisibleNeighbors(view, cx, cy, cz)) continue;
+            int probability_update = 255/c_dist_sq;
+            //int probability_update = 200/c_dist_sq+55;
+            //int probability_update = 150/c_dist_sq+105;
+            //int probability_update = 16;
+            //int probability_update = 255;
+
+            int r = rand()&0xff;
+            if((entry->do_query && r <= 255) || r <= probability_update)
+            {
+                entry->do_query = 0;
+                LAB_View_QueryChunk(view, entry);
+            }
+            #endif
+        }
+    }
+}
+
+static void LAB_View_QueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
+{
+    // TODO fixed sized buffer of queries, glGetQueryObject called
+    //      in the next frame, in LAB_View_Tick
+    glPushMatrix();
+    glColorMask(0, 0, 0, 0);
+    glDepthMask(0);
+
+    unsigned query_id;
+    glGenQueries(1, &query_id);
+    glBeginQuery(GL_ANY_SAMPLES_PASSED, query_id);
+
+    glTranslatef(16*entry->x, 16*entry->y, 16*entry->z);
+    glScalef(16, 16, 16);
+    static float box[6*2*3][3] = {
+        {0, 0, 0}, {1, 0, 0}, {0, 1, 0},
+        {1, 1, 0}, {0, 1, 0}, {1, 0, 0},
+
+        {1, 0, 1}, {0, 0, 1}, {1, 1, 1},
+        {0, 1, 1}, {1, 1, 1}, {0, 0, 1},
+
+
+        {0, 0, 0}, {0, 1, 0}, {0, 0, 1},
+        {0, 1, 1}, {0, 0, 1}, {0, 1, 0},
+
+        {1, 1, 0}, {1, 0, 0}, {1, 1, 1},
+        {1, 0, 1}, {1, 1, 1}, {1, 0, 0},
+
+
+        {0, 0, 0}, {0, 0, 1}, {1, 0, 0},
+        {1, 0, 1}, {1, 0, 0}, {0, 0, 1},
+
+        {0, 1, 1}, {0, 1, 0}, {1, 1, 1},
+        {1, 1, 0}, {1, 1, 1}, {0, 1, 0},
+    };
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glVertexPointer(3, GL_FLOAT, 0, box);
+    glDrawArrays(GL_TRIANGLES, 0, 6*2*3);
+
+    glEndQuery(GL_ANY_SAMPLES_PASSED);
+    unsigned visible = 0;
+    glGetQueryObjectuiv(query_id, GL_QUERY_RESULT, &visible);
+    glDeleteQueries(1, &query_id);
+
+    glDepthMask(1);
+    glColorMask(1, 1, 1, 1);
+    glPopMatrix();
+
+    entry->visible = visible;
+}
 
 
 
@@ -544,6 +647,7 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
     LAB_ViewRenderChunks(view);
+    LAB_View_QueryChunks(view);
 
     // TODO: remove this
     glDisableClientState(GL_COLOR_ARRAY);
@@ -628,7 +732,8 @@ void LAB_ViewRenderChunks(LAB_View* view)
         cx = view->chunks[i].x;
         cy = view->chunks[i].y;
         cz = view->chunks[i].z;
-        if((cx-px)*(cx-px) + (cy-py)*(cy-py) + (cz-pz)*(cz-pz) <= dist_sq)
+        if((cx-px)*(cx-px) + (cy-py)*(cy-py) + (cz-pz)*(cz-pz) <= dist_sq
+           && view->chunks[i].visible)
             LAB_ViewRenderChunk(view, &view->chunks[i]);
     }
 }
@@ -676,20 +781,22 @@ LAB_ViewChunkEntry* LAB_ViewNewChunkEntry(LAB_View* view, int x, int y, int z)
     chunks[chunk_count].x = x;
     chunks[chunk_count].y = y;
     chunks[chunk_count].z = z;
+    //chunks[chunk_count].visible = 1; // <-- TODO: remove from here
+    chunks[chunk_count].do_query = 1;
     view->chunk_count++;
 
     return &chunks[chunk_count];
 }
 
 
-LAB_ViewChunkEntry* LAB_ViewGetChunkEntry(LAB_View* view, int x, int y, int z)
+/*LAB_ViewChunkEntry* LAB_ViewGetChunkEntry(LAB_View* view, int x, int y, int z)
 {
     LAB_ViewChunkEntry* chunk_entry;
     chunk_entry = LAB_ViewFindChunkEntry(view, x, y, z);
     if(chunk_entry != NULL) return chunk_entry;
     return LAB_ViewNewChunkEntry(view, x, y, z);
 
-}
+}*/
 
 void LAB_ViewInvalidateEverything(LAB_View* view, int free_buffers)
 {
@@ -742,6 +849,19 @@ void LAB_ViewTick(LAB_View* view, uint32_t delta_ms)
 }
 
 
+static bool LAB_View_HasChunkVisibleNeighbors(LAB_View* view, int x, int y, int z)
+{
+    for(int i = 0; i < 6; ++i)
+    {
+        const int* off = LAB_offset[i];
+        int xx = x + off[0];
+        int yy = y + off[1];
+        int zz = z + off[2];
+        LAB_ViewChunkEntry* entry = LAB_ViewFindChunkEntry(view, xx, yy, zz);
+        if(entry && entry->visible) return 1;
+    }
+    return 0;
+}
 
 void LAB_ViewLoadNearChunks(LAB_View* view)
 {
@@ -836,12 +956,14 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
                         LAB_ViewChunkEntry* entry = LAB_ViewFindChunkEntry(view, xx, yy, zz);
                         if(entry == NULL)
                         {
+                            if(r > 1 && !LAB_View_HasChunkVisibleNeighbors(view, xx, yy, zz))
+                                continue;
                             entry = LAB_ViewNewChunkEntry(view, xx, yy, zz);
                             if(entry == NULL) return; // NO MEMORY
                             entry->dirty = ~0;
-                        }
-                        if(entry->dirty)
-                        {
+                        /*}
+                        if(!entry->exist)
+                        {*/
                             (void)LAB_GetChunk(view->world, xx, yy, zz, LAB_CHUNK_GENERATE_LATER);
                             --load_amount;
                             if(!load_amount) return;

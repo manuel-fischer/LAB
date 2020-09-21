@@ -31,9 +31,7 @@ typedef struct LAB_ViewChunkEntry
     size_t mesh_count, mesh_capacity;
     LAB_Triangle* mesh;
 
-    unsigned dirty:2, used:1;
-    /*unsigned dirty_flags;
-    unsigned used:1;*/
+    unsigned dirty:2, exist:1, visible:1, do_query:1;
 
     unsigned vbo;
 
@@ -97,6 +95,7 @@ typedef struct LAB_View
     uint32_t preload_dist,
              render_dist,
              keep_dist;
+    // TODO: query enable/disable setting
 
     uint32_t max_update,
              rest_update;

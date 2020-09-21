@@ -66,7 +66,8 @@ int main(int argc, char** argv) {
     view.flags = LAB_VIEW_SHOW_HUD;
     view.max_update = 160;
     //view.load_amount = 3;
-    view.load_amount = 10;
+    //view.load_amount = 10;
+    view.load_amount = 1;
 
     CHECK_INIT(LAB_ConstructViewInput(&view_input, &view));
     LAB_GL_CHECK();
