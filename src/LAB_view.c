@@ -1,5 +1,7 @@
 #include "LAB_view.h"
 
+#define LAB_VIEW_QUERY_IMMEDIATELY 0
+
 #include "LAB_memory.h"
 #include "LAB_error.h"
 #include "LAB_math.h"
@@ -37,8 +39,10 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
 static void LAB_ViewRenderChunks(LAB_View* view);
 static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
 static bool LAB_View_HasChunkVisibleNeighbors(LAB_View* view, int x, int y, int z);
-static void LAB_View_QueryChunks(LAB_View* view);
-static void LAB_View_QueryChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
+static void LAB_View_FetchQueryChunks(LAB_View* view);
+static void LAB_View_FetchQueryChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
+static void LAB_View_OrderQueryChunks(LAB_View* view);
+static void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
 static void LAB_ViewRemoveDistantChunks(LAB_View* view);
 static void LAB_ViewDestructChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
 
@@ -327,7 +331,30 @@ static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 }
 
 
-static void LAB_View_QueryChunks(LAB_View* view)
+static void LAB_View_FetchQueryChunks(LAB_View* view)
+{
+    for(size_t i = 0; i < view->chunk_count; ++i)
+    {
+        LAB_ViewChunkEntry* entry = &view->chunks[i];
+
+        if(entry->query_id)
+            LAB_View_FetchQueryChunk(view, entry);
+    }
+}
+
+static void LAB_View_FetchQueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
+{
+    unsigned visible = 1;
+    glGetQueryObjectuiv(entry->query_id, GL_QUERY_RESULT, &visible);
+    entry->visible = visible;
+
+    glDeleteQueries(1, &entry->query_id);
+    entry->query_id = 0;
+}
+
+
+
+static void LAB_View_OrderQueryChunks(LAB_View* view)
 {
     int px = LAB_Sar((int)floorf(view->x), LAB_CHUNK_SHIFT);
     int py = LAB_Sar((int)floorf(view->y), LAB_CHUNK_SHIFT);
@@ -367,14 +394,14 @@ static void LAB_View_QueryChunks(LAB_View* view)
             if((entry->do_query && r <= 255) || r <= probability_update)
             {
                 entry->do_query = 0;
-                LAB_View_QueryChunk(view, entry);
+                LAB_View_OrderQueryChunk(view, entry);
             }
             #endif
         }
     }
 }
 
-static void LAB_View_QueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
+static void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
 {
     // TODO fixed sized buffer of queries, glGetQueryObject called
     //      in the next frame, in LAB_View_Tick
@@ -382,9 +409,8 @@ static void LAB_View_QueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
     glColorMask(0, 0, 0, 0);
     glDepthMask(0);
 
-    unsigned query_id;
-    glGenQueries(1, &query_id);
-    glBeginQuery(GL_ANY_SAMPLES_PASSED, query_id);
+    glGenQueries(1, &entry->query_id);
+    glBeginQuery(GL_ANY_SAMPLES_PASSED, entry->query_id);
 
     glTranslatef(16*entry->x, 16*entry->y, 16*entry->z);
     glScalef(16, 16, 16);
@@ -415,15 +441,19 @@ static void LAB_View_QueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
     glDrawArrays(GL_TRIANGLES, 0, 6*2*3);
 
     glEndQuery(GL_ANY_SAMPLES_PASSED);
-    unsigned visible = 0;
-    glGetQueryObjectuiv(query_id, GL_QUERY_RESULT, &visible);
-    glDeleteQueries(1, &query_id);
 
     glDepthMask(1);
     glColorMask(1, 1, 1, 1);
     glPopMatrix();
 
+    #if LAB_VIEW_QUERY_IMMEDIATELY
+    unsigned visible = 1;
+    glGetQueryObjectuiv(entry->query_id, GL_QUERY_RESULT, &visible);
     entry->visible = visible;
+
+    glDeleteQueries(1, &entry->query_id);
+    entry->query_id = 0;
+    #endif
 }
 
 
@@ -647,7 +677,7 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
     LAB_ViewRenderChunks(view);
-    LAB_View_QueryChunks(view);
+    LAB_View_OrderQueryChunks(view);
 
     // TODO: remove this
     glDisableClientState(GL_COLOR_ARRAY);
@@ -844,6 +874,9 @@ void LAB_ViewTick(LAB_View* view, uint32_t delta_ms)
 {
     LAB_ViewRemoveDistantChunks(view);
     LAB_ViewLoadNearChunks(view);
+    #if !LAB_VIEW_QUERY_IMMEDIATELY
+    LAB_View_FetchQueryChunks(view);
+    #endif
     LAB_FpsGraph_AddSample(&view->fps_graph, delta_ms);
     LAB_GuiManager_Tick(&view->gui_mgr);
 }

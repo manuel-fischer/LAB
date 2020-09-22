@@ -34,6 +34,11 @@ typedef struct LAB_ViewChunkEntry
     unsigned dirty:2, exist:1, visible:1, do_query:1;
 
     unsigned vbo;
+    unsigned query_id; // 0 for no query done in the last frame
+                       // gets generated in OrderQueryBlock
+                       // gets deleted in FetchQueryBlock
+                       // TODO: maybe use an array and allocate
+                       //       a fixed number of query objects
 
 } LAB_ViewChunkEntry;
 
