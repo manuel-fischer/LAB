@@ -349,8 +349,7 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                     SDL_WarpMouseInWindow(window->window, w/2, h/2);
                 }
             }
-
-        }
+        } break;
 
     }
     return 1;

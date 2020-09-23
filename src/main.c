@@ -101,17 +101,17 @@ int main(int argc, char** argv) {
         ///*if(itr%20 == 0)*/ printf("%i fps          \r", 1000/delta_ms);
         time_ms = time2_ms;
 
-            uint32_t t0 = SDL_GetTicks();
+        //    uint32_t t0 = SDL_GetTicks();
         LAB_ViewInputTick(&view_input, delta_ms);
-            uint32_t t1 = SDL_GetTicks();
+        //    uint32_t t1 = SDL_GetTicks();
         LAB_WorldTick(&the_world, delta_ms);
-            uint32_t t2 = SDL_GetTicks();
+        //    uint32_t t2 = SDL_GetTicks();
         LAB_ViewTick(&view, delta_ms);
-            uint32_t t3 = SDL_GetTicks();
-        if(itr%16==0)
-        {
-            printf("ViewInput %i\nWorld %i\nView %i\n\n", (int)t1-t0, (int)t2-t1, (int)t3-t2);
-        }
+        //    uint32_t t3 = SDL_GetTicks();
+        //if(itr%16==0)
+        //{
+        //    printf("ViewInput %i\nWorld %i\nView %i\n\n", (int)t1-t0, (int)t2-t1, (int)t3-t2);
+        //}
     }
 
 

@@ -150,6 +150,7 @@ void LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType flags
 void LAB_FillBlocks(LAB_World* world, int x0, int y0, int z0, int x1, int y1, int z1, LAB_ChunkPeekType flags, LAB_Block* block);
 
 
+// dir should be an unit vector
 int LAB_TraceBlock(LAB_World* world, int max_distance, float vpos[3], float dir[3], LAB_ChunkPeekType flags, unsigned block_flags,
                    /*out*/ int target[3],/*out*/ int prev[3],/*out*/ float hit[3]);
 

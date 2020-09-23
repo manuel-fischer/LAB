@@ -234,15 +234,16 @@ void LAB_FillBlocks(LAB_World* world, int x0, int y0, int z0, int x1, int y1, in
 int LAB_TraceBlock(LAB_World* world, int max_distance, float vpos[3], float dir[3], LAB_ChunkPeekType flags, unsigned block_flags,
                    /*out*/ int target[3],/*out*/ int prev[3],/*out*/ float hit[3])
 {
+    #if 0
     // TODO more efficient
     float p[3];
     p[0] = vpos[0];
     p[1] = vpos[1];
     p[2] = vpos[2];
 
-    prev[0] = (int)floor(p[0]);
-    prev[1] = (int)floor(p[1]);
-    prev[2] = (int)floor(p[2]);
+    prev[0] = (int)floorf(p[0]);
+    prev[1] = (int)floorf(p[1]);
+    prev[2] = (int)floorf(p[2]);
 
     if(LAB_GetBlock(world, prev[0], prev[1], prev[2], flags)->flags&block_flags)
     {
@@ -256,9 +257,9 @@ int LAB_TraceBlock(LAB_World* world, int max_distance, float vpos[3], float dir[
         p[0] += dir[0]/16;
         p[1] += dir[1]/16;
         p[2] += dir[2]/16;
-        target[0] = (int)floor(p[0]);
-        target[1] = (int)floor(p[1]);
-        target[2] = (int)floor(p[2]);
+        target[0] = (int)floorf(p[0]);
+        target[1] = (int)floorf(p[1]);
+        target[2] = (int)floorf(p[2]);
         if(LAB_GetBlock(world, target[0], target[1], target[2], flags)->flags&block_flags)
         {
             return 1;
@@ -268,6 +269,74 @@ int LAB_TraceBlock(LAB_World* world, int max_distance, float vpos[3], float dir[
         prev[2] = target[2];
     }
     return 0;
+    #else
+    int x, y, z;
+    x = (int)floorf(vpos[0]);
+    y = (int)floorf(vpos[1]);
+    z = (int)floorf(vpos[2]);
+
+    int stepX, stepY, stepZ; // -1 or +1
+    stepX = dir[0]<0?-1:+1;
+    stepY = dir[1]<0?-1:+1;
+    stepZ = dir[2]<0?-1:+1;
+
+    float ivX, ivY, ivZ;
+    ivX = fabsf(dir[0]) < 0.00001 ? 100000.f : 1.f / fabsf(dir[0]);
+    ivY = fabsf(dir[1]) < 0.00001 ? 100000.f : 1.f / fabsf(dir[1]);
+    ivZ = fabsf(dir[2]) < 0.00001 ? 100000.f : 1.f / fabsf(dir[2]);
+
+    #define MOD1(v) ((v)-floorf(v))
+    float tMaxX, tMaxY, tMaxZ;
+    tMaxX = MOD1(vpos[0]); { if(dir[0]>0) tMaxX = 1.f-tMaxX; } tMaxX = fabsf(tMaxX * ivX);
+    tMaxY = MOD1(vpos[1]); { if(dir[1]>0) tMaxY = 1.f-tMaxY; } tMaxY = fabsf(tMaxY * ivY);
+    tMaxZ = MOD1(vpos[2]); { if(dir[2]>0) tMaxZ = 1.f-tMaxZ; } tMaxZ = fabsf(tMaxZ * ivZ);
+
+    // TODO:
+    float tDeltaX, tDeltaY, tDeltaZ;
+    tDeltaX = ivX;
+    tDeltaY = ivY;
+    tDeltaZ = ivZ;
+
+
+    target[0] = x;
+    target[1] = y;
+    target[2] = z;
+
+    // loop
+    while(tMaxX < 16 || tMaxY < 16 || tMaxZ < 16)
+    //for(int i = 0; i < 16; ++i)
+    {
+        prev[0] = x;
+        prev[1] = y;
+        prev[2] = z;
+
+        if(tMaxX < tMaxY)
+        {
+            if(tMaxX < tMaxZ)
+                x += stepX, tMaxX += tDeltaX;
+            else
+                z += stepZ, tMaxZ += tDeltaZ;
+        }
+        else
+        {
+            if(tMaxY < tMaxZ)
+                y += stepY, tMaxY += tDeltaY;
+            else
+                z += stepZ, tMaxZ += tDeltaZ;
+        }
+
+        target[0] = x;
+        target[1] = y;
+        target[2] = z;
+
+        if(LAB_GetBlock(world, target[0], target[1], target[2], flags)->flags&block_flags)
+        {
+            return 1;
+        }
+    }
+
+    return 0;
+    #endif
 }
 
 

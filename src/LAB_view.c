@@ -383,18 +383,25 @@ static void LAB_View_OrderQueryChunks(LAB_View* view)
                 LAB_View_QueryChunk(view, entry);
             }
             #else
-            if(!LAB_View_HasChunkVisibleNeighbors(view, cx, cy, cz)) continue;
-            int probability_update = 255/c_dist_sq;
-            //int probability_update = 200/c_dist_sq+55;
-            //int probability_update = 150/c_dist_sq+105;
-            //int probability_update = 16;
-            //int probability_update = 255;
-
-            int r = rand()&0xff;
-            if((entry->do_query && r <= 255) || r <= probability_update)
+            if(!LAB_View_HasChunkVisibleNeighbors(view, cx, cy, cz))
             {
                 entry->do_query = 0;
-                LAB_View_OrderQueryChunk(view, entry);
+                entry->visible = 0;
+            }
+            else
+            {
+                int probability_update = 255/c_dist_sq;
+                //int probability_update = 200/c_dist_sq+55;
+                //int probability_update = 150/c_dist_sq+105;
+                //int probability_update = 16;
+                //int probability_update = 255;
+
+                int r = rand()&0xff;
+                if((entry->do_query && r <= 255) || r <= probability_update)
+                {
+                    entry->do_query = 0;
+                    LAB_View_OrderQueryChunk(view, entry);
+                }
             }
             #endif
         }
@@ -547,12 +554,16 @@ void LAB_ViewRenderHud(LAB_View* view)
 
     LAB_View_RenderBlockSelection(view);
 
+    float pix = 1.f/(float)view->h;
+
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glEnable(GL_BLEND);
     glDisable(GL_DEPTH_TEST);
-    glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR);
+    glDisable(GL_TEXTURE_2D);
+    //glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR);
 
+    #if 0
     static const float crosshair[2*3*4] = {
             0, -0.1,
          0.05, -0.2,
@@ -570,12 +581,52 @@ void LAB_ViewRenderHud(LAB_View* view)
         -0.2, -0.05,
         -0.2,  0.05,
     };
+    #else
+    #define A 0.2
+    #define B 0.01
+    static const float crosshair[] = {
+         B,  A,
+         B, -A,
+        -B, -A,
+        //
+        -B, -A,
+        -B,  A,
+         B,  A,
+        //
+        //
+        -B,  B,
+        -A, -B,
+        -A,  B,
+        //
+        -A, -B,
+        -B,  B,
+        -B, -B,
+        //
+         A,  B,
+         B, -B,
+         B,  B,
+        //
+         B, -B,
+         A,  B,
+         A, -B,
+    };
+    #endif
 
-    glColor3f(1,1,1);
+    //glColor3f(1,1,1);
     glTranslatef(0,0,-5);
+    //glTranslatef(0,0,-1);
+    //glScalef(1.f/5.f, 1/5.f, 1);
     glVertexPointer(2, LAB_GL_TYPEOF(crosshair[0]), 0, crosshair);
-    glDrawArrays(GL_TRIANGLES, 0, 3*4);
+    glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR);
+    glColor3f(1,1,1);
+    glDrawArrays(GL_TRIANGLES, 0, sizeof(crosshair)/(2*sizeof(crosshair[0])));
+    glTranslatef(2*5*pix, -2*5*pix, 0);
+    glBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
+    glColor3f(0.3,0.3,0.3);
+    glDrawArrays(GL_TRIANGLES, 0, sizeof(crosshair)/(2*sizeof(crosshair[0])));
 
+    glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR);
+    glColor3f(1,1,1);
     {
         TTF_Font* font = TTF_OpenFont("fonts/DejaVuSansMono.ttf", 13);
         if(!font) return;

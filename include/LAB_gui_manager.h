@@ -10,6 +10,7 @@ typedef struct LAB_GuiManager
     SDL_Surface* surf;
     bool rerender;
     bool dismiss;
+    //bool component_focused; // TODO: focus/unfocus event should be yielded once
 } LAB_GuiManager;
 
 void LAB_GuiManager_Create(LAB_GuiManager* manager);

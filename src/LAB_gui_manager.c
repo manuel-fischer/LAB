@@ -123,12 +123,14 @@ bool LAB_GuiManager_HandleEvent(LAB_GuiManager* mgr, SDL_Event* event)
                 {
                     LAB_GuiManager_Dismiss(mgr);
                 }
-                /*else
+                else if(event->type == SDL_MOUSEMOTION)
                 {
                     SDL_Event tmp_event;
-                    tmp_event.type = LAB_GUI_EVENT_UNFOCUS;
-                    (*mgr->component->on_event)(mgr->component, &tmp_event);
-                }*/
+                    tmp_event.type = LAB_GUI_EVENT2SDL(LAB_GUI_EVENT_UNFOCUS);
+                    int rerender;
+                    rerender = (*mgr->component->on_event)(mgr->component, mgr, &tmp_event);
+                    if(rerender) mgr->rerender = 1;
+                }
 
                 return 1;
             }

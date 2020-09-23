@@ -1,6 +1,7 @@
 #include "LAB_gui_container.h"
 
 #include "LAB_debug.h"
+#include <stdio.h>
 
 bool LAB_GuiContainer_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Event* event)
 {
@@ -39,6 +40,14 @@ bool LAB_GuiContainer_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_E
         {
             tmp_event.type = LAB_GUI_EVENT2SDL(LAB_GUI_EVENT_UNFOCUS);
             rerender |= (cself->current)->on_event(cself->current, mgr, &tmp_event);
+            cself->current = NULL;
+        }
+    }
+    else if(event->type == LAB_GUI_EVENT2SDL(LAB_GUI_EVENT_UNFOCUS))
+    {
+        if(cself->current)
+        {
+            rerender |= (cself->current)->on_event(cself->current, mgr, event);
             cself->current = NULL;
         }
     }
