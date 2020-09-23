@@ -287,9 +287,9 @@ int LAB_TraceBlock(LAB_World* world, int max_distance, float vpos[3], float dir[
 
     #define MOD1(v) ((v)-floorf(v))
     float tMaxX, tMaxY, tMaxZ;
-    tMaxX = MOD1(vpos[0]); { if(dir[0]>0) tMaxX = 1.f-tMaxX; } tMaxX = fabsf(tMaxX * ivX);
-    tMaxY = MOD1(vpos[1]); { if(dir[1]>0) tMaxY = 1.f-tMaxY; } tMaxY = fabsf(tMaxY * ivY);
-    tMaxZ = MOD1(vpos[2]); { if(dir[2]>0) tMaxZ = 1.f-tMaxZ; } tMaxZ = fabsf(tMaxZ * ivZ);
+    if(fabsf(dir[0]) < 0.00001) tMaxX = max_distance; else { tMaxX = MOD1(vpos[0]); { if(dir[0]>0) tMaxX = 1.f-tMaxX; } tMaxX = fabsf(tMaxX * ivX); }
+    if(fabsf(dir[1]) < 0.00001) tMaxY = max_distance; else { tMaxY = MOD1(vpos[1]); { if(dir[1]>0) tMaxY = 1.f-tMaxY; } tMaxY = fabsf(tMaxY * ivY); }
+    if(fabsf(dir[2]) < 0.00001) tMaxZ = max_distance; else { tMaxZ = MOD1(vpos[2]); { if(dir[2]>0) tMaxZ = 1.f-tMaxZ; } tMaxZ = fabsf(tMaxZ * ivZ); }
 
     // TODO:
     float tDeltaX, tDeltaY, tDeltaZ;
@@ -303,8 +303,7 @@ int LAB_TraceBlock(LAB_World* world, int max_distance, float vpos[3], float dir[
     target[2] = z;
 
     // loop
-    while(tMaxX < 16 || tMaxY < 16 || tMaxZ < 16)
-    //for(int i = 0; i < 16; ++i)
+    while(tMaxX < max_distance || tMaxY < max_distance || tMaxZ < max_distance)
     {
         prev[0] = x;
         prev[1] = y;
