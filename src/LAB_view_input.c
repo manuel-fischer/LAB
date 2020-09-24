@@ -442,7 +442,11 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms)
         }
 
 
-        if(kbstate[SDL_SCANCODE_SPACE]) dy+=speed;
+        //if(kbstate[SDL_SCANCODE_SPACE]) dy+=speed;
+        if(kbstate[SDL_SCANCODE_SPACE]) {
+            dy+=speed;
+            if(view->vy < 0) view->vy = 0;
+        }
         if(kbstate[SDL_SCANCODE_LSHIFT]) dy-=speed;
     }
 

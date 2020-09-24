@@ -302,6 +302,15 @@ int LAB_TraceBlock(LAB_World* world, int max_distance, float vpos[3], float dir[
     target[1] = y;
     target[2] = z;
 
+
+    if(LAB_GetBlock(world, x, y, z, flags)->flags&block_flags)
+    {
+        prev[0] = x;
+        prev[1] = y;
+        prev[2] = z;
+        return 1;
+    }
+
     // loop
     while(tMaxX < max_distance || tMaxY < max_distance || tMaxZ < max_distance)
     {
@@ -328,7 +337,7 @@ int LAB_TraceBlock(LAB_World* world, int max_distance, float vpos[3], float dir[
         target[1] = y;
         target[2] = z;
 
-        if(LAB_GetBlock(world, target[0], target[1], target[2], flags)->flags&block_flags)
+        if(LAB_GetBlock(world, x, y, z, flags)->flags&block_flags)
         {
             return 1;
         }
