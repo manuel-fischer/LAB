@@ -193,6 +193,7 @@
 		<Unit filename="include/LAB_perf.h" />
 		<Unit filename="include/LAB_random.h" />
 		<Unit filename="include/LAB_render_item.h" />
+		<Unit filename="include/LAB_simplex_noise.h" />
 		<Unit filename="include/LAB_stdinc.h" />
 		<Unit filename="include/LAB_util.h" />
 		<Unit filename="include/LAB_view.h" />
@@ -275,6 +276,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_render_item.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_simplex_noise.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_util.c">
