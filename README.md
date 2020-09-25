@@ -8,6 +8,9 @@ work in progress. After the main engine has been written, custom modding
 support gets added, for custom blocks etc... (Thats how the content should be
 added).
 
+## Building
+To build LAB follow the instructions [here](setup-dev.md)
+
 ## The language choice: C
 
 Why do I use C for this project? For me its clean compared to other commonly
