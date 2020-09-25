@@ -10,6 +10,7 @@
 
 #include "LAB_gen_flat.h"
 #include "LAB_gen_overworld.h"
+#include "LAB_asset_manager.h"
 #include "LAB_gl.h"
 
 #include "LAB_gui.h"
@@ -75,6 +76,9 @@ int main(int argc, char** argv) {
     the_world.chunkview      = &LAB_ViewChunkProc;
     the_world.chunkview_user = &view;
 
+    the_world.chunkkeep      = &LAB_ViewChunkKeepProc;
+    the_world.chunkkeep_user = &view;
+
 
     main_window.onevent      = &LAB_ViewInputOnEventProc;
     main_window.onevent_user = &view_input;
@@ -112,6 +116,7 @@ int main(int argc, char** argv) {
         //{
         //    printf("ViewInput %i\nWorld %i\nView %i\n\n", (int)t1-t0, (int)t2-t1, (int)t3-t2);
         //}
+        //printf("%i\r", the_world.chunks.size);
     }
 
 
@@ -127,8 +132,11 @@ EXIT:
 
     if(init) LAB_Quit();
 
+    LAB_QuitAssets();
+
     #ifndef NDEBUG
     LAB_DbgMemShow();
+    printf("Alive GL-Objects: %i\n", LAB_gl_debug_alloc_count);
     #endif
 
     return return_value;

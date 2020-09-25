@@ -103,11 +103,16 @@ static LAB_Chunk* LAB_GenerateNotifyChunk(LAB_World* world, int x, int y, int z)
 LAB_Chunk* LAB_GetChunk(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType flags)
 {
     LAB_ChunkPos pos = { x, y, z };
-    if(world->last_entry && memcmp(&world->last_entry->key, &pos, sizeof pos)==0) return world->last_entry->value;
+    if(world->last_entry && memcmp(&world->last_entry->key, &pos, sizeof pos)==0)
+    {
+        world->last_entry->value->age = 0;
+        return world->last_entry->value;
+    }
     LAB_ChunkMap_Entry* entry = LAB_ChunkMap_Get(&world->chunks, pos);
     if(entry != NULL)
     {
         world->last_entry = entry;
+        entry->value->age = 0;
         return entry->value;
     }
 
@@ -216,6 +221,7 @@ void LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType flags
     if(chunk == NULL) return;
     chunk->blocks[LAB_CHUNK_OFFSET(x&LAB_CHUNK_MASK, y&LAB_CHUNK_MASK, z&LAB_CHUNK_MASK)] = block;
     //LAB_NotifyChunkLater(world, cx, cy, cz);
+    chunk->modified = 1;
     LAB_UpdateChunkLater(world, cx, cy, cz, LAB_CHUNK_UPDATE_BLOCK);
 }
 
@@ -349,7 +355,6 @@ int LAB_TraceBlock(LAB_World* world, int max_distance, float vpos[3], float dir[
 
 
 
-
 void LAB_WorldTick(LAB_World* world, uint32_t delta_ms)
 {
     size_t rest_gen = world->max_gen;
@@ -373,6 +378,35 @@ void LAB_WorldTick(LAB_World* world, uint32_t delta_ms)
             LAB_ChunkPos* pos = &world->chunks.table[i].key;
             LAB_UpdateChunk(world, pos->x, pos->y, pos->z, update);
             if(--rest_update == 0) return;
+        }
+    }
+
+    // Unload chunks
+    for(size_t i = 0; i < world->chunks.capacity; ++i)
+    {
+        LAB_ChunkMap_Entry* entry = &world->chunks.table[i];
+        LAB_Chunk* chunk = entry->value;
+        if(chunk)
+        {
+            chunk->age++;
+            if(chunk->age >= LAB_MAX_CHUNK_AGE && !chunk->modified)
+            {
+                int cx, cy, cz;
+                cx = entry->key.x;
+                cy = entry->key.y;
+                cz = entry->key.z;
+                bool keep = world->chunkkeep(world->chunkkeep_user, world, cx, cy, cz);
+                if(!keep)
+                {
+                    // Only entries after this entry are changed, another entry
+                    // might be moved into this entry, the array itself is not
+                    // reallocated when removing entries
+                    //printf("Unload chunk %i %i %i\n", cx, cy, cz);
+                    LAB_DestroyChunk(chunk);
+                    LAB_ChunkMap_RemoveEntry(&world->chunks, &world->chunks.table[i]);
+                    --i; // repeat index
+                }
+            }
         }
     }
 }

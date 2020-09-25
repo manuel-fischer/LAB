@@ -7,4 +7,5 @@
 SDL_Surface* LAB_block_terrain;
 unsigned     LAB_block_terrain_gl_id;
 
-void LAB_InitAssets();
+void LAB_InitAssets(void);
+void LAB_QuitAssets(void);

@@ -8,7 +8,7 @@
 SDL_Surface* LAB_block_terrain = NULL;
 unsigned     LAB_block_terrain_gl_id = 0;
 
-void LAB_InitAssets()
+void LAB_InitAssets(void)
 {
     // TODO
     static bool init = 0;
@@ -27,7 +27,7 @@ void LAB_InitAssets()
     }
 
     glEnable(GL_TEXTURE_2D);
-    glGenTextures(1, &LAB_block_terrain_gl_id);
+    glGenTextures(1, &LAB_block_terrain_gl_id); LAB_GL_DEBUG_ALLOC(1);
     glBindTexture(GL_TEXTURE_2D, LAB_block_terrain_gl_id);
 
     #ifndef NO_GLEW
@@ -50,4 +50,13 @@ void LAB_InitAssets()
 
     LAB_block_terrain = img;
     LAB_GL_CHECK();
+}
+
+void LAB_QuitAssets(void)
+{
+    glDeleteTextures(1, &LAB_block_terrain_gl_id); LAB_GL_DEBUG_FREE(1);
+    SDL_FreeSurface(LAB_block_terrain);
+
+    LAB_block_terrain_gl_id = 0;
+    LAB_block_terrain = NULL;
 }

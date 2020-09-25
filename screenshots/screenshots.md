@@ -2,6 +2,7 @@
 More recent screenshots are at the top, so if you want to see the developement stages from early on, you can start at the bottom and scroll up.
 
 ## New cave generation
+![](014.png)
 ![](013.png)
 
 ## Cave with Surface Entrance

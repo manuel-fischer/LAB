@@ -167,7 +167,7 @@ LAB_Chunk* LAB_GenOverworldProc(void* user, LAB_World* world, int x, int y, int 
 
                     double d1 = LAB_SimplexNoise3D(xi*DM+ox, 2*yi*CM, zi*CM+oz);
                     double d2 = LAB_SimplexNoise3D(xi*CM+ox, 2*yi*CM, zi*DM+oz);
-                    double d3 = LAB_SimplexNoise3D(xi*CM+ox, 2*yi*DM, zi*CM+oz);
+                   // double d3 = LAB_SimplexNoise3D(xi*CM+ox, 2*yi*DM, zi*CM+oz);
                     double d = d1*d1*d2*d2+d0*d0*2;//0.5;
                     //double d = d1*d1*d2*d2+(d0+1)*0.5;
                     //double d = d1*d1*d2*d2*(d3+1)*0.5+(d0*d0)*0.0005;

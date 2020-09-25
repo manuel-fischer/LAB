@@ -291,8 +291,8 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
 
                     for(int i = 0; i < view->chunk_count; ++i)
                     {
+                        glDeleteBuffers(1, &view->chunks[i].vbo); LAB_GL_DEBUG_FREE(1);
                         LAB_Free(view->chunks[i].mesh);
-                        glDeleteBuffers(1, &view->chunks[i].vbo);
                     }
                     memset(view->chunks, 0, view->chunk_count);
                     view->chunk_count = 0;

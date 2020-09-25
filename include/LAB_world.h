@@ -17,6 +17,7 @@ LAB_CHECK_STRUCT_SIZE(LAB_ChunkPos);
 unsigned LAB_ChunkPosHash(LAB_ChunkPos);
 int LAB_ChunkPosComp(LAB_ChunkPos, LAB_ChunkPos);
 
+#define LAB_MAX_CHUNK_AGE 256
 //#define LAB_MAX_LOAD_CHUNK 16
 #define LAB_MAX_LOAD_CHUNK 256
 
@@ -77,6 +78,7 @@ int LAB_ChunkPosComp(LAB_ChunkPos, LAB_ChunkPos);
 typedef struct LAB_World LAB_World;
 
 typedef void(LAB_ChunkViewer)(void* user, LAB_World* world, int x, int y, int z, LAB_ChunkUpdate update);
+typedef bool(LAB_ChunkKeeper)(void* user, LAB_World* world, int x, int y, int z);
 
 
 /*typedef struct LAB_ChunkEntry
@@ -92,6 +94,10 @@ typedef struct LAB_World
 
     LAB_ChunkViewer* chunkview;
     void*            chunkview_user;
+
+    LAB_ChunkKeeper* chunkkeep;
+    void*            chunkkeep_user;
+
 
     /*size_t chunk_count, chunk_capacity;
     LAB_ChunkEntry* chunks;*/

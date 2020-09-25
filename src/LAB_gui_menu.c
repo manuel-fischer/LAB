@@ -69,7 +69,7 @@ void LAB_GuiMenu_Save(void* user, LAB_GuiManager* mgr)
 
 void LAB_GuiMenu_SaveAs(void* user, LAB_GuiManager* mgr)
 {
-    LAB_World* world = (LAB_World*)user;
+   // LAB_World* world = (LAB_World*)user;
     printf("Saving dialog here\n");
     //LAB_GuiManager_Dismiss(mgr);
 }

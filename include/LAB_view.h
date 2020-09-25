@@ -6,6 +6,8 @@
 #include "LAB_model.h" // LAB_Triangle
 #include <SDL2/SDL_ttf.h>
 
+#define LAB_VIEW_QUERY_IMMEDIATELY 0
+
 /**
  *  Hooks
  *  - LAB_ViewChunkProc
@@ -34,12 +36,13 @@ typedef struct LAB_ViewChunkEntry
     unsigned dirty:2, exist:1, visible:1, do_query:1;
 
     unsigned vbo;
+    #if !LAB_VIEW_QUERY_IMMEDIATELY
     unsigned query_id; // 0 for no query done in the last frame
                        // gets generated in OrderQueryBlock
                        // gets deleted in FetchQueryBlock
                        // TODO: maybe use an array and allocate
                        //       a fixed number of query objects
-
+    #endif
 } LAB_ViewChunkEntry;
 
 
@@ -128,6 +131,7 @@ void LAB_DestructView(LAB_View* view);
 
 
 void LAB_ViewChunkProc(void* user, LAB_World* world, int x, int y, int z, LAB_ChunkUpdate update);
+bool LAB_ViewChunkKeepProc(void* user, LAB_World* world, int x, int y, int z);
 void LAB_ViewRenderProc(void* user, LAB_Window* window);
 
 LAB_ViewChunkEntry* LAB_ViewGetChunkEntry(LAB_View* view, int x, int y, int z);

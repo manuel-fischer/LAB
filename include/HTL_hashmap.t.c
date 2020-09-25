@@ -77,7 +77,7 @@ HTL_DEF void HTL_MEMBER(RemoveEntry)(HTL_P(NAME)* hashmap, HTL_MEMBER(Entry)* en
 {
     size_t i = entry-hashmap->table;
 
-    memset(entry, 0, sizeof *entry);
+    //memset(entry, 0, sizeof *entry);
     --hashmap->size;
 
     size_t empty_pos = i;
@@ -87,18 +87,19 @@ HTL_DEF void HTL_MEMBER(RemoveEntry)(HTL_P(NAME)* hashmap, HTL_MEMBER(Entry)* en
         if(i == hashmap->capacity) i = 0;
         if(!HTL_MEMBER(IsEntry)(hashmap, &hashmap->table[i])) break;
 
-        size_t best_index = HTL_P(HASH_FUNC)(hashmap->table[i].key);
+        size_t best_index = HTL_P(HASH_FUNC)(hashmap->table[i].key) % hashmap->capacity;
         if(best_index==i)
             continue;
         size_t relative_a = (hashmap->capacity+best_index-i) % hashmap->capacity;
         size_t relative_b = (hashmap->capacity+empty_pos-i) % hashmap->capacity;
         if(relative_a > relative_b)
-            continue; // Lasse Objekt hier
+            continue; // keep entry here
 
         hashmap->table[empty_pos] = hashmap->table[i];
-        memset(&hashmap->table[i], 0, sizeof *entry);
+        //memset(&hashmap->table[i], 0, sizeof *entry);
         empty_pos = i;
     }
+    memset(&hashmap->table[empty_pos], 0, sizeof *entry);
 }
 
 HTL_DEF void HTL_MEMBER(Remove)(HTL_P(NAME)* hashmap, HTL_P(KEY_TYPE) key)

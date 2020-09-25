@@ -1,7 +1,5 @@
 #include "LAB_view.h"
 
-#define LAB_VIEW_QUERY_IMMEDIATELY 0
-
 #include "LAB_memory.h"
 #include "LAB_error.h"
 #include "LAB_math.h"
@@ -96,6 +94,21 @@ void LAB_ViewChunkProc(void* user, LAB_World* world, int x, int y, int z, LAB_Ch
         if(entry)
             entry->dirty |= update;
     }
+}
+
+bool LAB_ViewChunkKeepProc(void* user, LAB_World* world, int x, int y, int z)
+{
+    LAB_View* view = (LAB_View*)user;
+
+    int px = LAB_Sar((int)floorf(view->x), LAB_CHUNK_SHIFT);
+    int py = LAB_Sar((int)floorf(view->y), LAB_CHUNK_SHIFT);
+    int pz = LAB_Sar((int)floorf(view->z), LAB_CHUNK_SHIFT);
+
+    int dx = x-px;
+    int dy = y-py;
+    int dz = z-pz;
+    unsigned int dist = dx*dx+dy*dy+dz*dz;
+    return dist <= view->keep_dist*view->keep_dist;
 }
 
 
@@ -271,7 +284,10 @@ static void LAB_ViewUploadVBO(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 {
     LAB_Triangle* mesh = chunk_entry->mesh;
 
-    if(!chunk_entry->vbo) glGenBuffers(1, &chunk_entry->vbo);
+    if(!chunk_entry->vbo)
+    {
+        glGenBuffers(1, &chunk_entry->vbo); LAB_GL_DEBUG_ALLOC(1);
+    }
 
     glBindBuffer(GL_ARRAY_BUFFER, chunk_entry->vbo);
     glBufferData(GL_ARRAY_BUFFER, chunk_entry->mesh_count*sizeof *mesh, mesh, GL_DYNAMIC_DRAW);
@@ -330,7 +346,7 @@ static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
     #endif
 }
 
-
+#if !LAB_VIEW_QUERY_IMMEDIATELY
 static void LAB_View_FetchQueryChunks(LAB_View* view)
 {
     for(size_t i = 0; i < view->chunk_count; ++i)
@@ -341,6 +357,7 @@ static void LAB_View_FetchQueryChunks(LAB_View* view)
             LAB_View_FetchQueryChunk(view, entry);
     }
 }
+#endif
 
 static void LAB_View_FetchQueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
 {
@@ -348,7 +365,7 @@ static void LAB_View_FetchQueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
     glGetQueryObjectuiv(entry->query_id, GL_QUERY_RESULT, &visible);
     entry->visible = visible;
 
-    glDeleteQueries(1, &entry->query_id);
+    glDeleteQueries(1, &entry->query_id); LAB_GL_DEBUG_FREE(1);
     entry->query_id = 0;
 }
 
@@ -416,8 +433,17 @@ static void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
     glColorMask(0, 0, 0, 0);
     glDepthMask(0);
 
-    glGenQueries(1, &entry->query_id);
-    glBeginQuery(GL_ANY_SAMPLES_PASSED, entry->query_id);
+    #if LAB_VIEW_QUERY_IMMEDIATELY
+    static unsigned query_id = 0;
+    if(query_id == 0)
+    {
+        glGenQueries(1, &query_id); LAB_GL_DEBUG_ALLOC(1);
+    }
+    #else
+    glGenQueries(1, &entry->query_id); LAB_GL_DEBUG_ALLOC(1);
+    unsigned query_id = entry->query_id;
+    #endif
+    glBeginQuery(GL_ANY_SAMPLES_PASSED, query_id);
 
     glTranslatef(16*entry->x, 16*entry->y, 16*entry->z);
     glScalef(16, 16, 16);
@@ -455,11 +481,8 @@ static void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
 
     #if LAB_VIEW_QUERY_IMMEDIATELY
     unsigned visible = 1;
-    glGetQueryObjectuiv(entry->query_id, GL_QUERY_RESULT, &visible);
+    glGetQueryObjectuiv(query_id, GL_QUERY_RESULT, &visible);
     entry->visible = visible;
-
-    glDeleteQueries(1, &entry->query_id);
-    entry->query_id = 0;
     #endif
 }
 
@@ -551,7 +574,6 @@ static void LAB_View_RenderBlockSelection(LAB_View* view)
 
 void LAB_ViewRenderHud(LAB_View* view)
 {
-
     LAB_View_RenderBlockSelection(view);
 
     float pix = 1.f/(float)view->h;
@@ -628,7 +650,7 @@ void LAB_ViewRenderHud(LAB_View* view)
     glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR);
     glColor3f(1,1,1);
     {
-        TTF_Font* font = TTF_OpenFont("fonts/DejaVuSansMono.ttf", 13);
+        TTF_Font* font = LAB_GuiMonospaceFont();
         if(!font) return;
 
         int rerender = 0;
@@ -658,6 +680,14 @@ void LAB_ViewRenderHud(LAB_View* view)
 
             char buf[64];
             snprintf(buf, sizeof(buf), "%i %i %i", px, py, pz);
+            //char buf[64];
+            //snprintf(buf, sizeof(buf), "%i %i %i - %i", px, py, pz,
+            //         LAB_gl_debug_alloc_count);
+            //char buf[512];
+            //snprintf(buf, sizeof(buf), "%i %i %i",
+            //         px, py, pz,
+            //         view->world->chunks.size,
+            //         view->chunk_capacity);
 
             SDL_Color fg = { 255, 255, 255, 255 };
             SDL_Color bg = {   0,   0,   0, 255 };
@@ -891,7 +921,7 @@ void LAB_ViewInvalidateEverything(LAB_View* view, int free_buffers)
         {
             if(view->chunks[i].vbo)
             {
-                glDeleteBuffers(1, &view->chunks[i].vbo);
+                glDeleteBuffers(1, &view->chunks[i].vbo); LAB_GL_DEBUG_FREE(1);
                 view->chunks[i].vbo = 0;
             }
         }
@@ -1070,6 +1100,14 @@ void LAB_ViewDestructChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
         LAB_Free(chunk_entry->mesh);
     #ifndef NO_GLEW
     if(chunk_entry->vbo)
-        glDeleteBuffers(1, &chunk_entry->vbo);
+    {
+        glDeleteBuffers(1, &chunk_entry->vbo); LAB_GL_DEBUG_FREE(1);
+    }
+    #endif
+    #if !LAB_VIEW_QUERY_IMMEDIATELY
+    if(chunk_entry->query_id)
+    {
+        glDeleteQueries(1, &chunk_entry->query_id); LAB_GL_DEBUG_FREE(1);
+    }
     #endif
 }

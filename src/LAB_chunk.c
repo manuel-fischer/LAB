@@ -18,6 +18,8 @@ LAB_Chunk* LAB_CreateChunk(LAB_Block* fill_block)
     memset(chunk->light, 0, sizeof chunk->light);
 
     chunk->dirty = 1;
+    chunk->age = 0;
+    chunk->modified = 0;
 
     return chunk;
 }
