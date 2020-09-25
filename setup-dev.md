@@ -3,10 +3,12 @@ You must install a compiler like GCC or Clang. A compiler with C17 support is
 recommended.
 
 For IXO you might need to install python3.
-You might find it useful to install
-[Code::Blocks](http://www.codeblocks.org/downloads/binaries) with mingw,
-because this IDE is used in both of my projects IXO and LAB, it can be used to
-build the binaries.
+
+If you use Windows you might find it useful to install
+[CodeBlocks](http://www.codeblocks.org/downloads/binaries) with mingw.
+This means that you pay attention to select links for mingw in further steps.
+Because this IDE is used in both of my projects IXO and LAB, it can be used to
+easily build the binaries.
 
 Your compiler/IDE installation usually include the following
 
@@ -28,6 +30,8 @@ following libraries:
 2. [SDL2-ttf](https://www.libsdl.org/projects/SDL_ttf/)
 3. [SDL2-image](https://www.libsdl.org/tmp/SDL_image/)
 
+For each of these archive files, do the following.
+
 You might open the file with a program like 7zip.
 
 Navigate the archive file structure, until you reach a directory
@@ -37,7 +41,7 @@ a subdirectory for your target machine.
 Copy the files in the `include/` and `lib/` directory in your preferred
 `include/` and `lib/` directories that are used by your compiler.
 
-When using Code::Blocks, global variables like `$(sdl2)` can be set under
+When using CodeBlocks, global variables like `$(sdl2)` can be set under
 `Settings>Global variables`. To add the entry click on `new` and enter `sdl2`
 into the prompt. Then enter the path(s) on the right, usually only the
 `base`-field is needed.
@@ -74,6 +78,6 @@ select a subdirectory for your target machine.
    
 # 5. Install and build LAB
 1. Clone [manuel-fischer/LAB](https://github.com/manuel-fischer/LAB)
-2. Use Code::Blocks to build and run LAB: open `Laboratory.cbp` with 
-   Code::Blocks
-3. In Code::Blocks press [F9] to build and run
+2. Use CodeBlocks to build and run LAB: open `Laboratory.cbp` with 
+   CodeBlocks
+3. In CodeBlocks press [F9] to build and run
