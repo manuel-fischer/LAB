@@ -83,6 +83,7 @@ typedef struct LAB_ViewInfo
 
 typedef struct LAB_View
 {
+    // TODO move to entity class
     // View position
     double x, y, z;
     // View angle
@@ -90,6 +91,8 @@ typedef struct LAB_View
 
     // Velocity
     double vx, vy, vz;
+
+    int on_ground;
 
     // Cache
     size_t chunk_count, chunk_capacity;

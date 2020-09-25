@@ -30,7 +30,7 @@ void LAB_InitAssets(void)
     glGenTextures(1, &LAB_block_terrain_gl_id); LAB_GL_DEBUG_ALLOC(1);
     glBindTexture(GL_TEXTURE_2D, LAB_block_terrain_gl_id);
 
-    #ifndef NO_GLEW
+    #if LAB_MIPMAPS
     // Mipmaps
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

@@ -10,6 +10,7 @@ typedef struct LAB_ViewInput
     //int dir_set;
     //int updown;
     unsigned flags;
+    unsigned state;
     float speed;
     unsigned brushsize;
     LAB_Block* selected_block;

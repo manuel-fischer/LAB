@@ -1,8 +1,9 @@
 #include "LAB_error.h"
+
+#include "LAB_gl.h"
+#include <SDL2/SDL.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <LAB_gl.h>
-#include <SDL2/SDL.h>
 
 #define LAB_ERROR_BUFFER_SIZE 1024
 

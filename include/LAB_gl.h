@@ -1,13 +1,13 @@
 #pragma once
 
-/*#ifndef GL3_PROTOTYPES
-#error  GL3_PROTOTYPES should be defined for OpenGL 3
+#ifdef __WINNT__
+#include <GL/glew.h>
+#define LAB_USES_GLEW
+#else
+//#define GL3_PROTOTYPES
+#include <GL/gl3.h>
 #endif
 
-#include <GL/gl3.h>*/
-#ifndef NO_GLEW
-#include <GL/glew.h>
-#endif
 #include <GL/gl.h>
 #include <GL/glu.h>
 //#include <GL/glext.h>

@@ -279,7 +279,6 @@ static LAB_Triangle* LAB_ViewMeshAlloc(LAB_ViewChunkEntry* chunk_entry, size_t a
     return &chunk_entry->mesh[mesh_count];
 }
 
-#ifndef NO_GLEW
 static void LAB_ViewUploadVBO(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 {
     LAB_Triangle* mesh = chunk_entry->mesh;
@@ -292,7 +291,6 @@ static void LAB_ViewUploadVBO(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
     glBindBuffer(GL_ARRAY_BUFFER, chunk_entry->vbo);
     glBufferData(GL_ARRAY_BUFFER, chunk_entry->mesh_count*sizeof *mesh, mesh, GL_DYNAMIC_DRAW);
 }
-#endif
 
 static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 {
@@ -300,25 +298,26 @@ static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
     if(view->rest_update && ( (chunk_entry->dirty&2) || ((chunk_entry->dirty&1) && (rand()&0x1f)==0) ))
     {
         bool chunk_available = LAB_ViewBuildMesh(view, chunk_entry, view->world);
-        if(!chunk_available) return;
+        if(!chunk_available)
+        {
+            chunk_entry->dirty = ~0;
+            chunk_entry->exist =  0;
+            return;
+        }
         chunk_entry->dirty = 0;
         chunk_entry->exist = 1;
         view->rest_update--;
 
-        #ifndef NO_GLEW
         if(view->flags & LAB_VIEW_USE_VBO)
             LAB_ViewUploadVBO(view, chunk_entry);
-        #endif
     }
     else
     {
-        #ifndef NO_GLEW
         if(view->flags & LAB_VIEW_USE_VBO)
         {
             if(!chunk_entry->vbo) return;
             glBindBuffer(GL_ARRAY_BUFFER, chunk_entry->vbo);
         }
-        #endif
     }
 
     if(chunk_entry->mesh_count == 0) return;
@@ -339,11 +338,8 @@ static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
     glDrawArrays(GL_TRIANGLES, 0, 3*chunk_entry->mesh_count);
     glPopMatrix();
 
-
-    #ifndef NO_GLEW
     if(view->flags & LAB_VIEW_USE_VBO)
         glBindBuffer(GL_ARRAY_BUFFER, 0);
-    #endif
 }
 
 #if !LAB_VIEW_QUERY_IMMEDIATELY
@@ -1067,19 +1063,22 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
                         if(q&2 && y==0) continue; else yy = py+(q&2 ? -y : y);
                         if(q&4 && z==0) continue; else zz = pz+(q&4 ? -z : z);
 
+
+                        if(r > 1 && !LAB_View_HasChunkVisibleNeighbors(view, xx, yy, zz))
+                            continue;
+
                         LAB_ViewChunkEntry* entry = LAB_ViewFindChunkEntry(view, xx, yy, zz);
                         if(entry == NULL)
                         {
-                            if(r > 1 && !LAB_View_HasChunkVisibleNeighbors(view, xx, yy, zz))
-                                continue;
                             entry = LAB_ViewNewChunkEntry(view, xx, yy, zz);
                             if(entry == NULL) return; // NO MEMORY
                             entry->dirty = ~0;
-                        /*}
-                        if(!entry->exist)
-                        {*/
-                            (void)LAB_GetChunk(view->world, xx, yy, zz, LAB_CHUNK_GENERATE_LATER);
                             --load_amount;
+                        }
+                        if(!entry->exist)
+                        {
+                            entry->do_query = 1;
+                            (void)LAB_GetChunk(view->world, xx, yy, zz, LAB_CHUNK_GENERATE_LATER);
                             if(!load_amount) return;
                         }
 
@@ -1098,12 +1097,12 @@ void LAB_ViewDestructChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 {
     if(chunk_entry->mesh)
         LAB_Free(chunk_entry->mesh);
-    #ifndef NO_GLEW
+
     if(chunk_entry->vbo)
     {
         glDeleteBuffers(1, &chunk_entry->vbo); LAB_GL_DEBUG_FREE(1);
     }
-    #endif
+
     #if !LAB_VIEW_QUERY_IMMEDIATELY
     if(chunk_entry->query_id)
     {

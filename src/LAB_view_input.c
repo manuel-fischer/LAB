@@ -444,8 +444,14 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms)
 
         //if(kbstate[SDL_SCANCODE_SPACE]) dy+=speed;
         if(kbstate[SDL_SCANCODE_SPACE]) {
-            dy+=speed;
-            if(view->vy < 0) view->vy = 0;
+            if(!(view_input->flags&LAB_VIEWINPUT_NOCLIP))
+            {
+                if(view->on_ground && view->vy == 0)
+                    view->vy = 4.8;
+            }
+            else
+                dy+=speed;
+            //if(view->vy < 0) view->vy = 0;
         }
         if(kbstate[SDL_SCANCODE_LSHIFT]) dy-=speed;
     }
@@ -486,7 +492,7 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms)
         view->x += dx;
         view->y += dy;
         view->z += dz;
-        view->vy += 0;
+        view->vy = 0;
     }
     else
     {
@@ -497,7 +503,7 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms)
 
         dy += accel*dt*dt*0.5 + view->vy*dt;
         view->vy += accel*dt;
-        if(dy > 0) view->vy = dy;
+        //if(dy > 0) view->vy = dy;
 
         // TODO move this collision physics to the world itself
         // clipping
@@ -529,35 +535,54 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms)
                 {  1,  1 },
             };
 
+            view->on_ground = 0;
             for(int i = 0; i < 2; ++i)
+            //for(int yy = -2; yy <= 1; ++yy)
             {
                 int yy = i ? 1 : -2;
                 for(int xx = -1; xx <= 1; ++xx)
                 for(int zz = -1; zz <= 1; ++zz)
                 {
                     LAB_Block* block  = LAB_GetBlock(view->world, bx+xx, by+yy, bz+zz, LAB_CHUNK_EXISTING);
-                    LAB_Block* block2 = LAB_GetBlock(view->world, bx+xx, by+0,  bz+zz, LAB_CHUNK_EXISTING);
-                    LAB_Block* block3 = LAB_GetBlock(view->world, bx+xx, by-1,  bz+zz, LAB_CHUNK_EXISTING);
-                    if((block->flags&LAB_BLOCK_MASSIVE) && !(block2->flags&LAB_BLOCK_MASSIVE)&& !(block3->flags&LAB_BLOCK_MASSIVE))
+
+                    if(xx!=0||zz!=0)
+                    {
+                        // Blocks on the same axis
+                        LAB_Block* b1 = LAB_GetBlock(view->world, bx+xx, by+0,  bz,    LAB_CHUNK_EXISTING);
+                        LAB_Block* b2 = LAB_GetBlock(view->world, bx+xx, by-1,  bz,    LAB_CHUNK_EXISTING);
+                        LAB_Block* b3 = LAB_GetBlock(view->world, bx,    by+0,  bz+zz, LAB_CHUNK_EXISTING);
+                        LAB_Block* b4 = LAB_GetBlock(view->world, bx,    by-1,  bz+zz, LAB_CHUNK_EXISTING);
+                        if(b1->flags&LAB_BLOCK_MASSIVE || b2->flags&LAB_BLOCK_MASSIVE) continue;
+                        if(b3->flags&LAB_BLOCK_MASSIVE || b4->flags&LAB_BLOCK_MASSIVE) continue;
+
+                        // Blocks possibly in the corners
+                        LAB_Block* b5 = LAB_GetBlock(view->world, bx+xx, by+0,  bz+zz, LAB_CHUNK_EXISTING);
+                        LAB_Block* b6 = LAB_GetBlock(view->world, bx+xx, by-1,  bz+zz, LAB_CHUNK_EXISTING);
+                        if(b5->flags&LAB_BLOCK_MASSIVE || b6->flags&LAB_BLOCK_MASSIVE) continue;
+                    }
+
+                    if(block->flags&LAB_BLOCK_MASSIVE)
                     {
                         int collides = 1;
                         collides &= (xx < 0 && fx < 0.2) || (xx > 0 && fx > 0.8) || xx == 0;
                         collides &= (zz < 0 && fz < 0.2) || (zz > 0 && fz > 0.8) || zz == 0;
-                        collides &= (yy <-1 && fy < 0.4) || (yy > 0 && fy > 0.8) || yy ==-1 || yy == 0;
+                        collides &= (yy <-1 && fy < 0.4 && fy > 0.3) || (yy > 0 && fy > 0.8 && fy < 0.9) || yy ==-1 || yy == 0;
 
                         if(collides)
                         {
-                            /**/ if(yy < 0) { view->y = by+0.4+d; view->vy = 0; }
-                            else if(yy > 0) { view->y = by+0.8-d; view->vy = 0; }
+                            /**/ if(yy < 0) { view->y = by+0.4+d; view->vy = LAB_MAX(view->vy, 0); view->on_ground = 1; }
+                            else if(yy > 0) { view->y = by+0.8-d; view->vy = LAB_MIN(view->vy, 0); }
 
 
                             fx = view->x-bx;
                             fy = view->y-by;
                             fz = view->z-bz;
+                            goto exit_for_yy;
                         }
                     }
                 }
             }
+            exit_for_yy:;
 
             int f = 0;
             for(int i = 0; i < 8; ++i)

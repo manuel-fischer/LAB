@@ -3,6 +3,7 @@
 #include <SDL2/SDL_surface.h>
 
 #define LAB_TILE_SIZE 32
+#define LAB_MIPMAPS 1
 
 SDL_Surface* LAB_block_terrain;
 unsigned     LAB_block_terrain_gl_id;

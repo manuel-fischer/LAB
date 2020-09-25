@@ -46,7 +46,7 @@ int LAB_ConstructWindow(LAB_Window* window, int w, int h, uint32_t sdl_flags)
         }
     }
 
-#ifndef NO_GLEW
+#ifdef LAB_USES_GLEW
     GLenum err = glewInit();
     if(err != GLEW_OK)
     {
