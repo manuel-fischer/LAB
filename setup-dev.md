@@ -1,12 +1,13 @@
-# 1. Tools
+# 1. Install Tools
 You must install a compiler like GCC or Clang. A compiler with C17 support is
 recommended.
 
 For IXO you might need to install python3.
 
 If you use Windows you might find it useful to install
-[CodeBlocks](http://www.codeblocks.org/downloads/binaries) with mingw.
-This means that you pay attention to select links for mingw in further steps.
+[CodeBlocks](http://www.codeblocks.org/downloads/binaries) with MinGW. This
+automaticly installs GCC if you select a link with `mingw` included.
+This means that you pay attention to select links for MinGW in further steps.
 Because this IDE is used in both of my projects IXO and LAB, it can be used to
 easily build the binaries.
 
