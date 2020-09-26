@@ -6,10 +6,10 @@
 typedef struct LAB_GuiManager
 {
     LAB_GuiComponent* component;
+    LAB_GuiComponent* dismiss_component;
     unsigned gl_id;
     SDL_Surface* surf;
     bool rerender;
-    bool dismiss;
     //bool component_focused; // TODO: focus/unfocus event should be yielded once
 } LAB_GuiManager;
 

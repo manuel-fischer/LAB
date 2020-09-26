@@ -1,6 +1,8 @@
 #include "LAB_gui_menu.h"
 
 #include "LAB_world.h"
+#include "LAB_gui_world_selection.h"
+#include "LAB_memory.h"
 
 static void LAB_GuiMenu_Resume(void* user, LAB_GuiManager* mgr);
 static void LAB_GuiMenu_Save(void* user, LAB_GuiManager* mgr);
@@ -60,24 +62,29 @@ static void LAB_GuiMenu_Resume(void* user, LAB_GuiManager* mgr)
     LAB_GuiManager_Dismiss(mgr);
 }
 
-void LAB_GuiMenu_Save(void* user, LAB_GuiManager* mgr)
+static void LAB_GuiMenu_Save(void* user, LAB_GuiManager* mgr)
 {
     LAB_World* world = (LAB_World*)user;
     printf("Saving world here: %i chunks\n", (int)world->chunks.size);
     //LAB_GuiManager_Dismiss(mgr);
 }
 
-void LAB_GuiMenu_SaveAs(void* user, LAB_GuiManager* mgr)
+static void LAB_GuiMenu_SaveAs(void* user, LAB_GuiManager* mgr)
 {
    // LAB_World* world = (LAB_World*)user;
     printf("Saving dialog here\n");
     //LAB_GuiManager_Dismiss(mgr);
 }
 
-void LAB_GuiMenu_Load(void* user, LAB_GuiManager* mgr)
+static void LAB_GuiMenu_Load(void* user, LAB_GuiManager* mgr)
 {
     LAB_GuiManager_Dismiss(mgr);
-    printf("Loading dialog here\n");
+    //printf("Loading dialog here\n");
+
+    LAB_GuiWorldSelection* gui = LAB_Malloc(sizeof *gui);
+    if(!gui) return;
+    LAB_GuiWorldSelection_Create(gui, "Load World", NULL);
+    LAB_GuiManager_ShowDialog(mgr, (LAB_GuiComponent*)gui);
 }
 
 static void LAB_GuiMenu_Quit(void* user, LAB_GuiManager* mgr)

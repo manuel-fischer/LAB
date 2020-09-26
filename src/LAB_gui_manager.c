@@ -10,7 +10,7 @@ void LAB_GuiManager_Create(LAB_GuiManager* manager)
 {
     manager->component = NULL;
     manager->surf = NULL;
-    manager->dismiss = 0;
+    manager->dismiss_component = NULL;
 }
 
 void LAB_GuiManager_Destroy(LAB_GuiManager* manager)
@@ -28,24 +28,25 @@ void LAB_GuiManager_ShowDialog(LAB_GuiManager* manager, LAB_GuiComponent* compon
     manager->rerender = 1;
 }
 
-void LAB_GuiManager_Dismiss_(LAB_GuiManager* manager)
-{
-    LAB_Free(manager->component);
-    manager->component = NULL;
-}
-
 void LAB_GuiManager_Dismiss(LAB_GuiManager* manager)
 {
-    manager->dismiss = 1;
+    // Component cannot be freed directly, because this function might
+    // have been called inside an event handler of that very component.
+    // For this, the function LAB_GuiManager_Tick needs to be called,
+    // It should be called when no events are handled.
+    LAB_ASSUME(manager->component != NULL);
+    LAB_ASSUME(manager->dismiss_component == NULL);
+    manager->dismiss_component = manager->component;
+    manager->component = NULL;
 }
 
 
 void LAB_GuiManager_Tick(LAB_GuiManager* manager)
 {
-    if(manager->dismiss)
+    if(manager->dismiss_component)
     {
-        LAB_GuiManager_Dismiss_(manager);
-        manager->dismiss = 0;
+        LAB_Free(manager->dismiss_component);
+        manager->dismiss_component = NULL;
     }
 }
 
