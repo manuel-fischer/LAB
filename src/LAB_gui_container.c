@@ -82,3 +82,14 @@ void LAB_GuiContainer_Render_Framed(LAB_GuiComponent* self, SDL_Surface* surf, i
 
     LAB_GuiContainer_Render(self, surf, x, y);
 }
+
+void LAB_GuiContainer_Destroy(LAB_GuiComponent* self)
+{
+    LAB_GuiContainer* cself = (LAB_GuiContainer*)self;
+
+    LAB_GuiComponent** c;
+    for(c = cself->components; *c; ++c)
+    {
+        (*c)->destroy(*c);
+    }
+}

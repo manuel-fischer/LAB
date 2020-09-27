@@ -11,6 +11,7 @@ void LAB_GuiLabel_Create(LAB_GuiLabel* label,
 
     label->on_event = &LAB_Gui_OnEvent_Ignore;
     label->render = &LAB_GuiLabel_Render;
+    label->destroy = &LAB_GuiLabel_Destroy;
 
     label->title = title;
     label->text_surf = NULL;
@@ -38,4 +39,10 @@ void LAB_GuiLabel_Render(LAB_GuiComponent* self, SDL_Surface* surf,
     dst.h = cself->text_surf->h;
 
     SDL_BlitSurface(cself->text_surf, NULL, surf, &dst);
+}
+
+void LAB_GuiLabel_Destroy(LAB_GuiComponent* self)
+{
+    LAB_GuiLabel* cself = (LAB_GuiLabel*)self;
+    SDL_FreeSurface(cself->text_surf);
 }

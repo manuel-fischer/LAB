@@ -16,14 +16,25 @@ void LAB_GuiManager_Create(LAB_GuiManager* manager)
 void LAB_GuiManager_Destroy(LAB_GuiManager* manager)
 {
     SDL_FreeSurface(manager->surf);
-    LAB_Free(manager->component);
+
+    if(manager->component)
+    {
+        (manager->component)->destroy(manager->component);
+        LAB_Free(manager->component);
+    }
+    if(manager->dismiss_component)
+    {
+        (manager->dismiss_component)->destroy(manager->dismiss_component);
+        LAB_Free(manager->dismiss_component);
+    }
 }
 
 
 void LAB_GuiManager_ShowDialog(LAB_GuiManager* manager, LAB_GuiComponent* component)
 {
-    LAB_ASSUME(manager->component != component);
-    if(manager->component) LAB_Free(manager->component);
+    //LAB_ASSUME(manager->component != component);
+    LAB_ASSUME(manager->component == NULL);
+    //if(manager->component) LAB_Free(manager->component);
     manager->component = component;
     manager->rerender = 1;
 }
@@ -45,6 +56,7 @@ void LAB_GuiManager_Tick(LAB_GuiManager* manager)
 {
     if(manager->dismiss_component)
     {
+        (manager->dismiss_component)->destroy(manager->dismiss_component);
         LAB_Free(manager->dismiss_component);
         manager->dismiss_component = NULL;
     }
@@ -120,7 +132,7 @@ bool LAB_GuiManager_HandleEvent(LAB_GuiManager* mgr, SDL_Event* event)
             *y /= GUI_SCALE;
             if(!LAB_GuiHitTest(mgr->component, *x, *y))
             {
-                if(event->type == SDL_MOUSEBUTTONUP)
+                if(event->type == SDL_MOUSEBUTTONDOWN)
                 {
                     LAB_GuiManager_Dismiss(mgr);
                 }

@@ -15,6 +15,7 @@ void LAB_GuiInventoryList_Create(LAB_GuiInventoryList* lst,
 
     lst->on_event = &LAB_GuiInventoryList_OnEvent;
     lst->render = &LAB_GuiInventoryList_Render;
+    lst->destroy = &LAB_GuiComponent_Destroy_Ignore;
 
     lst->selected_slot = -1;
 

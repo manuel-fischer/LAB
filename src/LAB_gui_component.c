@@ -25,3 +25,8 @@ bool LAB_Gui_OnEvent_Ignore(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Eve
 {
     return 0;
 }
+
+
+void LAB_GuiComponent_Destroy_Ignore(LAB_GuiComponent* self)
+{
+}

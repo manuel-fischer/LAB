@@ -221,7 +221,19 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
             for(int u = -1; u <= 1; ++u)
             {
                 int index = 3*(1+v) + 1+u;
-                tmp[index] = XX(u*ax+v*bx, u*ay+v*by, u*az+v*bz);
+                if(v && u && (GET_BLOCK_FLAGS(     v*bx+o[0],      v*by+o[1],      v*bz+o[2])&LAB_BLOCK_OPAQUE)
+                          && (GET_BLOCK_FLAGS(u*ax     +o[0], u*ay     +o[1], u*az     +o[2])&LAB_BLOCK_OPAQUE))
+                {
+                    //tmp[index] = LAB_MinColor(LAB_MaxColor(
+                    //                XX(     v*bx,      v*by,      v*bz),
+                    //                XX(u*ax     , u*ay     , u*az     )),
+                    //                XX(u*ax+v*bx, u*ay+v*by, u*az+v*bz));
+                    tmp[index] = LAB_MaxColor(
+                                    XX(     v*bx,      v*by,      v*bz),
+                                    XX(u*ax     , u*ay     , u*az     ));
+                }
+                else
+                    tmp[index] = XX(u*ax+v*bx, u*ay+v*by, u*az+v*bz);
             }
 
             /*light_sides[face][0] = XX(    0,     0,     0);

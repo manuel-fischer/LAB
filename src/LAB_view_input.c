@@ -395,77 +395,80 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms)
     LAB_View* view = view_input->view;
     float dx = 0, dy = 0, dz = 0;
 
-    int kbstate_size;
-    const Uint8* kbstate = SDL_GetKeyboardState(&kbstate_size);
-    int mx, my;
-    Uint32 mbstate = SDL_GetMouseState(&mx, &my);
-
-    float speed = view_input->speed * (kbstate[SDL_SCANCODE_LCTRL] ? 2.5 : 1);
-    speed *= (float)delta_ms*(1.f/1000.f);
-
-    //unsigned dir_set = view_input->dir_set;
-    unsigned dir_set = (kbstate[SDL_SCANCODE_W]?1:0)
-                     | (kbstate[SDL_SCANCODE_A]?2:0)
-                     | (kbstate[SDL_SCANCODE_S]?4:0)
-                     | (kbstate[SDL_SCANCODE_D]?8:0);
-    if(view_input->flags & LAB_VIEWINPUT_FORWARD)
+    if(view->gui_mgr.component == NULL)
     {
-        if(dir_set&(1|4))
+        int kbstate_size;
+        const Uint8* kbstate = SDL_GetKeyboardState(&kbstate_size);
+        int mx, my;
+        Uint32 mbstate = SDL_GetMouseState(&mx, &my);
+
+        float speed = view_input->speed * (kbstate[SDL_SCANCODE_LCTRL] ? 2.5 : 1);
+        speed *= (float)delta_ms*(1.f/1000.f);
+
+
+        //unsigned dir_set = view_input->dir_set;
+        unsigned dir_set = (kbstate[SDL_SCANCODE_W]?1:0)
+                         | (kbstate[SDL_SCANCODE_A]?2:0)
+                         | (kbstate[SDL_SCANCODE_S]?4:0)
+                         | (kbstate[SDL_SCANCODE_D]?8:0);
+        if(view_input->flags & LAB_VIEWINPUT_FORWARD)
         {
-            int bw = (dir_set&1) - !!(dir_set&4);
-            float dir[3];
-            LAB_ViewGetDirection(view, dir);
-            dx += dir[0]*speed*bw;
-            dy += dir[1]*speed*bw;
-            dz += dir[2]*speed*bw;
-        }
-        dir_set&=(2|8);
-    }
-
-    {
-
-
-        //              w.w.w.w.w.w.w.w.
-        //              aa..aa..aa..aa..
-        //              ssss....ssss....
-        //              dddddddd........
-        int ang8th = (0xf4650f7623f4120full >> (dir_set*4)) & 0xf;
-        if(ang8th != 0xf)
-        {
-            float ang_rad = view->ay*LAB_PI/180.f - (float)ang8th*LAB_PI*2/8.f;
-
-            float s = sin(ang_rad);
-            float c = cos(ang_rad);
-
-            dx += s*speed;
-            dz -= c*speed;
-        }
-
-
-        //if(kbstate[SDL_SCANCODE_SPACE]) dy+=speed;
-        if(kbstate[SDL_SCANCODE_SPACE]) {
-            if(!(view_input->flags&LAB_VIEWINPUT_NOCLIP))
+            if(dir_set&(1|4))
             {
-                if(view->on_ground && view->vy == 0)
-                    view->vy = 4.8;
+                int bw = (dir_set&1) - !!(dir_set&4);
+                float dir[3];
+                LAB_ViewGetDirection(view, dir);
+                dx += dir[0]*speed*bw;
+                dy += dir[1]*speed*bw;
+                dz += dir[2]*speed*bw;
             }
-            else
-                dy+=speed;
-            //if(view->vy < 0) view->vy = 0;
+            dir_set&=(2|8);
         }
-        if(kbstate[SDL_SCANCODE_LSHIFT]) dy-=speed;
-    }
 
-    if(kbstate[SDL_SCANCODE_LALT])
-    {
-        if(mbstate == SDL_BUTTON(SDL_BUTTON_LEFT) || mbstate == SDL_BUTTON(SDL_BUTTON_RIGHT))
         {
-            //for(int i=0; i < 10; ++i)
-            //    if(LAB_ViewInputInteract(view_input, !!(mbstate & SDL_BUTTON(SDL_BUTTON_RIGHT)))) break;
-            LAB_ViewInputInteract(view_input, !!(mbstate & SDL_BUTTON(SDL_BUTTON_RIGHT)));
+
+
+            //              w.w.w.w.w.w.w.w.
+            //              aa..aa..aa..aa..
+            //              ssss....ssss....
+            //              dddddddd........
+            int ang8th = (0xf4650f7623f4120full >> (dir_set*4)) & 0xf;
+            if(ang8th != 0xf)
+            {
+                float ang_rad = view->ay*LAB_PI/180.f - (float)ang8th*LAB_PI*2/8.f;
+
+                float s = sin(ang_rad);
+                float c = cos(ang_rad);
+
+                dx += s*speed;
+                dz -= c*speed;
+            }
+
+
+            //if(kbstate[SDL_SCANCODE_SPACE]) dy+=speed;
+            if(kbstate[SDL_SCANCODE_SPACE]) {
+                if(!(view_input->flags&LAB_VIEWINPUT_NOCLIP))
+                {
+                    if(view->on_ground && view->vy == 0)
+                        view->vy = 4.8;
+                }
+                else
+                    dy+=speed;
+                //if(view->vy < 0) view->vy = 0;
+            }
+            if(kbstate[SDL_SCANCODE_LSHIFT]) dy-=speed;
+        }
+
+        if(kbstate[SDL_SCANCODE_LALT])
+        {
+            if(mbstate == SDL_BUTTON(SDL_BUTTON_LEFT) || mbstate == SDL_BUTTON(SDL_BUTTON_RIGHT))
+            {
+                //for(int i=0; i < 10; ++i)
+                //    if(LAB_ViewInputInteract(view_input, !!(mbstate & SDL_BUTTON(SDL_BUTTON_RIGHT)))) break;
+                LAB_ViewInputInteract(view_input, !!(mbstate & SDL_BUTTON(SDL_BUTTON_RIGHT)));
+            }
         }
     }
-
 
 
     if(view_input->flags & (LAB_VIEWINPUT_DESTROY|LAB_VIEWINPUT_CREATE))
@@ -482,6 +485,8 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms)
         for(int yy = -dist; yy <= dist; ++yy)
         for(int xx = -dist; xx <= dist; ++xx)
         {
+            if((view_input->flags & LAB_VIEWINPUT_CREATE) && LAB_GetBlock(view->world, bx+xx, by+yy, bz+zz, LAB_CHUNK_GENERATE) != &LAB_BLOCK_AIR)
+                continue;
             if(xx*xx+yy*yy+zz*zz <= dist*dist+dist)
                 LAB_SetBlock(view->world, bx+xx, by+yy, bz+zz, LAB_CHUNK_GENERATE, block);
         }

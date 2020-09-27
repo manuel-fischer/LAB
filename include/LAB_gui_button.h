@@ -33,3 +33,5 @@ void LAB_GuiButton_Render(LAB_GuiComponent* self, SDL_Surface* surf,
 
 
 bool LAB_GuiButton_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Event* event);
+
+void LAB_GuiButton_Destroy(LAB_GuiComponent* self);

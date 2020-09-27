@@ -19,6 +19,7 @@ void LAB_GuiMenu_Create(LAB_GuiMenu* menu, LAB_World* world)
 
     menu->on_event = &LAB_GuiContainer_OnEvent;
     menu->render = &LAB_GuiContainer_Render_Framed;
+    menu->destroy = &LAB_GuiContainer_Destroy;
     menu->current = NULL; // TODO call LAB_GuiContainer_Create
 
     menu->components = menu->components_arr;

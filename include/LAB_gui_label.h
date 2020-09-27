@@ -16,3 +16,5 @@ void LAB_GuiLabel_Create(LAB_GuiLabel* button,
 
 void LAB_GuiLabel_Render(LAB_GuiComponent* self, SDL_Surface* surf,
                          int x, int y);
+
+void LAB_GuiLabel_Destroy(LAB_GuiComponent* self);

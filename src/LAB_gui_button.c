@@ -13,6 +13,7 @@ void LAB_GuiButton_Create(LAB_GuiButton* button,
 
     button->on_event = &LAB_GuiButton_OnEvent;
     button->render = &LAB_GuiButton_Render;
+    button->destroy = &LAB_GuiButton_Destroy;
 
     button->title = title;
     button->text_surf = NULL;
@@ -118,4 +119,11 @@ bool LAB_GuiButton_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Even
         }
     }
     return 0;
+}
+
+void LAB_GuiButton_Destroy(LAB_GuiComponent* self)
+{
+    LAB_GuiButton* cself = (LAB_GuiButton*)self;
+    SDL_FreeSurface(cself->text_surf);
+    //LAB_Free(cself->content);
 }

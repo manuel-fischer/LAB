@@ -3,12 +3,14 @@
 #include "LAB_gui_container.h"
 #include "LAB_gui_label.h"
 #include "LAB_gui_button.h"
+#include "LAB_gui_list_box.h"
+#include "LAB_gui_text_box.h"
 
 typedef struct LAB_World LAB_World; // Forward
 
 typedef void (*LAB_WorldSelectProc)(void* user, const char* world_filename);
 
-typedef LAB_GuiButton LAB_GuiList, LAB_GuiTextBox;
+typedef LAB_GuiButton LAB_GuiListBox_, LAB_GuiTextBox_;
 
 typedef struct LAB_GuiWorldSelection
 {
@@ -16,7 +18,7 @@ typedef struct LAB_GuiWorldSelection
     LAB_GuiComponent* components_arr[4+1];
 
     LAB_GuiLabel   lblTitle;
-    LAB_GuiList    lstWorlds;
+    LAB_GuiListBox lstWorlds;
     LAB_GuiTextBox txtWorld;
     LAB_GuiButton  cmdOK;
 

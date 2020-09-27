@@ -433,7 +433,7 @@ static LAB_Color LAB_CalcLight(LAB_World* world, LAB_Chunk*const chunks[27], int
             else
             {
                 nlum = LAB_GetNeighborhoodLight(chunks, x+o[0], y+o[1], z+o[2], default_color);
-                if(i!=3)
+                if(i!=3 || (nlum&0xffffff) != 0xffffff)
                     nlum = nlum - (nlum>>2 & 0x3f3f3f);
             }
             lum = LAB_MaxColor(lum, nlum);
@@ -520,7 +520,7 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, 
                     else
                     {
                         nlum = LAB_GetNeighborhoodLight(chunks, x+o[0], y+o[1], z+o[2], default_color);
-                        if(i!=3)
+                        if(i!=3 || (nlum&0xffffff) != 0xffffff)
                             nlum = nlum - (nlum>>2 & 0x3f3f3f);
                     }
                     lum = LAB_MaxColor(lum, nlum);

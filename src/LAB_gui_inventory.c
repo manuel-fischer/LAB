@@ -13,6 +13,7 @@ void LAB_GuiInventory_Create(LAB_GuiInventory* gui,
 
     gui->on_event = &LAB_GuiContainer_OnEvent;
     gui->render = &LAB_GuiContainer_Render_Framed;
+    gui->destroy = &LAB_GuiContainer_Destroy;
     gui->current = NULL; // TODO call LAB_GuiContainer_Create
 
     gui->components = gui->components_arr;

@@ -13,6 +13,10 @@
      */ \
     bool (*on_event)(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Event* event); \
     void (*render)(LAB_GuiComponent* self, SDL_Surface* surf, int x, int y); \
+    /** \
+     *  Do not free the memory of the component itself \
+     */ \
+    void (*destroy)(LAB_GuiComponent* self); \
     int x, y, w, h
 struct LAB_GuiComponent
 {
@@ -31,4 +35,6 @@ static inline bool LAB_GuiHitTest(LAB_GuiComponent* component, int x, int y)
         && 0 <= y && y < component->h;
 }
 
+// Default hook
+void LAB_GuiComponent_Destroy_Ignore(LAB_GuiComponent* self);
 

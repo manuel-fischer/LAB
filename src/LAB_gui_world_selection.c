@@ -11,6 +11,7 @@ void LAB_GuiWorldSelection_Create(LAB_GuiWorldSelection* gui, const char* title,
 
     gui->on_event = &LAB_GuiContainer_OnEvent;
     gui->render = &LAB_GuiContainer_Render_Framed;
+    gui->destroy = &LAB_GuiContainer_Destroy;
     gui->current = NULL; // TODO call LAB_GuiContainer_Create
 
     gui->components = gui->components_arr;
@@ -25,13 +26,18 @@ void LAB_GuiWorldSelection_Create(LAB_GuiWorldSelection* gui, const char* title,
                         10, 5, 200, 25,
                         title);
 
-    LAB_GuiButton_Create(&gui->lstWorlds,
-                         10, 30, 200, 115,
-                         "lstWorlds", &LAB_GuiWorldSelection_OK, NULL);
+    static const char* const tstlist[] = {
+        "one",
+        "two",
+        "three",
+    };
 
-    LAB_GuiButton_Create(&gui->txtWorld,
-                         10, 150, 140, 25,
-                         "txtWorld", &LAB_GuiWorldSelection_OK, NULL);
+    LAB_GuiListBox_Create(&gui->lstWorlds,
+                         10, 30, 200, 115,
+                         sizeof(tstlist)/sizeof(tstlist[0]), tstlist);
+
+    LAB_GuiTextBox_Create(&gui->txtWorld,
+                          10, 150, 140, 25);
 
     LAB_GuiButton_Create(&gui->cmdOK,
                          155, 150, 55, 25,
