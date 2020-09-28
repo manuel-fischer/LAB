@@ -29,3 +29,9 @@ bool LAB_GuiTextBox_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Eve
 
 
 void LAB_GuiTextBox_Destroy(LAB_GuiComponent* self);
+
+
+/**
+ *  Return 0 on failure (memory couldn't be allocated
+ */
+bool LAB_GuiTextBox_SetContent(LAB_GuiTextBox* cself, const char* txt);

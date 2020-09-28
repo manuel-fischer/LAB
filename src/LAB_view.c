@@ -306,6 +306,9 @@ static void LAB_ViewUploadVBO(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 
 static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 {
+    if(!LAB_View_IsChunkInSight(view, chunk_entry->x, chunk_entry->y, chunk_entry->z))
+        return;
+
     // TODO enshure light update after at most 1 sec
     if(view->rest_update && ( (chunk_entry->dirty&2) || ((chunk_entry->dirty&1) && (rand()&0x1f)==0) ))
     {
@@ -435,6 +438,8 @@ static void LAB_View_OrderQueryChunks(LAB_View* view)
 
 static void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
 {
+    if(!LAB_View_IsChunkInSight(view, entry->x, entry->y, entry->x)) return;
+
     // TODO fixed sized buffer of queries, glGetQueryObject called
     //      in the next frame, in LAB_View_Tick
     glPushMatrix();
@@ -744,9 +749,10 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
     // Setup world matrix
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+    glRotatef(view->az, 0, 0, 1);
     glRotatef(view->ax, 1, 0, 0);
     glRotatef(view->ay, 0, 1, 0);
-    glRotatef(view->az, 0, 0, 1);
+    //glRotatef(view->az, 0, 0, 1);
     glTranslatef(-view->x, -view->y, -view->z);
 
     // Block rendering settings
@@ -951,9 +957,28 @@ void LAB_ViewGetDirection(LAB_View* view, LAB_OUT float dir[3])
     say = sin(ay);
     cay = cos(ay);
 
+    #if 1
     dir[0] = cax*say;
     dir[1] = -sax;
     dir[2] = -cax*cay;
+    #else
+    float dx, dy, dz;
+    dx = cax*say;
+    dy = -sax;
+    dz = -cax*cay;
+
+    float az;
+    float saz, caz;
+
+    az = view->az*LAB_PI/180.f;
+
+    saz = sin(az);
+    caz = cos(az);
+
+    dir[0] =  dx*caz + dy*saz;
+    dir[1] = -dx*saz + dy*caz;
+    dir[2] =  dz;
+    #endif
 }
 
 
@@ -984,6 +1009,30 @@ static bool LAB_View_HasChunkVisibleNeighbors(LAB_View* view, int x, int y, int 
     }
     return 0;
 }
+
+
+bool LAB_View_IsChunkInSight(LAB_View* view, int cx, int cy, int cz)
+{
+    // TODO: might be inaccurate for large coordinates
+    float dir[3];
+    LAB_ViewGetDirection(view, dir);
+
+    float treshold = view->x*dir[0] + view->y*dir[1] + view->z*dir[2];
+    dir[0] *= 16.f;
+    dir[1] *= 16.f;
+    dir[2] *= 16.f;
+
+    // Distance of the nearest corner of the chunk to the plane
+    // with the normal vector dir, that has a distance treshold
+    // to the origin
+    float dist = cx*dir[0] + cy*dir[1] + cz*dir[2];
+    if(dir[0] > 0) dist += dir[0];
+    if(dir[1] > 0) dist += dir[1];
+    if(dir[2] > 0) dist += dir[2];
+
+    return dist >= treshold;
+}
+
 
 void LAB_ViewLoadNearChunks(LAB_View* view)
 {
@@ -1075,6 +1124,11 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
                         if(q&2 && y==0) continue; else yy = py+(q&2 ? -y : y);
                         if(q&4 && z==0) continue; else zz = pz+(q&4 ? -z : z);
 
+                        if(!LAB_View_IsChunkInSight(view, xx, yy, zz))
+                        {
+                            LAB_ASSUME(r > 0);
+                            continue;
+                        }
 
                         if(r > 1 && !LAB_View_HasChunkVisibleNeighbors(view, xx, yy, zz))
                             continue;

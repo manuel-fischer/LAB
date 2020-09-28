@@ -4,6 +4,8 @@ typedef struct LAB_View LAB_View;
 typedef struct LAB_Window LAB_Window;
 typedef union SDL_Event SDL_Event;
 
+#define LAB_CLIP_AX 1
+
 typedef struct LAB_ViewInput
 {
     LAB_View* view;

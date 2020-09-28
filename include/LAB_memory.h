@@ -11,6 +11,8 @@
 #define LAB_Free(memory)          free(memory)
 #define LAB_ReallocN(memory, count, size) LAB_RealReallocN(memory, count, size)
 
+#define LAB_StrDup(str)           strdup(str)
+
 #define LAB_RealRealloc LAB_Realloc
 #else
 #define LAB_Malloc(size)          LAB_DbgMalloc(size, __FILE__, __LINE__)
@@ -19,9 +21,10 @@
 #define LAB_Free(memory)          LAB_DbgFree(memory, __FILE__, __LINE__)
 #define LAB_ReallocN(memory, count, size) LAB_DbgReallocN(memory, count, size, __FILE__, __LINE__)
 
+#define LAB_StrDup(str)           LAB_DbgStrDup(str, __FILE__, __LINE__)
+
 #define LAB_RealRealloc realloc
-#endif
-#endif
+
 
 void* LAB_RealReallocN(void* memory, size_t count, size_t size);
 
@@ -31,5 +34,10 @@ void* LAB_DbgRealloc(void* memory, size_t size, const char* file, int line);
 void* LAB_DbgCalloc(size_t count, size_t size, const char* file, int line);
 void  LAB_DbgFree(void* memory, const char* file, int line);
 void* LAB_DbgReallocN(void* memory, size_t count, size_t size, const char* file, int line);
+
+char* LAB_DbgStrDup(const char* str, const char* file, int line);
+
+#endif
+#endif
 
 void  LAB_DbgMemShow(void);

@@ -135,6 +135,23 @@ void* LAB_DbgReallocN(void* memory, size_t count, size_t size, const char* file,
     return new_memory;
 }
 
+
+char* LAB_DbgStrDup(const char* str, const char* file, int line)
+{
+    char* new_string = strdup(str);
+    LAB_DbgMemPrint("strdup(%s) -> %p\n", file, line, str, new_string);
+
+    if(new_string != NULL)
+        mem_allocs++;
+    else
+        mem_fails++;
+
+    mem_checksum ^= (ptrdiff_t)new_string;
+    return new_string;
+}
+
+
+
 void LAB_DbgMemShow(void)
 {
     fprintf(stderr, "allocs:%5u\n"

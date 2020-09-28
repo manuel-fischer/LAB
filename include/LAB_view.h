@@ -87,7 +87,7 @@ typedef struct LAB_View
     // View position
     double x, y, z;
     // View angle
-    double ax, ay, az;
+    double ax, ay, az; // TODO cache view direction
 
     // Velocity
     double vx, vy, vz;
@@ -154,4 +154,4 @@ LAB_ViewChunkEntry* LAB_ViewFindChunkEntry(LAB_View* view, int x, int y, int z);
 LAB_ViewChunkEntry* LAB_ViewNewChunkEntry(LAB_View* view, int x, int y, int z);
 
 
-
+bool LAB_View_IsChunkInSight(LAB_View* view, int cx, int cy, int cz);

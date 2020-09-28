@@ -11,13 +11,43 @@ void LAB_GuiTextBox_Create(LAB_GuiTextBox* cself,
     cself->render = &LAB_GuiTextBox_Render;
     cself->destroy = &LAB_GuiTextBox_Destroy;
 
-    //cself->content_capacity = 0;
-    //cself->content = NULL;
     cself->content_capacity = 0;
     cself->content = NULL;
+
     cself->text_surf = NULL;
 
     cself->state = LAB_GUI_TEXT_BOX_NORMAL;
+}
+
+/**
+ *  Return 0 on failure
+ */
+static bool LAB_GuiTextBox_EnsureCapacity(LAB_GuiTextBox* cself, size_t min_capacity)
+{
+    if(min_capacity > cself->content_capacity) // new character + '\0'
+    {
+        size_t new_capacity;
+        if(cself->content_capacity == 0)
+            new_capacity = 16;
+        else
+            new_capacity = cself->content_capacity;
+
+        while(min_capacity > new_capacity)
+            new_capacity *= 2;
+
+        char* new_content = LAB_Realloc(cself->content, new_capacity);
+        if(new_content == NULL)
+            return 0;
+
+        cself->content = new_content;
+    }
+    return 1;
+}
+
+static void LAB_GuiTextBox_UpdateText(LAB_GuiTextBox* cself)
+{
+    SDL_FreeSurface(cself->text_surf);
+    cself->text_surf = NULL;
 }
 
 
@@ -101,18 +131,17 @@ bool LAB_GuiTextBox_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Eve
                         for(--slen; (cself->content[slen]&0xC0) == 0x80; --slen)
                             cself->content[slen] = '\0';
                         cself->content[slen] = '\0';
-                        SDL_FreeSurface(cself->text_surf);
-                        cself->text_surf = NULL;
+                        LAB_GuiTextBox_UpdateText(cself);
                         return 1;
                     }
                 }
             }
-        }
+        } break;
         case SDL_TEXTINPUT:
         {
             SDL_TextInputEvent* txt = &event->text;
             char* mb_char = txt->text;
-            if(mb_char[0] == 1) return 0;
+            //if(mb_char[0] == 1) return 0;
             size_t charlen = strlen(mb_char);
             size_t slen;
 
@@ -121,27 +150,11 @@ bool LAB_GuiTextBox_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Eve
             else
                 slen = 0;
 
-            if(slen+charlen+1 > cself->content_capacity) // new character + '\0'
-            {
-                size_t new_capacity;
-                if(cself->content_capacity == 0)
-                    new_capacity = 16;
-                else
-                    new_capacity = cself->content_capacity;
+            if(!LAB_GuiTextBox_EnsureCapacity(cself, slen+charlen+1)) return 0;
 
-                while(slen+charlen+1 > new_capacity)
-                    new_capacity *= 2;
-
-                char* new_content = LAB_Realloc(cself->content, new_capacity);
-                if(new_content == NULL)
-                    return 0;
-
-                cself->content = new_content;
-            }
             //strcat(cself->content, mb_char);
             memcpy(cself->content+slen, mb_char, charlen+1);
-            SDL_FreeSurface(cself->text_surf);
-            cself->text_surf = NULL;
+            LAB_GuiTextBox_UpdateText(cself);
             return 1;
         } break;
     }
@@ -175,4 +188,17 @@ void LAB_GuiTextBox_Destroy(LAB_GuiComponent* self)
     LAB_GuiTextBox* cself = (LAB_GuiTextBox*)self;
     SDL_FreeSurface(cself->text_surf);
     LAB_Free(cself->content);
+}
+
+
+
+bool LAB_GuiTextBox_SetContent(LAB_GuiTextBox* cself, const char* txt)
+{
+    size_t slen = strlen(txt);
+    if(!LAB_GuiTextBox_EnsureCapacity(cself, slen+1)) return 0;
+
+    memcpy(cself->content, txt, slen+1);
+
+    LAB_GuiTextBox_UpdateText(cself);
+    return 1;
 }

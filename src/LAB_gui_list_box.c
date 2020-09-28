@@ -3,7 +3,9 @@
 
 void LAB_GuiListBox_Create(LAB_GuiListBox* cself,
                           int x, int y, int w, int h,
-                          size_t element_count, const char* const* elements)
+                          size_t element_count, const char* const* elements,
+                          void (*on_selection)(void* user, size_t element),
+                          void*  on_selection_user)
 {
     cself->x = x; cself->y = y;
     cself->w = w; cself->h = h;
@@ -19,7 +21,9 @@ void LAB_GuiListBox_Create(LAB_GuiListBox* cself,
     cself->text_surfs = LAB_Calloc(sizeof(cself->text_surfs[0]), element_count);
 
     cself->selected_element = ~0;
-    cself->selected_element = 1;
+
+    cself->on_selection = on_selection;
+    cself->on_selection_user = on_selection_user;
 
     cself->state = LAB_GUI_LIST_BOX_NORMAL;
 }
@@ -65,7 +69,13 @@ bool LAB_GuiListBox_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Eve
     LAB_GuiListBox* cself = (LAB_GuiListBox*)self;
     switch(event->type)
     {
-
+        case SDL_MOUSEBUTTONDOWN:
+        {
+            // negative values get large positive numbers
+            cself->selected_element = (event->button.y-3) / LAB_GUI_LIST_BOX_ELEMENT_HEIGHT;
+            if(cself->on_selection) cself->on_selection(cself->on_selection_user, cself->selected_element);
+            return 1;
+        } break;
     }
     if(LAB_IS_GUI_EVENT(event->type))
     {

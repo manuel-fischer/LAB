@@ -14,6 +14,9 @@ typedef struct LAB_GuiListBox
 
     size_t selected_element; // every index above element_count means no element is selected
 
+    void (*on_selection)(void* user, size_t element);
+    void*  on_selection_user;
+
     int state;
 } LAB_GuiListBox;
 
@@ -26,7 +29,9 @@ enum LAB_GuiListBoxState
 // memory of elements not taken ownership over, caller needs to clean it up
 void LAB_GuiListBox_Create(LAB_GuiListBox* cself,
                           int x, int y, int w, int h,
-                          size_t element_count, const char* const* elements);
+                          size_t element_count, const char* const* elements,
+                          void (*on_selection)(void* user, size_t element),
+                          void*  on_selection_user);
 
 void LAB_GuiListBox_Render(LAB_GuiComponent* self, SDL_Surface* surf,
                           int x, int y);

@@ -22,9 +22,13 @@ typedef struct LAB_GuiWorldSelection
     LAB_GuiTextBox txtWorld;
     LAB_GuiButton  cmdOK;
 
+    size_t world_count;
+    char** worlds;
+
     LAB_WorldSelectProc on_select;
     void* on_select_user;
 } LAB_GuiWorldSelection;
 
 
 void LAB_GuiWorldSelection_Create(LAB_GuiWorldSelection* gui, const char* title, LAB_WorldSelectProc on_select);
+void LAB_GuiWorldSelection_Destroy(LAB_GuiComponent* self);

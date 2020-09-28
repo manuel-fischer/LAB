@@ -137,6 +137,17 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
 
                 case SDLK_SPACE:  view_input->updown |= 1; break;
                 case SDLK_LSHIFT: view_input->updown |= 2; break;*/
+
+
+                case SDLK_u:
+                case SDLK_i:
+                {
+                    view->az += key == SDLK_u ? -1 : 1;
+                    int siz;
+                    const uint8_t* state = SDL_GetKeyboardState(&siz);
+                    int other_scancode = (key+(SDL_SCANCODE_U-SDLK_u))^(SDL_SCANCODE_U^SDL_SCANCODE_I);
+                    if(state[other_scancode]) view->az = 0;
+                } break;
             }
         } break;
         case SDL_KEYUP:
@@ -318,11 +329,38 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                 SDL_GetWindowSize(window->window, &w, &h);
 
                 SDL_MouseMotionEvent* mmevent = (SDL_MouseMotionEvent*)event;
+                #if LAB_CLIP_AX
                 view->ay+=(float)(mmevent->x-w/2) / 4.f;
                 view->ax+=(float)(mmevent->y-h/2) / 4.f;
 
                 if(view->ax < -90) view->ax = -90;
                 if(view->ax >  90) view->ax =  90;
+                #else
+                float mx, my;
+                mx = (float)(mmevent->x-w/2) / 4.f;
+                my = (float)(mmevent->y-h/2) / 4.f;
+
+                float ax, ay, az;
+                ax = view->ax*(LAB_PI/180.f);
+                ay = view->ay*(LAB_PI/180.f);
+                az = view->az*(LAB_PI/180.f);
+
+                float cx = cos(ax), sx = sin(ax);
+                float cy = cos(ay), sy = sin(ay);
+                float cz = cos(az), sz = sin(az);
+                view->ax+=        cz*my +         sz*mx;
+                view->ay+=    cx*-sz*my +      cx*cz*mx;
+                view->az+=                    -sx*   mx;
+                //view->az+=0;
+
+                view->ax = LAB_AbsModF(view->ax, 360.f);
+                view->ay = LAB_AbsModF(view->ay, 360.f);
+                view->az = LAB_AbsModF(view->az, 360.f);
+
+                //if(view->ax < -90) view->ax = -90;
+                //if(view->ax >  90) view->ax =  90;
+                #endif
+                //view->az = view->ay;
 
                 SDL_WarpMouseInWindow(window->window, w/2, h/2);
             }
@@ -395,6 +433,9 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms)
     LAB_View* view = view_input->view;
     float dx = 0, dy = 0, dz = 0;
 
+    //if(view->az > 180) view->az -= 360;
+    //view->az *= 0.95;
+
     if(view->gui_mgr.component == NULL)
     {
         int kbstate_size;
@@ -449,8 +490,8 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms)
             if(kbstate[SDL_SCANCODE_SPACE]) {
                 if(!(view_input->flags&LAB_VIEWINPUT_NOCLIP))
                 {
-                    if(view->on_ground && view->vy == 0)
-                        view->vy = 4.8;
+                    if(view->on_ground)
+                        view->vy = 4.8*(1.4);
                 }
                 else
                     dy+=speed;
@@ -504,7 +545,7 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms)
         const float d = 0.001;
 
         float dt = (float)delta_ms*(1.f/1000.f);
-        const float accel = -9.81;
+        const float accel = -9.81*2;
 
         dy += accel*dt*dt*0.5 + view->vy*dt;
         view->vy += accel*dt;
