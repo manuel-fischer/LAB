@@ -1,0 +1,5 @@
+# Ignore all world files
+*
+
+# Keep this file
+!.gitignore
