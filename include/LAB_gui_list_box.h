@@ -33,7 +33,7 @@ void LAB_GuiListBox_Create(LAB_GuiListBox* cself,
                           void (*on_selection)(void* user, size_t element),
                           void*  on_selection_user);
 
-void LAB_GuiListBox_Render(LAB_GuiComponent* self, SDL_Surface* surf,
+void LAB_GuiListBox_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf,
                           int x, int y);
 
 bool LAB_GuiListBox_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Event* event);

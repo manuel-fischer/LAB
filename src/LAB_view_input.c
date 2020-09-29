@@ -419,6 +419,10 @@ static int LAB_ViewInputInteract(LAB_ViewInput* view_input, int right)
         }
         else
         {
+            if(!(view_input->flags&LAB_VIEWINPUT_NOCLIP)
+               &&  prev[0]==(int)floorf(view->x)
+               && (prev[1]==(int)floorf(view->y) || prev[1]==(int)floorf(view->y)-1)
+               &&  prev[2]==(int)floorf(view->z)) return 0;
             LAB_SetBlock(view->world, prev[0], prev[1], prev[2], LAB_CHUNK_GENERATE, view_input->selected_block);
         }
         return 1;

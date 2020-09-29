@@ -4,29 +4,46 @@
 #include "LAB_gl.h"
 #include "LAB_debug.h"
 
-#define GUI_SCALE 2
+#include <SDL2/SDL_ttf.h>
 
-void LAB_GuiManager_Create(LAB_GuiManager* manager)
+bool LAB_GuiManager_Create(LAB_GuiManager* mgr)
 {
-    manager->component = NULL;
-    manager->surf = NULL;
-    manager->dismiss_component = NULL;
+    mgr->component = NULL;
+    mgr->surf = NULL;
+    mgr->dismiss_component = NULL;
+    mgr->zoom = 1;
+    mgr->scale = 2;
+
+    mgr->button_font    = TTF_OpenFont("fonts/DejaVuSans.ttf", 12*mgr->scale);
+    if(!mgr->button_font) return 0;
+
+    mgr->title_font     = TTF_OpenFont("fonts/DejaVuSans.ttf", 15*mgr->scale);
+    if(!mgr->title_font)  return 0;
+
+    mgr->mono_font      = TTF_OpenFont("fonts/DejaVuSansMono.ttf", 13*mgr->scale);
+    if(!mgr->mono_font)   return 0;
+
+    return 1;
 }
 
-void LAB_GuiManager_Destroy(LAB_GuiManager* manager)
+void LAB_GuiManager_Destroy(LAB_GuiManager* mgr)
 {
-    SDL_FreeSurface(manager->surf);
+    SDL_FreeSurface(mgr->surf);
 
-    if(manager->component)
+    if(mgr->component)
     {
-        (manager->component)->destroy(manager->component);
-        LAB_Free(manager->component);
+        (mgr->component)->destroy(mgr->component);
+        LAB_Free(mgr->component);
     }
-    if(manager->dismiss_component)
+    if(mgr->dismiss_component)
     {
-        (manager->dismiss_component)->destroy(manager->dismiss_component);
-        LAB_Free(manager->dismiss_component);
+        (mgr->dismiss_component)->destroy(mgr->dismiss_component);
+        LAB_Free(mgr->dismiss_component);
     }
+
+    TTF_CloseFont(mgr->button_font);
+    TTF_CloseFont(mgr->title_font);
+    TTF_CloseFont(mgr->mono_font);
 }
 
 
@@ -67,16 +84,19 @@ void LAB_GuiManager_Render(LAB_GuiManager* mgr, int sw, int sh)
 {
     if(mgr->component)
     {
+        int z = mgr->zoom;
+        int s = mgr->scale;
+
         LAB_GuiComponent* c = mgr->component;
 
-        c->x = (sw/GUI_SCALE-c->w)/2;
-        c->y = (sh/GUI_SCALE-c->h)/2;
+        c->x = (sw/(s*z)-c->w)/2;
+        c->y = (sh/(s*z)-c->h)/2;
 
         int rerender = 0;
         if(mgr->surf)
         {
-            if(c->w != mgr->surf->w ||
-               c->h != mgr->surf->h)
+            if(c->w*s != mgr->surf->w ||
+               c->h*s != mgr->surf->h)
             {
                 SDL_FreeSurface(mgr->surf);
                 mgr->surf = NULL;
@@ -85,28 +105,31 @@ void LAB_GuiManager_Render(LAB_GuiManager* mgr, int sw, int sh)
 
         if(!mgr->surf)
         {
-            mgr->surf = SDL_CreateRGBSurfaceWithFormat(0, c->w, c->h, 32, SDL_PIXELFORMAT_RGBA32);
+            mgr->surf = SDL_CreateRGBSurfaceWithFormat(0, c->w*s, c->h*s, 32, SDL_PIXELFORMAT_RGBA32);
             rerender = 1;
             if(!mgr->surf) return;
         }
         else if(mgr->rerender)
         {
             // clear buffer
-            memset(mgr->surf->pixels, 0, 4*c->w*c->h);
+            memset(mgr->surf->pixels, 0, 4*mgr->surf->w*mgr->surf->h);
             rerender = 1;
         }
 
         if(rerender)
         {
-            (*c->render)(c, mgr->surf, 0, 0);
+            (*c->render)(c, mgr, mgr->surf, 0, 0);
             mgr->rerender = 0;
+            LAB_GL_ActivateTexture(&mgr->gl_id);
+            LAB_GL_UploadSurf(mgr->gl_id, mgr->surf);
+        }
+        else
+        {
+            LAB_GL_ActivateTexture(&mgr->gl_id);
         }
 
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        LAB_GL_ActivateTexture(&mgr->gl_id);
-        LAB_GL_UploadSurf(mgr->gl_id, mgr->surf);
-        LAB_GL_DrawSurf(mgr->gl_id, c->x*GUI_SCALE, c->y*GUI_SCALE, c->w*GUI_SCALE, c->h*GUI_SCALE, sw, sh);
+        LAB_GL_DrawSurf(mgr->gl_id, c->x*z*s, sh-c->y*z*s-c->h*z*s, c->w*z*s, c->h*z*s, sw, sh);
     }
 }
 
@@ -114,6 +137,9 @@ bool LAB_GuiManager_HandleEvent(LAB_GuiManager* mgr, SDL_Event* event)
 {
     if(mgr->component)
     {
+        int z = mgr->zoom;
+        int s = mgr->scale;
+
         if(event->type == SDL_KEYUP)
         {
             SDL_Keycode key = ((SDL_KeyboardEvent*)event)->keysym.sym;
@@ -128,8 +154,8 @@ bool LAB_GuiManager_HandleEvent(LAB_GuiManager* mgr, SDL_Event* event)
         int* x,* y;
         if(LAB_GetMouseCoordPtr(event, &x, &y))
         {
-            *x /= GUI_SCALE;
-            *y /= GUI_SCALE;
+            *x /= z*s;
+            *y /= z*s;
             if(!LAB_GuiHitTest(mgr->component, *x, *y))
             {
                 if(event->type == SDL_MOUSEBUTTONDOWN)

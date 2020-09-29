@@ -22,7 +22,7 @@ enum LAB_GuiTextBoxState
 void LAB_GuiTextBox_Create(LAB_GuiTextBox* cself,
                           int x, int y, int w, int h);
 
-void LAB_GuiTextBox_Render(LAB_GuiComponent* self, SDL_Surface* surf,
+void LAB_GuiTextBox_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf,
                           int x, int y);
 
 bool LAB_GuiTextBox_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Event* event);

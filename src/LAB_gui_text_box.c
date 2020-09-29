@@ -51,34 +51,36 @@ static void LAB_GuiTextBox_UpdateText(LAB_GuiTextBox* cself)
 }
 
 
-void LAB_GuiTextBox_Render(LAB_GuiComponent* self, SDL_Surface* surf,
+void LAB_GuiTextBox_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf,
                            int x, int y)
 {
     LAB_GuiTextBox* cself = (LAB_GuiTextBox*)self;
 
-    int cx = cself->state;
-    LAB_RenderRect(surf, x, y, self->w, self->h, cx, 0);
+    int s = mgr->scale;
 
-    int cursor_left = 5;
+    int cx = cself->state;
+    LAB_RenderRect(surf, s, s*x, s*y, s*self->w, s*self->h, cx, 0);
+
+    int cursor_left = s*5;
     if(cself->content != NULL && cself->content[0] != '\0')
     {
         if(!cself->text_surf)
         {
             SDL_Color fg = { 255, 255, 255, 255 };
-            TTF_Font* ttf = LAB_GuiFont();
+            TTF_Font* ttf = mgr->button_font;
             if(!ttf) return;
             cself->text_surf = TTF_RenderUTF8_Blended(ttf, cself->content, fg);
             if(!cself->text_surf) return;
         }
         SDL_Rect dst, src;
 
-        dst.x = x + 5;
-        dst.y = y + (self->h-cself->text_surf->h)/2;
+        dst.x = s*(x + 5);
+        dst.y = s*y + (s*self->h-cself->text_surf->h)/2;
         dst.w = cself->text_surf->w;
         dst.h = cself->text_surf->h;
 
         SDL_Rect* src_p;
-        int max_text_width = cself->w-10-1; // 1 additional pixel for cursor
+        int max_text_width = s*(cself->w-10-1); // 1 additional pixel for cursor
         if(cself->text_surf->w > max_text_width)
         {
             src.x = cself->text_surf->w-max_text_width;
@@ -102,10 +104,10 @@ void LAB_GuiTextBox_Render(LAB_GuiComponent* self, SDL_Surface* surf,
     {
         SDL_Rect dst;
 
-        dst.x = x + cursor_left;
-        dst.y = y + 5;
-        dst.w = 1;
-        dst.h = self->h - 10;
+        dst.x = s*x + cursor_left;
+        dst.y = s*(y + 5);
+        dst.w = s*1;
+        dst.h = s*(self->h - 10);
 
         Uint32 cursor_color = 0xffffffff;
 

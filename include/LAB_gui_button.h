@@ -28,7 +28,7 @@ void LAB_GuiButton_Create(LAB_GuiButton* button,
                           void(*on_click)(void* user, LAB_GuiManager* mgr),
                           void* user);
 
-void LAB_GuiButton_Render(LAB_GuiComponent* self, SDL_Surface* surf,
+void LAB_GuiButton_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf,
                           int x, int y);
 
 

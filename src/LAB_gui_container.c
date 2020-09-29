@@ -62,25 +62,27 @@ bool LAB_GuiContainer_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_E
 }
 
 // Does not clip
-void LAB_GuiContainer_Render(LAB_GuiComponent* self, SDL_Surface* surf, int x, int y)
+void LAB_GuiContainer_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf, int x, int y)
 {
     LAB_GuiContainer* cself = (LAB_GuiContainer*)self;
 
     LAB_GuiComponent** c;
     for(c = cself->components; *c; ++c)
     {
-        (*c)->render(*c, surf, x+(*c)->x, y+(*c)->y);
+        (*c)->render(*c, mgr, surf, x+(*c)->x, y+(*c)->y);
     }
 }
 
-void LAB_GuiContainer_Render_Framed(LAB_GuiComponent* self, SDL_Surface* surf, int x, int y)
+void LAB_GuiContainer_Render_Framed(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf, int x, int y)
 {
     //LAB_GuiContainer* cself = (LAB_GuiContainer*)self;
 
-    //surf.paintpicture x, y, cself->w, cself->h, sp.x, sp.y, sp.w, sp.h;
-    LAB_RenderRect(surf, 0, 0, self->w, self->h, 1, 3);
+    int s = mgr->scale;
 
-    LAB_GuiContainer_Render(self, surf, x, y);
+    //surf.paintpicture x, y, cself->w, cself->h, sp.x, sp.y, sp.w, sp.h;
+    LAB_RenderRect(surf, s, s*x, s*y, s*self->w, s*self->h, 1, 3);
+
+    LAB_GuiContainer_Render(self, mgr, surf, x, y);
 }
 
 void LAB_GuiContainer_Destroy(LAB_GuiComponent* self)

@@ -663,8 +663,9 @@ void LAB_ViewRenderHud(LAB_View* view)
     glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR);
     glColor3f(1,1,1);
     {
-        TTF_Font* font = LAB_GuiMonospaceFont();
-        if(!font) return;
+        TTF_Font* font = view->gui_mgr.mono_font;
+        //TTF_Font* font = LAB_GuiMonospaceFont();
+        //if(!font) return;
 
         int rerender = 0;
         int px, py, pz;
@@ -1018,6 +1019,7 @@ bool LAB_View_IsChunkInSight(LAB_View* view, int cx, int cy, int cz)
     LAB_ViewGetDirection(view, dir);
 
     float treshold = view->x*dir[0] + view->y*dir[1] + view->z*dir[2];
+
     dir[0] *= 16.f;
     dir[1] *= 16.f;
     dir[2] *= 16.f;

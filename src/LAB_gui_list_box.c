@@ -29,17 +29,19 @@ void LAB_GuiListBox_Create(LAB_GuiListBox* cself,
 }
 
 
-void LAB_GuiListBox_Render(LAB_GuiComponent* self, SDL_Surface* surf,
+void LAB_GuiListBox_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf,
                            int x, int y)
 {
     LAB_GuiListBox* cself = (LAB_GuiListBox*)self;
 
+    int s = mgr->scale;
+
     int cx = cself->state;
-    LAB_RenderRect(surf, x, y, self->w, self->h, cx, 0);
+    LAB_RenderRect(surf, s, s*x, s*y, s*self->w, s*self->h, cx, 0);
 
     if(cself->selected_element < cself->element_count)
     {
-        LAB_RenderRect(surf, x+3, y+3+cself->selected_element*LAB_GUI_LIST_BOX_ELEMENT_HEIGHT, self->w-6, LAB_GUI_LIST_BOX_ELEMENT_HEIGHT, 2, 0);
+        LAB_RenderRect(surf, s, s*(x+3), s*(y+3+cself->selected_element*LAB_GUI_LIST_BOX_ELEMENT_HEIGHT), s*(self->w-6), s*(LAB_GUI_LIST_BOX_ELEMENT_HEIGHT), 2, 0);
     }
 
     for(size_t i = 0; i < cself->element_count; ++i)
@@ -47,7 +49,7 @@ void LAB_GuiListBox_Render(LAB_GuiComponent* self, SDL_Surface* surf,
         if(!cself->text_surfs[i])
         {
             SDL_Color fg = { 255, 255, 255, 255 };
-            TTF_Font* ttf = LAB_GuiFont();
+            TTF_Font* ttf = mgr->button_font;
             if(!ttf) return;
             cself->text_surfs[i] = TTF_RenderUTF8_Blended(ttf, cself->elements[i], fg);
             if(!cself->text_surfs[i]) return;
@@ -55,10 +57,10 @@ void LAB_GuiListBox_Render(LAB_GuiComponent* self, SDL_Surface* surf,
 
         SDL_Rect dst;
 
-        dst.x = x + 5+1;
-        dst.y = y + 3 + i*LAB_GUI_LIST_BOX_ELEMENT_HEIGHT + (LAB_GUI_LIST_BOX_ELEMENT_HEIGHT-cself->text_surfs[i]->h)/2;
-        dst.w = cself->text_surfs[i]->w;
-        dst.h = cself->text_surfs[i]->h;
+        dst.x = s*(x + 5+1);
+        dst.y = s*(y + 3 + i*LAB_GUI_LIST_BOX_ELEMENT_HEIGHT) + (s*LAB_GUI_LIST_BOX_ELEMENT_HEIGHT-cself->text_surfs[i]->h)/2;
+        dst.w = s*cself->text_surfs[i]->w;
+        dst.h = s*cself->text_surfs[i]->h;
 
         SDL_BlitSurface(cself->text_surfs[i], NULL, surf, &dst);
     }

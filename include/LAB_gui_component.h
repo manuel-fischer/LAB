@@ -12,7 +12,7 @@
      *  Return 1 if component got dirty and needs to be rerendered \
      */ \
     bool (*on_event)(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Event* event); \
-    void (*render)(LAB_GuiComponent* self, SDL_Surface* surf, int x, int y); \
+    void (*render)(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf, int x, int y); \
     /** \
      *  Do not free the memory of the component itself \
      */ \

@@ -2,7 +2,7 @@
 
 #include "LAB_render_item.h"
 
-void LAB_GuiInventoryList_Render(LAB_GuiComponent* self, SDL_Surface* surf, int x, int y);
+void LAB_GuiInventoryList_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf, int x, int y);
 bool LAB_GuiInventoryList_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Event* event);
 
 void LAB_GuiInventoryList_Create(LAB_GuiInventoryList* lst,
@@ -34,9 +34,11 @@ void LAB_GuiInventoryList_Create_Columns(LAB_GuiInventoryList* lst,
     LAB_GuiInventoryList_Create(lst, x, y, w, h, inventory, inventory_user);
 }
 
-void LAB_GuiInventoryList_Render(LAB_GuiComponent* self, SDL_Surface* surf, int x, int y)
+void LAB_GuiInventoryList_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf, int x, int y)
 {
     LAB_GuiInventoryList* cself = (LAB_GuiInventoryList*)self;
+
+    int s = mgr->scale;
 
     size_t i = 0;
     size_t inv_size = cself->inventory->get_size(cself->inventory_user);
@@ -50,14 +52,14 @@ void LAB_GuiInventoryList_Render(LAB_GuiComponent* self, SDL_Surface* surf, int 
         cx = x+xi*LAB_SLOT_SIZE;
         cy = y+yi*LAB_SLOT_SIZE;
         int tx = cself->selected_slot == i ? 1 : 0;
-        LAB_RenderRect(surf, cx, cy, LAB_SLOT_SIZE, LAB_SLOT_SIZE, tx, 2);
+        LAB_RenderRect(surf, s, s*cx, s*cy, s*LAB_SLOT_SIZE, s*LAB_SLOT_SIZE, tx, 2);
         LAB_Block* b = cself->inventory->get_slot(cself->inventory_user, i);
         SDL_Surface* bsurf = LAB_RenderBlock2D(b);
 
         SDL_Rect dst_rect;
-        dst_rect.x = cx+LAB_SLOT_BORDER;
-        dst_rect.y = cy+LAB_SLOT_BORDER;
-        dst_rect.w = dst_rect.h = LAB_ITEM_SIZE;
+        dst_rect.x = s*(cx+LAB_SLOT_BORDER);
+        dst_rect.y = s*(cy+LAB_SLOT_BORDER);
+        dst_rect.w = dst_rect.h = s*LAB_ITEM_SIZE;
 
         //SDL_BlitSurface(bsurf, NULL, surf, &dst_rect);
         SDL_BlitScaled(bsurf, NULL, surf, &dst_rect);
