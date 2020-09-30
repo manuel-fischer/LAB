@@ -26,12 +26,14 @@ IXO_STRUCTDEF(LAB_Block,
 
 LAB_Block LAB_BLOCK_OUTSIDE = {
     .flags = LAB_BLOCK_OPAQUE,
-    .lum = LAB_RGB(255, 255, 255),
+    //.lum = LAB_RGB(255, 255, 255),
+    .dia = LAB_RGB(255, 255, 255),
 };
 
 
 LAB_Block LAB_BLOCK_AIR = {
     .flags = 0,
+    .dia = LAB_RGB(255, 255, 255),
 };
 
 
@@ -176,6 +178,16 @@ LAB_Block LAB_BLOCK_SAND = {
 };
 
 
+LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_LEAVES, 2, 2, LAB_RGB(20, 150, 40));
+LAB_Block LAB_BLOCK_LEAVES = {
+    .flags = (LAB_BLOCK_MASSIVE|LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL),
+    //.tint = LAB_RGB(20, 75, 10),
+    .tint = LAB_RGB(20, 150, 40),
+    .dia = LAB_RGB(130, 200, 130),
+    .tx = 2, 2,
+    .model = &LAB_MODEL_LEAVES,
+};
+
 LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_WOOD, 2, 0, LAB_RGB(93, 75, 60));
 LAB_Block LAB_BLOCK_WOOD = {
     .flags = LAB_BLOCK_SOLID,
@@ -275,11 +287,13 @@ LAB_Block LAB_BLOCK_RED_LIGHT = {
 LAB_Block LAB_BLOCK_INVISIBLE_LIGHT = {
     .flags = LAB_BLOCK_INTERACTABLE | LAB_BLOCK_EMISSIVE,
     .lum = LAB_RGB(255, 255, 255),
+    .dia = LAB_RGB(255, 255, 255),
     .model = &LAB_MODEL_LIGHT
 };
 
 LAB_Block LAB_BLOCK_BARRIER = {
     .flags = LAB_BLOCK_INTERACTABLE | LAB_BLOCK_MASSIVE,
+    .dia = LAB_RGB(255, 255, 255),
     .model = &LAB_MODEL_LIGHT_RED,
 };
 
@@ -303,6 +317,7 @@ LAB_Block* LAB_blocks_arr[] =
     &LAB_BLOCK_SANDBRICKS,
     &LAB_BLOCK_SMOOTHSAND,
     &LAB_BLOCK_SAND,
+    &LAB_BLOCK_LEAVES,
     &LAB_BLOCK_WOOD,
     &LAB_BLOCK_WOOD_PLANKS,
     &LAB_BLOCK_WOOD_PLANKS_DARK,

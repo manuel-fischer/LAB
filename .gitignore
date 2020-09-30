@@ -61,3 +61,6 @@ dkms.conf
 
 # Screenshots
 screenshots/scr-*
+
+# Debug output files
+dbg_*

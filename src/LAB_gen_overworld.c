@@ -3,13 +3,36 @@
 #include "LAB_opt.h"
 #include "LAB_noise.h"
 
+#include "LAB_gen_overworld_structures.h"
+
+#define LAB_MAX_STRUCTURE_SIZE 1 /*in chunks*/
+
 #include "LAB_simplex_noise.h"
 #include <math.h>
 
 #define SMTST(smth, prob, orig) ((smth) > (orig)-(prob)/2 && (smth) < (orig)+(prob)/2)
 
+#define LAB_GEN_DIRT_SALT        0x12345
+#define LAB_GEN_UNDERGROUND_SALT 0x54321
+#define LAB_GEN_CRYSTAL_SALT     0x98765
+
+//static void LAB_Gen_Surface(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
+static void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
+static int  LAB_Gen_Surface_Shape_Func(LAB_GenOverworld* gen, int x, int z);     // height
+static int  LAB_Gen_Surface_Populate(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
+static void LAB_Gen_Surface_Populate_Func(LAB_GenOverworld* gen, LAB_Placer* p, int cx, int cy, int cz);
+static void LAB_Gen_Cave(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
+static void LAB_Gen_Cave_Carve(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
+static bool LAB_Gen_Cave_Carve_Func(LAB_GenOverworld* gen, int x, int y, int z); // block is cave
+static void LAB_Gen_Cave_Crystals(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
+static void LAB_Gen_Cave_RockVariety(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
+
+
+
+
+
 LAB_HOT
-LAB_Chunk* LAB_GenOverworldProc(void* user, LAB_World* world, int x, int y, int z)
+LAB_Chunk* LAB_GenOverworldProc(void* user, /*unused*/LAB_World* world_, int x, int y, int z)
 {
     LAB_GenOverworld* gen = user;
 
@@ -17,60 +40,48 @@ LAB_Chunk* LAB_GenOverworldProc(void* user, LAB_World* world, int x, int y, int 
     LAB_Chunk* chunk = LAB_CreateChunk(block);
     if(!chunk) return NULL;
 
+    //LAB_Gen_Surface(gen, chunk, x, y, z);
 
-    static uint64_t noise[17*17*17];
-    static uint32_t smooth[16*16*16];
+    LAB_Gen_Surface_Shape(gen, chunk, x, y, z);
+    LAB_Gen_Cave(gen, chunk, x, y, z);
+    LAB_Gen_Surface_Populate(gen, chunk, x, y, z);
 
+    return chunk;
+}
+
+
+/*tatic void LAB_Gen_Surface(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y, int z)
+{
+    LAB_Gen_Surface_Shape(gen, chunk, x, y, z);
+    LAB_Gen_Surface_Populate(gen, chunk, x, y, z);
+}*/
+
+static void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y, int z)
+{
     LAB_Random random;
-    LAB_ChunkRandom(&random, gen->seed^0x12345, x, y, z);
+    LAB_ChunkRandom(&random, gen->seed^LAB_GEN_DIRT_SALT, x, y, z);
 
     if(y >= -2 && y <= -1)
     {
-        //LAB_ChunkNoise2D(noise, gen->seed, x, z);
-        //LAB_SmoothNoise2D(smooth, noise);
-
         for(int zz = 0; zz < 16; ++zz)
         for(int xx = 0; xx < 16; ++xx)
-        for(int yy = 0; yy < 16; ++yy)
+        for(int yy =15; yy >= 0; --yy)
         {
-            //printf("%uL\n", noise[xx+17*zz]&15);
-            uint64_t height = (15^yy)+16*(y+2);          // Range [0, 32)
-            //uint64_t sheight = smooth[xx|16*zz]>>(32-5); // Range [0, 32)
-            double xi = 16*x|xx;
-            double zi = 16*z|zz;
 
-            #define ML 0.001
-            //#define ML 0.01
-            #define MS 0.03
-            double large = (LAB_SimplexNoise2D(xi*0.001, zi*0.001)+1)*0.5;
-            #define fade(t) ((t)*(t)*(t)*((t)*((t)*6-15)+10))
-            #define sqr1(t) ((t)*(2-t))
-            #define sqr2(t) ((t)*(t))
-            double small = 0.70*(LAB_SimplexNoise2D(xi*MS*1, zi*MS*1)+1)*0.5
-                         + 0.20*(LAB_SimplexNoise2D(xi*MS*2, zi*MS*2)+1)*0.5
-                         + 0.10*(LAB_SimplexNoise2D(xi*MS*4, zi*MS*4)+1)*0.5;
-            //small = sqr1(sqr1(sqr1(small)));
-            double displacement = (large*large)*(large*large)*small;
-            displacement = sqr1(sqr1(sqr1(displacement)));
-            //displacement = fade(fade(displacement));
-            displacement = fade(displacement);
-            double base  = 0.50*(LAB_SimplexNoise2D(xi*ML*2+100, zi*ML*2+100)+1)*0.5
-                         + 0.50*(LAB_SimplexNoise2D(xi*ML*4+100, zi*ML*4+100)+1)*0.5;
-            double n = 0.50*displacement
-                     + 0.50*base*base*base;
-            //n = sqr1(sqr1(n));
-            //double n = large*small;
-            uint64_t sheight = (int)floor(n*31.); // Range [0, 32)
+            int xi = 16*x|xx;
+            int yi = 16*y|yy;
+            int zi = 16*z|zz;
+
+            int sheight = LAB_Gen_Surface_Shape_Func(gen, xi, zi);
 
             LAB_Block* b;
 
-            if(height == sheight)
+            if(yi == sheight)
                 b = &LAB_BLOCK_GRASS;
-            else if(height <= sheight)
+            else if(yi <= sheight)
             {
-                //if(rng.random() >= (2*height-(sheight>>))/(16+8))
                 uint64_t fact = 0x100000000ll/(32+16);
-                if((~LAB_NextRandom(&random)>>32) >= (2u*(32-height)-(32-sheight))*fact)
+                if((~LAB_NextRandom(&random)>>32) >= (2u*(-yi)-(-sheight))*fact)
                     b = &LAB_BLOCK_DIRT;
                 else
                     continue; // keep stone
@@ -78,161 +89,184 @@ LAB_Chunk* LAB_GenOverworldProc(void* user, LAB_World* world, int x, int y, int 
             else
                 b = &LAB_BLOCK_AIR;
 
-            chunk->blocks[LAB_CHUNK_OFFSET(xx, 15^yy, zz)] = b;
-            //if(rand() & 1)
-            //    chunk->blocks[LAB_CHUNK_OFFSET(xx, yy, zz)] = &LAB_BLOCK_GRASS;
-            //chunk->blocks[LAB_CHUNK_OFFSET(xx, 15^yy, zz)] = &LAB_BLOCK_GRASS;
-            //chunk->blocks[LAB_CHUNK_OFFSET(xx, 15^yy, zz)] = &LAB_BLOCK_COBBLESTONE;
-            /*if((rand() & 3) == 0) break;
-            if((rand() & 3) == 0) break;
-            if((rand() & 3) == 0) break;
-            if((rand() & 3) == 0) break;*/
+            chunk->blocks[LAB_CHUNK_OFFSET(xx, yy, zz)] = b;
         }
     }
-    //#define A -5
-    #define A -1
-    #ifdef A
-    if(y <= A)
-    #else
-    if(y <= 0)
-    #endif
-    //if(0)
+}
+
+
+static int LAB_Gen_Surface_Shape_Func(LAB_GenOverworld* gen, int xi, int zi)
+{
+    #define ML 0.001
+    #define MS 0.03
+    double large = (LAB_SimplexNoise2D(xi*0.001, zi*0.001)+1)*0.5;
+    #define fade(t) ((t)*(t)*(t)*((t)*((t)*6-15)+10))
+    #define sqr1(t) ((t)*(2-t))
+    #define sqr2(t) ((t)*(t))
+    double small = 0.70*(LAB_SimplexNoise2D(xi*MS*1, zi*MS*1)+1)*0.5
+                 + 0.20*(LAB_SimplexNoise2D(xi*MS*2, zi*MS*2)+1)*0.5
+                 + 0.10*(LAB_SimplexNoise2D(xi*MS*4, zi*MS*4)+1)*0.5;
+    double displacement = (large*large)*(large*large)*small;
+    displacement = sqr1(sqr1(sqr1(displacement)));
+    displacement = fade(displacement);
+    double base  = 0.50*(LAB_SimplexNoise2D(xi*ML*2+100, zi*ML*2+100)+1)*0.5
+                 + 0.50*(LAB_SimplexNoise2D(xi*ML*4+100, zi*ML*4+100)+1)*0.5;
+    double n = 0.50*displacement
+             + 0.50*base*base*base;
+    return (int)floor(n*31.)-32; // Range [0, 32)
+}
+
+
+
+
+static int  LAB_Gen_Surface_Populate(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz)
+{
+    for(int z = -LAB_MAX_STRUCTURE_SIZE; z <= LAB_MAX_STRUCTURE_SIZE; ++z)
+    for(int y = -LAB_MAX_STRUCTURE_SIZE; y <= LAB_MAX_STRUCTURE_SIZE; ++y)
+    for(int x = -LAB_MAX_STRUCTURE_SIZE; x <= LAB_MAX_STRUCTURE_SIZE; ++x)
     {
-        // Carve out
-        //LAB_ChunkNoise3D(noise, gen->seed, x, y, z);
-        //LAB_SmoothNoise3D(smooth, noise);
-        for(int zz = 0; zz < 16; ++zz)
+        LAB_Placer p;
+        p.chunk = chunk;
+        p.ox = -16*x;
+        p.oy = -16*y;
+        p.oz = -16*z;
+        LAB_Gen_Surface_Populate_Func(gen, &p, cx+x, cy+y, cz+z);
+    }
+}
+
+static void LAB_Gen_Surface_Populate_Func(LAB_GenOverworld* gen, LAB_Placer* p, int cx, int cy, int cz)
+{
+    LAB_Random rnd;
+    LAB_ChunkRandom(&rnd, gen->seed^0x13579, cx, cy, cz);
+    int count = LAB_NextRandom(&rnd)&7;
+    for(int i = 0; i < count; ++i)
+    {
+        int xz = LAB_NextRandom(&rnd);
+        int x = xz    & 15;
+        int z = xz>>4 & 15;
+
+        // absolute
+        int ay = 1+LAB_Gen_Surface_Shape_Func(gen, x|cx<<4, z|cz<<4);
+        if(ay >> 4 == cy)
         {
-            for(int yy = 0; yy < 16; ++yy)
-            {
-                #ifdef A
-                /*uint32_t threshold = y == A
-                                   ? 0x08000000ull*(15-yy)
-                                   : 0x80000000ull;*/
-                #else
-                uint32_t threshold = 0x80000000ull;
-                #endif
-                for(int xx = 0; xx < 16; ++xx)
-                {
-                    //if(noise[(xx+yy+zz)&0xccc|0x333] < 0x03000000)
-                    //if(smooth[xx+yy+zz] < 0x30000000)     '
-                    //printf("%x\n", smooth[xx+yy+zz]);
-                    //if(smooth[xx+yy+zz] < threshold/3 && smooth[xx+yy+zz] > 0x08000000)
-                    //if(smooth[xx+yy+zz] < threshold/2)
-                    double xi = x*16|xx;
-                    double yi = y*16|yy;
-                    double zi = z*16|zz;
-                    #if 0
-                    #define CM (1./32.)                    //double d = (LAB_SimplexNoise3D(xi*CM*1, yi*CM*1, zi*CM*1)+1)*0.5;
-                    double d = 0.50*(LAB_SimplexNoise3D(xi*CM*1, yi*CM*1, zi*CM*1)+1)*0.5
-                             + 0.30*(LAB_SimplexNoise3D(xi*CM*2, yi*CM*2, zi*CM*2)+1)*0.5
-                             + 0.20*(LAB_SimplexNoise3D(xi*CM*4, yi*CM*4, zi*CM*4)+1)*0.5;
-                    #else
-                    //#define CM (1./128.)
-                    //#define DM (1./32.)
-                    #if 0
-                    double d1 = 0.50*(LAB_SimplexNoise3D(xi*DM*1, yi*CM*1, zi*CM*1)+1)*0.5
-                              + 0.30*(LAB_SimplexNoise3D(xi*DM*2, yi*CM*2, zi*CM*2)+1)*0.5
-                              + 0.20*(LAB_SimplexNoise3D(xi*DM*4, yi*CM*4, zi*CM*4)+1)*0.5;
-                    double d2 = 0.50*(LAB_SimplexNoise3D(xi*CM*1, yi*CM*1, zi*DM*1)+1)*0.5
-                              + 0.30*(LAB_SimplexNoise3D(xi*CM*2, yi*CM*2, zi*DM*2)+1)*0.5
-                              + 0.20*(LAB_SimplexNoise3D(xi*CM*4, yi*CM*4, zi*DM*4)+1)*0.5;
-                    #endif
-                    #if 0
-                    //#define KM (1./20.)
-                    //#define KM (1./3.)
-                    #define KM (1./5.)
-                    double ox = 0; //LAB_SimplexNoise2D(xi*KM, zi*KM)*0.03;
-                    double oz = 0; //LAB_SimplexNoise2D(xi*KM, zi*KM+100)*0.03;
+            LAB_Placer p2;
+            p2.chunk = p->chunk;
+            p2.ox = p->ox - x;
+            p2.oy = p->oy - (ay&15);
+            p2.oz = p->oz - z;
 
-                    double d0 = (LAB_SimplexNoise3D(xi*CM+ox, 2*yi*CM, zi*CM+oz)+1)*0.5;
-
-                    double d1 = (LAB_SimplexNoise3D(xi*DM+ox, 2*yi*CM, zi*CM+oz)+1)*0.5;
-                    double d2 = (LAB_SimplexNoise3D(xi*CM+ox, 2*yi*CM, zi*DM+oz)+1)*0.5;
-                    double d3 = (LAB_SimplexNoise3D(xi*CM+ox, 2*yi*DM, zi*CM+oz)+1)*0.5;
-                    //double d = (d1+d2)*0.5;
-                    //double d = sqr2((d1+d2+d3)*(1./3.));
-                    double d = d1*(1-d3) + d2*d3+d0;
-                    //double d = d1*d2;
-                    if(d < 0.55)
-                    #endif
-
-                    #define CM (1./128.)
-                    #define DM (1./32.)
-                    #define KM (1./10.)
-                    double ox = LAB_SimplexNoise2D(xi*KM, zi*KM)*0.03;
-                    double oz = LAB_SimplexNoise2D(xi*KM, zi*KM+100)*0.03;
-
-                    double d0 = LAB_SimplexNoise3D(xi*CM+ox, 2*yi*CM, zi*CM+oz);
-
-                    double d1 = LAB_SimplexNoise3D(xi*DM+ox, 2*yi*CM, zi*CM+oz);
-                    double d2 = LAB_SimplexNoise3D(xi*CM+ox, 2*yi*CM, zi*DM+oz);
-                   // double d3 = LAB_SimplexNoise3D(xi*CM+ox, 2*yi*DM, zi*CM+oz);
-                    double d = d1*d1*d2*d2+d0*d0*2;//0.5;
-                    //double d = d1*d1*d2*d2+(d0+1)*0.5;
-                    //double d = d1*d1*d2*d2*(d3+1)*0.5+(d0*d0)*0.0005;
-
-                    //double treshold = 0.25-0.25/(double)(yi*yi+1);
-                    //double treshold = 1-1/(double)(yi*yi*0.00001+1);
-                    double treshold = 1-1/(double)(yi*yi*0.001+20)*20;
-                    if(d < treshold*0.2/**(0.5+0.5*(d3+1)*0.5)*/)
-                    #endif
-                    //if(d < (float)threshold/(float)((long long)256*256*256*256)/2)
-                    //if(d < 0.125)
-                    //if(d < 0.125)
-                    //if(!SMTST(smooth[xx+yy+zz], 0xffffffff^threshold, 0x80000000))
-                    {
-                        chunk->blocks[xx|yy<<4|zz<<8] = &LAB_BLOCK_AIR;
-                    }
-                }
-            }
+            LAB_Gen_Overworld_Tree(&p2, &rnd);
         }
+    }
+}
 
-        if((LAB_NextRandom(&random)&7) < 3)
+
+
+
+
+
+
+
+
+
+
+
+
+static void LAB_Gen_Cave(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y, int z)
+{
+    if(y <= -1)
+    {
+        // Underground Generation
+        LAB_Gen_Cave_Carve(gen, chunk, x, y, z);
+        LAB_Gen_Cave_Crystals(gen, chunk, x, y, z);
+        LAB_Gen_Cave_RockVariety(gen, chunk, x, y, z);
+    }
+}
+
+
+static void LAB_Gen_Cave_Carve(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y, int z)
+{
+    // Carve out caves
+    for(int zz = 0; zz < 16; ++zz)
+    for(int yy = 0; yy < 16; ++yy)
+    for(int xx = 0; xx < 16; ++xx)
+    {
+        double xi = x*16|xx;
+        double yi = y*16|yy;
+        double zi = z*16|zz;
+        if(LAB_Gen_Cave_Carve_Func(gen, xi, yi, zi))
+            chunk->blocks[xx|yy<<4|zz<<8] = &LAB_BLOCK_AIR;
+    }
+}
+
+static bool LAB_Gen_Cave_Carve_Func(LAB_GenOverworld* gen, int xi, int yi, int zi)
+{
+
+    #define CM (1./128.)
+    #define DM (1./32.)
+    #define KM (1./10.)
+    double ox = LAB_SimplexNoise2D(xi*KM, zi*KM)*0.03;
+    double oz = LAB_SimplexNoise2D(xi*KM, zi*KM+100)*0.03;
+
+    double d0 = LAB_SimplexNoise3D(xi*CM+ox, 2*yi*CM, zi*CM+oz);
+
+    double d1 = LAB_SimplexNoise3D(xi*DM+ox, 2*yi*CM, zi*CM+oz);
+    double d2 = LAB_SimplexNoise3D(xi*CM+ox, 2*yi*CM, zi*DM+oz);
+
+    double d = d1*d1*d2*d2+d0*d0*2;
+
+    double treshold = 1-1/(double)(abs(yi)*32*0.001+20)*20;
+    return d < treshold*0.2;
+}
+
+static void LAB_Gen_Cave_Crystals(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y, int z)
+{
+    LAB_Random random;
+    LAB_ChunkRandom(&random, gen->seed^LAB_GEN_CRYSTAL_SALT, x, y, z);
+
+    // Less probability that crystals generate at the top
+    int amount = LAB_MIN(-2*y, 100);
+
+    if((LAB_NextRandom(&random)&255) < amount)
+    {
+        for(int i = LAB_NextRandom(&random)&15; i > 0; --i)
         {
-            for(int i = LAB_NextRandom(&random)&15; i > 0; --i)
+            LAB_Block*const LIGHTS[4] = { &LAB_BLOCK_BLUE_LIGHT, &LAB_BLOCK_YELLOW_LIGHT, &LAB_BLOCK_GREEN_LIGHT, &LAB_BLOCK_RED_LIGHT };
+
+            LAB_Block* light = LIGHTS[LAB_NextRandom(&random)&3];
+            int xx = LAB_NextRandom(&random) & 0xf;
+            int zz = LAB_NextRandom(&random) & 0xf;
+            int yy;
+            for(yy = 0; yy < 16; ++yy)
+                if(chunk->blocks[xx+16*yy+16*16*zz] == &LAB_BLOCK_STONE)
+                    break;
+            if(yy == 16) continue;
+
+            int h = (LAB_NextRandom(&random)&3)+2;
+            for(--yy; yy >= 0 && h > 0; --yy, --h)
             {
-                LAB_Block*const LIGHTS[4] = { &LAB_BLOCK_BLUE_LIGHT, &LAB_BLOCK_YELLOW_LIGHT, &LAB_BLOCK_GREEN_LIGHT, &LAB_BLOCK_RED_LIGHT };
-
-                LAB_Block* light = LIGHTS[LAB_NextRandom(&random)&3];
-                int xx = LAB_NextRandom(&random) & 0xf;
-                int zz = LAB_NextRandom(&random) & 0xf;
-                int yy;
-                for(yy = 0; yy < 16; ++yy)
-                    if(chunk->blocks[xx+16*yy+16*16*zz] == &LAB_BLOCK_STONE)
-                        break;
-                if(yy == 16) continue;
-
-                int h = (LAB_NextRandom(&random)&3)+2;
-                for(--yy; yy >= 0 && h > 0; --yy, --h)
-                {
-                    chunk->blocks[xx+16*yy+16*16*zz] = light;
-                }
+                chunk->blocks[xx+16*yy+16*16*zz] = light;
             }
         }
     }
+}
 
+
+static void LAB_Gen_Cave_RockVariety(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y, int z)
+{
+    static uint64_t noise[17*17*17];
+    static uint32_t smooth[16*16*16];
 
     LAB_ChunkNoise3D(noise, gen->seed^0x12345, x, y, z);
     LAB_SmoothNoise3D(smooth, noise);
     for(int zz = 0; zz < 16*16*16; zz+=16*16)
+    for(int yy = 0; yy < 16*16;    yy+=16)
+    for(int xx = 0; xx < 16;       xx++)
     {
-        for(int yy = 0; yy < 16*16;    yy+=16)
+        uint32_t n = smooth[xx|yy|zz];
+        if(SMTST(n, 0x20000000, 0x80000000) && chunk->blocks[xx|yy|zz] == &LAB_BLOCK_STONE)
         {
-            for(int xx = 0; xx < 16;       xx++)
-            {
-                //if(noise[(xx+yy+zz)&0xccc|0x333] < 0x03000000)
-                //if(smooth[xx+yy+zz] < 0x30000000)     '
-                //printf("%x\n", smooth[xx+yy+zz]);
-                uint32_t n = smooth[xx+yy+zz];
-                if(SMTST(n, 0x20000000, 0x80000000) && chunk->blocks[xx+yy+zz] == &LAB_BLOCK_STONE)
-                {
-                    chunk->blocks[xx+yy+zz] = &LAB_BLOCK_MARBLE;
-                }
-            }
+            chunk->blocks[xx|yy|zz] = &LAB_BLOCK_MARBLE;
         }
     }
-
-
-    return chunk;
 }

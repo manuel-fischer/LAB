@@ -772,10 +772,17 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
     glShadeModel(GL_SMOOTH);
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
+    glEnable(GL_ALPHA_TEST);
+    //glAlphaFunc(GL_GEQUAL, 1/255.f);
+    glAlphaFunc(GL_GEQUAL, 32/255.f);
+    //glAlphaFunc(GL_GEQUAL, 64/255.f);
+
+
     LAB_ViewRenderChunks(view);
     LAB_View_OrderQueryChunks(view);
 
     // TODO: remove this
+    glDisable(GL_ALPHA_TEST);
     glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 

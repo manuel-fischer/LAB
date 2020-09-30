@@ -421,6 +421,7 @@ static LAB_Color LAB_CalcLight(LAB_World* world, LAB_Chunk*const chunks[27], int
     int off = LAB_CHUNK_OFFSET(x, y, z);
     if(!(cnk->blocks[off]->flags & LAB_BLOCK_OPAQUE))
     {
+        LAB_Color dia = cnk->blocks[off]->dia;
         lum = LAB_RGB(16, 16, 16);
         for(int i = 0; i < 6; ++i)
         {
@@ -436,7 +437,7 @@ static LAB_Color LAB_CalcLight(LAB_World* world, LAB_Chunk*const chunks[27], int
                 if(i!=3 || (nlum&0xffffff) != 0xffffff)
                     nlum = nlum - (nlum>>2 & 0x3f3f3f);
             }
-            lum = LAB_MaxColor(lum, nlum);
+            lum = LAB_MaxColor(lum, LAB_MulColor(nlum, dia));
         }
     }
     else
@@ -502,34 +503,7 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, 
         for(int x = 0; x < 16; ++x)
         {
             int off = LAB_CHUNK_OFFSET(x, y, z);
-
-            LAB_Color lum;
-            //lum = LAB_RGB(16, 16, 16);
-            //lum = LAB_GetNeighborhoodBlock(chunks, x,y,z)->lum;
-            if(!(cnk->blocks[off]->flags & LAB_BLOCK_OPAQUE))
-            {
-                lum = LAB_RGB(16, 16, 16);
-                for(int i = 0; i < 6; ++i)
-                {
-                    const int* o = LAB_offset[i];
-                    int nlum;
-
-                    LAB_Block* block = LAB_GetNeighborhoodBlock(chunks, x+o[0], y+o[1], z+o[2]);
-                    if(block->flags & LAB_BLOCK_EMISSIVE)
-                        nlum = block->lum;
-                    else
-                    {
-                        nlum = LAB_GetNeighborhoodLight(chunks, x+o[0], y+o[1], z+o[2], default_color);
-                        if(i!=3 || (nlum&0xffffff) != 0xffffff)
-                            nlum = nlum - (nlum>>2 & 0x3f3f3f);
-                    }
-                    lum = LAB_MaxColor(lum, nlum);
-                }
-            }
-            else
-            {
-                lum = LAB_GetNeighborhoodBlock(chunks, x,y,z)->lum;
-            }
+            LAB_Color lum = LAB_CalcLight(world, chunks, x, y, z, default_color);
             if(cnk->light[off] != lum)
             {
                 cnk->light[off] = lum;
