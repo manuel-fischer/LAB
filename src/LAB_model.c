@@ -1,6 +1,11 @@
 #include "LAB_model.h"
 #include "LAB_bits.h"
 
+static int LAB_FaceSetToLightIndex(int face)
+{
+    return face ? LAB_Ctz(face) : 6;
+}
+
 int LAB_PutModelAt(LAB_OUT LAB_Triangle* dst, LAB_Model const* model,
                    float x, float y, float z, unsigned faces)
 {
@@ -40,7 +45,7 @@ int LAB_PutModelShadedAt(LAB_OUT LAB_Triangle* dst, LAB_Model const* model,
             dst->v[0].x += x; dst->v[0].y += y; dst->v[0].z += z;
             dst->v[1].x += x; dst->v[1].y += y; dst->v[1].z += z;
             dst->v[2].x += x; dst->v[2].y += y; dst->v[2].z += z;
-            unsigned light = LAB_Ctz(LAB_TRIANGLE_LIGHT(*src));
+            unsigned light = LAB_FaceSetToLightIndex(LAB_TRIANGLE_LIGHT(*src));
             // Nightvision: LAB_OversaturateColor light_sides[light]
             dst->v[0].color = LAB_MulColor_Fast(dst->v[0].color, light_sides[light]);
             dst->v[1].color = LAB_MulColor_Fast(dst->v[1].color, light_sides[light]);
@@ -70,7 +75,7 @@ int LAB_PutModelSmoothShadedAt(LAB_OUT LAB_Triangle* dst,
             dst->v[0].x += x; dst->v[0].y += y; dst->v[0].z += z;
             dst->v[1].x += x; dst->v[1].y += y; dst->v[1].z += z;
             dst->v[2].x += x; dst->v[2].y += y; dst->v[2].z += z;
-            unsigned light = LAB_Ctz(LAB_TRIANGLE_LIGHT(*src));
+            unsigned light = LAB_FaceSetToLightIndex(LAB_TRIANGLE_LIGHT(*src));
             // Nightvision: LAB_OversaturateColor light_sides[light]
             for(int i = 0; i < 3; ++i)
             {

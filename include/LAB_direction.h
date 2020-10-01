@@ -12,3 +12,5 @@
 #define LAB_DIR_U  8
 #define LAB_DIR_N 16
 #define LAB_DIR_S 32
+
+#define LAB_DIR_ALL 63

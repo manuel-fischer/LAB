@@ -19,7 +19,7 @@
 //static void LAB_Gen_Surface(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
 static void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
 static int  LAB_Gen_Surface_Shape_Func(LAB_GenOverworld* gen, int x, int z);     // height
-static int  LAB_Gen_Surface_Populate(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
+static void LAB_Gen_Surface_Populate(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
 static void LAB_Gen_Surface_Populate_Func(LAB_GenOverworld* gen, LAB_Placer* p, int cx, int cy, int cz);
 static void LAB_Gen_Cave(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
 static void LAB_Gen_Cave_Carve(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
@@ -50,7 +50,7 @@ LAB_Chunk* LAB_GenOverworldProc(void* user, /*unused*/LAB_World* world_, int x, 
 }
 
 
-/*tatic void LAB_Gen_Surface(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y, int z)
+/*static void LAB_Gen_Surface(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y, int z)
 {
     LAB_Gen_Surface_Shape(gen, chunk, x, y, z);
     LAB_Gen_Surface_Populate(gen, chunk, x, y, z);
@@ -119,7 +119,7 @@ static int LAB_Gen_Surface_Shape_Func(LAB_GenOverworld* gen, int xi, int zi)
 
 
 
-static int  LAB_Gen_Surface_Populate(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz)
+static void LAB_Gen_Surface_Populate(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz)
 {
     for(int z = -LAB_MAX_STRUCTURE_SIZE; z <= LAB_MAX_STRUCTURE_SIZE; ++z)
     for(int y = -LAB_MAX_STRUCTURE_SIZE; y <= LAB_MAX_STRUCTURE_SIZE; ++y)
@@ -138,7 +138,11 @@ static void LAB_Gen_Surface_Populate_Func(LAB_GenOverworld* gen, LAB_Placer* p, 
 {
     LAB_Random rnd;
     LAB_ChunkRandom(&rnd, gen->seed^0x13579, cx, cy, cz);
-    int count = LAB_NextRandom(&rnd)&7;
+
+    int count;
+
+    // place plant groups
+    count = 7+(LAB_NextRandom(&rnd)&63);
     for(int i = 0; i < count; ++i)
     {
         int xz = LAB_NextRandom(&rnd);
@@ -147,7 +151,31 @@ static void LAB_Gen_Surface_Populate_Func(LAB_GenOverworld* gen, LAB_Placer* p, 
 
         // absolute
         int ay = 1+LAB_Gen_Surface_Shape_Func(gen, x|cx<<4, z|cz<<4);
-        if(ay >> 4 == cy)
+        if(ay >> 4 == cy && !LAB_Gen_Cave_Carve_Func(gen, x|cx<<4, ay-1, z|cz<<4))
+        {
+            LAB_Placer p2;
+            p2.chunk = p->chunk;
+            p2.ox = p->ox - x;
+            p2.oy = p->oy - (ay&15);
+            p2.oz = p->oz - z;
+
+            LAB_Block* plant = LAB_NextRandom(&rnd)&1 ? &LAB_BLOCK_TALLGRASS : &LAB_BLOCK_TALLERGRASS;
+
+            LAB_Placer_SetBlock(&p2, 0, 0, 0, plant);
+        }
+    }
+
+    // place trees
+    count = LAB_NextRandom(&rnd)&3;
+    for(int i = 0; i < count; ++i)
+    {
+        int xz = LAB_NextRandom(&rnd);
+        int x = xz    & 15;
+        int z = xz>>4 & 15;
+
+        // absolute
+        int ay = 1+LAB_Gen_Surface_Shape_Func(gen, x|cx<<4, z|cz<<4);
+        if(ay >> 4 == cy && !LAB_Gen_Cave_Carve_Func(gen, x|cx<<4, ay-1, z|cz<<4))
         {
             LAB_Placer p2;
             p2.chunk = p->chunk;
@@ -156,6 +184,27 @@ static void LAB_Gen_Surface_Populate_Func(LAB_GenOverworld* gen, LAB_Placer* p, 
             p2.oz = p->oz - z;
 
             LAB_Gen_Overworld_Tree(&p2, &rnd);
+        }
+    }
+
+    // place buildings
+    if((LAB_NextRandom(&rnd)&31) == 0)
+    {
+        int xz = LAB_NextRandom(&rnd);
+        int x = xz    & 15;
+        int z = xz>>4 & 15;
+
+        // absolute
+        int ay = 1+LAB_Gen_Surface_Shape_Func(gen, x|cx<<4, z|cz<<4);
+        if(ay >> 4 == cy && !LAB_Gen_Cave_Carve_Func(gen, x|cx<<4, ay-1, z|cz<<4))
+        {
+            LAB_Placer p2;
+            p2.chunk = p->chunk;
+            p2.ox = p->ox - x;
+            p2.oy = p->oy - (ay&15);
+            p2.oz = p->oz - z;
+
+            LAB_Gen_Overworld_Tower(&p2, &rnd);
         }
     }
 }

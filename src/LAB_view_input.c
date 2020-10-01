@@ -419,7 +419,7 @@ static int LAB_ViewInputInteract(LAB_ViewInput* view_input, int right)
         }
         else
         {
-            if(!(view_input->flags&LAB_VIEWINPUT_NOCLIP)
+            if(!(view_input->flags&LAB_VIEWINPUT_NOCLIP) && (view_input->selected_block->flags&LAB_BLOCK_MASSIVE)
                &&  prev[0]==(int)floorf(view->x)
                && (prev[1]==(int)floorf(view->y) || prev[1]==(int)floorf(view->y)-1)
                &&  prev[2]==(int)floorf(view->z)) return 0;

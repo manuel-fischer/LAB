@@ -53,7 +53,6 @@ bool LAB_ConstructView(LAB_View* view, LAB_World* world)
     memset(view, 0, sizeof *view);
     view->world = world;
 
-    view->ax = 22;
     view->y = 1.5;
 
     LAB_FpsGraph_Create(&view->fps_graph);
@@ -180,16 +179,19 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
     faces |= 32*(!(GET_BLOCK_FLAGS( 0, 0, 1)&LAB_BLOCK_OPAQUE));
     if(faces == 0) return;
 
+    int lum_faces = 63; // all
+
     #define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?LAB_HighColor2(x):(x))
     if((view->flags&LAB_VIEW_FLAT_SHADE)||(block->flags&LAB_BLOCK_FLAT_SHADE))
     {
-        LAB_Color light_sides[6];
-        for(int face_itr=faces; face_itr; face_itr &= face_itr-1)
+        LAB_Color light_sides[7];
+        for(int face_itr=lum_faces; face_itr; face_itr &= face_itr-1)
         {
             int face = LAB_Ctz(face_itr);
             const int* o = LAB_offset[face];
             light_sides[face] = MAP_LIGHT(LAB_GetNeighborhoodLight(cnk3x3x3, x+o[0], y+o[1], z+o[2], LAB_RGB(255, 255, 255)));
         }
+        light_sides[6] = LAB_GetNeighborhoodLight(cnk3x3x3, x, y, z, LAB_RGB(255, 255, 255));
 
 
         const LAB_Model* model = block->model;
@@ -202,8 +204,8 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
     }
     else
     {
-        LAB_Color light_sides[6][4];
-        for(int face_itr=faces; face_itr; face_itr &= face_itr-1)
+        LAB_Color light_sides[7][4];
+        for(int face_itr=lum_faces; face_itr; face_itr &= face_itr-1)
         {
             int face = LAB_Ctz(face_itr);
             const int* o = LAB_offset[face];
@@ -248,6 +250,11 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
 
             #undef XX
         }
+
+        light_sides[6][0] =
+        light_sides[6][1] =
+        light_sides[6][2] =
+        light_sides[6][3] = LAB_GetNeighborhoodLight(cnk3x3x3, x, y, z, LAB_RGB(255, 255, 255));
 
 
         const LAB_Model* model = block->model;
@@ -425,7 +432,7 @@ static void LAB_View_OrderQueryChunks(LAB_View* view)
                 //int probability_update = 255;
 
                 int r = rand()&0xff;
-                if((entry->do_query && r <= 255) || r <= probability_update)
+                if((entry->do_query && r <= 255) )//|| r <= probability_update)
                 {
                     entry->do_query = 0;
                     LAB_View_OrderQueryChunk(view, entry);
@@ -1148,6 +1155,7 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
                             entry = LAB_ViewNewChunkEntry(view, xx, yy, zz);
                             if(entry == NULL) return; // NO MEMORY
                             entry->dirty = ~0;
+                            entry->visible = 1;
                             --load_amount;
                         }
                         if(!entry->exist)

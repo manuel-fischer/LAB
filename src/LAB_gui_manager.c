@@ -20,7 +20,7 @@ bool LAB_GuiManager_Create(LAB_GuiManager* mgr)
     mgr->title_font     = TTF_OpenFont("fonts/DejaVuSans.ttf", 15*mgr->scale);
     if(!mgr->title_font)  return 0;
 
-    mgr->mono_font      = TTF_OpenFont("fonts/DejaVuSansMono.ttf", 13*mgr->scale);
+    mgr->mono_font      = TTF_OpenFont("fonts/DejaVuSansMono.ttf", 11*mgr->scale); // 13
     if(!mgr->mono_font)   return 0;
 
     return 1;
