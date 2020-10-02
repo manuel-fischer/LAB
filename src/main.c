@@ -105,18 +105,30 @@ int main(int argc, char** argv) {
         ///*if(itr%20 == 0)*/ printf("%i fps          \r", 1000/delta_ms);
         time_ms = time2_ms;
 
-        //    uint32_t t0 = SDL_GetTicks();
+        #if 1
         LAB_ViewInputTick(&view_input, delta_ms);
-        //    uint32_t t1 = SDL_GetTicks();
         LAB_WorldTick(&the_world, delta_ms);
-        //    uint32_t t2 = SDL_GetTicks();
         LAB_ViewTick(&view, delta_ms);
-        //    uint32_t t3 = SDL_GetTicks();
-        //if(itr%16==0)
-        //{
-        //    printf("ViewInput %i\nWorld %i\nView %i\n\n", (int)t1-t0, (int)t2-t1, (int)t3-t2);
-        //}
+        #else
+            uint64_t t0 = LAB_NanoSeconds();
+        LAB_ViewInputTick(&view_input, delta_ms);
+            uint64_t t1 = LAB_NanoSeconds();
+        LAB_WorldTick(&the_world, delta_ms);
+            uint64_t t2 = LAB_NanoSeconds();
+        LAB_ViewTick(&view, delta_ms);
+            uint64_t t3 = LAB_NanoSeconds();
+
+        uint64_t d_01, d_12, d_23;
+        d_01 = t1-t0;
+        d_12 = t2-t1;
+        d_23 = t3-t2;
+
+        if(itr%16==0)
+        {
+            printf("ViewInput %i\nWorld %i\nView %i\n\n", (int)d_01, (int)d_12, (int)d_23);
+        }
         //printf("%i\r", the_world.chunks.size);
+        #endif
     }
 
 

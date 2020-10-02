@@ -37,8 +37,10 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
 static void LAB_ViewRenderChunks(LAB_View* view);
 static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
 static bool LAB_View_HasChunkVisibleNeighbors(LAB_View* view, int x, int y, int z);
+#if !LAB_VIEW_QUERY_IMMEDIATELY
 static void LAB_View_FetchQueryChunks(LAB_View* view);
 static void LAB_View_FetchQueryChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
+#endif
 static void LAB_View_OrderQueryChunks(LAB_View* view);
 static void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
 static void LAB_ViewRemoveDistantChunks(LAB_View* view);
@@ -107,7 +109,7 @@ bool LAB_ViewChunkKeepProc(void* user, LAB_World* world, int x, int y, int z)
     int dy = y-py;
     int dz = z-pz;
     unsigned int dist = dx*dx+dy*dy+dz*dz;
-    return dist <= view->keep_dist*view->keep_dist;
+    return dist <= view->keep_dist*view->keep_dist+3;
 }
 
 
@@ -150,6 +152,7 @@ static void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chun
 }
 
 
+// TODO move to world
 LAB_HOT LAB_INLINE
 LAB_BlockFlags LAB_GetNeighborhoodBlockFlags(LAB_Chunk* neighborhood[27], int x, int y, int z)
 {
@@ -181,17 +184,19 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
 
     int lum_faces = 63; // all
 
-    #define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?LAB_HighColor2(x):(x))
+    //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?LAB_HighColor2(x):(x))
+    //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?LAB_MixColor50(x, ~0):(x))
+    #define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor(LAB_MulColor(~(x), ~(x)), LAB_MulColor(~(x), ~(x))):(x))
     if((view->flags&LAB_VIEW_FLAT_SHADE)||(block->flags&LAB_BLOCK_FLAT_SHADE))
     {
         LAB_Color light_sides[7];
         for(int face_itr=lum_faces; face_itr; face_itr &= face_itr-1)
         {
             int face = LAB_Ctz(face_itr);
-            const int* o = LAB_offset[face];
-            light_sides[face] = MAP_LIGHT(LAB_GetNeighborhoodLight(cnk3x3x3, x+o[0], y+o[1], z+o[2], LAB_RGB(255, 255, 255)));
+            //const int* o = LAB_offset[face];
+            light_sides[face] = MAP_LIGHT(LAB_GetNeighborhoodLight(cnk3x3x3, x+LAB_OX(face), y+LAB_OY(face), z+LAB_OZ(face), LAB_RGB(255, 255, 255)));
         }
-        light_sides[6] = LAB_GetNeighborhoodLight(cnk3x3x3, x, y, z, LAB_RGB(255, 255, 255));
+        light_sides[6] = MAP_LIGHT(LAB_GetNeighborhoodLight(cnk3x3x3, x, y, z, LAB_RGB(255, 255, 255)));
 
 
         const LAB_Model* model = block->model;
@@ -208,23 +213,26 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
         for(int face_itr=lum_faces; face_itr; face_itr &= face_itr-1)
         {
             int face = LAB_Ctz(face_itr);
-            const int* o = LAB_offset[face];
+            //const int* o = LAB_offset[face];
+            int ox = LAB_OX(face);
+            int oy = LAB_OY(face);
+            int oz = LAB_OZ(face);
 
-            #define XX(xd, yd, zd) LAB_GetNeighborhoodLight(cnk3x3x3, x+o[0]+(xd), y+o[1]+(yd), z+o[2]+(zd), LAB_RGB(16, 16, 16))
-            int ax = LAB_offsetA[face>>1][0];
-            int ay = LAB_offsetA[face>>1][1];
-            int az = LAB_offsetA[face>>1][2];
-            int bx = LAB_offsetB[face>>1][0];
-            int by = LAB_offsetB[face>>1][1];
-            int bz = LAB_offsetB[face>>1][2];
+            #define XX(xd, yd, zd) LAB_GetNeighborhoodLight(cnk3x3x3, x+ox+(xd), y+oy+(yd), z+oz+(zd), LAB_RGB(16, 16, 16))
+            int ax = LAB_AX(face>>1); // LAB_offsetA[face>>1][0];
+            int ay = LAB_AY(face>>1); // LAB_offsetA[face>>1][1];
+            int az = LAB_AZ(face>>1); // LAB_offsetA[face>>1][2];
+            int bx = LAB_BX(face>>1); // LAB_offsetB[face>>1][0];
+            int by = LAB_BY(face>>1); // LAB_offsetB[face>>1][1];
+            int bz = LAB_BZ(face>>1); // LAB_offsetB[face>>1][2];
 
             LAB_Color tmp[9];
             for(int v = -1; v <= 1; ++v)
             for(int u = -1; u <= 1; ++u)
             {
                 int index = 3*(1+v) + 1+u;
-                if(v && u && (GET_BLOCK_FLAGS(     v*bx+o[0],      v*by+o[1],      v*bz+o[2])&LAB_BLOCK_OPAQUE)
-                          && (GET_BLOCK_FLAGS(u*ax     +o[0], u*ay     +o[1], u*az     +o[2])&LAB_BLOCK_OPAQUE))
+                if(v && u && (GET_BLOCK_FLAGS(     v*bx+ox,      v*by+oy,      v*bz+oz)&LAB_BLOCK_OPAQUE)
+                          && (GET_BLOCK_FLAGS(u*ax     +ox, u*ay     +oy, u*az     +oz)&LAB_BLOCK_OPAQUE))
                 {
                     //tmp[index] = LAB_MinColor(LAB_MaxColor(
                     //                XX(     v*bx,      v*by,      v*bz),
@@ -254,7 +262,7 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
         light_sides[6][0] =
         light_sides[6][1] =
         light_sides[6][2] =
-        light_sides[6][3] = LAB_GetNeighborhoodLight(cnk3x3x3, x, y, z, LAB_RGB(255, 255, 255));
+        light_sides[6][3] = MAP_LIGHT(LAB_GetNeighborhoodLight(cnk3x3x3, x, y, z, LAB_RGB(255, 255, 255)));
 
 
         const LAB_Model* model = block->model;
@@ -262,7 +270,7 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
         LAB_Triangle* tri;
         tri = LAB_ViewMeshAlloc(chunk_entry, model->size, 0);
         if(LAB_UNLIKELY(tri == NULL)) return;
-        int count = LAB_PutModelSmoothShadedAt(tri, model, x, y, z, faces, light_sides);
+        int count = LAB_PutModelSmoothShadedAt(tri, model, x, y, z, faces, (const LAB_Color(*)[4])light_sides);
         chunk_entry->mesh_count -= model->size-count;
     }
 
@@ -311,38 +319,80 @@ static void LAB_ViewUploadVBO(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
     glBufferData(GL_ARRAY_BUFFER, chunk_entry->mesh_count*sizeof *mesh, mesh, GL_DYNAMIC_DRAW);
 }
 
+static bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
+{
+    if(!LAB_View_IsChunkInSight(view, chunk_entry->x, chunk_entry->y, chunk_entry->z))
+        return 0;
+
+    // TODO enshure light update after at most 1 sec
+    if(     (chunk_entry->dirty&LAB_CHUNK_UPDATE_LOCAL)
+        || ((chunk_entry->dirty&LAB_CHUNK_UPDATE_LIGHT) && (rand()&0x1f)==0) )
+    {
+        bool chunk_available = LAB_ViewBuildMesh(view, chunk_entry, view->world);
+        if(!chunk_available)
+        {
+            //chunk_entry->dirty = ~0;
+            chunk_entry->exist =  0;
+            //printf("FAILED to build mesh for %i %i %i\n", chunk_entry->x, chunk_entry->y, chunk_entry->z);
+            return 0;
+        }
+        chunk_entry->dirty = 0;
+        chunk_entry->exist = 1;
+        chunk_entry->upload_vbo = 1;
+
+        if(view->flags & LAB_VIEW_USE_VBO)
+            LAB_ViewUploadVBO(view, chunk_entry);
+
+        return 1;
+    }
+    return 0;
+}
+
+static void LAB_ViewBuildChunks(LAB_View* view)
+{
+    unsigned rest_update = view->max_update;
+
+    int px = LAB_Sar((int)floorf(view->x), LAB_CHUNK_SHIFT);
+    int py = LAB_Sar((int)floorf(view->y), LAB_CHUNK_SHIFT);
+    int pz = LAB_Sar((int)floorf(view->z), LAB_CHUNK_SHIFT);
+
+
+    int dist_sq = view->render_dist*view->render_dist + 3;
+    for(size_t i = 0; i < view->chunk_count && rest_update; ++i)
+    {
+        int cx, cy, cz;
+        cx = view->chunks[i].x;
+        cy = view->chunks[i].y;
+        cz = view->chunks[i].z;
+        if((cx-px)*(cx-px) + (cy-py)*(cy-py) + (cz-pz)*(cz-pz) <= dist_sq
+           && view->chunks[i].visible)
+            rest_update -= LAB_ViewBuildChunk(view, &view->chunks[i]);
+    }
+}
+
 static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 {
     if(!LAB_View_IsChunkInSight(view, chunk_entry->x, chunk_entry->y, chunk_entry->z))
         return;
 
-    // TODO enshure light update after at most 1 sec
-    if(view->rest_update && ( (chunk_entry->dirty&2) || ((chunk_entry->dirty&1) && (rand()&0x1f)==0) ))
-    {
-        bool chunk_available = LAB_ViewBuildMesh(view, chunk_entry, view->world);
-        if(!chunk_available)
-        {
-            chunk_entry->dirty = ~0;
-            chunk_entry->exist =  0;
-            return;
-        }
-        chunk_entry->dirty = 0;
-        chunk_entry->exist = 1;
-        view->rest_update--;
+    if(!chunk_entry->exist)
+        return;
 
-        if(view->flags & LAB_VIEW_USE_VBO)
-            LAB_ViewUploadVBO(view, chunk_entry);
-    }
-    else
+    if(chunk_entry->mesh_count == 0) return;
+
+    if(view->flags & LAB_VIEW_USE_VBO)
     {
-        if(view->flags & LAB_VIEW_USE_VBO)
+        if(chunk_entry->upload_vbo)
+        {
+            chunk_entry->upload_vbo = 0;
+            LAB_ViewUploadVBO(view, chunk_entry);
+        }
+        else
         {
             if(!chunk_entry->vbo) return;
             glBindBuffer(GL_ARRAY_BUFFER, chunk_entry->vbo);
         }
     }
-
-    if(chunk_entry->mesh_count == 0) return;
 
     glPushMatrix();
     glTranslatef(LAB_CHUNK_SIZE*chunk_entry->x, LAB_CHUNK_SIZE*chunk_entry->y, LAB_CHUNK_SIZE*chunk_entry->z);
@@ -375,17 +425,20 @@ static void LAB_View_FetchQueryChunks(LAB_View* view)
             LAB_View_FetchQueryChunk(view, entry);
     }
 }
-#endif
 
 static void LAB_View_FetchQueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
 {
-    unsigned visible = 1;
+    unsigned visible = 2;
     glGetQueryObjectuiv(entry->query_id, GL_QUERY_RESULT, &visible);
-    entry->visible = visible;
+    LAB_ASSUME(visible < 2); // either 0 or 1
+    entry->visible = !!visible;
+    //entry->visible = 1; // DBG
 
     glDeleteQueries(1, &entry->query_id); LAB_GL_DEBUG_FREE(1);
     entry->query_id = 0;
+    LAB_GL_CHECK();
 }
+#endif
 
 
 
@@ -407,17 +460,10 @@ static void LAB_View_OrderQueryChunks(LAB_View* view)
         int c_dist_sq = (cx-px)*(cx-px) + (cy-py)*(cy-py) + (cz-pz)*(cz-pz);
 
 
-        if(c_dist_sq <= 1*1+3)
+        if(c_dist_sq <= 1*1+1*1+1*1)
             entry->visible = 1;
         else if(c_dist_sq <= dist_sq)
         {
-            #if 0
-            if(entry->do_query || LAB_View_HasChunkVisibleNeighbors(view, cx, cy, cz))
-            {
-                entry->do_query = 0;
-                LAB_View_QueryChunk(view, entry);
-            }
-            #else
             if(!LAB_View_HasChunkVisibleNeighbors(view, cx, cy, cz))
             {
                 entry->do_query = 0;
@@ -425,33 +471,21 @@ static void LAB_View_OrderQueryChunks(LAB_View* view)
             }
             else
             {
-                int probability_update = 255/c_dist_sq;
-                //int probability_update = 200/c_dist_sq+55;
-                //int probability_update = 150/c_dist_sq+105;
-                //int probability_update = 16;
-                //int probability_update = 255;
+                int probability_update = LAB_MAX(255/c_dist_sq, 31);
+                //int probability_update = LAB_MAX(255-c_dist_sq, 31);
 
-                int r = rand()&0xff;
-                if((entry->do_query && r <= 255) )//|| r <= probability_update)
+                if(entry->do_query || (rand()&0xff) <= probability_update)
                 {
-                    entry->do_query = 0;
                     LAB_View_OrderQueryChunk(view, entry);
                 }
             }
-            #endif
         }
     }
 }
 
 static void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
 {
-    if(!LAB_View_IsChunkInSight(view, entry->x, entry->y, entry->x)) return;
-
-    // TODO fixed sized buffer of queries, glGetQueryObject called
-    //      in the next frame, in LAB_View_Tick
-    glPushMatrix();
-    glColorMask(0, 0, 0, 0);
-    glDepthMask(0);
+    if(!LAB_View_IsChunkInSight(view, entry->x, entry->y, entry->z)) return;
 
     #if LAB_VIEW_QUERY_IMMEDIATELY
     static unsigned query_id = 0;
@@ -460,40 +494,63 @@ static void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
         glGenQueries(1, &query_id); LAB_GL_DEBUG_ALLOC(1);
     }
     #else
+    LAB_ASSUME(entry->query_id == 0);
     glGenQueries(1, &entry->query_id); LAB_GL_DEBUG_ALLOC(1);
     unsigned query_id = entry->query_id;
     #endif
+    LAB_ASSUME(query_id != 0);
+    //LAB_ASSUME(glIsQuery(query_id));
+    //if(!glIsQuery(query_id)) printf("%i is not a query\n", query_id);
+
+
+    // TODO fixed sized buffer of queries, glGetQueryObject called
+    //      in the next frame, in LAB_View_Tick
+    glPushMatrix();
+    #define DBG_QUERY 0
+    #if !DBG_QUERY
+    glColorMask(0, 0, 0, 0);
+    #endif
+    glDepthMask(0);
+
     glBeginQuery(GL_ANY_SAMPLES_PASSED, query_id);
 
-    glTranslatef(16*entry->x, 16*entry->y, 16*entry->z);
-    glScalef(16, 16, 16);
-    static float box[6*2*3][3] = {
-        {0, 0, 0}, {1, 0, 0}, {0, 1, 0},
-        {1, 1, 0}, {0, 1, 0}, {1, 0, 0},
+        glTranslatef(16*entry->x, 16*entry->y, 16*entry->z);
+        glScalef(16, 16, 16);
+        static const float box[6*2*3][3] = {
+            {0, 0, 0}, {1, 0, 0}, {0, 1, 0},
+            {1, 1, 0}, {0, 1, 0}, {1, 0, 0},
 
-        {1, 0, 1}, {0, 0, 1}, {1, 1, 1},
-        {0, 1, 1}, {1, 1, 1}, {0, 0, 1},
-
-
-        {0, 0, 0}, {0, 1, 0}, {0, 0, 1},
-        {0, 1, 1}, {0, 0, 1}, {0, 1, 0},
-
-        {1, 1, 0}, {1, 0, 0}, {1, 1, 1},
-        {1, 0, 1}, {1, 1, 1}, {1, 0, 0},
+            {1, 0, 1}, {0, 0, 1}, {1, 1, 1},
+            {0, 1, 1}, {1, 1, 1}, {0, 0, 1},
 
 
-        {0, 0, 0}, {0, 0, 1}, {1, 0, 0},
-        {1, 0, 1}, {1, 0, 0}, {0, 0, 1},
+            {0, 0, 0}, {0, 1, 0}, {0, 0, 1},
+            {0, 1, 1}, {0, 0, 1}, {0, 1, 0},
 
-        {0, 1, 1}, {0, 1, 0}, {1, 1, 1},
-        {1, 1, 0}, {1, 1, 1}, {0, 1, 0},
-    };
-    glDisableClientState(GL_COLOR_ARRAY);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glVertexPointer(3, GL_FLOAT, 0, box);
-    glDrawArrays(GL_TRIANGLES, 0, 6*2*3);
+            {1, 1, 0}, {1, 0, 0}, {1, 1, 1},
+            {1, 0, 1}, {1, 1, 1}, {1, 0, 0},
+
+
+            {0, 0, 0}, {0, 0, 1}, {1, 0, 0},
+            {1, 0, 1}, {1, 0, 0}, {0, 0, 1},
+
+            {0, 1, 1}, {0, 1, 0}, {1, 1, 1},
+            {1, 1, 0}, {1, 1, 1}, {0, 1, 0},
+        };
+
+    #if DBG_QUERY
+        if(entry->do_query)
+            glColor4f(0, 1, 0, 1);
+        else
+            glColor4f(0, 0, 1, 1);
+    #endif
+
+        glVertexPointer(3, GL_FLOAT, 0, box);
+        glDrawArrays(GL_TRIANGLES, 0, 6*2*3);
 
     glEndQuery(GL_ANY_SAMPLES_PASSED);
+    //if(!glIsQuery(query_id)) printf("%i is not a query\n", query_id);
+    LAB_ASSUME(glIsQuery(query_id));
 
     glDepthMask(1);
     glColorMask(1, 1, 1, 1);
@@ -504,6 +561,9 @@ static void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
     glGetQueryObjectuiv(query_id, GL_QUERY_RESULT, &visible);
     entry->visible = visible;
     #endif
+
+    entry->do_query = 0;
+    LAB_GL_CHECK();
 }
 
 
@@ -729,6 +789,7 @@ void LAB_ViewRenderHud(LAB_View* view)
 
 void LAB_ViewRenderProc(void* user, LAB_Window* window)
 {
+    // NO access to world here -> world can update whilst rendering
     LAB_View* view = (LAB_View*)user;
 
     // Block rendering settings
@@ -786,6 +847,11 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
 
 
     LAB_ViewRenderChunks(view);
+
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisable(GL_TEXTURE_2D);
+    glColor4f(1, 1, 1, 1);
     LAB_View_OrderQueryChunks(view);
 
     // TODO: remove this
@@ -858,8 +924,6 @@ void LAB_ViewRemoveDistantChunks(LAB_View* view)
 
 void LAB_ViewRenderChunks(LAB_View* view)
 {
-    view->rest_update = view->max_update;
-
     int px = LAB_Sar((int)floorf(view->x), LAB_CHUNK_SHIFT);
     int py = LAB_Sar((int)floorf(view->y), LAB_CHUNK_SHIFT);
     int pz = LAB_Sar((int)floorf(view->z), LAB_CHUNK_SHIFT);
@@ -904,7 +968,8 @@ LAB_ViewChunkEntry* LAB_ViewNewChunkEntry(LAB_View* view, int x, int y, int z)
     chunk_count = view->chunk_count;
     chunk_capacity = view->chunk_capacity;
 
-    if(LAB_UNLIKELY(view->chunk_count >= chunk_capacity))
+    //if(LAB_UNLIKELY(view->chunk_count >= chunk_capacity))
+    if(view->chunk_count >= chunk_capacity)
     {
         if(chunk_capacity == 0)
             chunk_capacity = 16;
@@ -922,7 +987,7 @@ LAB_ViewChunkEntry* LAB_ViewNewChunkEntry(LAB_View* view, int x, int y, int z)
     chunks[chunk_count].y = y;
     chunks[chunk_count].z = z;
     //chunks[chunk_count].visible = 1; // <-- TODO: remove from here
-    chunks[chunk_count].do_query = 1;
+    //chunks[chunk_count].do_query = 1;
     view->chunk_count++;
 
     return &chunks[chunk_count];
@@ -1006,6 +1071,7 @@ void LAB_ViewTick(LAB_View* view, uint32_t delta_ms)
     #if !LAB_VIEW_QUERY_IMMEDIATELY
     LAB_View_FetchQueryChunks(view);
     #endif
+    LAB_ViewBuildChunks(view);
     LAB_FpsGraph_AddSample(&view->fps_graph, delta_ms);
     LAB_GuiManager_Tick(&view->gui_mgr);
 }
@@ -1015,10 +1081,10 @@ static bool LAB_View_HasChunkVisibleNeighbors(LAB_View* view, int x, int y, int 
 {
     for(int i = 0; i < 6; ++i)
     {
-        const int* off = LAB_offset[i];
-        int xx = x + off[0];
-        int yy = y + off[1];
-        int zz = z + off[2];
+        //const int* off = LAB_offset[i];
+        int xx = x + LAB_OX(i);
+        int yy = y + LAB_OY(i);
+        int zz = z + LAB_OZ(i);
         LAB_ViewChunkEntry* entry = LAB_ViewFindChunkEntry(view, xx, yy, zz);
         if(entry && entry->visible) return 1;
     }
@@ -1028,6 +1094,7 @@ static bool LAB_View_HasChunkVisibleNeighbors(LAB_View* view, int x, int y, int 
 
 bool LAB_View_IsChunkInSight(LAB_View* view, int cx, int cy, int cz)
 {
+    //if(cy < -2 || cy >= 0) return 0; // DBG
     // TODO: might be inaccurate for large coordinates
     float dir[3];
     LAB_ViewGetDirection(view, dir);
@@ -1155,8 +1222,8 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
                             entry = LAB_ViewNewChunkEntry(view, xx, yy, zz);
                             if(entry == NULL) return; // NO MEMORY
                             entry->dirty = ~0;
-                            entry->visible = 1;
                             --load_amount;
+                            LAB_ASSUME(!entry->exist);
                         }
                         if(!entry->exist)
                         {

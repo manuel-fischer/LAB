@@ -1,5 +1,6 @@
 #include "LAB_gl.h"
 #include "LAB_bits.h"
+#include "LAB_debug.h"
 
 #define LAB_GL_ERRORS_X(X) \
     X(GL_NO_ERROR, "No error") \
@@ -30,6 +31,13 @@ const char* LAB_GL_GetCurrentError(void)
     return LAB_GL_GetError(glGetError());
 }
 
+int LAB_GL_GetInt(GLenum e)
+{
+    int i;
+    glGetIntegerv(e, &i);
+    return i;
+}
+
 void LAB_GL_ActivateTexture(unsigned* gl_id)
 {
     if(*gl_id == 0)
@@ -48,6 +56,8 @@ void LAB_GL_ActivateTexture(unsigned* gl_id)
 
 void LAB_GL_UploadSurf(unsigned gl_id, SDL_Surface* surf)
 {
+    LAB_ASSUME_0(LAB_GL_GetUInt(GL_TEXTURE_BINDING_2D)==gl_id);
+
     int info_width  = LAB_CeilPow2(surf->w);
     int info_height = LAB_CeilPow2(surf->h);
 
@@ -74,6 +84,8 @@ void LAB_GL_UploadSurf(unsigned gl_id, SDL_Surface* surf)
 
 void LAB_GL_DrawSurf(unsigned gl_id, int x, int y, int w, int h, int sw, int sh)
 {
+    LAB_ASSUME_0(LAB_GL_GetUInt(GL_TEXTURE_BINDING_2D)==gl_id);
+
     int rw, rh;
     rw = LAB_CeilPow2(w);
     rh = LAB_CeilPow2(h);

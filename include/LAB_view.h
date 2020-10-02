@@ -33,7 +33,7 @@ typedef struct LAB_ViewChunkEntry
     size_t mesh_count, mesh_capacity;
     LAB_Triangle* mesh;
 
-    unsigned dirty:2, exist:1, visible:1, do_query:1;
+    unsigned dirty:2, exist:1, visible:1, do_query:1, upload_vbo:1;
 
     unsigned vbo;
     #if !LAB_VIEW_QUERY_IMMEDIATELY
@@ -108,8 +108,7 @@ typedef struct LAB_View
              keep_dist;
     // TODO: query enable/disable setting
 
-    uint32_t max_update,
-             rest_update;
+    uint32_t max_update;
 
     uint32_t load_amount;
 

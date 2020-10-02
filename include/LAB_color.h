@@ -32,40 +32,40 @@ typedef uint32_t LAB_Color;
 
 
 
-static inline LAB_Color LAB_MaxColor(LAB_Color a, LAB_Color b)
+// branching, alpha gets 255
+static inline LAB_Color LAB_MaxColorB(LAB_Color a, LAB_Color b)
 {
-    // TODO: Alpha
-    #if 1
-    //LAB_Color  g_mask = ((a&0xff00)-(b&0xff00)) >> 8 & 0xff;
-    //LAB_Color rb_mask = ((((a&0xff00ff)|0x1000)-(b&0xff00ff)) >> 8 & 0x1)*0xff;
-    LAB_Color  g_mask = (((a&0xff00)-(b&0xff00)) >> 8 & 0x100)*0xff;
-    LAB_Color rb_mask = ((((a&0xff00ff)|0x1000)-(b&0xff00ff)) >> 8 & 0x10001)*0xff;
-
-    return a ^ ((a^b) & (rb_mask|g_mask));
-    #else
     int ar, ag, ab, br, bg, bb;
     ar = LAB_RED(a); ag = LAB_GRN(a); ab = LAB_BLU(a);
     br = LAB_RED(b); bg = LAB_GRN(b); bb = LAB_BLU(b);
     return LAB_RGB(ar<br?br:ar, ag<bg?bg:ag, ab<bb?bb:ab);
-    #endif
 }
 
-static inline LAB_Color LAB_MinColor(LAB_Color a, LAB_Color b)
+// branchless
+static inline LAB_Color LAB_MaxColor(LAB_Color a, LAB_Color b)
 {
-    // TODO: Alpha
-    #if 1
-    //LAB_Color  g_mask = ((a&0xff00)-(b&0xff00)) >> 8 & 0xff;
-    //LAB_Color rb_mask = ((((a&0xff00ff)|0x1000)-(b&0xff00ff)) >> 8 & 0x1)*0xff;
-    LAB_Color  g_mask = (((a&0xff00)-(b&0xff00)) >> 8 & 0x100)*0xff;
-    LAB_Color rb_mask = ((((a&0xff00ff)|0x1000)-(b&0xff00ff)) >> 8 & 0x10001)*0xff;
+    LAB_Color ga_mask = ((((a>>8&0x00ff00ff)|0x00100000)-(b>>8&0x00ff00ff))    & 0x01000100)*0xff;
+    LAB_Color rb_mask = ((((a   &0x00ff00ff)|0x00001000)-(b   &0x00ff00ff))>>8 & 0x00010001)*0xff;
 
-    return b ^ ((a^b) & (rb_mask|g_mask));
-    #else
+    return a ^ ((a^b) & (rb_mask|ga_mask));
+}
+
+// branching, alpha gets 255
+static inline LAB_Color LAB_MinColorB(LAB_Color a, LAB_Color b)
+{
     int ar, ag, ab, br, bg, bb;
     ar = LAB_RED(a); ag = LAB_GRN(a); ab = LAB_BLU(a);
     br = LAB_RED(b); bg = LAB_GRN(b); bb = LAB_BLU(b);
     return LAB_RGB(ar>br?br:ar, ag>bg?bg:ag, ab>bb?bb:ab);
-    #endif
+}
+
+// branchless
+static inline LAB_Color LAB_MinColor(LAB_Color a, LAB_Color b)
+{
+    LAB_Color ga_mask = ((((a>>8&0x00ff00ff)|0x00100000)-(b>>8&0x00ff00ff))    & 0x01000100)*0xff;
+    LAB_Color rb_mask = ((((a   &0x00ff00ff)|0x00001000)-(b   &0x00ff00ff))>>8 & 0x00010001)*0xff;
+
+    return b ^ ((a^b) & (rb_mask|ga_mask));
 }
 
 // use in contstant context or when the a, b can be reevaluated
@@ -240,15 +240,39 @@ static inline LAB_Color LAB_InterpolateColor4vf(LAB_Color* colors,
 
 static inline LAB_Color LAB_InterpolateColor2i(LAB_Color a, LAB_Color b, int m)
 {
+    #if 0
+    // 32 imul instructions, 2 mulss instructions in LAB_model.o
     return LAB_RGBA(
         (int)(LAB_RED(a)*(256-m) + LAB_RED(b)*m)>>8&0xff,
         (int)(LAB_GRN(a)*(256-m) + LAB_GRN(b)*m)>>8&0xff,
         (int)(LAB_BLU(a)*(256-m) + LAB_BLU(b)*m)>>8&0xff,
         (int)(LAB_ALP(a)*(256-m) + LAB_ALP(b)*m)>>8&0xff
     );
+    #elif 1
+    // 20 imul instructions, 2 mulss instructions in LAB_model.o
+    return LAB_RGBA(
+        (int)(LAB_RED(a)*256 + (LAB_RED(b)-LAB_RED(a))*m)>>8&0xff,
+        (int)(LAB_GRN(a)*256 + (LAB_GRN(b)-LAB_GRN(a))*m)>>8&0xff,
+        (int)(LAB_BLU(a)*256 + (LAB_BLU(b)-LAB_BLU(a))*m)>>8&0xff,
+        (int)(LAB_ALP(a)*256 + (LAB_ALP(b)-LAB_ALP(a))*m)>>8&0xff
+    );
+    #else
+    // 30 imul instructions, 6 mulss instructions in LAB_model.o
+    // TODO: use 2 imuls
+    //uint32_t x = (a&0x00ff00ff)-((((b&0x00ff00ff|0x00000100)-(a&0x00ff00ff))*m>>8)&0x00ff00ff);
+    //uint32_t y = (a&0xff00ff00)-((((b&0xff00ff00|0x00010000)-(a&0xff00ff00))*m>>8)&0xff00ff00);
+
+    uint32_t x = ((a&0x00ff00ff)+(((((b&0x00ff00ff)|0x00000100)-(a&0x00ff00ff))*m)>>8))&0x00ff00ff;
+    uint32_t y = ((a&0xff00ff00)+(((((b&0xff00ff00)|0x00010000)-(a&0xff00ff00))>>8)*m))&0xff00ff00;
+
+    //uint32_t x = (a&0xff)+(((b&0xff)-(a&0xff))*m>>8);
+    //uint32_t x = (a&0x00ff00ff)-((((b&0x00ff00ff|0x00000100)-(a&0x00ff00ff))*m>>8)&0x00ff00ff);
+    //uint32_t y = 0;//(a&0xff00ff00)-((((b&0xff00ff00|0x00010000)-(a&0xff00ff00))*m>>8)&0xff00ff00);
+    return x|y;
+    #endif
 }
 
-static inline LAB_Color LAB_InterpolateColor4vi(LAB_Color* colors,
+static inline LAB_Color LAB_InterpolateColor4vi(const LAB_Color* colors,
                                                int u, int v)
 {
     return LAB_InterpolateColor2i(

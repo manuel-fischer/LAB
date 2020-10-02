@@ -290,11 +290,13 @@ LAB_Block LAB_BLOCK_GREEN_LIGHT = {
     .model = &LAB_MODEL_LIGHT_GREEN,
 };
 
-LAB_DEF_MODEL_CUBE_SHADELESS_ALL(LAB_MODEL_LIGHT_RED, 1, 2, LAB_RGB(255, 100, 50));
+LAB_DEF_MODEL_CUBE_SHADELESS_ALL(LAB_MODEL_LIGHT_RED, 1, 2, LAB_RGB(255, 100, 75));
 LAB_Block LAB_BLOCK_RED_LIGHT = {
     .flags = LAB_BLOCK_SOLID | LAB_BLOCK_GLOWING,
-    .lum = LAB_RGB(255, 64, 16),
-    .item_tint = LAB_RGB(255, 100, 50),
+    //.lum = LAB_RGB(255, 64, 16),
+    .lum = LAB_RGB(255, 20, 16),
+    //.item_tint = LAB_RGB(255, 100, 50),
+    .item_tint = LAB_RGB(255, 100, 75),
     .item_tx = 1, 2,
     .model = &LAB_MODEL_LIGHT_RED,
 };

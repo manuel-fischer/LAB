@@ -8,8 +8,12 @@ typedef struct LAB_World LAB_World;
 
 enum LAB_ChunkUpdate
 {
-    LAB_CHUNK_UPDATE_LIGHT = 1,   // light changed, usually by neighboring chunk
-    LAB_CHUNK_UPDATE_BLOCK = 2|1, // block changed, light is usually also updated
+    LAB_CHUNK_UPDATE_LIGHT = 1, // light changed, usually by neighboring chunk
+    LAB_CHUNK_UPDATE_BLOCK_ = 2, // block changed, usually in combination with light
+    LAB_CHUNK_UPDATE_BLOCK = 2+1,
+    LAB_CHUNK_UPDATE_LOCAL = 2+0*4, // the chunk itself has changed -> higher priority
+                                // when only the neighboring chunk had changed, the update
+                                // is not propagated
 };
 typedef int LAB_ChunkUpdate;
 

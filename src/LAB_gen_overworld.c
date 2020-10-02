@@ -274,7 +274,7 @@ static void LAB_Gen_Cave_Crystals(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x
     LAB_ChunkRandom(&random, gen->seed^LAB_GEN_CRYSTAL_SALT, x, y, z);
 
     // Less probability that crystals generate at the top
-    int amount = LAB_MIN(-2*y, 100);
+    unsigned amount = LAB_MIN(2*LAB_MAX(0, -y), 100);
 
     if((LAB_NextRandom(&random)&255) < amount)
     {

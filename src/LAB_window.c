@@ -6,6 +6,7 @@
 
 #include <SDL2/SDL.h>
 #include "LAB_gl.h"
+#include "LAB_util.h" // nanos
 
 
 int LAB_ConstructWindow(LAB_Window* window, int w, int h, uint32_t sdl_flags)
@@ -87,13 +88,17 @@ int LAB_WindowLoop(LAB_Window* window)
 
     if(LAB_LIKELY(window->render != NULL))
     {
+        //uint64_t t0 = LAB_NanoSeconds();
         // TODO: pass w, h to hook, remove glViewport from here
         int w, h;
         SDL_GetWindowSize(window->window, &w, &h);
         glViewport(0, 0, w, h);
         window->render(window->render_user, window);
+
+        //uint64_t t1 = LAB_NanoSeconds();
         SDL_GL_SwapWindow(window->window);
-        //SDL_Delay(16);
+        //uint64_t t2 = LAB_NanoSeconds();
+        //printf("%14i %14i\n", (int)(t1-t0), (int)(t2-t1));
     }
 
     return 1;

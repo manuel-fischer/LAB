@@ -102,7 +102,7 @@ typedef struct LAB_World
     /*size_t chunk_count, chunk_capacity;
     LAB_ChunkEntry* chunks;*/
     LAB_ChunkMap chunks;
-    LAB_ChunkMap_Entry* last_entry;
+    //LAB_ChunkMap_Entry* last_entry; // TODO: invalid when chunk map gets reallocated
 
     LAB_ChunkPosQueue gen_queue;
     LAB_ChunkPos2Queue update_queue;

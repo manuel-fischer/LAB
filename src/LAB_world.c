@@ -33,14 +33,19 @@ unsigned LAB_ChunkPosHash(LAB_ChunkPos pos)
 {
     //return (unsigned)pos.x*257 + (unsigned)pos.y*8191 + (unsigned)pos.y*65537;
     //return (unsigned)pos.x*7 + (unsigned)pos.y*13 + (unsigned)pos.y*19;
-    return pos.x
-         ^ pos.y << 6 ^ pos.y << 4
-         ^ pos.z << 2 ^ pos.z << 7;
+    return (unsigned)pos.x
+         ^ (unsigned)pos.y << (unsigned)6 ^ pos.y << 4
+         ^ (unsigned)pos.z << (unsigned)2 ^ pos.z << 7;
 }
 
 int LAB_ChunkPosComp(LAB_ChunkPos a, LAB_ChunkPos b)
 {
-    return a.x != b.x || a.y != b.y || a.z != b.z;
+    //return a.x != b.x || a.y != b.y || a.z != b.z;
+    //return (a.x != b.x) | (a.y != b.y) | (a.z != b.z);
+    //return memcmp(&a, &b, sizeof a)!=0;
+    LAB_ChunkPos tmp_a, tmp_b;
+    tmp_a=a; tmp_b=b;
+    return memcmp(&tmp_a, &tmp_b, sizeof a)!=0;
 }
 
 
@@ -103,15 +108,15 @@ static LAB_Chunk* LAB_GenerateNotifyChunk(LAB_World* world, int x, int y, int z)
 LAB_Chunk* LAB_GetChunk(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType flags)
 {
     LAB_ChunkPos pos = { x, y, z };
-    if(world->last_entry && memcmp(&world->last_entry->key, &pos, sizeof pos)==0)
+/*    if(world->last_entry && memcmp(&world->last_entry->key, &pos, sizeof pos)==0)
     {
         world->last_entry->value->age = 0;
         return world->last_entry->value;
-    }
+    }*/
     LAB_ChunkMap_Entry* entry = LAB_ChunkMap_Get(&world->chunks, pos);
     if(entry != NULL)
     {
-        world->last_entry = entry;
+//        world->last_entry = entry;
         entry->value->age = 0;
         return entry->value;
     }
@@ -164,8 +169,7 @@ void LAB_UpdateChunk(LAB_World* world, int x, int y, int z, LAB_ChunkUpdate upda
         for(int face_itr=faces; face_itr; face_itr &= face_itr-1)
         {
             int face = LAB_Ctz(face_itr);
-            const int* o = LAB_offset[face];
-            LAB_UpdateChunkLater(world, x+o[0], y+o[1], z+o[2], LAB_CHUNK_UPDATE_LIGHT);
+            LAB_UpdateChunkLater(world, x+LAB_OX(face), y+LAB_OY(face), z+LAB_OZ(face), LAB_CHUNK_UPDATE_LIGHT);
         }
 
         (*world->chunkview)(world->chunkview_user, world, x, y, z, update);
@@ -414,6 +418,7 @@ void LAB_WorldTick(LAB_World* world, uint32_t delta_ms)
 
 static LAB_Color LAB_CalcLight(LAB_World* world, LAB_Chunk*const chunks[27], int x, int y, int z, LAB_Color default_color)
 {
+    #if 0
     LAB_Color lum;
     //lum = LAB_RGB(16, 16, 16);
     //lum = LAB_GetNeighborhoodBlock(chunks, x,y,z)->lum;
@@ -445,6 +450,42 @@ static LAB_Color LAB_CalcLight(LAB_World* world, LAB_Chunk*const chunks[27], int
         lum = LAB_GetNeighborhoodBlock(chunks, x,y,z)->lum;
     }
     return lum;
+    #else
+    LAB_Color lum;
+    LAB_Chunk* cnk = chunks[1+3+9];
+    int off = LAB_CHUNK_OFFSET(x, y, z);
+
+
+    LAB_Color dia = cnk->blocks[off]->dia;
+    //LAB_Color dia = LAB_GetNeighborhoodBlock(chunks, x, y, z)->dia;
+
+    //lum = LAB_RGB(16, 16, 16);
+    lum = ((dia>>4) & 0x0f0f0f) | 0xff000000;
+    lum = LAB_MaxColor(lum, cnk->blocks[off]->lum);
+    //lum = LAB_MaxColor(lum, LAB_GetNeighborhoodLight(chunks, x, y, z, default_color));
+    for(int i = 0; i < 6; ++i)
+    {
+        //const int* o = LAB_offset[i];
+        int nlum, nlum1, nlum2;
+
+        LAB_Block* block = LAB_GetNeighborhoodBlock(chunks, x+LAB_OX(i), y+LAB_OY(i), z+LAB_OZ(i));
+        nlum1 = block->lum;
+        nlum2 = LAB_GetNeighborhoodLight(chunks, x+LAB_OX(i), y+LAB_OY(i), z+LAB_OZ(i), default_color);
+        //if(i!=3 || (nlum2&0xffffff) != 0xffffff)
+        //    nlum2 = nlum2 - (nlum2>>2 & 0x3f3f3f);
+
+        // simplified
+        //uint32_t mask = -(i!=3); // alpha needs to be 0
+        uint32_t is_white_24 = ((nlum2&0xffffffu)+1)&0x01000000u;
+        uint32_t mask = is_white_24-(unsigned)((!!is_white_24) & (i==3)); // alpha needs to be 0
+        nlum2 = nlum2 - ((nlum2>>2 & 0x3f3f3f)&~mask); // don't care about alpha here
+
+        nlum = LAB_MaxColor(nlum1, nlum2);
+        lum = LAB_MaxColor(lum, LAB_MulColor(nlum, dia));
+    }
+
+    return lum;
+    #endif
 }
 
 /**
@@ -493,6 +534,7 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, 
 
     memset(cnk->light, 0, sizeof cnk->light);
 
+    #if 1
     int changed = 1;
     int change_count = 0;
     while(changed)
@@ -518,6 +560,41 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, 
         }
         change_count++;
     }
+    #else
+    // expanded by 15 blocks version
+    int changed = 1;
+    int change_count = 0;
+    while(changed)
+    {
+        changed = 0;
+        for(int z =  0-15; z < 16+15; ++z)
+        for(int y = 15+15; y >= 0-15; --y)
+        for(int x =  0-15; x < 16+15; ++x)
+        {
+            int block_index;
+            LAB_Chunk* cnk;
+            cnk = LAB_GetNeighborhoodRef(chunks, x, y, z, &block_index);
+            if(cnk)
+            {
+                LAB_Color lum = LAB_CalcLight(world, chunks, x, y, z, default_color);
+
+
+                if(cnk->light[block_index] != lum)
+                {
+                    cnk->light[block_index] = lum;
+                    if(x<=0)  faces_changed |=  1;
+                    if(x>=15) faces_changed |=  2;
+                    if(y<=0)  faces_changed |=  4;
+                    if(y>=15) faces_changed |=  8;
+                    if(z<=0)  faces_changed |= 16;
+                    if(z>=15) faces_changed |= 32;
+                    changed = 1;
+                }
+            }
+        }
+        change_count++;
+    }
+    #endif
     return faces_changed;
 }
 

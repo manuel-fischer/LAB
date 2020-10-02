@@ -59,3 +59,8 @@ void LAB_GL_ActivateTexture(unsigned* gl_id);
 
 void LAB_GL_UploadSurf(unsigned gl_id, SDL_Surface* surf);
 void LAB_GL_DrawSurf(unsigned gl_id, int x, int y, int w, int h, int sw, int sh);
+
+
+
+int LAB_GL_GetInt(GLenum e);
+#define LAB_GL_GetUInt(e) (unsigned)LAB_GL_GetInt(e)

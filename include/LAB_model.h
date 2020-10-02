@@ -47,9 +47,9 @@ int LAB_PutModelAt(LAB_OUT LAB_Triangle* dst, LAB_Model const* model,
 
 int LAB_PutModelShadedAt(LAB_OUT LAB_Triangle* dst, LAB_Model const* model,
                          float x, float y, float z, unsigned faces,
-                         LAB_Color light_sides[6]);
+                         const LAB_Color light_sides[6]);
 
 int LAB_PutModelSmoothShadedAt(LAB_OUT LAB_Triangle* dst,
                                LAB_Model const* model,
                                float x, float y, float z, unsigned faces,
-                               LAB_Color light_sides[6][4]);
+                               const LAB_Color light_sides[6][4]);
