@@ -221,6 +221,18 @@ LAB_Color LAB_GetNeighborhoodLight(LAB_Chunk*const neighborhood[27], int x, int 
 }
 
 LAB_HOT LAB_INLINE
+bool LAB_SetNeighborhoodLight(LAB_Chunk* neighborhood[27], int x, int y, int z, LAB_Color color)
+{
+    int block_index;
+    LAB_Chunk* chunk;
+    chunk = LAB_GetNeighborhoodRef(neighborhood, x, y, z, &block_index);
+
+    if(chunk == NULL) return 0;
+    chunk->light[block_index] = color;
+    return 1;
+}
+
+LAB_HOT LAB_INLINE
 uint32_t LAB_World_PeekFlags3x3(LAB_Chunk* chunk, int x, int y, int z, unsigned flag)
 {
     uint32_t bitset = 0, curbit = 1;

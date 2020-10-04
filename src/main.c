@@ -107,7 +107,7 @@ int main(int argc, char** argv) {
 
         #if 1
         LAB_ViewInputTick(&view_input, delta_ms);
-        LAB_WorldTick(&the_world, delta_ms);
+        /*if(itr%10==0)*/ LAB_WorldTick(&the_world, delta_ms);
         LAB_ViewTick(&view, delta_ms);
         #else
             uint64_t t0 = LAB_NanoSeconds();

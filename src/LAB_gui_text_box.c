@@ -1,6 +1,8 @@
 #include "LAB_gui_text_box.h"
 #include "LAB_memory.h"
 
+// TODO sel_start & sel_len
+
 void LAB_GuiTextBox_Create(LAB_GuiTextBox* cself,
                           int x, int y, int w, int h)
 {

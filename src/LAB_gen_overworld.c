@@ -65,31 +65,32 @@ static void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x
     {
         for(int zz = 0; zz < 16; ++zz)
         for(int xx = 0; xx < 16; ++xx)
-        for(int yy =15; yy >= 0; --yy)
         {
-
             int xi = 16*x|xx;
-            int yi = 16*y|yy;
             int zi = 16*z|zz;
-
             int sheight = LAB_Gen_Surface_Shape_Func(gen, xi, zi);
-
-            LAB_Block* b;
-
-            if(yi == sheight)
-                b = &LAB_BLOCK_GRASS;
-            else if(yi <= sheight)
+            for(int yy =15; yy >= 0; --yy)
             {
-                uint64_t fact = 0x100000000ll/(32+16);
-                if((~LAB_NextRandom(&random)>>32) >= (2u*(-yi)-(-sheight))*fact)
-                    b = &LAB_BLOCK_DIRT;
-                else
-                    continue; // keep stone
-            }
-            else
-                b = &LAB_BLOCK_AIR;
+                int yi = 16*y|yy;
 
-            chunk->blocks[LAB_CHUNK_OFFSET(xx, yy, zz)] = b;
+
+                LAB_Block* b;
+
+                if(yi == sheight)
+                    b = &LAB_BLOCK_GRASS;
+                else if(yi <= sheight)
+                {
+                    uint64_t fact = 0x100000000ll/(32+16);
+                    if((~LAB_NextRandom(&random)>>32) >= (2u*(-yi)-(-sheight))*fact)
+                        b = &LAB_BLOCK_DIRT;
+                    else
+                        continue; // keep stone
+                }
+                else
+                    b = &LAB_BLOCK_AIR;
+
+                chunk->blocks[LAB_CHUNK_OFFSET(xx, yy, zz)] = b;
+            }
         }
     }
 }

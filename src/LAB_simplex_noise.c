@@ -18,7 +18,8 @@
  * attribution is appreciated.
  *
  */
-#include <math.h>
+#include "LAB_opt.h"
+#include "LAB_math.h"
 
 
 // first 4 entries used also in 2D version
@@ -127,7 +128,9 @@ static double dot4(const double* g, double x, double y, double z, double w) {
 
 
 // 2D simplex noise
+LAB_HOT
 double LAB_SimplexNoise2D(double xin, double yin) {
+    //return LAB_AbsModF(0.1*xin*yin+0.1*yin*yin,1);
     double n0, n1, n2; // Noise contributions from the three corners
     // Skew the input space to determine which simplex cell we're in
     double s = (xin+yin)*F2; // Hairy factor for 2D
@@ -182,7 +185,9 @@ double LAB_SimplexNoise2D(double xin, double yin) {
 
 
 // 3D simplex noise
+LAB_HOT
 double LAB_SimplexNoise3D(double xin, double yin, double zin) {
+    //return LAB_AbsModF(xin*zin+xin*yin*yin+zin*zin,1);
     double n0, n1, n2, n3; // Noise contributions from the four corners
     // Skew the input space to determine which simplex cell we're in
     double s = (xin+yin+zin)*F3; // Very nice and simple skew factor for 3D
@@ -200,17 +205,28 @@ double LAB_SimplexNoise3D(double xin, double yin, double zin) {
     // Determine which simplex we are in.
     int i1, j1, k1; // Offsets for second corner of simplex in (i,j,k) coords
     int i2, j2, k2; // Offsets for third corner of simplex in (i,j,k) coords
-    if(x0>=y0) {
-      if(y0>=z0)
-        { i1=1; j1=0; k1=0; i2=1; j2=1; k2=0; } // X Y Z order
-        else if(x0>=z0) { i1=1; j1=0; k1=0; i2=1; j2=0; k2=1; } // X Z Y order
-        else { i1=0; j1=0; k1=1; i2=1; j2=0; k2=1; } // Z X Y order
-      }
-    else { // x0<y0
-      if(y0<z0) { i1=0; j1=0; k1=1; i2=0; j2=1; k2=1; } // Z Y X order
-      else if(x0<z0) { i1=0; j1=1; k1=0; i2=0; j2=1; k2=1; } // Y Z X order
-      else { i1=0; j1=1; k1=0; i2=1; j2=1; k2=0; } // Y X Z order
+    #if 0
+    if(x0>=y0) {                                                            // ->  15 = 1|2|4|8
+        if(y0>=z0) {      i1=1; j1=0; k1=0; i2=1; j2=1; k2=0; } // X Y Z order ->   3 = 1|(2)
+        else if(x0>=z0) { i1=1; j1=0; k1=0; i2=1; j2=0; k2=1; } // X Z Y order ->   4 =     4
+        else {            i1=0; j1=0; k1=1; i2=1; j2=0; k2=1; } // Z X Y order ->   8 =       8
     }
+    else { // x0<y0                                                            -> 240 = 16|32|64|128
+        if(y0<z0) {       i1=0; j1=0; k1=1; i2=0; j2=1; k2=1; } // Z Y X order -> 192 =     (64)|128
+        else if(x0<z0) {  i1=0; j1=1; k1=0; i2=0; j2=1; k2=1; } // Y Z X order ->  32 =    32
+        else {            i1=0; j1=1; k1=0; i2=1; j2=1; k2=0; } // Y X Z order ->  16 = 16
+    }
+    #else
+    int index = (x0<y0)<<2 | (y0<z0)<<1 | (x0<z0);
+    i1 = (3|4|0|  0| 0| 0)>>index&1;
+    j1 = (0|0|0|  0|32|16)>>index&1;
+    k1 = (0|0|8|192| 0| 0)>>index&1;
+
+    i2 = (3|4|8|  0| 0|16)>>index&1;
+    j2 = (3|0|0|192|32|16)>>index&1;
+    k2 = (0|4|8|192|32| 0)>>index&1;
+    #endif
+
     // A step of (1,0,0) in (i,j,k) means a step of (1-c,-c,-c) in (x,y,z),
     // a step of (0,1,0) in (i,j,k) means a step of (-c,1-c,-c) in (x,y,z), and
     // a step of (0,0,1) in (i,j,k) means a step of (-c,-c,1-c) in (x,y,z), where
@@ -264,6 +280,7 @@ double LAB_SimplexNoise3D(double xin, double yin, double zin) {
 
 
 // 4D simplex noise, better simplex rank ordering method 2012-03-09
+LAB_HOT
 double LAB_SimplexNoise4D(double x, double y, double z, double w) {
 
     double n0, n1, n2, n3, n4; // Noise contributions from the five corners

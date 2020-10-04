@@ -321,10 +321,11 @@ static void LAB_ViewUploadVBO(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 
 static bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 {
+    // TODO: only build chunk if all neighbors are generated
     if(!LAB_View_IsChunkInSight(view, chunk_entry->x, chunk_entry->y, chunk_entry->z))
         return 0;
 
-    // TODO enshure light update after at most 1 sec
+    // TODO: enshure light update after at most 1 sec
     if(     (chunk_entry->dirty&LAB_CHUNK_UPDATE_LOCAL)
         || ((chunk_entry->dirty&LAB_CHUNK_UPDATE_LIGHT) && (rand()&0x1f)==0) )
     {
