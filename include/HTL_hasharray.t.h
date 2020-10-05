@@ -33,13 +33,14 @@ typedef struct HTL_P(NAME)
     size_t capacity;
     size_t size;
     HTL_MEMBER(Entry)* table;
+    HTL_MEMBER(Entry)* cached_entry; // last requested entry, not thread safe
 } HTL_P(NAME);
 
 
 /********* LIFETIME *********/
 
 /**
- *  Construct an empty hasharray at the referenced location
+ *  Create an empty hasharray at the referenced location
  *  Return 1 on success, 0 on failure
  *
  *  PRE:  hasharray was not already constructed
@@ -48,17 +49,17 @@ typedef struct HTL_P(NAME)
  *
  *  Alternatively the bytes could be set to 0
  */
-bool HTL_MEMBER(Construct)(HTL_P(NAME)* hasharray);
+bool HTL_MEMBER(Create)(HTL_P(NAME)* hasharray);
 
 /**
- *  Destruct a hasharray at the referenced location
+ *  Destroy a hasharray at the referenced location
  *  Dynamic memory gets cleaned up
  *
  *  POST: All references to entries get invalidated, because
  *        the array gets freed, Construct could be called
  *        again
  */
-void HTL_MEMBER(Destruct)(HTL_P(NAME)* hasharray);
+void HTL_MEMBER(Destroy)(HTL_P(NAME)* hasharray);
 
 
 /********* ENTRY ACCESS *********/

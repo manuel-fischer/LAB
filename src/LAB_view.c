@@ -1199,6 +1199,7 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
                         case 0: x=r; y=a; z=b; break /*switch*/;
                         case 1: x=a; y=b; z=r; break /*switch*/;
                         case 2: x=b; y=r; z=a; break /*switch*/;
+                        default: LAB_UNREACHABLE();
                     }
                     for(int q = 0; q < 8; ++q)
                     {

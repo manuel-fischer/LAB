@@ -24,6 +24,9 @@
 #define LAB_PURE     __attribute__((pure))
 #define LAB_CONST    __attribute__((const))
 
+//#define LAB_UNROLL(n) _Pragma("GCC unroll " #n)
+#define LAB_PRAGMA(str) _Pragma(#str)
+#define LAB_UNROLL(n) LAB_PRAGMA(GCC unroll n)
 
 
 /*#define LAB_PAD(type) \
@@ -51,6 +54,8 @@
 
 #define LAB_PURE
 #define LAB_CONST
+
+#define LAB_UNROLL(n)
 
 
 //#define LAB_PAD(type) type LAB_UNQ(pad)

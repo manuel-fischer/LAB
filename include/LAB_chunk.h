@@ -32,7 +32,7 @@ typedef struct LAB_Chunk
 {
     LAB_Block* blocks[LAB_CHUNK_LENGTH];
     LAB_Color  light[LAB_CHUNK_LENGTH];
-    unsigned int dirty:8, modified:1;
+    unsigned int dirty:8, modified:1, light_generated:1;
     int age;
 } LAB_Chunk;
 

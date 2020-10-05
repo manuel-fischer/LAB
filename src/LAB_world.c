@@ -11,6 +11,7 @@
 #include "LAB_world_light.h"
 
 #include <math.h>
+#include <stdio.h> // DBG
 
 
 #define HTL_PARAM LAB_CHUNK_MAP
@@ -161,11 +162,16 @@ void LAB_UpdateChunk(LAB_World* world, int x, int y, int z, LAB_ChunkUpdate upda
         LAB_Chunk* chunks[27];
         LAB_GetChunkNeighborhood(world, chunks, x, y, z, LAB_CHUNK_EXISTING);
         int faces = LAB_TickLight(world, chunks, x, y, z);
-        // TODO: ENABLE LATER
-        for(int face_itr=faces; face_itr; face_itr &= face_itr-1)
+        for(int face_itr=faces&63; face_itr; face_itr &= face_itr-1)
         {
             int face = LAB_Ctz(face_itr);
             LAB_UpdateChunkLater(world, x+LAB_OX(face), y+LAB_OY(face), z+LAB_OZ(face), LAB_CHUNK_UPDATE_LIGHT);
+        }
+        if(faces&128)
+        {
+            LAB_ASSUME(chunks[1+3+9]);
+            printf("UPDATE AGAIN");
+            chunks[1+3+9]->dirty |= LAB_CHUNK_UPDATE_LIGHT; // TODO: |LAB_CHUNK_UPDATE_LOCAL;
         }
 
         (*world->chunkview)(world->chunkview_user, world, x, y, z, update);

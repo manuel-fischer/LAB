@@ -7,6 +7,7 @@
  *  LAB_ASSUME_0(cond)
  *  - check that calls extern functions -> removed completely in release
 **/
+#include "LAB_opt.h"
 #ifdef NDEBUG
 #  ifdef __GNUC__
      /* hint to compiler */

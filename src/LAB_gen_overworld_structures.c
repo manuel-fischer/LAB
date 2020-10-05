@@ -54,6 +54,7 @@ void LAB_Gen_Overworld_Tower(LAB_Placer* p, LAB_Random* rnd)
             floor   = &LAB_BLOCK_MARBLECOBBLE;
             ceiling = &LAB_BLOCK_WOOD_PLANKS_DARK;
         break;
+        default: LAB_UNREACHABLE();
     }
 
     for(int z = -r; z <= r; ++z)

@@ -2,6 +2,7 @@
 
 #include "LAB_chunk.h"
 #include "LAB_stdinc.h"
+#include "LAB_debug.h"
 
 #include "LAB_check.h"
 #include "LAB_opt.h"
@@ -183,6 +184,10 @@ LAB_INLINE uint32_t LAB_World_PeekFlags3x3(LAB_Chunk* chunk, int x, int y, int z
 LAB_INLINE
 LAB_Chunk* LAB_GetNeighborhoodRef(LAB_Chunk*const neighborhood[27], int x, int y, int z, int* /*out*/ index)
 {
+    LAB_ASSUME(x >= -16 && x < 32);
+    LAB_ASSUME(y >= -16 && y < 32);
+    LAB_ASSUME(z >= -16 && z < 32);
+
     int cx, cy, cz,  ix, iy, iz;
 
     cx = (x+16) >> LAB_CHUNK_SHIFT;
