@@ -304,6 +304,7 @@ static void LAB_Gen_Cave_Crystals(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x
 
 static void LAB_Gen_Cave_RockVariety(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y, int z)
 {
+    #if 0
     static uint64_t noise[17*17*17];
     static uint32_t smooth[16*16*16];
 
@@ -319,4 +320,27 @@ static void LAB_Gen_Cave_RockVariety(LAB_GenOverworld* gen, LAB_Chunk* chunk, in
             chunk->blocks[xx|yy|zz] = &LAB_BLOCK_MARBLE;
         }
     }
+    #else
+    for(int zz = 0; zz < 16; ++zz)
+    for(int yy = 0; yy < 16; ++yy)
+    for(int xx = 0; xx < 16; ++xx)
+    {
+        int xi = xx|x<<4;
+        int yi = yy|y<<4;
+        int zi = zz|z<<4;
+        if(chunk->blocks[xx|yy<<4|zz<<8] == &LAB_BLOCK_STONE)
+        {
+            #define F (1.f/42.f)
+            double n = LAB_SimplexNoise3D(xi*F, yi*F+gen->seed+0x12345, zi*F);
+            //if(n >= 0.375 && n <= 0.625)
+            //if(n <= 0.25)
+            if(n <= 0.17)
+                chunk->blocks[xx|yy<<4|zz<<8] = &LAB_BLOCK_MARBLE;
+            //else if(n >= 0.25 && n <= 0.75)
+            //else if(n >= 0.75)
+            else if(n >= 0.83)
+                chunk->blocks[xx|yy<<4|zz<<8] = &LAB_BLOCK_BASALT;
+        }
+    }
+    #endif
 }

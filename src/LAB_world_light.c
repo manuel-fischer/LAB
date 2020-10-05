@@ -94,12 +94,14 @@ static LAB_Color LAB_CalcLight(LAB_World* world, LAB_Chunk*const chunks[27], int
 
 
     //LAB_Color dia = cnk->blocks[off]->dia;
-    LAB_Color dia = LAB_GetNeighborhoodBlock(chunks, x, y, z)->dia;
+    LAB_Block* b_ctr = LAB_GetNeighborhoodBlock(chunks, x, y, z);
+    LAB_Color dia = b_ctr->dia;
 
     //lum = LAB_RGB(16, 16, 16);
     lum = LAB_DARK_LIGHT(dia);
     //lum = LAB_MaxColor(lum, cnk->blocks[off]->lum);
-    lum = LAB_MaxColor(lum, LAB_GetNeighborhoodLight(chunks, x, y, z, default_color));
+    //lum = LAB_MaxColor(lum, LAB_GetNeighborhoodLight(chunks, x, y, z, default_color));
+    lum = LAB_MaxColor(lum, b_ctr->lum);
     LAB_UNROLL(6)
     for(int i = 0; i < 6; ++i)
     {
@@ -149,6 +151,7 @@ static int LAB_UpdateLight_First(LAB_World* world, LAB_Chunk*const chunks[27], L
 {
     int changed = 0;
 
+    #if 0
     // check borders (this is needed if light blocks are placed at the border)
     LAB_UNROLL(6)
     for(int face = 0; face<6; ++face)
@@ -196,6 +199,7 @@ static int LAB_UpdateLight_First(LAB_World* world, LAB_Chunk*const chunks[27], L
         }
         next_side:;
     }
+    #endif
 
     // check and update center chunk
     LAB_Chunk* cnk = chunks[1+3+9];
@@ -205,8 +209,11 @@ static int LAB_UpdateLight_First(LAB_World* world, LAB_Chunk*const chunks[27], L
     {
         int off = LAB_CHUNK_OFFSET(x, y, z);
 
-        if(cnk->light[off] != LAB_CalcLight(world, chunks, x, y, z, default_color))
+        LAB_Color lum = LAB_CalcLight(world, chunks, x, y, z, default_color);
+
+        if(cnk->light[off] != lum)
         {
+            cnk->light[off] = lum;
             if(x==0)  changed |=  1;
             if(x==15) changed |=  2;
             if(y==0)  changed |=  4;
@@ -284,6 +291,8 @@ static int LAB_CheckLight(LAB_World* world, LAB_Chunk*const chunks[27], LAB_Colo
 LAB_HOT                                           // TODO: |--------------------| not used
 int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, int cz)
 {
+    //static int i = 0;
+    //printf("LAB_TickLight %i @ %i %i %i\n", i++, cx, cy, cz);
     LAB_Chunk* ctr_cnk = chunks[1+3+9];
     if(!ctr_cnk) return 0;
 
@@ -324,9 +333,9 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, 
             int y = qy+LAB_OY(face);
             int z = qz+LAB_OZ(face);
             #if 0
-            if(x==-16||x==31) continue;
-            if(y==-16||y==31) continue;
-            if(z==-16||z==31) continue;
+            if(x==-16||x==31) goto next_face;
+            if(y==-16||y==31) goto next_face;
+            if(z==-16||z==31) goto next_face;
             #else
             // only one check:
             switch(face)
