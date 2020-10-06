@@ -68,6 +68,15 @@ static inline LAB_Color LAB_MinColor(LAB_Color a, LAB_Color b)
     return b ^ ((a^b) & (rb_mask|ga_mask));
 }
 
+// fill channels where a < b with 0xff
+static inline LAB_Color LAB_CompMask(LAB_Color a, LAB_Color b)
+{
+    LAB_Color ga_mask = ((((a>>8&0x00ff00ff)|0x00100000)-(b>>8&0x00ff00ff))    & 0x01000100)*0xff;
+    LAB_Color rb_mask = ((((a   &0x00ff00ff)|0x00001000)-(b   &0x00ff00ff))>>8 & 0x00010001)*0xff;
+
+    return rb_mask|ga_mask;
+}
+
 // use in contstant context or when the a, b can be reevaluated
 #define LAB_MUL_COLOR(a, b) \
     LAB_RGBA(LAB_RED(a)*LAB_RED(b)/255, \
@@ -280,4 +289,18 @@ static inline LAB_Color LAB_InterpolateColor4vi(const LAB_Color* colors,
                 LAB_InterpolateColor2i(colors[2], colors[3], u),
                 v
     );
+}
+
+
+static inline LAB_Color LAB_ColorHI4(LAB_Color c)
+{
+    //return (c&0xf0f0f0f0)|(c&0xf0f0f0f0)>>4;
+    //return c-(((c&0xf0f0f0f0)^0xf0f0f0f0)>>4);
+    LAB_Color a = (c&0xff00ff00)-(((c&0xf000f000)^0xf000f000)>>4);
+    LAB_Color b = (c&0x00ff00ff)-(((c&0x00f000f0)^0x00f000f0)>>4);
+    //a &= (LAB_CompMask(a, c)&0xff00ff00);
+    //b &= (LAB_CompMask(b, c)&0x00ff00ff);
+    a &= (LAB_CompMask(c, a)&0xff00ff00)^0xff00ff00;
+    b &= (LAB_CompMask(c, b)&0x00ff00ff)^0x00ff00ff;
+    return a|b;
 }

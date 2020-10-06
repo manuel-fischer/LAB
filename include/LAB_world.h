@@ -27,7 +27,8 @@ int LAB_ChunkPosComp(LAB_ChunkPos, LAB_ChunkPos);
 
 
 
-#define LAB_CHUNK_MAP_NAME                 LAB_ChunkMap
+#if 0
+/*#define LAB_CHUNK_MAP_NAME                 LAB_ChunkMap
 #define LAB_CHUNK_MAP_KEY_TYPE             LAB_ChunkPos
 #define LAB_CHUNK_MAP_VALUE_TYPE           LAB_Chunk*
 #define LAB_CHUNK_MAP_HASH_FUNC            LAB_ChunkPosHash
@@ -42,7 +43,42 @@ int LAB_ChunkPosComp(LAB_ChunkPos, LAB_ChunkPos);
 
 #define HTL_PARAM LAB_CHUNK_MAP
 #include "HTL_hashmap.t.h"
+#undef HTL_PARAM*/
+
+
+#else
+
+
+typedef struct LAB_World_ChunkEntry
+{
+    LAB_ChunkPos pos;
+    LAB_Chunk* chunk;
+} LAB_World_ChunkEntry;
+
+#define LAB_CHUNK_TBL_NAME             LAB_ChunkTBL
+#define LAB_CHUNK_TBL_KEY_TYPE         LAB_ChunkPos
+#define LAB_CHUNK_TBL_ENTRY_TYPE       LAB_World_ChunkEntry
+#define LAB_CHUNK_TBL_KEY_FUNC(e)      ((e)->pos)
+#define LAB_CHUNK_TBL_HASH_FUNC(k)     LAB_ChunkPosHash(k)
+#define LAB_CHUNK_TBL_COMP_FUNC(k1,k2) LAB_ChunkPosComp(k1, k2)
+
+#define LAB_CHUNK_TBL_EMPTY_FUNC(e)    ((e)->chunk == NULL)
+
+#define LAB_CHUNK_TBL_CALLOC           LAB_Calloc
+#define LAB_CHUNK_TBL_FREE             LAB_Free
+
+#define LAB_CHUNK_TBL_LOAD_NUM         3
+#define LAB_CHUNK_TBL_LOAD_DEN         4
+#define LAB_CHUNK_TBL_GROW_FACTOR      2
+#define LAB_CHUNK_TBL_INITIAL_CAPACITY 16
+
+#define LAB_CHUNK_TBL_CACHE_LAST       1
+
+
+#define HTL_PARAM LAB_CHUNK_TBL
+#include "HTL_hasharray.t.h"
 #undef HTL_PARAM
+#endif
 
 
 #define LAB_CHUNKPOS_QUEUE_NAME     LAB_ChunkPosQueue
@@ -53,6 +89,7 @@ int LAB_ChunkPosComp(LAB_ChunkPos, LAB_ChunkPos);
 #include "HTL_queue.t.h"
 #undef HTL_PARAM
 
+/*
 #define LAB_CHUNKPOS2_QUEUE_NAME     LAB_ChunkPos2Queue
 #define LAB_CHUNKPOS2_QUEUE_TYPE     LAB_ChunkPos
 #define LAB_CHUNKPOS2_QUEUE_CAPACITY 128
@@ -60,6 +97,7 @@ int LAB_ChunkPosComp(LAB_ChunkPos, LAB_ChunkPos);
 #define HTL_PARAM LAB_CHUNKPOS2_QUEUE
 #include "HTL_queue.t.h"
 #undef HTL_PARAM
+*/
 
 
 /*typedef struct LAB_LightUpdate
@@ -99,14 +137,10 @@ typedef struct LAB_World
     LAB_ChunkKeeper* chunkkeep;
     void*            chunkkeep_user;
 
-
-    /*size_t chunk_count, chunk_capacity;
-    LAB_ChunkEntry* chunks;*/
-    LAB_ChunkMap chunks;
-    //LAB_ChunkMap_Entry* last_entry; // TODO: invalid when chunk map gets reallocated
+    LAB_ChunkTBL chunks;
 
     LAB_ChunkPosQueue gen_queue;
-    LAB_ChunkPos2Queue update_queue;
+    //LAB_ChunkPos2Queue update_queue;
 
     size_t max_gen,
            max_update;

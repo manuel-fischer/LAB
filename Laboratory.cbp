@@ -109,8 +109,8 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-pg" />
-					<Add option="-Og" />
 					<Add option="-g" />
+					<Add option="-O0" />
 					<Add option="-DNDEBUG" />
 				</Compiler>
 				<Linker>
@@ -158,7 +158,13 @@
 			<Add library="glew32" />
 		</Linker>
 		<Unit filename="TODO.txt" />
+		<Unit filename="include/HTL_hasharray.t.c">
+			<Option compilerVar="CC" />
+			<Option compile="0" />
+			<Option link="0" />
+		</Unit>
 		<Unit filename="include/HTL_hasharray.t.h" />
+		<Unit filename="include/HTL_hasharray_util.h" />
 		<Unit filename="include/HTL_hashmap.t.c">
 			<Option compilerVar="CPP" />
 			<Option compile="0" />

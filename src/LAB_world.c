@@ -14,17 +14,21 @@
 #include <stdio.h> // DBG
 
 
-#define HTL_PARAM LAB_CHUNK_MAP
+/*#define HTL_PARAM LAB_CHUNK_MAP
 #include "HTL_hashmap.t.c"
+#undef HTL_PARAM*/
+
+#define HTL_PARAM LAB_CHUNK_TBL
+#include "HTL_hasharray.t.c"
 #undef HTL_PARAM
 
 #define HTL_PARAM LAB_CHUNKPOS_QUEUE
 #include "HTL_queue.t.c"
 #undef HTL_PARAM
 
-#define HTL_PARAM LAB_CHUNKPOS2_QUEUE
+/*#define HTL_PARAM LAB_CHUNKPOS2_QUEUE
 #include "HTL_queue.t.c"
-#undef HTL_PARAM
+#undef HTL_PARAM*/
 
 unsigned LAB_ChunkPosHash(LAB_ChunkPos pos)
 {
@@ -50,23 +54,23 @@ int LAB_ChunkPosComp(LAB_ChunkPos a, LAB_ChunkPos b)
 int LAB_ConstructWorld(LAB_World* world)
 {
     // those never fail
-    LAB_ChunkMap_Construct(&world->chunks);
+    LAB_ChunkTBL_Create(&world->chunks);
     LAB_ChunkPosQueue_Construct(&world->gen_queue);
-    LAB_ChunkPos2Queue_Construct(&world->update_queue);
+    //LAB_ChunkPos2Queue_Construct(&world->update_queue);
     return 1;
 }
 
 void LAB_DestructWorld(LAB_World* world)
 {
-    LAB_ChunkPos2Queue_Destruct(&world->update_queue);
+    //LAB_ChunkPos2Queue_Destruct(&world->update_queue);
     LAB_ChunkPosQueue_Destruct(&world->gen_queue);
     for(size_t i = 0; i < world->chunks.capacity; ++i)
     {
-        LAB_ChunkMap_Entry* entry = &world->chunks.table[i];
-        if(entry->value)
-            LAB_DestroyChunk(entry->value);
+        LAB_World_ChunkEntry* entry = &world->chunks.table[i];
+        if(entry->chunk != NULL)
+            LAB_DestroyChunk(entry->chunk);
     }
-    LAB_ChunkMap_Destruct(&world->chunks);
+    LAB_ChunkTBL_Destroy(&world->chunks);
 }
 
 
@@ -74,27 +78,32 @@ static LAB_Chunk* LAB_GenerateNotifyChunk(LAB_World* world, int x, int y, int z)
 {
     //printf("GEN %3i, %3i, %3i\n", x, y, z);
     LAB_ChunkPos pos = { x, y, z };
-    LAB_ChunkMap_Entry* entry;
+    LAB_World_ChunkEntry* entry;
     LAB_Chunk* chunk;
-    entry = LAB_ChunkMap_PutKey(&world->chunks, pos);
+    entry = LAB_ChunkTBL_PutAlloc(&world->chunks, pos);
 
     // Create slot for chunk
     // Note that it does not really exist, because the value is NULL
     // Entry must be written before anything further happens
     if(LAB_UNLIKELY(entry == NULL)) return NULL;
 
-    if(entry->value != NULL) // already generated
+    if(entry->chunk != NULL) // already generated
     {
-        return entry->value;
+        return entry->chunk;
     }
 
     chunk = (*world->chunkgen)(world->chunkgen_user, world, x, y, z);
-    if(LAB_UNLIKELY(chunk == NULL)) return NULL;
-        // Because the inserted entry is not really existing
-        // We can silently discard it
+    if(LAB_UNLIKELY(chunk == NULL))
+    {
+        // Because the inserted entry was not changed
+        // We can discard it
+        LAB_ChunkTBL_Discard(&world->chunks, entry);
+        return NULL;
+    }
 
     // Slot gets occupied, because >chunk< is nonzero
-    entry->value = chunk;
+    entry->pos = pos;
+    entry->chunk = chunk;
 
     LAB_UpdateChunk(world, x, y, z, LAB_CHUNK_UPDATE_BLOCK);
 
@@ -110,12 +119,12 @@ LAB_Chunk* LAB_GetChunk(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType
         world->last_entry->value->age = 0;
         return world->last_entry->value;
     }*/
-    LAB_ChunkMap_Entry* entry = LAB_ChunkMap_Get(&world->chunks, pos);
+    LAB_World_ChunkEntry* entry = LAB_ChunkTBL_Get(&world->chunks, pos);
     if(entry != NULL)
     {
 //        world->last_entry = entry;
-        entry->value->age = 0;
-        return entry->value;
+        entry->chunk->age = 0;
+        return entry->chunk;
     }
 
     if(flags == LAB_CHUNK_GENERATE)
@@ -376,12 +385,12 @@ void LAB_WorldTick(LAB_World* world, uint32_t delta_ms)
     size_t rest_update = world->max_update;
     for(size_t i = 0; i < world->chunks.capacity; ++i)
     {
-        LAB_Chunk* chunk = world->chunks.table[i].value;
+        LAB_Chunk* chunk = world->chunks.table[i].chunk;
         if(chunk && chunk->dirty)
         {
             LAB_ChunkUpdate update = chunk->dirty;
             chunk->dirty = 0;
-            LAB_ChunkPos* pos = &world->chunks.table[i].key;
+            LAB_ChunkPos* pos = &world->chunks.table[i].pos;
             LAB_UpdateChunk(world, pos->x, pos->y, pos->z, update);
             if(--rest_update == 0) return;
         }
@@ -390,18 +399,18 @@ void LAB_WorldTick(LAB_World* world, uint32_t delta_ms)
     // Unload chunks
     for(size_t i = 0; i < world->chunks.capacity; ++i)
     {
-        LAB_ChunkMap_Entry* entry = &world->chunks.table[i];
-        LAB_Chunk* chunk = entry->value;
+        LAB_World_ChunkEntry* entry = &world->chunks.table[i];
+        LAB_Chunk* chunk = entry->chunk;
         if(chunk)
         {
             chunk->age++;
             if(chunk->age >= LAB_MAX_CHUNK_AGE && !chunk->modified)
             {
                 int cx, cy, cz;
-                cx = entry->key.x;
-                cy = entry->key.y;
-                cz = entry->key.z;
-                bool keep = world->chunkkeep(world->chunkkeep_user, world, cx, cy, cz);
+                cx = entry->pos.x;
+                cy = entry->pos.y;
+                cz = entry->pos.z;
+                bool keep = world->chunkkeep(world->chunkkeep_user, world, cx, cy, cz); // DBG
                 if(!keep)
                 {
                     // Only entries after this entry are changed, another entry
@@ -409,7 +418,7 @@ void LAB_WorldTick(LAB_World* world, uint32_t delta_ms)
                     // reallocated when removing entries
                     //printf("Unload chunk %i %i %i\n", cx, cy, cz);
                     LAB_DestroyChunk(chunk);
-                    LAB_ChunkMap_RemoveEntry(&world->chunks, &world->chunks.table[i]);
+                    LAB_ChunkTBL_RemoveEntry(&world->chunks, &world->chunks.table[i]);
                     --i; // repeat index
                 }
             }

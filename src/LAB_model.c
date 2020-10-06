@@ -21,7 +21,8 @@ int LAB_PutModelAt(LAB_OUT LAB_Triangle*restrict dst, LAB_Model const* model,
         if(occlusion&faces)
         {
             // main loop: 45 instructions
-            memcpy(dst, src, sizeof *src);
+            //memcpy(dst, src, sizeof *src);
+            *dst = *src;
             dst->v[0].x += x; dst->v[0].y += y; dst->v[0].z += z;
             dst->v[1].x += x; dst->v[1].y += y; dst->v[1].z += z;
             dst->v[2].x += x; dst->v[2].y += y; dst->v[2].z += z;
@@ -52,7 +53,8 @@ int LAB_PutModelShadedAt(LAB_OUT LAB_Triangle* dst, LAB_Model const* model,
         unsigned occlusion = LAB_TRIANGLE_CULL(*src);
         if(occlusion&faces)
         {
-            memcpy(dst, src, sizeof *src);
+            //memcpy(dst, src, sizeof *src);
+            *dst = *src;
             dst->v[0].x += x; dst->v[0].y += y; dst->v[0].z += z;
             dst->v[1].x += x; dst->v[1].y += y; dst->v[1].z += z;
             dst->v[2].x += x; dst->v[2].y += y; dst->v[2].z += z;
@@ -83,7 +85,8 @@ int LAB_PutModelSmoothShadedAt(LAB_OUT LAB_Triangle* dst,
         unsigned occlusion = LAB_TRIANGLE_CULL(*src);
         if(occlusion&faces)
         {
-            memcpy(dst, src, sizeof *src);
+            //memcpy(dst, src, sizeof *src);
+            *dst = *src;
             dst->v[0].x += x; dst->v[0].y += y; dst->v[0].z += z;
             dst->v[1].x += x; dst->v[1].y += y; dst->v[1].z += z;
             dst->v[2].x += x; dst->v[2].y += y; dst->v[2].z += z;

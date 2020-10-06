@@ -5,6 +5,8 @@
 
 // minimum light level for completely unlit block with that dia
 #define LAB_DARK_LIGHT(dia) ((((dia)>>4) & 0x0f0f0fu) | 0xff000000u)
+                    //nlum = nlum - (nlum>>2 & 0x3f3f3f);
+#define LAB_LIGHT_FALL_OFF(lum) ((lum) - ((lum)>>3 & 0x1f1f1f)-((lum)>>4 & 0x0f0f0f))
 
 // heuristic lighting algorithm
 /*static void LAB_PrepareLight(LAB_Chunk* chunk, LAB_Color default_color)
@@ -47,7 +49,7 @@ static void LAB_PrepareLight(LAB_Chunk* chunk, LAB_Chunk* chunk_above, LAB_Color
 }
 
 LAB_INLINE
-static LAB_Color LAB_CalcLight(LAB_World* world, LAB_Chunk*const chunks[27], int x, int y, int z, LAB_Color default_color)
+static LAB_Color LAB_CalcLight(LAB_World* world, LAB_Chunk*const chunks[27], int x, int y, int z, LAB_Color default_color, LAB_Color default_color_above)
 {
     LAB_ASSUME(x >= -16+1 && x < 32-1);
     LAB_ASSUME(y >= -16+1 && y < 32-1);
@@ -74,9 +76,9 @@ static LAB_Color LAB_CalcLight(LAB_World* world, LAB_Chunk*const chunks[27], int
                 nlum = block->lum;
             else
             {
-                nlum = LAB_GetNeighborhoodLight(chunks, x+o[0], y+o[1], z+o[2], default_color);
+                nlum = LAB_GetNeighborhoodLight(chunks, x+o[0], y+o[1], z+o[2], i==3?default_color_above:default_color);
                 if(i!=3 || (nlum&0xffffff) != 0xffffff)
-                    nlum = nlum - (nlum>>2 & 0x3f3f3f);
+                    nlum = LAB_LIGHT_FALL_OFF(nlum);
             }
             lum = LAB_MaxColor(lum, LAB_MulColor(nlum, dia));
         }
@@ -111,7 +113,7 @@ static LAB_Color LAB_CalcLight(LAB_World* world, LAB_Chunk*const chunks[27], int
         LAB_Block* block = LAB_GetNeighborhoodBlock(chunks, x+LAB_OX(i), y+LAB_OY(i), z+LAB_OZ(i));
 
         nlum1 = block->lum;
-        nlum2 = LAB_GetNeighborhoodLight(chunks, x+LAB_OX(i), y+LAB_OY(i), z+LAB_OZ(i), default_color);
+        nlum2 = LAB_GetNeighborhoodLight(chunks, x+LAB_OX(i), y+LAB_OY(i), z+LAB_OZ(i), i==3?default_color_above:default_color);
         //if(i!=3 || (nlum2&0xffffff) != 0xffffff)
         //    nlum2 = nlum2 - (nlum2>>2 & 0x3f3f3f);
 
@@ -119,7 +121,8 @@ static LAB_Color LAB_CalcLight(LAB_World* world, LAB_Chunk*const chunks[27], int
         //uint32_t mask = -(i!=3); // alpha needs to be 0
         uint32_t is_white_24 = ((nlum2&0xffffffu)+1)&0x01000000u;
         uint32_t mask = is_white_24-(unsigned)((!!is_white_24) & (i==3)); // alpha needs to be 0
-        nlum2 = nlum2 - ((nlum2>>2 & 0x3f3f3f)&~mask); // don't care about alpha here
+        //nlum2 = nlum2 - ((nlum2>>2 & 0x3f3f3f)&~mask); // don't care about alpha here
+        nlum2 = nlum2 ^ ((nlum2^LAB_LIGHT_FALL_OFF(nlum2)) &~ mask);
 
         nlum = LAB_MaxColor(nlum1, nlum2);
         lum = LAB_MaxColor(lum, LAB_MulColor(nlum, dia));
@@ -147,11 +150,11 @@ static LAB_Color LAB_CalcLight(LAB_World* world, LAB_Chunk*const chunks[27], int
  *  S, N, U, D, E, W: Neighboring chunk needs to be updated
  */
 LAB_INLINE
-static int LAB_UpdateLight_First(LAB_World* world, LAB_Chunk*const chunks[27], LAB_Color default_color, size_t queue_cap, int* queue, size_t* queue_count)
+static int LAB_UpdateLight_First(LAB_World* world, LAB_Chunk*const chunks[27], LAB_Color default_color, LAB_Color default_color_above, size_t queue_cap, int* queue, size_t* queue_count)
 {
     int changed = 0;
 
-    #if 0
+    #if 1
     // check borders (this is needed if light blocks are placed at the border)
     LAB_UNROLL(6)
     for(int face = 0; face<6; ++face)
@@ -188,7 +191,7 @@ static int LAB_UpdateLight_First(LAB_World* world, LAB_Chunk*const chunks[27], L
                 LAB_Chunk* cnk = LAB_GetNeighborhoodRef(chunks, x, y, z, &off);
                 if(cnk)
                 {
-                    LAB_Color lum = LAB_CalcLight(world, chunks, x, y, z, default_color);
+                    LAB_Color lum = LAB_CalcLight(world, chunks, x, y, z, default_color, default_color_above);
                     if(cnk->light[off] != lum)
                     {
                         changed |= 1<<face;
@@ -209,7 +212,7 @@ static int LAB_UpdateLight_First(LAB_World* world, LAB_Chunk*const chunks[27], L
     {
         int off = LAB_CHUNK_OFFSET(x, y, z);
 
-        LAB_Color lum = LAB_CalcLight(world, chunks, x, y, z, default_color);
+        LAB_Color lum = LAB_CalcLight(world, chunks, x, y, z, default_color, default_color_above);
 
         if(cnk->light[off] != lum)
         {
@@ -272,7 +275,7 @@ static int LAB_CheckLight(LAB_World* world, LAB_Chunk*const chunks[27], LAB_Colo
     {
         int off;
         LAB_Chunk* cnk = LAB_GetNeighborhoodRef(chunks, x, y, z, &off);
-        if(cnk && cnk->light[off] != LAB_CalcLight(world, chunks, x, y, z, default_color))
+        if(cnk && cnk->light[off] != LAB_CalcLight(world, chunks, x, y, z, default_color, default_color_above))
         {
             if(x<=0)  changed |=  1;
             if(x>=15) changed |=  2;
@@ -296,11 +299,12 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, 
     LAB_Chunk* ctr_cnk = chunks[1+3+9];
     if(!ctr_cnk) return 0;
 
-    LAB_Color default_color = cy <  -2 ? LAB_RGB(16, 16, 16) : LAB_RGB(255, 255, 255);
+    LAB_Color default_color_above = cy <  -2 ? LAB_RGB(16, 16, 16) : LAB_RGB(255, 255, 255);
+    LAB_Color default_color = cy <  0 ? LAB_RGB(16, 16, 16) : LAB_RGB(255, 255, 255);
 
     if(!ctr_cnk->light_generated)
     {
-        LAB_PrepareLight(ctr_cnk, chunks[1+2*3+9], default_color);
+        LAB_PrepareLight(ctr_cnk, chunks[1+2*3+9], default_color_above);
         ctr_cnk->light_generated = 1;
     }
 
@@ -312,7 +316,7 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, 
 
     // for simplicity the queue starts at 0, this is not passed to the function
     // because no elements are taken out of the queue
-    int faces_changed = LAB_UpdateLight_First(world, chunks, default_color, LAB_LIGHT_QUEUE_SIZE, queue, &queue_count);
+    int faces_changed = LAB_UpdateLight_First(world, chunks, default_color, default_color_above, LAB_LIGHT_QUEUE_SIZE, queue, &queue_count);
     if(!faces_changed) return 0;
     //faces_changed &= 63; // remove change bit
 
@@ -355,7 +359,7 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, 
             cnk = LAB_GetNeighborhoodRef(chunks, x, y, z, &block_index);
             if(cnk)
             {
-                LAB_Color lum = LAB_CalcLight(world, chunks, x, y, z, default_color);
+                LAB_Color lum = LAB_CalcLight(world, chunks, x, y, z, default_color, default_color_above);
 
                 if(cnk->light[block_index] != lum)
                 {

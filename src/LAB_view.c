@@ -25,9 +25,10 @@
 #include "LAB_gui_component.h"
 #include "LAB_gui_menu.h"
 
-/*#define HTL_PARAM LAB_VIEW_CHUNK_MAP
-#include "HTL_hashmap.t.h"
-#undef HTL_PARAM*/
+#define HTL_PARAM LAB_VIEW_CHUNK_TBL
+#include "HTL_hasharray.t.c"
+#undef HTL_PARAM
+
 
 ///############################
 
@@ -57,6 +58,8 @@ bool LAB_ConstructView(LAB_View* view, LAB_World* world)
 
     view->y = 1.5;
 
+    //LAB_View_ChunkTBL_Create(&view->entry); // not nessesary because already set to 0 above
+
     LAB_FpsGraph_Create(&view->fps_graph);
     LAB_GuiManager_Create(&view->gui_mgr);
 
@@ -68,11 +71,13 @@ void LAB_DestructView(LAB_View* view)
     LAB_GuiManager_Destroy(&view->gui_mgr);
     LAB_FpsGraph_Destroy(&view->fps_graph);
 
-    for(size_t i = 0; i < view->chunk_count; ++i)
+    LAB_ViewChunkEntry* e;
+    HTL_HASHARRAY_EACH(LAB_View_ChunkTBL, &view->chunks, e,
     {
-        LAB_ViewDestructChunk(view, &view->chunks[i]);
-    }
-    LAB_Free(view->chunks);
+        LAB_ViewDestructChunk(view, e);
+    });
+
+    LAB_View_ChunkTBL_Destroy(&view->chunks);
 }
 
 
@@ -186,6 +191,9 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
 
     //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?LAB_HighColor2(x):(x))
     //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?LAB_MixColor50(x, ~0):(x))
+    //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor(LAB_MulColor(~(x), ~(x)), LAB_MulColor(~(x), ~(x))):(x))
+    // before mixing
+    #define MAP_LIGHT_0(x) LAB_ColorHI4(x)
     #define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor(LAB_MulColor(~(x), ~(x)), LAB_MulColor(~(x), ~(x))):(x))
     if((view->flags&LAB_VIEW_FLAT_SHADE)||(block->flags&LAB_BLOCK_FLAT_SHADE))
     {
@@ -194,9 +202,9 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
         {
             int face = LAB_Ctz(face_itr);
             //const int* o = LAB_offset[face];
-            light_sides[face] = MAP_LIGHT(LAB_GetNeighborhoodLight(cnk3x3x3, x+LAB_OX(face), y+LAB_OY(face), z+LAB_OZ(face), LAB_RGB(255, 255, 255)));
+            light_sides[face] = MAP_LIGHT(MAP_LIGHT_0(LAB_GetNeighborhoodLight(cnk3x3x3, x+LAB_OX(face), y+LAB_OY(face), z+LAB_OZ(face), LAB_RGB(255, 255, 255))));
         }
-        light_sides[6] = MAP_LIGHT(LAB_GetNeighborhoodLight(cnk3x3x3, x, y, z, LAB_RGB(255, 255, 255)));
+        light_sides[6] = MAP_LIGHT(MAP_LIGHT_0(LAB_GetNeighborhoodLight(cnk3x3x3, x, y, z, LAB_RGB(255, 255, 255))));
 
 
         const LAB_Model* model = block->model;
@@ -209,6 +217,7 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
     }
     else
     {
+        LAB_Color default_color = chunk_entry->y<-2 ? LAB_RGB(15, 15, 15) : LAB_RGB(255, 255, 255);
         LAB_Color light_sides[7][4];
         for(int face_itr=lum_faces; face_itr; face_itr &= face_itr-1)
         {
@@ -218,7 +227,7 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
             int oy = LAB_OY(face);
             int oz = LAB_OZ(face);
 
-            #define XX(xd, yd, zd) LAB_GetNeighborhoodLight(cnk3x3x3, x+ox+(xd), y+oy+(yd), z+oz+(zd), LAB_RGB(16, 16, 16))
+            #define XX(xd, yd, zd) LAB_GetNeighborhoodLight(cnk3x3x3, x+ox+(xd), y+oy+(yd), z+oz+(zd), default_color)
             int ax = LAB_AX(face>>1); // LAB_offsetA[face>>1][0];
             int ay = LAB_AY(face>>1); // LAB_offsetA[face>>1][1];
             int az = LAB_AZ(face>>1); // LAB_offsetA[face>>1][2];
@@ -238,12 +247,12 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
                     //                XX(     v*bx,      v*by,      v*bz),
                     //                XX(u*ax     , u*ay     , u*az     )),
                     //                XX(u*ax+v*bx, u*ay+v*by, u*az+v*bz));
-                    tmp[index] = LAB_MaxColor(
+                    tmp[index] = MAP_LIGHT_0(LAB_MaxColor(
                                     XX(     v*bx,      v*by,      v*bz),
-                                    XX(u*ax     , u*ay     , u*az     ));
+                                    XX(u*ax     , u*ay     , u*az     )));
                 }
                 else
-                    tmp[index] = XX(u*ax+v*bx, u*ay+v*by, u*az+v*bz);
+                    tmp[index] = MAP_LIGHT_0(XX(u*ax+v*bx, u*ay+v*by, u*az+v*bz));
             }
 
             /*light_sides[face][0] = XX(    0,     0,     0);
@@ -359,16 +368,17 @@ static void LAB_ViewBuildChunks(LAB_View* view)
 
 
     int dist_sq = view->render_dist*view->render_dist + 3;
-    for(size_t i = 0; i < view->chunk_count && rest_update; ++i)
+    LAB_ViewChunkEntry* e;
+    HTL_HASHARRAY_EACH(LAB_View_ChunkTBL, &view->chunks, e,
     {
         int cx, cy, cz;
-        cx = view->chunks[i].x;
-        cy = view->chunks[i].y;
-        cz = view->chunks[i].z;
+        cx = e->x;
+        cy = e->y;
+        cz = e->z;
         if((cx-px)*(cx-px) + (cy-py)*(cy-py) + (cz-pz)*(cz-pz) <= dist_sq
-           && view->chunks[i].visible)
-            rest_update -= LAB_ViewBuildChunk(view, &view->chunks[i]);
-    }
+           && e->visible)
+            rest_update -= LAB_ViewBuildChunk(view, e);
+    });
 }
 
 static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
@@ -418,13 +428,12 @@ static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 #if !LAB_VIEW_QUERY_IMMEDIATELY
 static void LAB_View_FetchQueryChunks(LAB_View* view)
 {
-    for(size_t i = 0; i < view->chunk_count; ++i)
+    LAB_ViewChunkEntry* e;
+    HTL_HASHARRAY_EACH(LAB_View_ChunkTBL, &view->chunks, e,
     {
-        LAB_ViewChunkEntry* entry = &view->chunks[i];
-
-        if(entry->query_id)
-            LAB_View_FetchQueryChunk(view, entry);
-    }
+        if(e->query_id)
+            LAB_View_FetchQueryChunk(view, e);
+    });
 }
 
 static void LAB_View_FetchQueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
@@ -451,37 +460,37 @@ static void LAB_View_OrderQueryChunks(LAB_View* view)
 
 
     int dist_sq = view->render_dist*view->render_dist + 3;
-    for(size_t i = 0; i < view->chunk_count; ++i)
+    LAB_ViewChunkEntry* e;
+    HTL_HASHARRAY_EACH(LAB_View_ChunkTBL, &view->chunks, e,
     {
-        LAB_ViewChunkEntry* entry = &view->chunks[i];
         int cx, cy, cz;
-        cx = entry->x;
-        cy = entry->y;
-        cz = entry->z;
+        cx = e->x;
+        cy = e->y;
+        cz = e->z;
         int c_dist_sq = (cx-px)*(cx-px) + (cy-py)*(cy-py) + (cz-pz)*(cz-pz);
 
 
         if(c_dist_sq <= 1*1+1*1+1*1)
-            entry->visible = 1;
+            e->visible = 1;
         else if(c_dist_sq <= dist_sq)
         {
             if(!LAB_View_HasChunkVisibleNeighbors(view, cx, cy, cz))
             {
-                entry->do_query = 0;
-                entry->visible = 0;
+                e->do_query = 0;
+                e->visible = 0;
             }
             else
             {
                 int probability_update = LAB_MAX(255/c_dist_sq, 31);
                 //int probability_update = LAB_MAX(255-c_dist_sq, 31);
 
-                if(entry->do_query || (rand()&0xff) <= probability_update)
+                if(e->do_query || (rand()&0xff) <= probability_update)
                 {
-                    LAB_View_OrderQueryChunk(view, entry);
+                    LAB_View_OrderQueryChunk(view, e);
                 }
             }
         }
-    }
+    });
 }
 
 static void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
@@ -798,10 +807,14 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
     glCullFace(GL_FRONT);
 
     // Sky color
-    if(view->y <= -16*4)
-        glClearColor(0.03, 0.03, 0.03, 1);
+    float f = LAB_MIN(LAB_MAX((view->y+64+32)*(1./64.), 0), 1);
+    f*=f;
+    glClearColor(0.5*f, 0.7*f, 0.9*f, 1);
+    /*if(view->y <= -16*4)
+        //glClearColor(0.03, 0.03, 0.03, 1);
+        glClearColor(0.0, 0.0, 0.0, 1);
     else
-        glClearColor(0.5, 0.7, 0.9, 1);
+        glClearColor(0.5, 0.7, 0.9, 1);*/
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -897,10 +910,11 @@ void LAB_ViewRemoveDistantChunks(LAB_View* view)
     int pz = LAB_Sar((int)floorf(view->z), LAB_CHUNK_SHIFT);
 
     int dist_sq = view->keep_dist*view->keep_dist + 3;
+    #if 0
     size_t a = 0;
-    for(size_t i = 0; i < view->chunk_count; ++i)
+    for(size_t i = 0; i < view->chunks.capacity; ++i)
+    if(view->chunks[i].occupied)
     {
-
         int cx, cy, cz;
         cx = view->chunks[i].x;
         cy = view->chunks[i].y;
@@ -909,7 +923,8 @@ void LAB_ViewRemoveDistantChunks(LAB_View* view)
         {
             if(a != i)
             {
-                memcpy(&view->chunks[a], &view->chunks[i], sizeof *view->chunks);
+                //memcpy(&view->chunks[a], &view->chunks[i], sizeof *view->chunks);
+                view->chunks[a] = view->chunks[i];
             }
             ++a;
         }
@@ -919,6 +934,12 @@ void LAB_ViewRemoveDistantChunks(LAB_View* view)
         }
     }
     view->chunk_count = a;
+    #else
+    LAB_ViewChunkEntry* e;
+    HTL_HASHARRAY_REMOVE(LAB_View_ChunkTBL, &view->chunks, e,
+                         (e->x-px)*(e->x-px) + (e->y-py)*(e->y-py) + (e->z-pz)*(e->z-pz) > dist_sq,
+                         {LAB_ViewDestructChunk(view, e);});
+    #endif
 }
 
 
@@ -931,16 +952,13 @@ void LAB_ViewRenderChunks(LAB_View* view)
 
 
     int dist_sq = view->render_dist*view->render_dist + 3;
-    for(size_t i = 0; i < view->chunk_count; ++i)
+    LAB_ViewChunkEntry* e;
+    HTL_HASHARRAY_EACH(LAB_View_ChunkTBL, &view->chunks, e,
     {
-        int cx, cy, cz;
-        cx = view->chunks[i].x;
-        cy = view->chunks[i].y;
-        cz = view->chunks[i].z;
-        if((cx-px)*(cx-px) + (cy-py)*(cy-py) + (cz-pz)*(cz-pz) <= dist_sq
-           && view->chunks[i].visible)
-            LAB_ViewRenderChunk(view, &view->chunks[i]);
-    }
+        if((e->x-px)*(e->x-px) + (e->y-py)*(e->y-py) + (e->z-pz)*(e->z-pz) <= dist_sq
+           && e->visible)
+            LAB_ViewRenderChunk(view, e);
+    });
 }
 
 
@@ -949,12 +967,17 @@ void LAB_ViewRenderChunks(LAB_View* view)
 
 LAB_ViewChunkEntry* LAB_ViewFindChunkEntry(LAB_View* view, int x, int y, int z)
 {
-    for(size_t i = 0; i < view->chunk_count; ++i)
+#if 0
+    for(size_t i = 0; i < view->chunks.capacity; ++i)
+    if(view->chunks[i].occupied)
     {
         if(view->chunks[i].x == x && view->chunks[i].y == y && view->chunks[i].z == z)
             return &view->chunks[i];
     }
     return NULL;
+#endif
+    LAB_ChunkPos pos = {x, y, z};
+    return LAB_View_ChunkTBL_Get(&view->chunks, pos);
 }
 
 /**
@@ -962,6 +985,7 @@ LAB_ViewChunkEntry* LAB_ViewFindChunkEntry(LAB_View* view, int x, int y, int z)
  */
 LAB_ViewChunkEntry* LAB_ViewNewChunkEntry(LAB_View* view, int x, int y, int z)
 {
+#if 0
     LAB_ViewChunkEntry* chunks;
     size_t chunk_count, chunk_capacity;
 
@@ -992,6 +1016,17 @@ LAB_ViewChunkEntry* LAB_ViewNewChunkEntry(LAB_View* view, int x, int y, int z)
     view->chunk_count++;
 
     return &chunks[chunk_count];
+#endif
+    LAB_ChunkPos pos = {x, y, z};
+    LAB_ViewChunkEntry* entry;
+    entry = LAB_View_ChunkTBL_PutAlloc(&view->chunks, pos);
+    if(LAB_UNLIKELY(!entry)) return NULL;
+    // memset 0
+    entry->x = x;
+    entry->y = y;
+    entry->z = z;
+    entry->occupied = 1;
+    return entry;
 }
 
 
@@ -1006,20 +1041,23 @@ LAB_ViewChunkEntry* LAB_ViewNewChunkEntry(LAB_View* view, int x, int y, int z)
 
 void LAB_ViewInvalidateEverything(LAB_View* view, int free_buffers)
 {
-    for(size_t i = 0; i < view->chunk_count; ++i)
+    LAB_ViewChunkEntry* e;
+
+    HTL_HASHARRAY_EACH(LAB_View_ChunkTBL, &view->chunks, e,
     {
-        view->chunks[i].dirty = ~0;
-    }
+        e->dirty = ~0;
+    });
+
     if(free_buffers)
     {
-        for(size_t i = 0; i < view->chunk_count; ++i)
+        HTL_HASHARRAY_EACH(LAB_View_ChunkTBL, &view->chunks, e,
         {
-            if(view->chunks[i].vbo)
+            if(e->vbo)
             {
-                glDeleteBuffers(1, &view->chunks[i].vbo); LAB_GL_DEBUG_FREE(1);
-                view->chunks[i].vbo = 0;
+                glDeleteBuffers(1, &e->vbo); LAB_GL_DEBUG_FREE(1);
+                e->vbo = 0;
             }
-        }
+        });
     }
 }
 
