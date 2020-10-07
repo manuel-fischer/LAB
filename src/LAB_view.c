@@ -193,7 +193,8 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
     //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?LAB_MixColor50(x, ~0):(x))
     //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor(LAB_MulColor(~(x), ~(x)), LAB_MulColor(~(x), ~(x))):(x))
     // before mixing
-    #define MAP_LIGHT_0(x) LAB_ColorHI4(x)
+    //#define MAP_LIGHT_0(x) LAB_ColorHI4(x)
+    #define MAP_LIGHT_0(x) (x)
     #define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor(LAB_MulColor(~(x), ~(x)), LAB_MulColor(~(x), ~(x))):(x))
     if((view->flags&LAB_VIEW_FLAT_SHADE)||(block->flags&LAB_BLOCK_FLAT_SHADE))
     {

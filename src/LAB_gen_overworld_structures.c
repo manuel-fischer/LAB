@@ -35,23 +35,23 @@ void LAB_Gen_Overworld_Tower(LAB_Placer* p, LAB_Random* rnd)
     {
         case 0:
         case 1:
-            corner  = &LAB_BLOCK_SMOOTHSTONE;
-            wall    = &LAB_BLOCK_STONEBRICKS;
-            floor   = &LAB_BLOCK_COBBLESTONE;
+            corner  = &LAB_BLOCK_STONE_SMOOTH;
+            wall    = &LAB_BLOCK_STONE_BRICKS;
+            floor   = &LAB_BLOCK_STONE_COBBLE;
             ceiling = &LAB_BLOCK_WOOD_PLANKS_DARK;
         break;
 
         case 2:
-            corner  = &LAB_BLOCK_SMOOTHBASALT;
-            wall    = &LAB_BLOCK_BASALTBRICKS;
-            floor   = &LAB_BLOCK_BASALTCOBBLE;
+            corner  = &LAB_BLOCK_BASALT_SMOOTH;
+            wall    = &LAB_BLOCK_BASALT_BRICKS;
+            floor   = &LAB_BLOCK_BASALT_COBBLE;
             ceiling = &LAB_BLOCK_WOOD_PLANKS;
         break;
 
         case 3:
-            corner  = &LAB_BLOCK_SMOOTHMARBLE;
-            wall    = &LAB_BLOCK_MARBLEBRICKS;
-            floor   = &LAB_BLOCK_MARBLECOBBLE;
+            corner  = &LAB_BLOCK_MARBLE_SMOOTH;
+            wall    = &LAB_BLOCK_MARBLE_BRICKS;
+            floor   = &LAB_BLOCK_MARBLE_COBBLE;
             ceiling = &LAB_BLOCK_WOOD_PLANKS_DARK;
         break;
         default: LAB_UNREACHABLE();

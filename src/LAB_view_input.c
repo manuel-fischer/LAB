@@ -36,7 +36,7 @@ bool LAB_ConstructViewInput(LAB_ViewInput* view_input, LAB_View* view)
     view_input->speed = 3.0f;
     view_input->view = view;
     view_input->brushsize = 3;
-    view_input->selected_block = &LAB_BLOCK_COBBLESTONE;
+    view_input->selected_block = &LAB_BLOCK_STONE_COBBLE;
     return 1;
 }
 

@@ -1,7 +1,8 @@
 #include "LAB_gen_overworld.h"
 #include "LAB_random.h"
 #include "LAB_opt.h"
-#include "LAB_noise.h"
+//#include "LAB_noise.h"
+#include "LAB_bits.h"
 
 #include "LAB_gen_overworld_structures.h"
 
@@ -29,6 +30,11 @@ static void LAB_Gen_Cave_RockVariety(LAB_GenOverworld* gen, LAB_Chunk* chunk, in
 
 
 
+#define LAB_SURFACE_MIN_CY (-2)
+//#define LAB_SURFACE_MAX_CY (0)
+#define LAB_SURFACE_MAX_CY (5)
+#define LAB_SURFACE_MIN_Y (16*LAB_SURFACE_MIN_CY)
+#define LAB_SURFACE_MAX_Y (16*LAB_SURFACE_MAX_CY)
 
 
 LAB_HOT
@@ -36,7 +42,7 @@ LAB_Chunk* LAB_GenOverworldProc(void* user, /*unused*/LAB_World* world_, int x, 
 {
     LAB_GenOverworld* gen = user;
 
-    LAB_Block* block = y < 0 ? &LAB_BLOCK_STONE : &LAB_BLOCK_AIR;
+    LAB_Block* block = y < LAB_SURFACE_MAX_CY ? &LAB_BLOCK_STONE : &LAB_BLOCK_AIR;
     LAB_Chunk* chunk = LAB_CreateChunk(block);
     if(!chunk) return NULL;
 
@@ -61,7 +67,8 @@ static void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x
     LAB_Random random;
     LAB_ChunkRandom(&random, gen->seed^LAB_GEN_DIRT_SALT, x, y, z);
 
-    if(y >= -2 && y <= -1)
+    //                         v  for dirt generation below the surface
+    if(y >= LAB_SURFACE_MIN_CY-1 && y < LAB_SURFACE_MAX_CY)
     {
         for(int zz = 0; zz < 16; ++zz)
         for(int xx = 0; xx < 16; ++xx)
@@ -69,7 +76,7 @@ static void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x
             int xi = 16*x|xx;
             int zi = 16*z|zz;
             int sheight = LAB_Gen_Surface_Shape_Func(gen, xi, zi);
-            for(int yy =15; yy >= 0; --yy)
+            for(int yy = 15; yy >= 0; --yy)
             {
                 int yi = 16*y|yy;
 
@@ -80,8 +87,10 @@ static void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x
                     b = &LAB_BLOCK_GRASS;
                 else if(yi <= sheight)
                 {
-                    uint64_t fact = 0x100000000ll/(32+16);
-                    if((~LAB_NextRandom(&random)>>32) >= (2u*(-yi)-(-sheight))*fact)
+                    //uint64_t fact = 0x100000000ll/(32+16);
+                    //if((~LAB_NextRandom(&random)>>32) >= (2u*(-yi)-(-sheight))*fact)
+                    if(yi >= sheight-(int)(LAB_NextRandom(&random)&7)-1)
+                    //if(yi >= sheight-2)
                         b = &LAB_BLOCK_DIRT;
                     else
                         continue; // keep stone
@@ -114,7 +123,7 @@ static int LAB_Gen_Surface_Shape_Func(LAB_GenOverworld* gen, int xi, int zi)
                  + 0.50*(LAB_SimplexNoise2D(xi*ML*4+100, zi*ML*4+100)+1)*0.5;
     double n = 0.50*displacement
              + 0.50*base*base*base;
-    return (int)floor(n*31.)-32; // Range [0, 32)
+    return (int)floor(n*(LAB_SURFACE_MAX_Y-LAB_SURFACE_MIN_Y-1))+LAB_SURFACE_MIN_Y; // Range [LAB_SURFACE_MIN_Y, LAB_SURFACE_MAX_Y)
 }
 
 

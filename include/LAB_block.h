@@ -4,6 +4,8 @@
 #include "LAB_color.h"
 #include "LAB_model.h"
 
+#include "LAB_blt_block.h"
+
 #include "IXO/IXO_classdef.h"
 
 /**
@@ -55,22 +57,12 @@ IXO_DECLARE_CLASS(LAB_Block);
 
 extern LAB_Block LAB_BLOCK_OUTSIDE,
                  LAB_BLOCK_AIR,
-                 LAB_BLOCK_BASALT,
-                 LAB_BLOCK_BASALTCOBBLE,
-                 LAB_BLOCK_BASALTBRICKS,
-                 LAB_BLOCK_SMOOTHBASALT,
-                 LAB_BLOCK_STONE,
-                 LAB_BLOCK_COBBLESTONE,
-                 LAB_BLOCK_STONEBRICKS,
-                 LAB_BLOCK_SMOOTHSTONE,
-                 LAB_BLOCK_MARBLE,
-                 LAB_BLOCK_MARBLECOBBLE,
-                 LAB_BLOCK_MARBLEBRICKS,
-                 LAB_BLOCK_SMOOTHMARBLE,
-                 LAB_BLOCK_SANDSTONE,
-                 LAB_BLOCK_SANDCOBBLE,
-                 LAB_BLOCK_SANDBRICKS,
-                 LAB_BLOCK_SMOOTHSAND,
+                 LAB_ENM_STONE_BLOCKS(,BASALT),
+                 LAB_ENM_STONE_BLOCKS(,STONE),
+                 LAB_ENM_STONE_BLOCKS(,MARBLE),
+                 LAB_ENM_STONE_BLOCKS(,CLAY),
+                 LAB_ENM_STONE_BLOCKS(,LAPIZ),
+                 LAB_ENM_STONE_BLOCKS(,SANDSTONE),
                  LAB_BLOCK_SAND,
                  LAB_BLOCK_LEAVES,
                  LAB_BLOCK_WOOD,
