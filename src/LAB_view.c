@@ -143,6 +143,8 @@ static void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chun
     const int Y = 3*1;
     const int Z = 3*3*1;
 
+    size_t old_mesh_capacity = chunk_entry->mesh_capacity;
+    size_t old_mesh_count = chunk_entry->mesh_count;
     chunk_entry->mesh_count = 0;
 
     for(size_t z = 0; z < LAB_CHUNK_SIZE; ++z)
@@ -153,6 +155,34 @@ static void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chun
         {
             LAB_ViewBuildMeshBlock(view, chunk_entry, cnk3x3x3, x, y, z);
         }
+    }
+
+    if(old_mesh_capacity != chunk_entry->mesh_capacity || chunk_entry->mesh_order == NULL)
+    {
+        LAB_ASSUME(old_mesh_capacity <= chunk_entry->mesh_capacity);
+        // Never shrinks memory
+        LAB_TriangleOrder* mesh_order = LAB_ReallocN(chunk_entry->mesh_order, chunk_entry->mesh_capacity, sizeof*mesh_order);
+        if(!mesh_order)
+        {
+            // Memory error
+            // render without indices
+            LAB_Free(chunk_entry->mesh_order);
+            chunk_entry->mesh_order = NULL;
+            return;
+        }
+        chunk_entry->mesh_order = mesh_order;
+    }
+
+    if(old_mesh_count != chunk_entry->mesh_count)
+    {
+        // TODO: if old_mesh_count wasn't NULL previously
+        //           if old_mesh_count < mesh_count then
+        //               add indices counting upwards
+        //           else
+        //               go through mesh_order [0, old_mesh_count)
+        //               (this is possible because mesh_capacity never shrinks
+        //               and remove triangles that have indices >= mesh_count
+        LAB_BuildModelOrder(chunk_entry->mesh_order, chunk_entry->mesh_count);
     }
 }
 
@@ -359,7 +389,23 @@ static bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
     return 0;
 }
 
-static void LAB_ViewBuildChunks(LAB_View* view)
+static bool LAB_ViewUpdateChunk(LAB_View* view, LAB_ViewChunkEntry* e)
+{
+    bool updated = LAB_ViewBuildChunk(view, e);
+    if(e->mesh_order && (rand()&0x1f) == 0)
+    //if(e->mesh_order)
+    {
+        float cam[3];
+        cam[0] = view->x-e->x*16;
+        cam[1] = view->y-e->y*16;
+        cam[2] = view->z-e->z*16;
+        LAB_SortModelOrder(e->mesh_order, e->mesh, e->mesh_count, cam);
+    }
+    return updated;
+}
+
+
+static void LAB_ViewUpdateChunks(LAB_View* view)
 {
     unsigned rest_update = view->max_update;
 
@@ -378,7 +424,7 @@ static void LAB_ViewBuildChunks(LAB_View* view)
         cz = e->z;
         if((cx-px)*(cx-px) + (cy-py)*(cy-py) + (cz-pz)*(cz-pz) <= dist_sq
            && e->visible)
-            rest_update -= LAB_ViewBuildChunk(view, e);
+            rest_update -= LAB_ViewUpdateChunk(view, e);
     });
 }
 
@@ -419,7 +465,14 @@ static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
     glColorPointer(4, GL_UNSIGNED_BYTE, sizeof *mesh->v, &mesh->v[0].color);
     glTexCoordPointer(2, LAB_GL_TYPEOF(mesh->v[0].u), sizeof *mesh->v, &mesh->v[0].u);
 
-    glDrawArrays(GL_TRIANGLES, 0, 3*chunk_entry->mesh_count);
+    if(chunk_entry->mesh_order)
+    {
+        glDrawElements(GL_TRIANGLES, 3*chunk_entry->mesh_count, GL_UNSIGNED_INT, chunk_entry->mesh_order);
+    }
+    else
+    {
+        glDrawArrays(GL_TRIANGLES, 0, 3*chunk_entry->mesh_count);
+    }
     glPopMatrix();
 
     if(view->flags & LAB_VIEW_USE_VBO)
@@ -861,6 +914,16 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
     //glAlphaFunc(GL_GEQUAL, 64/255.f);
 
 
+    // TODO: Render passes   ALPHA_TEST           BLEND            MIPMAPPING
+    // RENDER_PASS_SOLID         no                 no                yes
+    // RENDER_PASS_BLIT        >=32                 no                 no
+    // RENDER_PASS_MASKED      >=32                 no                yes
+    // RENDER_PASS_ALPHA       >= 1       src*src.a+dst*(1-src.a)     yes
+    // RENDER_PASS_MULT2       >= 1       src*dst  +dst*src           yes
+    // RENDER_PASS_ADD         >= 1       src*1    +dst*1             yes
+    //glEnable(GL_BLEND);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     LAB_ViewRenderChunks(view);
 
     glDisableClientState(GL_COLOR_ARRAY);
@@ -1111,7 +1174,7 @@ void LAB_ViewTick(LAB_View* view, uint32_t delta_ms)
     #if !LAB_VIEW_QUERY_IMMEDIATELY
     LAB_View_FetchQueryChunks(view);
     #endif
-    LAB_ViewBuildChunks(view);
+    LAB_ViewUpdateChunks(view);
     LAB_FpsGraph_AddSample(&view->fps_graph, delta_ms);
     LAB_GuiManager_Tick(&view->gui_mgr);
 }
@@ -1288,6 +1351,9 @@ void LAB_ViewDestructChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 {
     if(chunk_entry->mesh)
         LAB_Free(chunk_entry->mesh);
+
+    if(chunk_entry->mesh_order)
+        LAB_Free(chunk_entry->mesh_order);
 
     if(chunk_entry->vbo)
     {

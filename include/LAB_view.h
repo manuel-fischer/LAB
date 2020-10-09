@@ -4,6 +4,7 @@
 #include "LAB_fps_graph.h"
 #include "LAB_gui_manager.h"
 #include "LAB_model.h" // LAB_Triangle
+#include "LAB_model_order.h" // LAB_TriangleOrder
 #include "LAB_world.h"
 #include "LAB_memory.h"
 #include <SDL2/SDL_ttf.h>
@@ -34,6 +35,7 @@ typedef struct LAB_ViewChunkEntry
 
     size_t mesh_count, mesh_capacity;
     LAB_Triangle* mesh;
+    LAB_TriangleOrder* mesh_order;
 
     unsigned dirty:2,       // chunk needs update
              exist:1,       // chunk exists in world

@@ -3,6 +3,7 @@
 #include "LAB_opt.h"
 #include "LAB_color.h"
 
+// TODO setting to switch between triangle rendering and quad rendering
 
 /**
  *  the flags field of the first vertex of a triangle
@@ -24,6 +25,8 @@ typedef struct LAB_Triangle //     Size
     LAB_Vertex v[3];        //  3*32 Bytes
 }                           //-------------
 LAB_Triangle;               //    96 Bytes
+// the midpoint between [0] and [1] is used
+// to compute the distance to the camera
 
 #define LAB_TRIANGLE_CULL(triangle) ((triangle).v[0].flags)
 #define LAB_TRIANGLE_LIGHT(triangle) ((triangle).v[1].flags)

@@ -29,7 +29,7 @@
 /// LAB_SetVertex(&t1[1],  x2, y2, z2,  r2, g2, b2, a2,  u2, v2,  cr, cg, cb, tx, ty);
 /// LAB_SetVertex(&t1[0],  x3, y3, z3,  r3, g3, b3, a3,  u3, v3,  cr, cg, cb, tx, ty);
 
-#define LAB_MK_QUAD(x0, y0, z0,  u0, v0, \
+/*#define LAB_MK_QUAD(x0, y0, z0,  u0, v0, \
                     x1, y1, z1,  u1, v1, \
                     x2, y2, z2,  u2, v2, \
                     x3, y3, z3,  u3, v3, \
@@ -41,6 +41,20 @@
     LAB_MK_TRI(x3, y3, z3,  u3, v3, \
                x2, y2, z2,  u2, v2, \
                x1, y1, z1,  u1, v1, \
+               color, cull, light)*/
+
+#define LAB_MK_QUAD(x0, y0, z0,  u0, v0, \
+                    x1, y1, z1,  u1, v1, \
+                    x2, y2, z2,  u2, v2, \
+                    x3, y3, z3,  u3, v3, \
+                    color, cull, light) \
+    LAB_MK_TRI(x1, y1, z1,  u1, v1, \
+               x2, y2, z2,  u2, v2, \
+               x0, y0, z0,  u0, v0, \
+               color, cull, light), \
+    LAB_MK_TRI(x2, y2, z2,  u2, v2, \
+               x1, y1, z1,  u1, v1, \
+               x3, y3, z3,  u3, v3, \
                color, cull, light)
 
 

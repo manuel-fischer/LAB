@@ -182,6 +182,7 @@
 		<Unit filename="include/LAB_asset_manager.h" />
 		<Unit filename="include/LAB_bits.h" />
 		<Unit filename="include/LAB_block.h" />
+		<Unit filename="include/LAB_blt_block.h" />
 		<Unit filename="include/LAB_blt_model.h" />
 		<Unit filename="include/LAB_check.h" />
 		<Unit filename="include/LAB_chunk.h" />
