@@ -1,6 +1,7 @@
 #pragma once
 #include "LAB_stdinc.h"
 #include "LAB_opt.h"
+#include "LAB_render_pass.h"
 #include "LAB_color.h"
 
 // TODO setting to switch between triangle rendering and quad rendering
@@ -35,6 +36,7 @@ typedef struct LAB_Model
 {
     size_t size;
     LAB_Triangle* data;
+    LAB_RenderPass render_pass;
 } LAB_Model;
 
 

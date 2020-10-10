@@ -63,7 +63,7 @@
                                        nu, nv, nc,  su, sv, sc, \
                                        shade_x,                 \
                                        shade_y,                 \
-                                       shade_z)                 \
+                                       shade_z, ...)            \
 LAB_Triangle name##_data[] = {                             \
     /** WEST **/                                           \
     LAB_MK_QUAD(0, 1, 0,  (wu)+0, (wv)+0,                  \
@@ -110,33 +110,39 @@ LAB_Triangle name##_data[] = {                             \
 };                                                         \
 LAB_Model name = {                                         \
     .size = sizeof(name##_data) / sizeof(LAB_Triangle),    \
-    .data = name##_data                                    \
+    .data = name##_data,                                   \
+    __VA_ARGS__                                            \
 }
 
 
 
 #define LAB_DEF_MODEL_CUBE(name,  wu, wv, wc,  eu, ev, ec, \
                                   du, dv, dc,  uu, uv, uc, \
-                                  nu, nv, nc,  su, sv, sc) \
+                                  nu, nv, nc,  su, sv, sc, \
+                                  ...)                     \
    LAB_DEF_MODEL_CUBE_BASE(name,  wu, wv, wc,  eu, ev, ec, \
                                   du, dv, dc,  uu, uv, uc, \
                                   nu, nv, nc,  su, sv, sc, \
                                   LAB_SHADE_X,             \
                                   LAB_SHADE_Y,             \
-                                  LAB_SHADE_Z)
+                                  LAB_SHADE_Z,             \
+                                  __VA_ARGS__)
 
 
-#define LAB_DEF_MODEL_CUBE_ALL(name,  tu, tv, tc) \
+#define LAB_DEF_MODEL_CUBE_ALL(name,  tu, tv, tc, ...) \
     LAB_DEF_MODEL_CUBE(name,  tu, tv, tc,  tu, tv, tc, \
                               tu, tv, tc,  tu, tv, tc, \
-                              tu, tv, tc,  tu, tv, tc)
+                              tu, tv, tc,  tu, tv, tc, \
+                              __VA_ARGS__)
 
 
 #define LAB_DEF_MODEL_CUBE_SIDES(name,  hu, hv, hc, \
-                                        du, dv, dc,  uu, uv, uc) \
+                                        du, dv, dc,  uu, uv, uc, \
+                                        ...) \
     LAB_DEF_MODEL_CUBE(name,  hu, hv, hc,  hu, hv, hc, \
                               du, dv, dc,  uu, uv, uc, \
-                              hu, hv, hc,  hu, hv, hc)
+                              hu, hv, hc,  hu, hv, hc, \
+                              __VA_ARGS__)
 
 
 //---------
@@ -144,26 +150,31 @@ LAB_Model name = {                                         \
 
 #define LAB_DEF_MODEL_CUBE_SHADELESS(name,  wu, wv, wc,  eu, ev, ec, \
                                             du, dv, dc,  uu, uv, uc, \
-                                            nu, nv, nc,  su, sv, sc) \
+                                            nu, nv, nc,  su, sv, sc, \
+                                            ...)                     \
    LAB_DEF_MODEL_CUBE_BASE(name,  wu, wv, wc,  eu, ev, ec, \
                                   du, dv, dc,  uu, uv, uc, \
                                   nu, nv, nc,  su, sv, sc, \
                                   LAB_NO_SHADE,            \
                                   LAB_NO_SHADE,            \
-                                  LAB_NO_SHADE)
+                                  LAB_NO_SHADE,            \
+                                  __VA_ARGS__)
 
 
-#define LAB_DEF_MODEL_CUBE_SHADELESS_ALL(name,  tu, tv, tc) \
+#define LAB_DEF_MODEL_CUBE_SHADELESS_ALL(name,  tu, tv, tc, ...) \
     LAB_DEF_MODEL_CUBE_SHADELESS(name,  tu, tv, tc,  tu, tv, tc, \
                               tu, tv, tc,  tu, tv, tc, \
-                              tu, tv, tc,  tu, tv, tc)
+                              tu, tv, tc,  tu, tv, tc, \
+                              __VA_ARGS__)
 
 
 #define LAB_DEF_MODEL_CUBE_SHADELESS_SIDES(name,  hu, hv, hc, \
-                                                  du, dv, dc,  uu, uv, uc) \
+                                                  du, dv, dc,  uu, uv, uc, \
+                                                  ...) \
     LAB_DEF_MODEL_CUBE_SHADELESS(name,  hu, hv, hc,  hu, hv, hc, \
                               du, dv, dc,  uu, uv, uc, \
-                              hu, hv, hc,  hu, hv, hc)
+                              hu, hv, hc,  hu, hv, hc, \
+                              __VA_ARGS__)
 
 
 
@@ -175,7 +186,8 @@ LAB_Model name = {                                         \
 
 
 #define LAB_DEF_MODEL_CROSS_BASE(name,  wu, wv, wc,  eu, ev, ec, \
-                                        nu, nv, nc,  su, sv, sc) \
+                                        nu, nv, nc,  su, sv, sc, \
+                                        ...) \
 LAB_Triangle name##_data[] = {                             \
     /** WEST **/                                           \
     LAB_MK_QUAD(0.9, 1, 0.1,  (wu)+0, (wv)+0,              \
@@ -208,9 +220,11 @@ LAB_Triangle name##_data[] = {                             \
 };                                                         \
 LAB_Model name = {                                         \
     .size = sizeof(name##_data) / sizeof(LAB_Triangle),    \
-    .data = name##_data                                    \
+    .data = name##_data,                                   \
+    __VA_ARGS__                                            \
 }
 
-#define LAB_DEF_MODEL_CROSS(name,  tu, tv, tc) \
+#define LAB_DEF_MODEL_CROSS(name,  tu, tv, tc, ...) \
     LAB_DEF_MODEL_CROSS_BASE(name,  tu, tv, tc,  tu, tv, tc, \
-                                    tu, tv, tc,  tu, tv, tc)
+                                    tu, tv, tc,  tu, tv, tc, \
+                                    __VA_ARGS__)

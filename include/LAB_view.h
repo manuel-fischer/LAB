@@ -7,6 +7,7 @@
 #include "LAB_model_order.h" // LAB_TriangleOrder
 #include "LAB_world.h"
 #include "LAB_memory.h"
+#include "LAB_view_mesh.h"
 #include <SDL2/SDL_ttf.h>
 
 #define LAB_VIEW_QUERY_IMMEDIATELY 0
@@ -33,19 +34,24 @@ typedef struct LAB_ViewChunkEntry
     int x, y, z;
 
 
-    size_t mesh_count, mesh_capacity;
+    /*size_t mesh_count, mesh_capacity;
     LAB_Triangle* mesh;
-    LAB_TriangleOrder* mesh_order;
+    LAB_TriangleOrder* mesh_order;*
+
+    unsigned vbo;*/
+    //unsigned vbos[LAB_RENDER_PASS_COUNT];
+
+    LAB_View_Mesh render_passes[LAB_RENDER_PASS_COUNT];
+    LAB_TriangleOrder* mesh_order; // for LAB_RENDER_PASS_ALPHA
 
     unsigned dirty:2,       // chunk needs update
              exist:1,       // chunk exists in world
              visible:1,     // chunk is visible when in sight
              do_query:1,    // visibility unknown, a query should be submitted
-             upload_vbo:1,  // vbo changed, needs reupload
+             upload_vbo:1,  // vbos changed, need reupload, gets set to 0 in last render pass
 
              occupied:1;    // table entry occupied
 
-    unsigned vbo;
     #if !LAB_VIEW_QUERY_IMMEDIATELY
     unsigned query_id; // 0 for no query done in the last frame
                        // gets generated in OrderQueryBlock
@@ -93,12 +99,19 @@ static inline LAB_ChunkPos LAB_MakeChunkPos(int x, int y, int z)
 #define LAB_VIEW_FLAT_SHADE        8u
 #define LAB_VIEW_BRIGHTER         16u
 
+// Coordinate info
 typedef struct LAB_ViewInfo
 {
     int x, y, z;
     unsigned gl_texture;
     SDL_Surface* surf;
 } LAB_ViewInfo;
+
+typedef struct LAB_ViewSortedChunkEntry
+{
+    LAB_ViewChunkEntry* entry;
+    float distance;
+} LAB_ViewSortedChunkEntry;
 
 typedef struct LAB_View
 {
@@ -114,11 +127,10 @@ typedef struct LAB_View
     int on_ground;
 
     // Cache
-    /*size_t chunk_count, chunk_capacity;
-    LAB_ViewChunkEntry* chunks;*/
     LAB_View_ChunkTBL chunks;
 
-    //LAB_ViewChunkMap chunks;
+    LAB_ViewSortedChunkEntry* sorted_chunks;
+
 
     LAB_World* world;
 

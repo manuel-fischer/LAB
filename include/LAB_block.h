@@ -26,12 +26,13 @@
 typedef uint32_t LAB_BlockFlags;
 
 #define LAB_BLOCK_MASSIVE      1u // Entities collide with this
-#define LAB_BLOCK_OPAQUE       2u // Other blocks get visually covered by this block
-#define LAB_BLOCK_VISUAL       4u // The block is rendered
-#define LAB_BLOCK_INTERACTABLE 8u // The block can be interacted with
+#define LAB_BLOCK_OPAQUE       2u // Any block gets visually covered by this block
+#define LAB_BLOCK_OPAQUE_SELF  4u // This block (TODO: Blocks with the same material id or tag) get visually covered by this block
+#define LAB_BLOCK_VISUAL       8u // The block is rendered
+#define LAB_BLOCK_INTERACTABLE 16u // The block can be interacted with
 #define LAB_BLOCK_SOLID        (LAB_BLOCK_MASSIVE|LAB_BLOCK_OPAQUE|LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL)
 
-#define LAB_BLOCK_TRANSPARENT  16u // The block has some transparent pixels
+#define LAB_BLOCK_TRANSPARENT  32u // The block has some transparent pixels
                                    // LAB_BLOCK_SOLID should not be set, otherwise it has an XRay-effect
 
 #define LAB_BLOCK_FLAT_SHADE   64u // should be in the model

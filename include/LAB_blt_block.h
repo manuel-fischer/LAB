@@ -9,7 +9,8 @@
     prefix LAB_BLOCK_##name##_SMOOTH
 
 #define LAB_DEF_STONE_BLOCKS(name, color) \
-    LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_##name, 0, 0, color); \
+    LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_##name, 0, 0, color, \
+                    .render_pass = LAB_RENDER_PASS_SOLID); \
     LAB_Block LAB_BLOCK_##name = { \
         .flags = LAB_BLOCK_SOLID, \
         .item_tint = color, \
@@ -17,7 +18,8 @@
         .model = &LAB_MODEL_##name, \
     }; \
     \
-    LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_##name##_COBBLE, 1, 0, color); \
+    LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_##name##_COBBLE, 1, 0, color, \
+                    .render_pass = LAB_RENDER_PASS_SOLID); \
     LAB_Block LAB_BLOCK_##name##_COBBLE = { \
         .flags = LAB_BLOCK_SOLID, \
         .item_tint = color, \
@@ -25,7 +27,8 @@
         .model = &LAB_MODEL_##name##_COBBLE, \
     }; \
     \
-    LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_##name##_BRICKS, 1, 1, color); \
+    LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_##name##_BRICKS, 1, 1, color, \
+                    .render_pass = LAB_RENDER_PASS_SOLID); \
     LAB_Block LAB_BLOCK_##name##_BRICKS = { \
         .flags = LAB_BLOCK_SOLID, \
         .item_tint = color, \
@@ -33,7 +36,8 @@
         .model = &LAB_MODEL_##name##_BRICKS, \
     }; \
     \
-    LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_##name##_SMOOTH, 0, 1, color); \
+    LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_##name##_SMOOTH, 0, 1, color, \
+                    .render_pass = LAB_RENDER_PASS_SOLID); \
     LAB_Block LAB_BLOCK_##name##_SMOOTH = { \
         .flags = LAB_BLOCK_SOLID, \
         .item_tint = color, \

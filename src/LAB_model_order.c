@@ -33,8 +33,10 @@ static void LAB_PrepareSortModelOrder(LAB_TriangleOrder* order, LAB_Triangle con
         // alternatively
         //order->v[1] = (uint32_t)(256*dist);
 
-        //memcpy(&order->v[1], &dist, sizeof dist);
-        order->v[1] = ~*(uint32_t*)&dist; // bit cast of the floating point value
+        uint32_t dist_i;
+        memcpy(&dist_i, &dist, sizeof dist);
+        order->v[1] = ~dist_i;
+        //order->v[1] = ~*(uint32_t*)&dist; // bit cast of the floating point value
                                           // it is assumed that the floating point
                                           // variable is represented as an integer
                                           // in the following way (IEEE 754):
@@ -174,12 +176,12 @@ void LAB_SortModelOrder2(LAB_TriangleOrder* order, LAB_Triangle const* mesh,
         }
     }
 
-    size_t last_dist = 0;
-    for(int i = 0; i < triangle_count; ++i)
+    /*size_t last_dist = 0;
+    for(size_t i = 0; i < triangle_count; ++i)
     {
         LAB_ASSUME(last_dist <= order[i].v[D]);
         last_dist = order[i].v[D];
-    }
+    }*/
 
     LAB_FinishSortModelOrder(order, triangle_count, I);
 }

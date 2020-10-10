@@ -145,7 +145,7 @@ static void LAB_GL_GenerateMipmap2D(size_t w, size_t h, LAB_Color* data, int num
     {
         w/=2; h/=2;
         LAB_CalculateMipmap2D(w, h, data, new_data);
-        LAB_Fix0Alpha(w, h, new_data);
+        if(i != num_mipmaps) LAB_Fix0Alpha(w, h, new_data);
         glTexImage2D(GL_TEXTURE_2D, i, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, new_data);
         LAB_DebugSaveImage(w, h, new_data, "dbg_terrain_%i.png", i);
         //data = new_data;
