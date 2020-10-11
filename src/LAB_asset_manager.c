@@ -12,8 +12,8 @@ SDL_Surface* LAB_block_terrain = NULL;
 unsigned     LAB_block_terrain_gl_id = 0;
 
 // alpha corrected mip maps
-static void LAB_GL_GenerateMipmap2D(size_t w, size_t h, LAB_Color* data, int num_mipmaps);
-static void LAB_Fix0Alpha(size_t w, size_t h, LAB_Color* data);
+LAB_STATIC void LAB_GL_GenerateMipmap2D(size_t w, size_t h, LAB_Color* data, int num_mipmaps);
+LAB_STATIC void LAB_Fix0Alpha(size_t w, size_t h, LAB_Color* data);
 
 void LAB_InitAssets(void)
 {
@@ -74,7 +74,7 @@ void LAB_QuitAssets(void)
 
 
 
-static void LAB_Fix0Alpha(size_t w, size_t h, LAB_Color* data)
+LAB_STATIC void LAB_Fix0Alpha(size_t w, size_t h, LAB_Color* data)
 {
     // Fix fully transparent pixels
     for(size_t x = 0;         x < w; ++x)
@@ -103,7 +103,7 @@ static void LAB_Fix0Alpha(size_t w, size_t h, LAB_Color* data)
 
 
 // w, h the size of the new texture
-static void LAB_CalculateMipmap2D(size_t w, size_t h, LAB_Color* in_data, LAB_Color* out_data)
+LAB_STATIC void LAB_CalculateMipmap2D(size_t w, size_t h, LAB_Color* in_data, LAB_Color* out_data)
 {
     for(size_t x = 0;         x < w; ++x)
     for(size_t y = 0, yi = 0; y < h; ++y, yi+=w)
@@ -131,9 +131,9 @@ static void LAB_CalculateMipmap2D(size_t w, size_t h, LAB_Color* in_data, LAB_Co
     }
 }
 
-static void LAB_DebugSaveImage(size_t w, size_t h, LAB_Color* data, const char* fname_fmt, ...);
+LAB_STATIC void LAB_DebugSaveImage(size_t w, size_t h, LAB_Color* data, const char* fname_fmt, ...);
 
-static void LAB_GL_GenerateMipmap2D(size_t w, size_t h, LAB_Color* data, int num_mipmaps)
+LAB_STATIC void LAB_GL_GenerateMipmap2D(size_t w, size_t h, LAB_Color* data, int num_mipmaps)
 {
     //LAB_Color* tmp_buf = LAB_Malloc(w*h*sizeof*tmp_buf);
     LAB_Color* tmp_buf = LAB_Malloc((w/2*h/2+w/4*w/4)*sizeof*tmp_buf);
@@ -165,7 +165,7 @@ static void LAB_GL_GenerateMipmap2D(size_t w, size_t h, LAB_Color* data, int num
 
 
 
-static void LAB_DebugSaveImage(size_t w, size_t h, LAB_Color* data, const char* fname_fmt, ...)
+LAB_STATIC void LAB_DebugSaveImage(size_t w, size_t h, LAB_Color* data, const char* fname_fmt, ...)
 {
     char fname_buf[300];
     va_list lst;

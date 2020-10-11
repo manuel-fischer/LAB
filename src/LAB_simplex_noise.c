@@ -115,27 +115,32 @@ static const unsigned short permMod12[512] = {
 #define F4 0.30901699437494745 /* (Math.sqrt(5.0)-1.0)/4.0;  */
 #define G4 0.1381966011250105  /* (5.0-Math.sqrt(5.0))/20.0; */
 
-#define fastfloor(x) ((int)floor(x))
+LAB_STATIC double dot2(const double* g, double x, double y)
+{
+    return g[0]*x + g[1]*y;
+}
 
-static double dot2(const double* g, double x, double y) {
-    return g[0]*x + g[1]*y; }
+LAB_STATIC double dot3(const double* g, double x, double y, double z)
+{
+    return g[0]*x + g[1]*y + g[2]*z;
+}
 
-static double dot3(const double* g, double x, double y, double z) {
-    return g[0]*x + g[1]*y + g[2]*z; }
-
-static double dot4(const double* g, double x, double y, double z, double w) {
-    return g[0]*x + g[1]*y + g[2]*z + g[3]*w; }
+LAB_STATIC double dot4(const double* g, double x, double y, double z, double w)
+{
+    return g[0]*x + g[1]*y + g[2]*z + g[3]*w;
+}
 
 
 // 2D simplex noise
 LAB_HOT
-double LAB_SimplexNoise2D(double xin, double yin) {
+double LAB_SimplexNoise2D(double xin, double yin)
+{
     //return LAB_AbsModF(0.1*xin*yin+0.1*yin*yin,1);
     double n0, n1, n2; // Noise contributions from the three corners
     // Skew the input space to determine which simplex cell we're in
     double s = (xin+yin)*F2; // Hairy factor for 2D
-    int i = fastfloor(xin+s);
-    int j = fastfloor(yin+s);
+    int i = LAB_FastFloorD2I(xin+s);
+    int j = LAB_FastFloorD2I(yin+s);
     double t = (i+j)*G2;
     double X0 = i-t; // Unskew the cell origin back to (x,y) space
     double Y0 = j-t;
@@ -181,19 +186,20 @@ double LAB_SimplexNoise2D(double xin, double yin) {
     // Add contributions from each corner to get the final noise value.
     // The result is scaled to return values in the interval [-1,1].
     return 70.0 * (n0 + n1 + n2);
-  }
+}
 
 
 // 3D simplex noise
 LAB_HOT
-double LAB_SimplexNoise3D(double xin, double yin, double zin) {
+double LAB_SimplexNoise3D(double xin, double yin, double zin)
+{
     //return LAB_AbsModF(xin*zin+xin*yin*yin+zin*zin,1);
     double n0, n1, n2, n3; // Noise contributions from the four corners
     // Skew the input space to determine which simplex cell we're in
     double s = (xin+yin+zin)*F3; // Very nice and simple skew factor for 3D
-    int i = fastfloor(xin+s);
-    int j = fastfloor(yin+s);
-    int k = fastfloor(zin+s);
+    int i = LAB_FastFloorD2I(xin+s);
+    int j = LAB_FastFloorD2I(yin+s);
+    int k = LAB_FastFloorD2I(zin+s);
     double t = (i+j+k)*G3;
     double X0 = i-t; // Unskew the cell origin back to (x,y,z) space
     double Y0 = j-t;
@@ -281,15 +287,16 @@ double LAB_SimplexNoise3D(double xin, double yin, double zin) {
 
 // 4D simplex noise, better simplex rank ordering method 2012-03-09
 LAB_HOT
-double LAB_SimplexNoise4D(double x, double y, double z, double w) {
+double LAB_SimplexNoise4D(double x, double y, double z, double w)
+{
 
     double n0, n1, n2, n3, n4; // Noise contributions from the five corners
     // Skew the (x,y,z,w) space to determine which cell of 24 simplices we're in
     double s = (x + y + z + w) * F4; // Factor for 4D skewing
-    int i = fastfloor(x + s);
-    int j = fastfloor(y + s);
-    int k = fastfloor(z + s);
-    int l = fastfloor(w + s);
+    int i = LAB_FastFloorD2I(x + s);
+    int j = LAB_FastFloorD2I(y + s);
+    int k = LAB_FastFloorD2I(z + s);
+    int l = LAB_FastFloorD2I(w + s);
     double t = (i + j + k + l) * G4; // Factor for 4D unskewing
     double X0 = i - t; // Unskew the cell origin back to (x,y,z,w) space
     double Y0 = j - t;

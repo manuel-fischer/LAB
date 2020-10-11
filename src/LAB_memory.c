@@ -1,4 +1,6 @@
 #include "LAB_memory.h"
+
+#include "LAB_attr.h"
 #include "LAB_opt.h"
 #include "LAB_util.h"
 #include <stdio.h>
@@ -10,7 +12,7 @@ static size_t mem_frees = 0;
 static size_t mem_fails = 0;
 static ptrdiff_t mem_checksum = 0; // all pointers xored together
 
-static inline void LAB_DbgMemPrint(const char* format, const char* file, int line, ...);
+LAB_STATIC void LAB_DbgMemPrint(const char* format, const char* file, int line, ...);
 
 void* LAB_RealReallocN(void* memory, size_t count, size_t size)
 {
@@ -21,7 +23,7 @@ void* LAB_RealReallocN(void* memory, size_t count, size_t size)
 
 typedef unsigned u;
 
-void LAB_DbgMemPrint(const char* format, const char* file, int line, ...)
+LAB_STATIC void LAB_DbgMemPrint(const char* format, const char* file, int line, ...)
 {
     #if 0
     fprintf(stderr, "%-16s|%3i:\t", LAB_Filename(file), line);

@@ -215,7 +215,7 @@ LAB_INLINE uint32_t LAB_World_PeekFlags3x3(LAB_Chunk* chunk, int x, int y, int z
 /**
  *  the origin of x,y,z is at (0,0,0) of the chunk at [1+3+3*3]
  */
-LAB_INLINE
+LAB_ALWAYS_INLINE LAB_INLINE
 LAB_Chunk* LAB_GetNeighborhoodRef(LAB_Chunk*const neighborhood[27], int x, int y, int z, int* /*out*/ index)
 {
     LAB_ASSUME(x >= -16 && x < 32);
@@ -237,7 +237,7 @@ LAB_Chunk* LAB_GetNeighborhoodRef(LAB_Chunk*const neighborhood[27], int x, int y
     return neighborhood[cx+cy+cz];
 }
 
-LAB_HOT LAB_INLINE
+LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
 LAB_Block* LAB_GetNeighborhoodBlock(LAB_Chunk*const neighborhood[27], int x, int y, int z)
 {
     int block_index;
@@ -247,7 +247,7 @@ LAB_Block* LAB_GetNeighborhoodBlock(LAB_Chunk*const neighborhood[27], int x, int
     return chunk->blocks[block_index];
 }
 
-LAB_HOT LAB_INLINE
+LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
 LAB_Color LAB_GetNeighborhoodLight(LAB_Chunk*const neighborhood[27], int x, int y, int z, LAB_Color default_color)
 {
     int block_index;
@@ -259,7 +259,7 @@ LAB_Color LAB_GetNeighborhoodLight(LAB_Chunk*const neighborhood[27], int x, int 
     return chunk->light[block_index];
 }
 
-LAB_HOT LAB_INLINE
+LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
 bool LAB_SetNeighborhoodLight(LAB_Chunk* neighborhood[27], int x, int y, int z, LAB_Color color)
 {
     int block_index;
@@ -271,7 +271,7 @@ bool LAB_SetNeighborhoodLight(LAB_Chunk* neighborhood[27], int x, int y, int z, 
     return 1;
 }
 
-LAB_HOT LAB_INLINE
+LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
 uint32_t LAB_World_PeekFlags3x3(LAB_Chunk* chunk, int x, int y, int z, unsigned flag)
 {
     uint32_t bitset = 0, curbit = 1;

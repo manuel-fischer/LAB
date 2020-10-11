@@ -8,7 +8,7 @@ typedef struct RECT RECT;
 typedef int BOOL;
 BOOL ClipCursor(const RECT *lpRect);
 
-static inline void SDL_SetWindowGrab_Fix(SDL_Window* window, SDL_bool grabbed)
+LAB_INLINE void SDL_SetWindowGrab_Fix(SDL_Window* window, SDL_bool grabbed)
 {
     // There is a bug in SDL, where ClipCursor is not called, when the window itself
     // is partly outside of the screen. When this happens, the cursor keeps being

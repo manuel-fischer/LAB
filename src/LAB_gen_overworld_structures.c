@@ -30,6 +30,8 @@ void LAB_Gen_Overworld_Tower(LAB_Placer* p, LAB_Random* rnd)
     int r = 2+(R>>1 & 1);
     //if(LAB_Placer_IsInside...)
 
+    // TODO: UB: floor is a library function name and
+    //           could possibly be defined as a macro
     LAB_Block* corner,* wall,* floor,* ceiling;
     switch((R>>2)&3)
     {

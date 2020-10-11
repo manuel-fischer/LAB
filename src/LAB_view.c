@@ -23,6 +23,7 @@
 #include "LAB_bits.h"
 #include "LAB_opt.h"
 #include "LAB_util.h"
+#include "LAB_attr.h"
 
 #include "LAB_gui.h"
 #include "LAB_gui_component.h"
@@ -35,24 +36,35 @@
 
 ///############################
 
-static bool LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_World* world);
-static void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_IN LAB_Chunk* chunk_neighborhood[27]);
-static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_IN LAB_Chunk* chunk_neighborhood[27], int x, int y, int z);
-static void LAB_ViewUpdateChunks(LAB_View* view);
-static bool LAB_ViewUpdateChunk(LAB_View* view, LAB_ViewChunkEntry* e);
-static void LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass);
-static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_RenderPass pass);
-static bool LAB_View_HasChunkVisibleNeighbors(LAB_View* view, int x, int y, int z);
+LAB_STATIC bool LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_World* world);
+LAB_STATIC void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_IN LAB_Chunk* chunk_neighborhood[27]);
+LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_IN LAB_Chunk* chunk_neighborhood[27], int x, int y, int z);
+LAB_STATIC void LAB_ViewUpdateChunks(LAB_View* view);
+LAB_STATIC bool LAB_ViewUpdateChunk(LAB_View* view, LAB_ViewChunkEntry* e);
+LAB_STATIC void LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass);
+LAB_STATIC void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_RenderPass pass);
+LAB_STATIC bool LAB_View_HasChunkVisibleNeighbors(LAB_View* view, int x, int y, int z);
 #if !LAB_VIEW_QUERY_IMMEDIATELY
-static void LAB_View_FetchQueryChunks(LAB_View* view);
-static void LAB_View_FetchQueryChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
+LAB_STATIC void LAB_View_FetchQueryChunks(LAB_View* view);
+LAB_STATIC void LAB_View_FetchQueryChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
 #endif
-static void LAB_View_OrderQueryChunks(LAB_View* view);
-static void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
-static void LAB_ViewRemoveDistantChunks(LAB_View* view);
-static void LAB_ViewDestructChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
+LAB_STATIC void LAB_View_OrderQueryChunks(LAB_View* view);
+LAB_STATIC void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
+LAB_STATIC void LAB_ViewRemoveDistantChunks(LAB_View* view);
+LAB_STATIC void LAB_ViewDestructChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
 
-static LAB_Triangle* LAB_ViewMeshAlloc(LAB_View_Mesh* mesh, size_t add_size, size_t extra_size);
+LAB_STATIC void LAB_ViewUploadVBO(LAB_View* view, LAB_View_Mesh* mesh);
+LAB_STATIC bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
+LAB_STATIC void LAB_View_UploadChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
+LAB_STATIC void LAB_View_UploadChunks(LAB_View* view);
+
+LAB_STATIC void LAB_RenderBlockSelection(LAB_View* view, int x, int y, int z);
+LAB_STATIC void LAB_View_RenderBlockSelection(LAB_View* view);
+
+LAB_STATIC int LAB_View_CompareChunksIndirect(const void* a, const void* b);
+LAB_STATIC void LAB_View_SortChunks(LAB_View* view, uint32_t delta_ms);
+
+LAB_STATIC LAB_Triangle* LAB_ViewMeshAlloc(LAB_View_Mesh* mesh, size_t add_size, size_t extra_size);
 
 bool LAB_ConstructView(LAB_View* view, LAB_World* world)
 {
@@ -113,9 +125,9 @@ bool LAB_ViewChunkKeepProc(void* user, LAB_World* world, int x, int y, int z)
 {
     LAB_View* view = (LAB_View*)user;
 
-    int px = LAB_Sar((int)floorf(view->x), LAB_CHUNK_SHIFT);
-    int py = LAB_Sar((int)floorf(view->y), LAB_CHUNK_SHIFT);
-    int pz = LAB_Sar((int)floorf(view->z), LAB_CHUNK_SHIFT);
+    int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
+    int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
+    int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
 
     int dx = x-px;
     int dy = y-py;
@@ -129,7 +141,7 @@ bool LAB_ViewChunkKeepProc(void* user, LAB_World* world, int x, int y, int z)
 /**
  *  Return 1 if the chunk was available
  */
-static bool LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_World* world)
+LAB_STATIC bool LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_World* world)
 {
     LAB_Chunk* chunk_neighborhood[27];
 
@@ -138,13 +150,16 @@ static bool LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, L
                              LAB_CHUNK_EXISTING);
 
     if(chunk_neighborhood[1+3+9] == NULL) return 0;
+    //chunk_entry->exist = chunk_neighborhood[1+3+9] != NULL;
+    //for(int i = 0; i < 27; ++i)
+    //    if(chunk_neighborhood[i] == NULL) return 0;
     LAB_ViewBuildMeshNeighbored(view, chunk_entry, chunk_neighborhood);
     return 1;
 }
 
 
 LAB_HOT
-static void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_Chunk* cnk3x3x3[27])
+LAB_STATIC void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_Chunk* cnk3x3x3[27])
 {
     const int X = 1;
     const int Y = 3*1;
@@ -231,7 +246,7 @@ static void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chun
 
 
 // TODO move to world
-LAB_HOT LAB_INLINE
+LAB_HOT LAB_ALWAYS_INLINE
 LAB_BlockFlags LAB_GetNeighborhoodBlockFlags(LAB_Chunk* neighborhood[27], int x, int y, int z)
 {
     int block_index;
@@ -242,8 +257,8 @@ LAB_BlockFlags LAB_GetNeighborhoodBlockFlags(LAB_Chunk* neighborhood[27], int x,
 }
 
 
-LAB_HOT LAB_INLINE
-static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_Chunk* cnk3x3x3[27], int x, int y, int z)
+LAB_HOT LAB_ALWAYS_INLINE
+LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_Chunk* cnk3x3x3[27], int x, int y, int z)
 {
 
 #define GET_BLOCK(bx, by, bz) LAB_GetNeighborhoodBlock(cnk3x3x3, x+(bx), y+(by), z+(bz))
@@ -370,7 +385,7 @@ static void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
 }
 
 
-static LAB_Triangle* LAB_ViewMeshAlloc(LAB_View_Mesh* mesh, size_t add_size, size_t extra_size)
+LAB_STATIC LAB_Triangle* LAB_ViewMeshAlloc(LAB_View_Mesh* mesh, size_t add_size, size_t extra_size)
 {
     size_t mesh_count, new_mesh_count, mesh_capacity;
 
@@ -395,7 +410,7 @@ static LAB_Triangle* LAB_ViewMeshAlloc(LAB_View_Mesh* mesh, size_t add_size, siz
     return &mesh->data[mesh_count];
 }
 
-static void LAB_ViewUploadVBO(LAB_View* view, LAB_View_Mesh* mesh)
+LAB_STATIC void LAB_ViewUploadVBO(LAB_View* view, LAB_View_Mesh* mesh)
 {
     LAB_Triangle* mesh_data = mesh->data;
 
@@ -408,7 +423,7 @@ static void LAB_ViewUploadVBO(LAB_View* view, LAB_View_Mesh* mesh)
     glBufferData(GL_ARRAY_BUFFER, mesh->size*sizeof *mesh_data, mesh_data, GL_DYNAMIC_DRAW);
 }
 
-static bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
+LAB_STATIC bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 {
     // TODO: only build chunk if all neighbors are generated
     if(!LAB_View_IsChunkInSight(view, chunk_entry->x, chunk_entry->y, chunk_entry->z))
@@ -422,7 +437,7 @@ static bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
         if(!chunk_available)
         {
             //chunk_entry->dirty = ~0;
-            chunk_entry->exist =  0;
+            //chunk_entry->exist =  0;
             //printf("FAILED to build mesh for %i %i %i\n", chunk_entry->x, chunk_entry->y, chunk_entry->z);
             return 0;
         }
@@ -439,7 +454,7 @@ static bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
     return 0;
 }
 
-static bool LAB_ViewUpdateChunk(LAB_View* view, LAB_ViewChunkEntry* e)
+LAB_STATIC bool LAB_ViewUpdateChunk(LAB_View* view, LAB_ViewChunkEntry* e)
 {
     bool updated = LAB_ViewBuildChunk(view, e);
     if(e->mesh_order && (updated || (rand()&0x1f) == 0))
@@ -456,13 +471,13 @@ static bool LAB_ViewUpdateChunk(LAB_View* view, LAB_ViewChunkEntry* e)
 }
 
 
-static void LAB_ViewUpdateChunks(LAB_View* view)
+LAB_STATIC void LAB_ViewUpdateChunks(LAB_View* view)
 {
     unsigned rest_update = view->max_update;
 
-    int px = LAB_Sar((int)floorf(view->x), LAB_CHUNK_SHIFT);
-    int py = LAB_Sar((int)floorf(view->y), LAB_CHUNK_SHIFT);
-    int pz = LAB_Sar((int)floorf(view->z), LAB_CHUNK_SHIFT);
+    int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
+    int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
+    int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
 
 
     int dist_sq = view->render_dist*view->render_dist + 3;
@@ -479,7 +494,7 @@ static void LAB_ViewUpdateChunks(LAB_View* view)
     });
 }
 
-static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_RenderPass pass)
+LAB_STATIC void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_RenderPass pass)
 {
     if(!LAB_View_IsChunkInSight(view, chunk_entry->x, chunk_entry->y, chunk_entry->z))
         return;
@@ -529,9 +544,9 @@ static void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry,
 
 void LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass)
 {
-    int px = LAB_Sar((int)floorf(view->x), LAB_CHUNK_SHIFT);
-    int py = LAB_Sar((int)floorf(view->y), LAB_CHUNK_SHIFT);
-    int pz = LAB_Sar((int)floorf(view->z), LAB_CHUNK_SHIFT);
+    int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
+    int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
+    int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
 
 
     int dist_sq = view->render_dist*view->render_dist + 3;
@@ -551,7 +566,7 @@ void LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass)
 
 
 
-static void LAB_View_UploadChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
+LAB_STATIC void LAB_View_UploadChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 {
     if(!LAB_View_IsChunkInSight(view, chunk_entry->x, chunk_entry->y, chunk_entry->z))
         return;
@@ -573,11 +588,11 @@ static void LAB_View_UploadChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry
     }
 }
 
-static void LAB_View_UploadChunks(LAB_View* view)
+LAB_STATIC void LAB_View_UploadChunks(LAB_View* view)
 {
-    int px = LAB_Sar((int)floorf(view->x), LAB_CHUNK_SHIFT);
-    int py = LAB_Sar((int)floorf(view->y), LAB_CHUNK_SHIFT);
-    int pz = LAB_Sar((int)floorf(view->z), LAB_CHUNK_SHIFT);
+    int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
+    int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
+    int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
 
 
     int dist_sq = view->render_dist*view->render_dist + 3;
@@ -598,7 +613,7 @@ static void LAB_View_UploadChunks(LAB_View* view)
 
 
 #if !LAB_VIEW_QUERY_IMMEDIATELY
-static void LAB_View_FetchQueryChunks(LAB_View* view)
+LAB_STATIC void LAB_View_FetchQueryChunks(LAB_View* view)
 {
     LAB_ViewChunkEntry* e;
     HTL_HASHARRAY_EACH(LAB_View_ChunkTBL, &view->chunks, e,
@@ -608,7 +623,7 @@ static void LAB_View_FetchQueryChunks(LAB_View* view)
     });
 }
 
-static void LAB_View_FetchQueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
+LAB_STATIC void LAB_View_FetchQueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
 {
     unsigned visible = 2;
     glGetQueryObjectuiv(entry->query_id, GL_QUERY_RESULT, &visible);
@@ -624,11 +639,11 @@ static void LAB_View_FetchQueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
 
 
 
-static void LAB_View_OrderQueryChunks(LAB_View* view)
+LAB_STATIC void LAB_View_OrderQueryChunks(LAB_View* view)
 {
-    int px = LAB_Sar((int)floorf(view->x), LAB_CHUNK_SHIFT);
-    int py = LAB_Sar((int)floorf(view->y), LAB_CHUNK_SHIFT);
-    int pz = LAB_Sar((int)floorf(view->z), LAB_CHUNK_SHIFT);
+    int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
+    int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
+    int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
 
 
     int dist_sq = view->render_dist*view->render_dist + 3;
@@ -665,7 +680,7 @@ static void LAB_View_OrderQueryChunks(LAB_View* view)
     });
 }
 
-static void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
+LAB_STATIC void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
 {
     if(!LAB_View_IsChunkInSight(view, entry->x, entry->y, entry->z)) return;
 
@@ -764,7 +779,7 @@ static void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
 
 
 
-static void LAB_RenderBlockSelection(LAB_View* view, int x, int y, int z)
+LAB_STATIC void LAB_RenderBlockSelection(LAB_View* view, int x, int y, int z)
 {
 #define O (-0.001f)
 #define I ( 1.001f)
@@ -804,7 +819,7 @@ static void LAB_RenderBlockSelection(LAB_View* view, int x, int y, int z)
 }
 
 
-static void LAB_View_RenderBlockSelection(LAB_View* view)
+LAB_STATIC void LAB_View_RenderBlockSelection(LAB_View* view)
 {
     int target[3]; // targeted block
     int prev[3]; // previous block
@@ -918,9 +933,9 @@ void LAB_ViewRenderHud(LAB_View* view)
 
         int rerender = 0;
         int px, py, pz;
-        px = (int)floor(view->x);
-        py = (int)floor(view->y);
-        pz = (int)floor(view->z);
+        px = LAB_FastFloorF2I(view->x);
+        py = LAB_FastFloorF2I(view->y);
+        pz = LAB_FastFloorF2I(view->z);
         if(view->info.surf == NULL)
         {
             //view->info.surf = SDL_CreateRGBSurface(0, INFO_WIDTH, INFO_HEIGHT, 32, 0, 0, 0, 0);
@@ -1094,9 +1109,9 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
 
 void LAB_ViewRemoveDistantChunks(LAB_View* view)
 {
-    int px = LAB_Sar((int)floorf(view->x), LAB_CHUNK_SHIFT);
-    int py = LAB_Sar((int)floorf(view->y), LAB_CHUNK_SHIFT);
-    int pz = LAB_Sar((int)floorf(view->z), LAB_CHUNK_SHIFT);
+    int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
+    int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
+    int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
 
     int dist_sq = view->keep_dist*view->keep_dist + 3;
     #if 0
@@ -1275,14 +1290,14 @@ void LAB_ViewGetDirection(LAB_View* view, LAB_OUT float dir[3])
 }
 
 
-static int LAB_View_CompareChunksIndirect(const void* a, const void* b)
+LAB_STATIC int LAB_View_CompareChunksIndirect(const void* a, const void* b)
 {
     const LAB_ViewSortedChunkEntry* e1 = a,* e2 = b;
 
     return e1->distance < e2->distance ? -1 : e1->distance > e2->distance ? 1 : 0;
 }
 
-static void LAB_View_SortChunks(LAB_View* view, uint32_t delta_ms)
+LAB_STATIC void LAB_View_SortChunks(LAB_View* view, uint32_t delta_ms)
 {
     LAB_ViewSortedChunkEntry* sorted_chunks = LAB_ReallocN(view->sorted_chunks, view->chunks.size, sizeof*sorted_chunks);
     if(!sorted_chunks)
@@ -1328,7 +1343,7 @@ void LAB_ViewTick(LAB_View* view, uint32_t delta_ms)
 }
 
 
-static bool LAB_View_HasChunkVisibleNeighbors(LAB_View* view, int x, int y, int z)
+LAB_STATIC bool LAB_View_HasChunkVisibleNeighbors(LAB_View* view, int x, int y, int z)
 {
     for(int i = 0; i < 6; ++i)
     {
@@ -1372,9 +1387,9 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
 {
     // TODO: check if gen-queue is full: quit
 
-    int px = LAB_Sar((int)floorf(view->x), LAB_CHUNK_SHIFT);
-    int py = LAB_Sar((int)floorf(view->y), LAB_CHUNK_SHIFT);
-    int pz = LAB_Sar((int)floorf(view->z), LAB_CHUNK_SHIFT);
+    int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
+    int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
+    int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
 
     /**
 

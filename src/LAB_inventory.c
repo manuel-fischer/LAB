@@ -2,10 +2,10 @@
 
 #include "LAB_block.h"
 
-static size_t     (LAB_CheatInventory_GetSize)(void*);
-static LAB_Block* (LAB_CheatInventory_GetSlot)(void*, size_t index);
-static bool       (LAB_CheatInventory_PutSlot)(void*, size_t index);
-static LAB_Block* (LAB_CheatInventory_TakeSlot)(void*, size_t index);
+LAB_STATIC size_t     (LAB_CheatInventory_GetSize)(void*);
+LAB_STATIC LAB_Block* (LAB_CheatInventory_GetSlot)(void*, size_t index);
+LAB_STATIC bool       (LAB_CheatInventory_PutSlot)(void*, size_t index);
+LAB_STATIC LAB_Block* (LAB_CheatInventory_TakeSlot)(void*, size_t index);
 
 const LAB_IInventory LAB_cheat_inventory = {
     .get_size = &LAB_CheatInventory_GetSize,

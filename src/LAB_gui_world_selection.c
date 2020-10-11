@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static bool LAB_GuiWorldSelection_ListDir(size_t* world_count, char*** world_names)
+LAB_STATIC bool LAB_GuiWorldSelection_ListDir(size_t* world_count, char*** world_names)
 {
     size_t world_capacity = *world_count;
 
@@ -48,8 +48,8 @@ cleanup:
 
 }
 
-static void LAB_GuiWorldSelection_lstWorlds_OnSelect(void* user, size_t entry);
-static void LAB_GuiWorldSelection_OK(void* user, LAB_GuiManager* mgr);
+LAB_STATIC void LAB_GuiWorldSelection_lstWorlds_OnSelect(void* user, size_t entry);
+LAB_STATIC void LAB_GuiWorldSelection_OK(void* user, LAB_GuiManager* mgr);
 
 void LAB_GuiWorldSelection_Create(LAB_GuiWorldSelection* gui, const char* title, LAB_WorldSelectProc on_select)
 {
@@ -105,7 +105,7 @@ void LAB_GuiWorldSelection_Destroy(LAB_GuiComponent* self)
     LAB_Free(cself->worlds);
 }
 
-static void LAB_GuiWorldSelection_lstWorlds_OnSelect(void* user, size_t entry)
+LAB_STATIC void LAB_GuiWorldSelection_lstWorlds_OnSelect(void* user, size_t entry)
 {
     LAB_GuiWorldSelection* gui = (LAB_GuiWorldSelection*)user;
     if(entry < gui->world_count)
@@ -114,7 +114,7 @@ static void LAB_GuiWorldSelection_lstWorlds_OnSelect(void* user, size_t entry)
     }
 }
 
-static void LAB_GuiWorldSelection_OK(void* user, LAB_GuiManager* mgr)
+LAB_STATIC void LAB_GuiWorldSelection_OK(void* user, LAB_GuiManager* mgr)
 {
     LAB_GuiWorldSelection* gui = (LAB_GuiWorldSelection*)user;
     const char* filename = gui->txtWorld.content;

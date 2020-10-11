@@ -1,5 +1,7 @@
 #pragma once
 
+#include "LAB_attr.h"
+
 // TODO: Render passes   ALPHA_TEST           BLEND            MIPMAPPING       CHUNK_ORDER    CHUNK_SORTED  DEPTH_MASK  DEPTH_TEST
 // RENDER_PASS_SOLID         no                 no                yes             forward           no           yes        yes
 // RENDER_PASS_MASKED      >=32                 no                yes             forward           no           yes        yes
@@ -28,7 +30,7 @@ enum
 // ASSUMPTION: LAB_PrepareRenderPass always called 6 times with increasing pass from 0 to 5
 // ASSUMPTION: terrain texture enabled
 // Return if chunks are rendered backwards and sorted
-static inline bool LAB_PrepareRenderPass(LAB_RenderPass pass)
+LAB_INLINE bool LAB_PrepareRenderPass(LAB_RenderPass pass)
 {
     switch(pass)
     {

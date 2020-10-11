@@ -112,6 +112,7 @@
 					<Add option="-g" />
 					<Add option="-O0" />
 					<Add option="-DNDEBUG" />
+					<Add option="-DPROFILE" />
 				</Compiler>
 				<Linker>
 					<Add option="-pg -lgmon" />
@@ -180,6 +181,7 @@
 		<Unit filename="include/HTL_queue.t.h" />
 		<Unit filename="include/LAB.h" />
 		<Unit filename="include/LAB_asset_manager.h" />
+		<Unit filename="include/LAB_attr.h" />
 		<Unit filename="include/LAB_bits.h" />
 		<Unit filename="include/LAB_block.h" />
 		<Unit filename="include/LAB_blt_block.h" />
@@ -215,16 +217,19 @@
 		<Unit filename="include/LAB_math.h" />
 		<Unit filename="include/LAB_memory.h" />
 		<Unit filename="include/LAB_model.h" />
+		<Unit filename="include/LAB_model_order.h" />
 		<Unit filename="include/LAB_noise.h" />
 		<Unit filename="include/LAB_opt.h" />
 		<Unit filename="include/LAB_perf.h" />
 		<Unit filename="include/LAB_random.h" />
 		<Unit filename="include/LAB_render_item.h" />
+		<Unit filename="include/LAB_render_pass.h" />
 		<Unit filename="include/LAB_simplex_noise.h" />
 		<Unit filename="include/LAB_stdinc.h" />
 		<Unit filename="include/LAB_util.h" />
 		<Unit filename="include/LAB_view.h" />
 		<Unit filename="include/LAB_view_input.h" />
+		<Unit filename="include/LAB_view_mesh.h" />
 		<Unit filename="include/LAB_window.h" />
 		<Unit filename="include/LAB_world.h" />
 		<Unit filename="include/LAB_world_light.h" />
@@ -307,6 +312,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_model.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_model_order.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_noise.c">

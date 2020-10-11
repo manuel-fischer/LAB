@@ -3,7 +3,7 @@
 
 #define LAB_FPS_GRAPH_CALC_Y(frame_ms) ((float)(frame_ms)*0.005f)
 
-static void LAB_FpsGraph_Shift(LAB_FpsGraph* graph)
+LAB_STATIC void LAB_FpsGraph_Shift(LAB_FpsGraph* graph)
 {
     // shift all the samples to the left, keeping the alpha channel of the
     // color and the x position at the original position

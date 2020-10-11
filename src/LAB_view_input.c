@@ -25,7 +25,7 @@
 #include "LAB_ext.h"
 #include "LAB_util.h"
 
-static int LAB_ViewInputInteract(LAB_ViewInput* view_input, int right);
+LAB_STATIC int LAB_ViewInputInteract(LAB_ViewInput* view_input, int right);
 
 //static int selected_block = 1;
 
@@ -50,7 +50,7 @@ void LAB_DestructViewInput(LAB_ViewInput* view_input)
 /**
  *  flip image horizontally and set alpha channel to 255
  */
-static void LAB_FixScreenImg(void* pixels, int w, int h)
+LAB_STATIC void LAB_FixScreenImg(void* pixels, int w, int h)
 {
     uint8_t* pix = (uint8_t*)pixels;
     int c = 4*w*(h/2);
@@ -79,7 +79,7 @@ static void LAB_FixScreenImg(void* pixels, int w, int h)
 }
 
 
-static void LAB_ShowGuiMenu(LAB_View* view)
+LAB_STATIC void LAB_ShowGuiMenu(LAB_View* view)
 {
     LAB_GuiMenu* gui = LAB_Malloc(sizeof *gui);
     if(!gui) return;
@@ -87,7 +87,7 @@ static void LAB_ShowGuiMenu(LAB_View* view)
     LAB_GuiManager_ShowDialog(&view->gui_mgr, (LAB_GuiComponent*)gui);
 }
 
-static void LAB_ShowGuiInventory(LAB_View* view, LAB_Block** block)
+LAB_STATIC void LAB_ShowGuiInventory(LAB_View* view, LAB_Block** block)
 {
     LAB_GuiInventory* gui = LAB_Malloc(sizeof *gui);
     if(!gui) return;
@@ -96,7 +96,7 @@ static void LAB_ShowGuiInventory(LAB_View* view, LAB_Block** block)
 }
 
 
-static void LAB_GrabMouse(LAB_View* view, LAB_Window* window, int grab)
+LAB_STATIC void LAB_GrabMouse(LAB_View* view, LAB_Window* window, int grab)
 {
     //int grab;
     //grab = !SDL_GetWindowGrab(window->window);
@@ -164,6 +164,12 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                 case SDLK_SPACE:  view_input->updown &= ~1; break;
                 case SDLK_LSHIFT: view_input->updown &= ~2; break;*/
 
+                /*case SDLK_o:
+                {
+                    view->x = LAB_FastFloorF2I(view->x);
+                    view->y = LAB_FastFloorF2I(view->y);
+                    view->z = LAB_FastFloorF2I(view->z);
+                } break;*/
                 case SDLK_x:
                 {
                     view_input->flags ^= LAB_VIEWINPUT_DESTROY;
@@ -393,7 +399,7 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
     return 1;
 }
 
-static int LAB_ViewInputInteract(LAB_ViewInput* view_input, int right)
+LAB_STATIC int LAB_ViewInputInteract(LAB_ViewInput* view_input, int right)
 {
     LAB_View* view = view_input->view;
 
@@ -420,9 +426,9 @@ static int LAB_ViewInputInteract(LAB_ViewInput* view_input, int right)
         else
         {
             if(!(view_input->flags&LAB_VIEWINPUT_NOCLIP) && (view_input->selected_block->flags&LAB_BLOCK_MASSIVE)
-               &&  prev[0]==(int)floorf(view->x)
-               && (prev[1]==(int)floorf(view->y) || prev[1]==(int)floorf(view->y)-1)
-               &&  prev[2]==(int)floorf(view->z)) return 0;
+               &&  prev[0]==LAB_FastFloorF2I(view->x)
+               && (prev[1]==LAB_FastFloorF2I(view->y) || prev[1]==LAB_FastFloorF2I(view->y)-1)
+               &&  prev[2]==LAB_FastFloorF2I(view->z)) return 0;
             LAB_SetBlock(view->world, prev[0], prev[1], prev[2], LAB_CHUNK_GENERATE, view_input->selected_block);
         }
         return 1;
@@ -521,9 +527,9 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms)
         LAB_Block* block = view_input->flags & LAB_VIEWINPUT_CREATE ? view_input->selected_block : &LAB_BLOCK_AIR;
 
         int bx, by, bz;
-        bx = (int)floorf(view->x);
-        by = (int)floorf(view->y);
-        bz = (int)floorf(view->z);
+        bx = LAB_FastFloorF2I(view->x);
+        by = LAB_FastFloorF2I(view->y);
+        bz = LAB_FastFloorF2I(view->z);
 
         int dist = view_input->brushsize;
         for(int zz = -dist; zz <= dist; ++zz)
@@ -565,9 +571,9 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms)
             view->z += dz/(float)steps;
 
             int bx, by, bz;
-            bx = (int)floorf(view->x);
-            by = (int)floorf(view->y);
-            bz = (int)floorf(view->z);
+            bx = LAB_FastFloorF2I(view->x);
+            by = LAB_FastFloorF2I(view->y);
+            bz = LAB_FastFloorF2I(view->z);
 
             float fx, fy, fz;
             fx = view->x-(float)bx;

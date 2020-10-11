@@ -1,5 +1,7 @@
 #pragma once
 
+#include "LAB_attr.h"
+
 #include "LAB_gui.h"
 #include "LAB_gui_manager.h"
 #include "LAB_stdinc.h"
@@ -27,7 +29,7 @@ bool LAB_Gui_OnEvent_Ignore(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Eve
 
 bool LAB_GetMouseCoordPtr(SDL_Event* event, int** x, int** y);
 
-static inline bool LAB_GuiHitTest(LAB_GuiComponent* component, int x, int y)
+LAB_INLINE bool LAB_GuiHitTest(LAB_GuiComponent* component, int x, int y)
 {
     x -= component->x;
     y -= component->y;

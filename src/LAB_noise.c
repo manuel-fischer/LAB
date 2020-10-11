@@ -4,8 +4,8 @@
 #if 0
 
 #define DEF_NOISE_FUNC(me, rec)                                                          \
-LAB_HOT LAB_INLINE                                                                       \
-void LAB_SmoothNoiseRec##me(LAB_OUT uint32_t smooth[16*16],                       \
+LAB_HOT LAB_ALWAYS_INLINE                                                                \
+void LAB_SmoothNoiseRec##me(LAB_OUT uint32_t smooth[16*16],                              \
                                    LAB_IN uint64_t noise[17*17],                         \
                                    int x0, int y0, int x1, int y1,                       \
                                    uint32_t n00, uint32_t n01,                           \

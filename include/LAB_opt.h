@@ -17,12 +17,12 @@
 #define LAB_UNREACHABLE() __builtin_unreachable()
 
 // function attributes
-#define LAB_INLINE   __attribute__((always_inline)) inline
-#define LAB_NOINLINE __attribute__((noinline))
-#define LAB_HOT      __attribute__((hot))
+#define LAB_ALWAYS_INLINE __attribute__((always_inline))
+#define LAB_NOINLINE      __attribute__((noinline))
+#define LAB_HOT           __attribute__((hot))
 
-#define LAB_PURE     __attribute__((pure))
-#define LAB_CONST    __attribute__((const))
+#define LAB_PURE          __attribute__((pure))
+#define LAB_CONST         __attribute__((const))
 
 //#define LAB_UNROLL(n) _Pragma("GCC unroll " #n)
 #define LAB_PRAGMA(str) _Pragma(#str)
@@ -48,7 +48,7 @@
 
 #define LAB_UNREACHABLE() ((void)0)
 
-#define LAB_INLINE
+#define LAB_ALWAYS_INLINE
 #define LAB_NOINLINE
 #define LAB_HOT
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "LAB_attr.h"
+
 typedef struct LAB_View_Mesh
 {
     size_t size, capacity;
@@ -9,7 +11,7 @@ typedef struct LAB_View_Mesh
 } LAB_View_Mesh;
 
 
-static inline void LAB_View_Mesh_Destroy(LAB_View_Mesh* mesh)
+LAB_INLINE void LAB_View_Mesh_Destroy(LAB_View_Mesh* mesh)
 {
     if(mesh->data)
         LAB_Free(mesh->data);

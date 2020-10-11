@@ -2,8 +2,10 @@
 
 #include "LAB_memory.h"
 #include "LAB_error.h"
+#include "LAB_math.h"
 
 #include "LAB_stdinc.h"
+#include "LAB_attr.h"
 #include "LAB_opt.h"
 #include "LAB_debug.h"
 #include "LAB_util.h"
@@ -74,7 +76,7 @@ void LAB_DestructWorld(LAB_World* world)
 }
 
 
-static LAB_Chunk* LAB_GenerateNotifyChunk(LAB_World* world, int x, int y, int z)
+LAB_STATIC LAB_Chunk* LAB_GenerateNotifyChunk(LAB_World* world, int x, int y, int z)
 {
     //printf("GEN %3i, %3i, %3i\n", x, y, z);
     LAB_ChunkPos pos = { x, y, z };
@@ -188,7 +190,7 @@ void LAB_UpdateChunk(LAB_World* world, int x, int y, int z, LAB_ChunkUpdate upda
 }
 
 
-/*static int LAB_NotifyChunkLater_Comp(void* ctx, LAB_ChunkPos* a)
+/*LAB_STATIC int LAB_NotifyChunkLater_Comp(void* ctx, LAB_ChunkPos* a)
 {
     LAB_ChunkPos* b = ctx;
     return LAB_ChunkPosComp(*a, *b);
@@ -262,9 +264,9 @@ int LAB_TraceBlock(LAB_World* world, int max_distance, float vpos[3], float dir[
     p[1] = vpos[1];
     p[2] = vpos[2];
 
-    prev[0] = (int)floorf(p[0]);
-    prev[1] = (int)floorf(p[1]);
-    prev[2] = (int)floorf(p[2]);
+    prev[0] = LAB_FastFloorF2I(p[0]);
+    prev[1] = LAB_FastFloorF2I(p[1]);
+    prev[2] = LAB_FastFloorF2I(p[2]);
 
     if(LAB_GetBlock(world, prev[0], prev[1], prev[2], flags)->flags&block_flags)
     {
@@ -278,9 +280,9 @@ int LAB_TraceBlock(LAB_World* world, int max_distance, float vpos[3], float dir[
         p[0] += dir[0]/16;
         p[1] += dir[1]/16;
         p[2] += dir[2]/16;
-        target[0] = (int)floorf(p[0]);
-        target[1] = (int)floorf(p[1]);
-        target[2] = (int)floorf(p[2]);
+        target[0] = LAB_FastFloorF2I(p[0]);
+        target[1] = LAB_FastFloorF2I(p[1]);
+        target[2] = LAB_FastFloorF2I(p[2]);
         if(LAB_GetBlock(world, target[0], target[1], target[2], flags)->flags&block_flags)
         {
             return 1;
@@ -292,9 +294,9 @@ int LAB_TraceBlock(LAB_World* world, int max_distance, float vpos[3], float dir[
     return 0;
     #else
     int x, y, z;
-    x = (int)floorf(vpos[0]);
-    y = (int)floorf(vpos[1]);
-    z = (int)floorf(vpos[2]);
+    x = LAB_FastFloorF2I(vpos[0]);
+    y = LAB_FastFloorF2I(vpos[1]);
+    z = LAB_FastFloorF2I(vpos[2]);
 
     int stepX, stepY, stepZ; // -1 or +1
     stepX = dir[0]<0?-1:+1;
@@ -306,7 +308,10 @@ int LAB_TraceBlock(LAB_World* world, int max_distance, float vpos[3], float dir[
     ivY = fabsf(dir[1]) < 0.00001 ? 100000.f : 1.f / fabsf(dir[1]);
     ivZ = fabsf(dir[2]) < 0.00001 ? 100000.f : 1.f / fabsf(dir[2]);
 
-    #define MOD1(v) ((v)-floorf(v))
+    // NOTE: same floor rounding behavior as above!
+    //       the values x y z could be reused here
+    // TODO: possible problem, because number is converted to int and back to float again
+    #define MOD1(v) ((v)-LAB_FastFloorF2I(v))
     float tMaxX, tMaxY, tMaxZ;
     if(fabsf(dir[0]) < 0.00001) tMaxX = max_distance; else { tMaxX = MOD1(vpos[0]); { if(dir[0]>0) tMaxX = 1.f-tMaxX; } tMaxX = fabsf(tMaxX * ivX); }
     if(fabsf(dir[1]) < 0.00001) tMaxY = max_distance; else { tMaxY = MOD1(vpos[1]); { if(dir[1]>0) tMaxY = 1.f-tMaxY; } tMaxY = fabsf(tMaxY * ivY); }
@@ -399,6 +404,8 @@ void LAB_WorldTick(LAB_World* world, uint32_t delta_ms)
     // Unload chunks
     for(size_t i = 0; i < world->chunks.capacity; ++i)
     {
+        // TODO: remove chunkkeep hook, instead add callback to get
+        //       positions and distances,
         LAB_World_ChunkEntry* entry = &world->chunks.table[i];
         LAB_Chunk* chunk = entry->chunk;
         if(chunk)
@@ -411,7 +418,11 @@ void LAB_WorldTick(LAB_World* world, uint32_t delta_ms)
                 cy = entry->pos.y;
                 cz = entry->pos.z;
                 bool keep = world->chunkkeep(world->chunkkeep_user, world, cx, cy, cz); // DBG
-                if(!keep)
+                if(keep)
+                {
+                    chunk->age = 0;
+                }
+                else
                 {
                     // Only entries after this entry are changed, another entry
                     // might be moved into this entry, the array itself is not

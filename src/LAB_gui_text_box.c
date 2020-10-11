@@ -24,7 +24,7 @@ void LAB_GuiTextBox_Create(LAB_GuiTextBox* cself,
 /**
  *  Return 0 on failure
  */
-static bool LAB_GuiTextBox_EnsureCapacity(LAB_GuiTextBox* cself, size_t min_capacity)
+LAB_STATIC bool LAB_GuiTextBox_EnsureCapacity(LAB_GuiTextBox* cself, size_t min_capacity)
 {
     if(min_capacity > cself->content_capacity) // new character + '\0'
     {
@@ -46,7 +46,7 @@ static bool LAB_GuiTextBox_EnsureCapacity(LAB_GuiTextBox* cself, size_t min_capa
     return 1;
 }
 
-static void LAB_GuiTextBox_UpdateText(LAB_GuiTextBox* cself)
+LAB_STATIC void LAB_GuiTextBox_UpdateText(LAB_GuiTextBox* cself)
 {
     SDL_FreeSurface(cself->text_surf);
     cself->text_surf = NULL;

@@ -9,7 +9,7 @@
 #define LAB_LIGHT_FALL_OFF(lum) ((lum) - ((lum)>>3 & 0x1f1f1f)-((lum)>>4 & 0x0f0f0f))
 
 // heuristic lighting algorithm
-/*static void LAB_PrepareLight(LAB_Chunk* chunk, LAB_Color default_color)
+/*LAB_STATIC void LAB_PrepareLight(LAB_Chunk* chunk, LAB_Color default_color)
 {
     for(int z = 0; z < 16; ++z)
     for(int x = 0; x < 16; ++x)
@@ -29,8 +29,8 @@
 
 // heuristic lighting algorithm
 // run first time when the chunk has been created
-LAB_INLINE
-static void LAB_PrepareLight(LAB_Chunk* chunk, LAB_Chunk* chunk_above, LAB_Color default_color)
+LAB_ALWAYS_INLINE
+LAB_STATIC void LAB_PrepareLight(LAB_Chunk* chunk, LAB_Chunk* chunk_above, LAB_Color default_color)
 {
     for(int z = 0; z < 16; ++z)
     for(int x = 0; x < 16; ++x)
@@ -48,8 +48,8 @@ static void LAB_PrepareLight(LAB_Chunk* chunk, LAB_Chunk* chunk_above, LAB_Color
     }
 }
 
-LAB_INLINE
-static LAB_Color LAB_CalcLight(LAB_World* world, LAB_Chunk*const chunks[27], int x, int y, int z, LAB_Color default_color, LAB_Color default_color_above)
+LAB_ALWAYS_INLINE
+LAB_STATIC LAB_Color LAB_CalcLight(LAB_World* world, LAB_Chunk*const chunks[27], int x, int y, int z, LAB_Color default_color, LAB_Color default_color_above)
 {
     LAB_ASSUME(x >= -16+1 && x < 32-1);
     LAB_ASSUME(y >= -16+1 && y < 32-1);
@@ -149,8 +149,8 @@ static LAB_Color LAB_CalcLight(LAB_World* world, LAB_Chunk*const chunks[27], int
  *  ?: Any light changed
  *  S, N, U, D, E, W: Neighboring chunk needs to be updated
  */
-LAB_INLINE
-static int LAB_UpdateLight_First(LAB_World* world, LAB_Chunk*const chunks[27], LAB_Color default_color, LAB_Color default_color_above, size_t queue_cap, int* queue, size_t* queue_count)
+LAB_ALWAYS_INLINE
+LAB_STATIC int LAB_UpdateLight_First(LAB_World* world, LAB_Chunk*const chunks[27], LAB_Color default_color, LAB_Color default_color_above, size_t queue_cap, int* queue, size_t* queue_count)
 {
     int changed = 0;
 
@@ -244,7 +244,7 @@ static int LAB_UpdateLight_First(LAB_World* world, LAB_Chunk*const chunks[27], L
  *  S, N, U, D, E, W: Neighboring chunk needs to be updated
  */
 LAB_HOT
-static int LAB_CheckLight(LAB_World* world, LAB_Chunk*const chunks[27], LAB_Color default_color)
+LAB_STATIC int LAB_CheckLight(LAB_World* world, LAB_Chunk*const chunks[27], LAB_Color default_color)
 {
     int changed = 0;
 
@@ -291,7 +291,7 @@ static int LAB_CheckLight(LAB_World* world, LAB_Chunk*const chunks[27], LAB_Colo
 }
 #endif
 
-LAB_HOT                                           // TODO: |--------------------| not used
+LAB_HOT                                                // TODO: |--------------------| not used
 int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, int cz)
 {
     //static int i = 0;
@@ -307,6 +307,7 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, 
         LAB_PrepareLight(ctr_cnk, chunks[1+2*3+9], default_color_above);
         ctr_cnk->light_generated = 1;
     }
+    //return 0; // DBG
 
     #define LAB_LIGHT_QUEUE_SIZE (1<<14)
     #define LAB_LIGHT_QUEUE_MASK (LAB_LIGHT_QUEUE_SIZE-1)

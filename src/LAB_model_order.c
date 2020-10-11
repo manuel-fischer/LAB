@@ -16,7 +16,7 @@ void LAB_BuildModelOrder(LAB_TriangleOrder* order, size_t triangle_count)
 }
 
 // fill `order` with distance data
-static void LAB_PrepareSortModelOrder(LAB_TriangleOrder* order, LAB_Triangle const* mesh,
+LAB_STATIC void LAB_PrepareSortModelOrder(LAB_TriangleOrder* order, LAB_Triangle const* mesh,
                                       size_t triangle_count, float cam2[3])
 {
     for(size_t i = 0; i < triangle_count; ++i, ++order)
@@ -67,7 +67,7 @@ static void LAB_PrepareSortModelOrder(LAB_TriangleOrder* order, LAB_Triangle con
 }
 
 // I -> position in order[i].v that contains the index
-static void LAB_FinishSortModelOrder(LAB_TriangleOrder* order, size_t triangle_count, int I)
+LAB_STATIC void LAB_FinishSortModelOrder(LAB_TriangleOrder* order, size_t triangle_count, int I)
 {
     LAB_TriangleOrder* end = order+triangle_count;
     for(; order != end; ++order)

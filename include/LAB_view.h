@@ -63,7 +63,7 @@ typedef struct LAB_ViewChunkEntry
 
 
 
-static inline LAB_ChunkPos LAB_MakeChunkPos(int x, int y, int z)
+LAB_INLINE LAB_ChunkPos LAB_MakeChunkPos(int x, int y, int z)
 {
     LAB_ChunkPos pos = {x, y, z};
     return pos;
@@ -81,8 +81,41 @@ static inline LAB_ChunkPos LAB_MakeChunkPos(int x, int y, int z)
 #define LAB_VIEW_CHUNK_TBL_CALLOC            LAB_Calloc
 #define LAB_VIEW_CHUNK_TBL_FREE              LAB_Free
 
-#define LAB_VIEW_CHUNK_TBL_LOAD_NUM          3
-#define LAB_VIEW_CHUNK_TBL_LOAD_DEN          4
+/*
+ * through profiling a load factor of 1/2 is better than this ratio:
+ *
+ *   #define LAB_VIEW_CHUNK_TBL_LOAD_NUM          3
+ *   #define LAB_VIEW_CHUNK_TBL_LOAD_DEN          4
+ *
+ * It might be better to use a sorted array and then use binary search on that,
+ * because already pointers to the chunk entries are stored in a sorted array to
+ * be used for sorted rendering.
+ *  This might allow to implement functions like FindNear, which starts searching
+ * at a given position
+ *
+ * TODO: sorted array datatype in HTL
+ *   - sorted by a key
+ *   - reordering by changing key func
+ *   - inserting multiple elements at once
+ *     - iteration backwards and copying elements from
+ *       the old back to the new back
+ *   - there should be an insertion without sorting, because
+ *     the array might be reordered by a completely different keyfunction
+ *     afterwards -> InsertAndReorder
+ * -> sorted by distance to the camera
+ *    - manhattan distance (city block distance) is suitable
+ *      - faster to compute than euclidian distance
+ *      - abs -- possibly branchful
+ *      - ordering of neighboring chunks is kept
+ *    - Chebyshev distance (max component distance) >>not<< suitable
+ *      - max, abs -- possibly branchful
+ *      - ordering of neighboring chunks not always kept
+ *        - chunks next to each other tangentially to the camera have
+ *          equal ordering
+ *
+*/
+#define LAB_VIEW_CHUNK_TBL_LOAD_NUM          1
+#define LAB_VIEW_CHUNK_TBL_LOAD_DEN          2
 #define LAB_VIEW_CHUNK_TBL_GROW_FACTOR       2
 #define LAB_VIEW_CHUNK_TBL_INITIAL_CAPACITY  16
 

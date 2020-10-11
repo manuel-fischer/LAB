@@ -1,5 +1,7 @@
 #include "LAB_random.h"
 
+#include "LAB_attr.h"
+
 
 void LAB_SetRandom(LAB_OUT LAB_Random* random, uint64_t seed)
 {
@@ -87,8 +89,8 @@ void LAB_ChunkNoise2D(LAB_OUT uint64_t noise[17*17], uint64_t world_seed, int cx
 }
 
 
-LAB_HOT LAB_INLINE
-inline void LAB_ChunkNoise3D_Sub(LAB_OUT uint64_t* noise, uint64_t world_seed,
+LAB_HOT LAB_ALWAYS_INLINE
+LAB_STATIC void LAB_ChunkNoise3D_Sub(LAB_OUT uint64_t* noise, uint64_t world_seed,
                                  int cx, int cy, int cz,
                                  int rx, int ry, int rz)
 {

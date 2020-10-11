@@ -1,6 +1,7 @@
 #pragma once
 
 #include "LAB_opt.h"
+#include "LAB_attr.h"
 
 #ifdef __GNUC__
 
@@ -16,7 +17,7 @@
 
 #else
 LAB_PURE
-static inline int LAB_PopCnt(uint32_t v)
+LAB_INLINE int LAB_PopCnt(uint32_t v)
 {
     // Slightly modified:  https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetKernighan
 
@@ -31,7 +32,7 @@ static inline int LAB_PopCnt(uint32_t v)
 }
 
 LAB_PURE
-static inline int LAB_Ctz(uint32_t v)
+LAB_INLINE int LAB_Ctz(uint32_t v)
 {
     // Slightly modified:  https://graphics.stanford.edu/~seander/bithacks.html#ZerosOnRightParallel
     // v: 32-bit word input to count zero bits on right
@@ -55,14 +56,14 @@ static inline int LAB_Ctz(uint32_t v)
 // Because C does not guarantee that x >> n sign extends for
 // signed numbers, here is an implementation that does this
 LAB_PURE
-static inline int LAB_Sar(int x, int n)
+LAB_INLINE int LAB_Sar(int x, int n)
 {
     return x < 0 ? ~(~x >> n) : x >> n;
 }
 #endif
 
 LAB_PURE
-static inline uint32_t LAB_CeilPow2(uint32_t x)
+LAB_INLINE uint32_t LAB_CeilPow2(uint32_t x)
 {
     x--;
     x |= x >> 1;

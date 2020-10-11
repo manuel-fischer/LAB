@@ -1,7 +1,7 @@
 #include "LAB_model.h"
 #include "LAB_bits.h"
 
-static int LAB_FaceSetToLightIndex(int face)
+LAB_STATIC int LAB_FaceSetToLightIndex(int face)
 {
     //return face ? LAB_Ctz(face) : 6;
     return LAB_Ctz(face|0x40);

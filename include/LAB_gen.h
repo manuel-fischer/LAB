@@ -1,5 +1,6 @@
 #pragma once
 
+#include "LAB_attr.h"
 #include "LAB_chunk.h"
 
 typedef struct LAB_RelativeChunkPlacer
@@ -12,18 +13,18 @@ typedef struct LAB_RelativeChunkPlacer
 typedef LAB_RelativeChunkPlacer LAB_Placer;
 
 
-static inline bool LAB_Placer_IsInside(LAB_Placer* p, int x, int y, int z, int w, int h, int d);
-static inline void LAB_Placer_SetBlock(LAB_Placer* p, int x, int y, int z, LAB_Block* block);
+LAB_INLINE bool LAB_Placer_IsInside(LAB_Placer* p, int x, int y, int z, int w, int h, int d);
+LAB_INLINE void LAB_Placer_SetBlock(LAB_Placer* p, int x, int y, int z, LAB_Block* block);
 
 
-static inline bool LAB_Placer_IsInside(LAB_Placer* p, int x, int y, int z, int w, int h, int d)
+LAB_INLINE bool LAB_Placer_IsInside(LAB_Placer* p, int x, int y, int z, int w, int h, int d)
 {
     return (x <= p->ox+16 && x+w >= p->ox)
         && (y <= p->oy+16 && y+h >= p->oy)
         && (z <= p->oz+16 && z+d >= p->oz);
 }
 
-static inline void LAB_Placer_SetBlock(LAB_Placer* p, int x, int y, int z, LAB_Block* block)
+LAB_INLINE void LAB_Placer_SetBlock(LAB_Placer* p, int x, int y, int z, LAB_Block* block)
 {
     unsigned xx = x - p->ox;
     unsigned yy = y - p->oy;
