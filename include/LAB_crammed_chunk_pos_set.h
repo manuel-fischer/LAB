@@ -47,6 +47,7 @@ LAB_CCPS LAB_CCPS_AddPos(LAB_CCPS set, int x, int y, int z)
     int LAB_CCPS_x_set, LAB_CCPS_y_set, LAB_CCPS_z_set; \
     int LAB_CCPS_x, LAB_CCPS_y, LAB_CCPS_z; \
     uint64_t LAB_CCPS_set = (set); \
+    int LAB_CCPS_hashtbl = LAB_CCPS_set>>48; \
     for(int LAB_CCPS_z_set = LAB_CCPS_set>>32 & 0xffff; LAB_CCPS_z_set; LAB_CCPS_z_set &= LAB_CCPS_z_set-1) \
     { \
         LAB_CCPS_z = LAB_Ctz(LAB_CCPS_z_set); \
@@ -56,7 +57,7 @@ LAB_CCPS LAB_CCPS_AddPos(LAB_CCPS set, int x, int y, int z)
             for(int LAB_CCPS_x_set = LAB_CCPS_set     & 0xffff; LAB_CCPS_x_set; LAB_CCPS_x_set &= LAB_CCPS_x_set-1) \
             { \
                 LAB_CCPS_x = LAB_Ctz(LAB_CCPS_x_set); \
-                if(set & (1<<48)<<LAB_CCPS_PosHash(LAB_CCPS_x, LAB_CCPS_y, LAB_CCPS_z)) \
+                if(LAB_CCPS_set & 1<<LAB_CCPS_PosHash(LAB_CCPS_x, LAB_CCPS_y, LAB_CCPS_z)) \
                 { \
                     (x)=LAB_CCPS_x; \
                     (y)=LAB_CCPS_y; \
