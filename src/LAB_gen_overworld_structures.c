@@ -1,6 +1,14 @@
 #include "LAB_gen_overworld_structures.h"
 
 
+
+void LAB_Gen_Overworld_Plant(LAB_Placer* p, LAB_Random* rnd)
+{
+    LAB_Block* plant = LAB_NextRandom(rnd)&1 ? &LAB_BLOCK_TALLGRASS : &LAB_BLOCK_TALLERGRASS;
+
+    LAB_Placer_SetBlock(p, 0, 0, 0, plant);
+}
+
 void LAB_Gen_Overworld_Tree(LAB_Placer* p, LAB_Random* rnd)
 {
     // tree height

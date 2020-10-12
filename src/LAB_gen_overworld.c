@@ -17,11 +17,31 @@
 #define LAB_GEN_UNDERGROUND_SALT 0x54321
 #define LAB_GEN_CRYSTAL_SALT     0x98765
 
+typedef struct LAB_StructureLayer
+{
+    int salt;
+    int probability; // in range [0, 256],
+    int min_count, max_count;
+    void (*structure_func)(LAB_Placer* p, LAB_Random* rnd);
+} LAB_StructureLayer;
+
+static const LAB_StructureLayer overworld_layers[] =
+{
+    {0x56789abc, 256,      7, 70, LAB_Gen_Overworld_Plant},
+    {0x13579bdf, 256,      0,  3, LAB_Gen_Overworld_Tree},
+    {0xfdb97531, (256/32), 1,  1, LAB_Gen_Overworld_Tower},
+};
+
+
 //LAB_STATIC void LAB_Gen_Surface(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
 LAB_STATIC void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
 LAB_STATIC int  LAB_Gen_Surface_Shape_Func(LAB_GenOverworld* gen, int x, int z);     // height
+LAB_STATIC void LAB_Gen_Surface_PopulateLayer(LAB_GenOverworld* gen, LAB_Chunk* chunk, const LAB_StructureLayer* lyr, int cx, int cy, int cz);
+LAB_STATIC void LAB_Gen_Surface_PopulateLayer_Func(LAB_GenOverworld* gen, LAB_Placer* p, const LAB_StructureLayer* lyr, int cx, int cy, int cz);
+#if 0
 LAB_STATIC void LAB_Gen_Surface_Populate(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
 LAB_STATIC void LAB_Gen_Surface_Populate_Func(LAB_GenOverworld* gen, LAB_Placer* p, int cx, int cy, int cz);
+#endif
 LAB_STATIC void LAB_Gen_Cave(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
 LAB_STATIC void LAB_Gen_Cave_Carve(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
 LAB_STATIC bool LAB_Gen_Cave_Carve_Func(LAB_GenOverworld* gen, int x, int y, int z); // block is cave
@@ -37,6 +57,8 @@ LAB_STATIC void LAB_Gen_Cave_RockVariety(LAB_GenOverworld* gen, LAB_Chunk* chunk
 #define LAB_SURFACE_MAX_Y (16*LAB_SURFACE_MAX_CY)
 
 
+
+
 LAB_HOT
 LAB_Chunk* LAB_GenOverworldProc(void* user, /*unused*/LAB_World* world_, int x, int y, int z)
 {
@@ -50,7 +72,9 @@ LAB_Chunk* LAB_GenOverworldProc(void* user, /*unused*/LAB_World* world_, int x, 
 
     LAB_Gen_Surface_Shape(gen, chunk, x, y, z);
     LAB_Gen_Cave(gen, chunk, x, y, z);
-    LAB_Gen_Surface_Populate(gen, chunk, x, y, z);
+    //LAB_Gen_Surface_Populate(gen, chunk, x, y, z);
+    for(size_t i = 0; i < sizeof(overworld_layers)/sizeof(overworld_layers[0]); ++i)
+        LAB_Gen_Surface_PopulateLayer(gen, chunk, &overworld_layers[i], x, y, z);
 
     return chunk;
 }
@@ -130,7 +154,7 @@ LAB_STATIC int LAB_Gen_Surface_Shape_Func(LAB_GenOverworld* gen, int xi, int zi)
 
 
 
-LAB_STATIC void LAB_Gen_Surface_Populate(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz)
+LAB_STATIC void LAB_Gen_Surface_PopulateLayer(LAB_GenOverworld* gen, LAB_Chunk* chunk, const LAB_StructureLayer* lyr, int cx, int cy, int cz)
 {
     for(int z = -LAB_MAX_STRUCTURE_SIZE; z <= LAB_MAX_STRUCTURE_SIZE; ++z)
     for(int y = -LAB_MAX_STRUCTURE_SIZE; y <= LAB_MAX_STRUCTURE_SIZE; ++y)
@@ -141,7 +165,58 @@ LAB_STATIC void LAB_Gen_Surface_Populate(LAB_GenOverworld* gen, LAB_Chunk* chunk
         p.ox = -16*x;
         p.oy = -16*y;
         p.oz = -16*z;
-        LAB_Gen_Surface_Populate_Func(gen, &p, cx+x, cy+y, cz+z);
+        LAB_Gen_Surface_PopulateLayer_Func(gen, &p, lyr, cx+x, cy+y, cz+z);
+    }
+}
+
+LAB_STATIC void LAB_Gen_Surface_PopulateLayer_Func(LAB_GenOverworld* gen, LAB_Placer* p, const LAB_StructureLayer* lyr, int cx, int cy, int cz)
+{
+    LAB_Random rnd;
+    LAB_ChunkRandom(&rnd, gen->seed^lyr->salt, cx, cy, cz);
+
+    int count;
+
+    // place plant groups
+    uint64_t r = LAB_NextRandom(&rnd);
+    if((int)(r&0xff) < lyr->probability)
+    {
+        count = lyr->min_count+((r>>8)%(lyr->max_count-lyr->min_count+1));
+        for(int i = 0; i < count; ++i)
+        {
+            int xz = LAB_NextRandom(&rnd);
+            int x = xz    & 15;
+            int z = xz>>4 & 15;
+
+            // absolute
+            int ay = 1+LAB_Gen_Surface_Shape_Func(gen, x|cx<<4, z|cz<<4);
+            if(ay >> 4 == cy && !LAB_Gen_Cave_Carve_Func(gen, x|cx<<4, ay-1, z|cz<<4))
+            {
+                LAB_Placer p2;
+                p2.chunk = p->chunk;
+                p2.ox = p->ox - x;
+                p2.oy = p->oy - (ay&15);
+                p2.oz = p->oz - z;
+
+                lyr->structure_func(&p2, &rnd);
+            }
+        }
+    }
+}
+
+#if 0
+LAB_STATIC void LAB_Gen_Surface_Populate(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz)
+{
+    for(int i = 0; i < sizeof(overworld_layers)/sizeof(overworld_layers[0]); ++i)
+    for(int z = -LAB_MAX_STRUCTURE_SIZE; z <= LAB_MAX_STRUCTURE_SIZE; ++z)
+    for(int y = -LAB_MAX_STRUCTURE_SIZE; y <= LAB_MAX_STRUCTURE_SIZE; ++y)
+    for(int x = -LAB_MAX_STRUCTURE_SIZE; x <= LAB_MAX_STRUCTURE_SIZE; ++x)
+    {
+        LAB_Placer p;
+        p.chunk = chunk;
+        p.ox = -16*x;
+        p.oy = -16*y;
+        p.oz = -16*z;
+        LAB_Gen_Surface_Populate_Func(gen, &p, &overworld_layers[i], cx+x, cy+y, cz+z);
     }
 }
 
@@ -219,7 +294,7 @@ LAB_STATIC void LAB_Gen_Surface_Populate_Func(LAB_GenOverworld* gen, LAB_Placer*
         }
     }
 }
-
+#endif
 
 
 

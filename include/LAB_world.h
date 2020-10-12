@@ -1,5 +1,6 @@
 #pragma once
 
+#include "LAB_crammed_chunk_pos_set.h"
 #include "LAB_chunk.h"
 #include "LAB_stdinc.h"
 #include "LAB_debug.h"

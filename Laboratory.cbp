@@ -189,6 +189,7 @@
 		<Unit filename="include/LAB_check.h" />
 		<Unit filename="include/LAB_chunk.h" />
 		<Unit filename="include/LAB_color.h" />
+		<Unit filename="include/LAB_crammed_chunk_pos_set.h" />
 		<Unit filename="include/LAB_debug.h" />
 		<Unit filename="include/LAB_direction.h" />
 		<Unit filename="include/LAB_error.h" />
