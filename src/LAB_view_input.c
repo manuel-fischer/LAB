@@ -522,12 +522,13 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms)
 
         if(kbstate[SDL_SCANCODE_LALT])
         {
-            if(mbstate == SDL_BUTTON(SDL_BUTTON_LEFT) || mbstate == SDL_BUTTON(SDL_BUTTON_RIGHT))
-            {
-                //for(int i=0; i < 10; ++i)
-                //    if(LAB_ViewInputInteract(view_input, !!(mbstate & SDL_BUTTON(SDL_BUTTON_RIGHT)))) break;
-                LAB_ViewInputInteract(view_input, !!(mbstate & SDL_BUTTON(SDL_BUTTON_RIGHT)));
-            }
+            //for(int i=0; i < 10; ++i)
+            //    if(LAB_ViewInputInteract(view_input, !!(mbstate & SDL_BUTTON(SDL_BUTTON_RIGHT)))) break;
+            int button = 0;
+            if(mbstate & SDL_BUTTON(SDL_BUTTON_MIDDLE)) button = SDL_BUTTON_MIDDLE;
+            if(mbstate & SDL_BUTTON(SDL_BUTTON_RIGHT))  button = SDL_BUTTON_RIGHT;
+            if(mbstate & SDL_BUTTON(SDL_BUTTON_LEFT))   button = SDL_BUTTON_LEFT;
+            if(button) LAB_ViewInputInteract(view_input, button);
         }
     }
 

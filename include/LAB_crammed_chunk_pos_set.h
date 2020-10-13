@@ -40,6 +40,8 @@ LAB_CCPS LAB_CCPS_AddPos(LAB_CCPS set, int x, int y, int z)
 
     // add hashtable entry
     set |= (1ull<<48) << LAB_CCPS_PosHash(x, y, z);
+
+    return set;
 }
 
 #define LAB_CCPS_EACH_POS(set, x, y, z, execute) do \
