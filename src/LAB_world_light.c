@@ -7,6 +7,7 @@
 #define LAB_DARK_LIGHT(dia) ((((dia)>>4) & 0x0f0f0fu) | 0xff000000u)
                     //nlum = nlum - (nlum>>2 & 0x3f3f3f);
 #define LAB_LIGHT_FALL_OFF(lum) ((lum) - ((lum)>>3 & 0x1f1f1f)-((lum)>>4 & 0x0f0f0f))
+//#define LAB_LIGHT_FALL_OFF(lum) (LAB_SubColor((lum), LAB_RGBA(16, 18, 20, 0)))
 
 // heuristic lighting algorithm
 /*LAB_STATIC void LAB_PrepareLight(LAB_Chunk* chunk, LAB_Color default_color)

@@ -377,21 +377,18 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
         {
             SDL_MouseButtonEvent* mbevent = (SDL_MouseButtonEvent*)event;
 
-            if(mbevent->button == SDL_BUTTON_LEFT || mbevent->button == SDL_BUTTON_RIGHT)
+            if(SDL_GetWindowGrab(window->window))
             {
-                if(SDL_GetWindowGrab(window->window))
-                {
-                    LAB_ViewInputInteract(view_input, mbevent->button == SDL_BUTTON_RIGHT);
-                }
-                else
-                {
-                    SDL_SetWindowGrab_Fix(window->window, 1);
-                    SDL_ShowCursor(0);
+                LAB_ViewInputInteract(view_input, mbevent->button);
+            }
+            else
+            {
+                SDL_SetWindowGrab_Fix(window->window, 1);
+                SDL_ShowCursor(0);
 
-                    int w, h;
-                    SDL_GetWindowSize(window->window, &w, &h);
-                    SDL_WarpMouseInWindow(window->window, w/2, h/2);
-                }
+                int w, h;
+                SDL_GetWindowSize(window->window, &w, &h);
+                SDL_WarpMouseInWindow(window->window, w/2, h/2);
             }
         } break;
 
@@ -399,7 +396,7 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
     return 1;
 }
 
-LAB_STATIC int LAB_ViewInputInteract(LAB_ViewInput* view_input, int right)
+LAB_STATIC int LAB_ViewInputInteract(LAB_ViewInput* view_input, int button)
 {
     LAB_View* view = view_input->view;
 
@@ -419,17 +416,30 @@ LAB_STATIC int LAB_ViewInputInteract(LAB_ViewInput* view_input, int right)
 
     if(LAB_TraceBlock(view->world, 10, vpos, dir, LAB_CHUNK_GENERATE, LAB_BLOCK_INTERACTABLE, target, prev, hit))
     {
-        if(!right)
+        switch(button)
         {
-            LAB_SetBlock(view->world, target[0], target[1], target[2], LAB_CHUNK_GENERATE, &LAB_BLOCK_AIR);
-        }
-        else
-        {
-            if(!(view_input->flags&LAB_VIEWINPUT_NOCLIP) && (view_input->selected_block->flags&LAB_BLOCK_MASSIVE)
-               &&  prev[0]==LAB_FastFloorF2I(view->x)
-               && (prev[1]==LAB_FastFloorF2I(view->y) || prev[1]==LAB_FastFloorF2I(view->y)-1)
-               &&  prev[2]==LAB_FastFloorF2I(view->z)) return 0;
-            LAB_SetBlock(view->world, prev[0], prev[1], prev[2], LAB_CHUNK_GENERATE, view_input->selected_block);
+            case SDL_BUTTON_LEFT:
+            {
+                LAB_SetBlock(view->world, target[0], target[1], target[2], LAB_CHUNK_GENERATE, &LAB_BLOCK_AIR);
+            } break;
+
+            case SDL_BUTTON_RIGHT:
+            {
+                if(!(view_input->flags&LAB_VIEWINPUT_NOCLIP) && (view_input->selected_block->flags&LAB_BLOCK_MASSIVE)
+                   &&  prev[0]==LAB_FastFloorF2I(view->x)
+                   && (prev[1]==LAB_FastFloorF2I(view->y) || prev[1]==LAB_FastFloorF2I(view->y)-1)
+                   &&  prev[2]==LAB_FastFloorF2I(view->z)) return 0;
+                LAB_SetBlock(view->world, prev[0], prev[1], prev[2], LAB_CHUNK_GENERATE, view_input->selected_block);
+            } break;
+
+            default: // SDL_BUTTON_MIDDLE
+            {
+                LAB_Block* b = LAB_GetBlock(view->world, target[0], target[1], target[2], LAB_CHUNK_EXISTING);
+                if(b != &LAB_BLOCK_OUTSIDE)
+                {
+                    view_input->selected_block = b;
+                }
+            } break;
         }
         return 1;
     }
