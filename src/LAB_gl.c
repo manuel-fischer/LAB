@@ -137,3 +137,33 @@ void LAB_GL_DrawSurf(unsigned gl_id, int x, int y, int w, int h, int sw, int sh)
     glMatrixMode(GL_TEXTURE);
     glPopMatrix();
 }
+
+
+
+void LAB_GL_FixScreenImg(void* pixels, int w, int h)
+{
+    uint8_t* pix = (uint8_t*)pixels;
+    int c = 4*w*(h/2);
+    for(int y0 = 0, y1 = 4*w*(h-1); y0 < c; y0+=4*w, y1-=4*w)
+    {
+        for(int x = 0; x < 4*w; x+=4)
+        {
+            for(int i = 0; i < 3; ++i)
+            {
+                char tmp = pix[y0+x+i];
+                pix[y0+x+i] = pix[y1+x+i];
+                pix[y1+x+i] = tmp;
+            }
+            pix[y0+x+3] = 0xffu;
+            pix[y1+x+3] = 0xffu;
+        }
+    }
+    if(h&1)
+    {
+        int y = c;
+        for(int x = 0; x < 4*w; x+=4)
+        {
+            pix[y+x+3] = 0xffu;
+        }
+    }
+}

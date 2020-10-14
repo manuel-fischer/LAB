@@ -54,6 +54,7 @@ void LAB_ChunkRandom(LAB_OUT LAB_Random* random, uint64_t world_seed, int x, int
     LAB_SetRandom(random, LAB_ChunkSeed(world_seed, x, y, z));
 }
 
+#if 0
 void LAB_ChunkNoise2D(LAB_OUT uint64_t noise[17*17], uint64_t world_seed, int cx, int cz)
 {
     LAB_Random random;
@@ -206,3 +207,4 @@ void LAB_ChunkNoise3D(LAB_OUT uint64_t noise[17*17*17], uint64_t world_seed, int
                              !!(i&1), !!(i&2), !!(i&4));
     }
 }
+#endif

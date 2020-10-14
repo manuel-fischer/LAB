@@ -1,5 +1,10 @@
 #include "LAB_world_light.h"
 #include "LAB_debug.h"
+#include "LAB_chunk_pseudo.h"
+// TODO: use pseudo chunks instead of NULL chunks -> no branching required
+//       - build chunk neighborhood with these pseudo chunks
+// TODO: reduce range of searching for possibly changed block positions
+//       - use crammed chunk pos set, stored in the chunks
 
 #include <stdio.h> // DBG
 

@@ -111,6 +111,7 @@
 					<Add option="-pg" />
 					<Add option="-g" />
 					<Add option="-O0" />
+					<Add option="-Wno-missing-declarations" />
 					<Add option="-DNDEBUG" />
 					<Add option="-DPROFILE" />
 				</Compiler>
@@ -188,6 +189,7 @@
 		<Unit filename="include/LAB_blt_model.h" />
 		<Unit filename="include/LAB_check.h" />
 		<Unit filename="include/LAB_chunk.h" />
+		<Unit filename="include/LAB_chunk_pseudo.h" />
 		<Unit filename="include/LAB_color.h" />
 		<Unit filename="include/LAB_crammed_chunk_pos_set.h" />
 		<Unit filename="include/LAB_debug.h" />
@@ -219,7 +221,6 @@
 		<Unit filename="include/LAB_memory.h" />
 		<Unit filename="include/LAB_model.h" />
 		<Unit filename="include/LAB_model_order.h" />
-		<Unit filename="include/LAB_noise.h" />
 		<Unit filename="include/LAB_opt.h" />
 		<Unit filename="include/LAB_perf.h" />
 		<Unit filename="include/LAB_random.h" />
@@ -247,6 +248,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_chunk.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_chunk_pseudo.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_debug.c">
@@ -316,9 +320,6 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_model_order.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/LAB_noise.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_random.c">

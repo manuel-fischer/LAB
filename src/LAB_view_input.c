@@ -26,6 +26,9 @@
 #include "LAB_util.h"
 
 LAB_STATIC int LAB_ViewInputInteract(LAB_ViewInput* view_input, int right);
+LAB_STATIC void LAB_ShowGuiMenu(LAB_View* view);
+LAB_STATIC void LAB_ShowGuiInventory(LAB_View* view, LAB_Block** block);
+LAB_STATIC void LAB_GrabMouse(LAB_View* view, LAB_Window* window, int grab);
 
 //static int selected_block = 1;
 
@@ -44,40 +47,6 @@ void LAB_DestructViewInput(LAB_ViewInput* view_input)
 {
 
 }
-
-
-
-/**
- *  flip image horizontally and set alpha channel to 255
- */
-LAB_STATIC void LAB_FixScreenImg(void* pixels, int w, int h)
-{
-    uint8_t* pix = (uint8_t*)pixels;
-    int c = 4*w*(h/2);
-    for(int y0 = 0, y1 = 4*w*(h-1); y0 < c; y0+=4*w, y1-=4*w)
-    {
-        for(int x = 0; x < 4*w; x+=4)
-        {
-            for(int i = 0; i < 3; ++i)
-            {
-                char tmp = pix[y0+x+i];
-                pix[y0+x+i] = pix[y1+x+i];
-                pix[y1+x+i] = tmp;
-            }
-            pix[y0+x+3] = 0xffu;
-            pix[y1+x+3] = 0xffu;
-        }
-    }
-    if(h&1)
-    {
-        int y = c;
-        for(int x = 0; x < 4*w; x+=4)
-        {
-            pix[y+x+3] = 0xffu;
-        }
-    }
-}
-
 
 LAB_STATIC void LAB_ShowGuiMenu(LAB_View* view)
 {
@@ -250,7 +219,7 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                     SDL_Surface* surf_screen = SDL_CreateRGBSurfaceWithFormat(0, view->w, view->h, 32, SDL_PIXELFORMAT_RGBA32);
                     if(!surf_screen) break;
                     glReadPixels(0, 0, view->w, view->h, GL_RGBA, GL_UNSIGNED_BYTE, surf_screen->pixels);
-                    LAB_FixScreenImg(surf_screen->pixels, view->w, view->h);
+                    LAB_GL_FixScreenImg(surf_screen->pixels, view->w, view->h);
 
                     time_t t;
                     struct tm* tinf;

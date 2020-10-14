@@ -64,3 +64,12 @@ void LAB_GL_DrawSurf(unsigned gl_id, int x, int y, int w, int h, int sw, int sh)
 
 int LAB_GL_GetInt(GLenum e);
 #define LAB_GL_GetUInt(e) (unsigned)LAB_GL_GetInt(e)
+
+
+
+/**
+ *  fix screen data fetched from opengl
+ *
+ *  flip image horizontally and set alpha channel to 255
+ */
+void LAB_GL_FixScreenImg(void* pixels, int w, int h);

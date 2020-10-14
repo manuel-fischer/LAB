@@ -1014,7 +1014,8 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
     float ratio = h?(float)w/(float)h:1;
     float nearp = 0.075f;
     float fov = 1;
-    glFrustum(-fov*nearp*ratio, fov*nearp*ratio, -fov*nearp, fov*nearp, nearp, 1000);
+    float far = view->render_dist*16+32;
+    glFrustum(-fov*nearp*ratio, fov*nearp*ratio, -fov*nearp, fov*nearp, nearp, far);
 
     // Setup world matrix
     glMatrixMode(GL_MODELVIEW);

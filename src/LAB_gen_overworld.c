@@ -17,21 +17,6 @@
 #define LAB_GEN_UNDERGROUND_SALT 0x54321
 #define LAB_GEN_CRYSTAL_SALT     0x98765
 
-typedef struct LAB_StructureLayer
-{
-    int salt;
-    int probability; // in range [0, 256],
-    int min_count, max_count;
-    void (*structure_func)(LAB_Placer* p, LAB_Random* rnd);
-} LAB_StructureLayer;
-
-static const LAB_StructureLayer overworld_layers[] =
-{
-    {0x56789abc, 256,      7, 70, LAB_Gen_Overworld_Plant},
-    {0x13579bdf, 256,      0,  3, LAB_Gen_Overworld_Tree},
-    {0xfdb97531, (256/32), 1,  1, LAB_Gen_Overworld_Tower},
-};
-
 
 //LAB_STATIC void LAB_Gen_Surface(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
 LAB_STATIC void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
@@ -73,7 +58,7 @@ LAB_Chunk* LAB_GenOverworldProc(void* user, /*unused*/LAB_World* world_, int x, 
     LAB_Gen_Surface_Shape(gen, chunk, x, y, z);
     LAB_Gen_Cave(gen, chunk, x, y, z);
     //LAB_Gen_Surface_Populate(gen, chunk, x, y, z);
-    for(size_t i = 0; i < sizeof(overworld_layers)/sizeof(overworld_layers[0]); ++i)
+    for(size_t i = 0; i < overworld_layers_count; ++i)
         LAB_Gen_Surface_PopulateLayer(gen, chunk, &overworld_layers[i], x, y, z);
 
     return chunk;

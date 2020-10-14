@@ -13,6 +13,8 @@ typedef struct LAB_ChunkPos
 {
     int16_t x, y, z;
     LAB_PAD(int16_t);
+    //int32_t x, y, z;
+    //LAB_PAD(int32_t);
 } LAB_ChunkPos;
 LAB_CHECK_STRUCT_SIZE(LAB_ChunkPos);
 
@@ -244,7 +246,8 @@ LAB_Block* LAB_GetNeighborhoodBlock(LAB_Chunk*const neighborhood[27], int x, int
     int block_index;
     LAB_Chunk* chunk;
     chunk = LAB_GetNeighborhoodRef(neighborhood, x, y, z, &block_index);
-    if(LAB_UNLIKELY(chunk == NULL)) return &LAB_BLOCK_OUTSIDE;
+    //if(LAB_UNLIKELY(chunk == NULL)) return &LAB_BLOCK_OUTSIDE;
+    if(chunk == NULL) return &LAB_BLOCK_OUTSIDE;
     return chunk->blocks[block_index];
 }
 
