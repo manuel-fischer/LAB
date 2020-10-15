@@ -191,6 +191,7 @@
 		<Unit filename="include/LAB_chunk.h" />
 		<Unit filename="include/LAB_chunk_pseudo.h" />
 		<Unit filename="include/LAB_color.h" />
+		<Unit filename="include/LAB_color_defs.h" />
 		<Unit filename="include/LAB_crammed_chunk_pos_set.h" />
 		<Unit filename="include/LAB_debug.h" />
 		<Unit filename="include/LAB_direction.h" />
@@ -223,6 +224,7 @@
 		<Unit filename="include/LAB_model_order.h" />
 		<Unit filename="include/LAB_opt.h" />
 		<Unit filename="include/LAB_perf.h" />
+		<Unit filename="include/LAB_pp.h" />
 		<Unit filename="include/LAB_random.h" />
 		<Unit filename="include/LAB_render_item.h" />
 		<Unit filename="include/LAB_render_pass.h" />

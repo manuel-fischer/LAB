@@ -8,15 +8,16 @@
 #define LAB_ENM_BLOCK_CUBE(prefix, name) \
     prefix LAB_BLOCK_##name
 
-#define LAB_DEF_BLOCK_CUBE(name, tx, ty, color, model_render_pass, block_flags) \
-    LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_##name, 0, 0, color, \
+#define LAB_DEF_BLOCK_CUBE(name, tx, ty, color, block_dia, model_render_pass, block_flags) \
+    LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_##name, tx, ty, color, \
                     .render_pass = model_render_pass); \
     LAB_Block LAB_BLOCK_##name = { \
         .flags = block_flags, \
+        .dia = block_dia, \
         .item_tint = color, \
         .item_tx = tx, ty, \
         .model = &LAB_MODEL_##name, \
-    }; \
+    }
 
 
 #define LAB_ENM_BLOCK_GROUP_STONE(prefix, name) \

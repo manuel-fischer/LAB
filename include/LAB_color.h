@@ -116,6 +116,8 @@ LAB_INLINE LAB_Color LAB_CompMask(LAB_Color a, LAB_Color b)
              LAB_BLU(a)*LAB_BLU(b)/255, \
              LAB_ALP(a)*LAB_ALP(b)/255)
 
+#define LAB_SQR_COLOR(a) LAB_MUL_COLOR(a, a)
+
 LAB_PURE
 LAB_INLINE LAB_Color LAB_MulColor(LAB_Color a, LAB_Color b)
 {

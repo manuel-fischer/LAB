@@ -9,7 +9,8 @@
 #define LAB_SHADE_Y LAB_RGBX(C0C0C0) // bottom
 #define LAB_SHADE_Z LAB_RGBX(D7D7D7) // north south
 
-#define LAB_SHADE_C LAB_RGBX(D0D0D0) // cross
+//#define LAB_SHADE_C LAB_RGBX(D0D0D0) // cross
+#define LAB_SHADE_C LAB_RGBX(FFFFFF) // cross
 
 #define LAB_NO_SHADE LAB_RGBX(FFFFFF) // north south
 
