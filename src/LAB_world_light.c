@@ -312,6 +312,7 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, 
     {
         LAB_PrepareLight(ctr_cnk, chunks[1+2*3+9], default_color_above);
         ctr_cnk->light_generated = 1;
+        return ~0; // TODO: multiple updates to the view
     }
     //return 0; // DBG
 

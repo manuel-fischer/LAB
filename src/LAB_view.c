@@ -44,6 +44,7 @@ LAB_STATIC bool LAB_ViewUpdateChunk(LAB_View* view, LAB_ViewChunkEntry* e);
 LAB_STATIC void LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass);
 LAB_STATIC void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_RenderPass pass);
 LAB_STATIC bool LAB_View_HasChunkVisibleNeighbors(LAB_View* view, int x, int y, int z);
+LAB_STATIC bool LAB_View_IsLocalChunk(LAB_View* view, int cx, int cy, int cz);
 #if !LAB_VIEW_QUERY_IMMEDIATELY
 LAB_STATIC void LAB_View_FetchQueryChunks(LAB_View* view);
 LAB_STATIC void LAB_View_FetchQueryChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
@@ -65,6 +66,7 @@ LAB_STATIC int LAB_View_CompareChunksIndirect(const void* a, const void* b);
 LAB_STATIC void LAB_View_SortChunks(LAB_View* view, uint32_t delta_ms);
 
 LAB_STATIC LAB_Triangle* LAB_ViewMeshAlloc(LAB_View_Mesh* mesh, size_t add_size, size_t extra_size);
+
 
 bool LAB_ConstructView(LAB_View* view, LAB_World* world)
 {
@@ -150,9 +152,11 @@ LAB_STATIC bool LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entr
                              LAB_CHUNK_EXISTING);
 
     if(chunk_neighborhood[1+3+9] == NULL) return 0;
+
     //chunk_entry->exist = chunk_neighborhood[1+3+9] != NULL;
-    //for(int i = 0; i < 27; ++i)
-    //    if(chunk_neighborhood[i] == NULL) return 0;
+    chunk_entry->exist = 1;
+    for(int i = 0; i < 27; ++i)
+        if(chunk_neighborhood[i] == NULL && (rand()&0x7) == 0) return 0;
     LAB_ViewBuildMeshNeighbored(view, chunk_entry, chunk_neighborhood);
     return 1;
 }
@@ -544,16 +548,17 @@ LAB_STATIC void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_en
 
 void LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass)
 {
+    int backwards = LAB_PrepareRenderPass(pass);
+
     int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
     int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
     int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
 
-
     int dist_sq = view->render_dist*view->render_dist + 3;
     LAB_ViewChunkEntry* e;
-    int start = pass==LAB_RENDER_PASS_ALPHA ? (int)view->chunks.size-1 : 0;
-    int stop  = pass==LAB_RENDER_PASS_ALPHA ? -1 : (int)view->chunks.size;
-    int step  = pass==LAB_RENDER_PASS_ALPHA ? -1 : 1;
+    int start = backwards ? (int)view->chunks.size-1 : 0;
+    int stop  = backwards ? -1 : (int)view->chunks.size;
+    int step  = backwards ? -1 : 1;
     for(int i = start; i != stop; i+=step)
     {
         e = view->sorted_chunks[i].entry;
@@ -657,7 +662,8 @@ LAB_STATIC void LAB_View_OrderQueryChunks(LAB_View* view)
         int c_dist_sq = (cx-px)*(cx-px) + (cy-py)*(cy-py) + (cz-pz)*(cz-pz);
 
 
-        if(c_dist_sq <= 1*1+1*1+1*1)
+        //if(c_dist_sq <= 1*1+1*1+1*1)
+        if(LAB_View_IsLocalChunk(view, cx, cy, cz))
             e->visible = 1;
         else if(c_dist_sq <= dist_sq)
         {
@@ -1051,11 +1057,8 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
     if(view->flags & LAB_VIEW_USE_VBO)
         LAB_View_UploadChunks(view);
 
-    LAB_PrepareRenderPass(LAB_RENDER_PASS_SOLID);
     LAB_ViewRenderChunks(view, LAB_RENDER_PASS_SOLID);
-    LAB_PrepareRenderPass(LAB_RENDER_PASS_MASKED);
     LAB_ViewRenderChunks(view, LAB_RENDER_PASS_MASKED);
-    LAB_PrepareRenderPass(LAB_RENDER_PASS_BLIT);
     LAB_ViewRenderChunks(view, LAB_RENDER_PASS_BLIT);
 
     {
@@ -1069,7 +1072,6 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
         glEnable(GL_TEXTURE_2D);
     }
 
-    LAB_PrepareRenderPass(LAB_RENDER_PASS_ALPHA);
     LAB_ViewRenderChunks(view, LAB_RENDER_PASS_ALPHA);
 
 
@@ -1261,6 +1263,8 @@ void LAB_ViewGetDirection(LAB_View* view, LAB_OUT float dir[3])
     ax = view->ax*LAB_PI/180.f;
     ay = view->ay*LAB_PI/180.f;
 
+    // ax = 0; //DBG
+
     sax = sin(ax);
     cax = cos(ax);
     say = sin(ay);
@@ -1356,6 +1360,39 @@ LAB_STATIC bool LAB_View_HasChunkVisibleNeighbors(LAB_View* view, int x, int y, 
         if(entry && entry->visible) return 1;
     }
     return 0;
+}
+
+LAB_STATIC bool LAB_View_IsLocalChunk(LAB_View* view, int cx, int cy, int cz)
+{
+    int   vxi, vyi, vzi;
+    int   vcx, vcy, vcz;
+    float vxc, vyc, vzc;
+
+    vxi = LAB_FastFloorF2I(view->x);
+    vyi = LAB_FastFloorF2I(view->y);
+    vzi = LAB_FastFloorF2I(view->z);
+
+    vcx = LAB_Sar(vxi, LAB_CHUNK_SHIFT);
+    vcy = LAB_Sar(vyi, LAB_CHUNK_SHIFT);
+    vcz = LAB_Sar(vzi, LAB_CHUNK_SHIFT);
+
+    vxc = vxi & LAB_CHUNK_MASK;
+    vyc = vyi & LAB_CHUNK_MASK;
+    vzc = vzi & LAB_CHUNK_MASK;
+
+    /**/ if(vxc <   1) { if(cx != vcx && cx != vcx-1) return 0; }
+    else if(vxc >= 15) { if(cx != vcx && cx != vcx+1) return 0; }
+    else               { if(cx != vcx               ) return 0; }
+
+    /**/ if(vyc <   1) { if(cy != vcy && cy != vcy-1) return 0; }
+    else if(vyc >= 15) { if(cy != vcy && cy != vcy+1) return 0; }
+    else               { if(cy != vcy               ) return 0; }
+
+    /**/ if(vzc <   1) { if(cz != vcz && cz != vcz-1) return 0; }
+    else if(vzc >= 15) { if(cz != vcz && cz != vcz+1) return 0; }
+    else               { if(cz != vcz               ) return 0; }
+
+    return 1;
 }
 
 

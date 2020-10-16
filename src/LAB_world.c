@@ -181,7 +181,7 @@ void LAB_UpdateChunk(LAB_World* world, int x, int y, int z, LAB_ChunkUpdate upda
         if(faces&128)
         {
             LAB_ASSUME(chunks[1+3+9]);
-            printf("UPDATE AGAIN");
+            //printf("UPDATE AGAIN");
             chunks[1+3+9]->dirty |= LAB_CHUNK_UPDATE_LIGHT; // TODO: |LAB_CHUNK_UPDATE_LOCAL;
         }
 

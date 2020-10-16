@@ -32,6 +32,14 @@ enum
 // Return if chunks are rendered backwards and sorted
 LAB_INLINE bool LAB_PrepareRenderPass(LAB_RenderPass pass)
 {
+    #if 0 // DBG
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR); // REENABLE MIPMAPPING
+            glEnable(GL_ALPHA_TEST);
+        glAlphaFunc(GL_GEQUAL, 1/255.f);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_SRC_COLOR);
+        return 1; //pass == LAB_RENDER_PASS_ALPHA;
+    #else
     switch(pass)
     {
         case LAB_RENDER_PASS_SOLID:
@@ -59,4 +67,5 @@ LAB_INLINE bool LAB_PrepareRenderPass(LAB_RenderPass pass)
         default:
             LAB_UNREACHABLE();
     }
+    #endif
 }
