@@ -56,6 +56,7 @@ LAB_Chunk* LAB_GenOverworldProc(void* user, /*unused*/LAB_World* world_, int x, 
     //LAB_Gen_Surface(gen, chunk, x, y, z);
 
     LAB_Gen_Surface_Shape(gen, chunk, x, y, z);
+    //return chunk; // DBG
     LAB_Gen_Cave(gen, chunk, x, y, z);
     //LAB_Gen_Surface_Populate(gen, chunk, x, y, z);
     for(size_t i = 0; i < overworld_layers_count; ++i)

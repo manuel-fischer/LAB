@@ -6,7 +6,7 @@
 
 #include "LAB_blt_block.h"
 
-#include "IXO/IXO_classdef.h"
+//#include "IXO/IXO_classdef.h"
 
 /**
  *  TODO Blockmodels:
@@ -53,7 +53,7 @@ typedef struct LAB_Block
     LAB_Model const* model;
 } LAB_Block;
 
-IXO_DECLARE_CLASS(LAB_Block);
+//IXO_DECLARE_CLASS(LAB_Block);
 
 
 extern LAB_Block LAB_BLOCK_OUTSIDE,

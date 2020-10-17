@@ -86,7 +86,7 @@ LAB_STATIC LAB_Color LAB_CalcLight(LAB_World* world, LAB_Chunk*const chunks[27],
                 if(i!=3 || (nlum&0xffffff) != 0xffffff)
                     nlum = LAB_LIGHT_FALL_OFF(nlum);
             }
-            lum = LAB_MaxColor(lum, LAB_MulColor(nlum, dia));
+            lum = LAB_MaxColor(lum, LAB_MulColor_Fast(nlum, dia));
         }
     }
     else
@@ -131,7 +131,7 @@ LAB_STATIC LAB_Color LAB_CalcLight(LAB_World* world, LAB_Chunk*const chunks[27],
         nlum2 = nlum2 ^ ((nlum2^LAB_LIGHT_FALL_OFF(nlum2)) &~ mask);
 
         nlum = LAB_MaxColor(nlum1, nlum2);
-        lum = LAB_MaxColor(lum, LAB_MulColor(nlum, dia));
+        lum = LAB_MaxColor(lum, LAB_MulColor_Fast(nlum, dia));
     }
 
     return lum;

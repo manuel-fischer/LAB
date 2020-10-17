@@ -1,9 +1,9 @@
 #include "LAB_block.h"
-#include "IXO/IXO_classdef.h"
+//#include "IXO/IXO_classdef.h"
 #include "LAB_color_defs.h"
 
 
-IXO_BITDEF(LAB_BlockFlags,
+/*IXO_BITDEF(LAB_BlockFlags,
     (SOLID, LAB_BLOCK_SOLID),
         (MASSIVE, LAB_BLOCK_MASSIVE),
         (OPAQUE, LAB_BLOCK_OPAQUE),
@@ -22,7 +22,7 @@ IXO_STRUCTDEF(LAB_Block,
     (flags, &LAB_BlockFlags_class)
     ...
 );
-#endif
+#endif*/
 
 
 #define LAB_COLOR_GRASS   LAB_RGB(15, 150, 30) // LAB_RGB(30, 170, 50)

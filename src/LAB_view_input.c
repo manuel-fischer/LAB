@@ -213,6 +213,11 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                     view->flags ^= LAB_VIEW_SHOW_HUD;
                 } break;
 
+                case SDLK_F9:
+                {
+                    view->flags ^= LAB_VIEW_SHOW_CHUNK_GRID;
+                } break;
+
                 case SDLK_F2:
                 {
                     // TODO detection if multiple screenshots are saved in the same second

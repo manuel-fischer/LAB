@@ -36,15 +36,17 @@
 
 ///############################
 
-LAB_STATIC bool LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_World* world);
-LAB_STATIC void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_IN LAB_Chunk* chunk_neighborhood[27]);
-LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_IN LAB_Chunk* chunk_neighborhood[27], int x, int y, int z);
+LAB_STATIC bool LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_World* world, unsigned visibility);
+LAB_STATIC void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_IN LAB_Chunk* chunk_neighborhood[27], unsigned visibility);
+LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_IN LAB_Chunk* chunk_neighborhood[27], int x, int y, int z, unsigned visibility);
 LAB_STATIC void LAB_ViewUpdateChunks(LAB_View* view);
 LAB_STATIC bool LAB_ViewUpdateChunk(LAB_View* view, LAB_ViewChunkEntry* e);
 LAB_STATIC void LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass);
-LAB_STATIC void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_RenderPass pass);
+LAB_STATIC bool LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_RenderPass pass);
+
 LAB_STATIC bool LAB_View_HasChunkVisibleNeighbors(LAB_View* view, int x, int y, int z);
 LAB_STATIC bool LAB_View_IsLocalChunk(LAB_View* view, int cx, int cy, int cz);
+LAB_STATIC unsigned LAB_View_ChunkVisibility(LAB_View* view, int cx, int cy, int cz);
 #if !LAB_VIEW_QUERY_IMMEDIATELY
 LAB_STATIC void LAB_View_FetchQueryChunks(LAB_View* view);
 LAB_STATIC void LAB_View_FetchQueryChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
@@ -59,7 +61,7 @@ LAB_STATIC bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
 LAB_STATIC void LAB_View_UploadChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
 LAB_STATIC void LAB_View_UploadChunks(LAB_View* view);
 
-LAB_STATIC void LAB_RenderBlockSelection(LAB_View* view, int x, int y, int z);
+LAB_STATIC void LAB_RenderBlock(LAB_View* view, float x, float y, float z, float w, float h, float d);
 LAB_STATIC void LAB_View_RenderBlockSelection(LAB_View* view);
 
 LAB_STATIC int LAB_View_CompareChunksIndirect(const void* a, const void* b);
@@ -67,6 +69,7 @@ LAB_STATIC void LAB_View_SortChunks(LAB_View* view, uint32_t delta_ms);
 
 LAB_STATIC LAB_Triangle* LAB_ViewMeshAlloc(LAB_View_Mesh* mesh, size_t add_size, size_t extra_size);
 
+LAB_STATIC void LAB_ViewRenderInit(LAB_View* view);
 
 bool LAB_ConstructView(LAB_View* view, LAB_World* world)
 {
@@ -81,6 +84,8 @@ bool LAB_ConstructView(LAB_View* view, LAB_World* world)
 
     LAB_FpsGraph_Create(&view->fps_graph);
     LAB_GuiManager_Create(&view->gui_mgr);
+
+    LAB_ViewRenderInit(view);
 
     return 1;
 }
@@ -143,7 +148,7 @@ bool LAB_ViewChunkKeepProc(void* user, LAB_World* world, int x, int y, int z)
 /**
  *  Return 1 if the chunk was available
  */
-LAB_STATIC bool LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_World* world)
+LAB_STATIC bool LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_World* world, unsigned visibility)
 {
     LAB_Chunk* chunk_neighborhood[27];
 
@@ -152,18 +157,19 @@ LAB_STATIC bool LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entr
                              LAB_CHUNK_EXISTING);
 
     if(chunk_neighborhood[1+3+9] == NULL) return 0;
-
     //chunk_entry->exist = chunk_neighborhood[1+3+9] != NULL;
     chunk_entry->exist = 1;
     for(int i = 0; i < 27; ++i)
         if(chunk_neighborhood[i] == NULL && (rand()&0x7) == 0) return 0;
-    LAB_ViewBuildMeshNeighbored(view, chunk_entry, chunk_neighborhood);
+
+    chunk_entry->visible_faces = visibility;
+    LAB_ViewBuildMeshNeighbored(view, chunk_entry, chunk_neighborhood, visibility);
     return 1;
 }
 
 
 LAB_HOT
-LAB_STATIC void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_Chunk* cnk3x3x3[27])
+LAB_STATIC void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_Chunk* cnk3x3x3[27], unsigned visibility)
 {
     const int X = 1;
     const int Y = 3*1;
@@ -182,7 +188,7 @@ LAB_STATIC void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* 
     {
         if(cnk3x3x3[X+Y+Z]->blocks[LAB_CHUNK_OFFSET(x, y, z)]->flags & LAB_BLOCK_VISUAL)
         {
-            LAB_ViewBuildMeshBlock(view, chunk_entry, cnk3x3x3, x, y, z);
+            LAB_ViewBuildMeshBlock(view, chunk_entry, cnk3x3x3, x, y, z, visibility);
         }
     }
 
@@ -262,7 +268,7 @@ LAB_BlockFlags LAB_GetNeighborhoodBlockFlags(LAB_Chunk* neighborhood[27], int x,
 
 
 LAB_HOT LAB_ALWAYS_INLINE
-LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_Chunk* cnk3x3x3[27], int x, int y, int z)
+LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_Chunk* cnk3x3x3[27], int x, int y, int z, unsigned visibility)
 {
 
 #define GET_BLOCK(bx, by, bz) LAB_GetNeighborhoodBlock(cnk3x3x3, x+(bx), y+(by), z+(bz))
@@ -293,7 +299,7 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
     // before mixing
     //#define MAP_LIGHT_0(x) LAB_ColorHI4(x)
     #define MAP_LIGHT_0(x) (x)
-    #define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor(LAB_MulColor(~(x), ~(x)), LAB_MulColor(~(x), ~(x))):(x))
+    #define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor_Fast(LAB_MulColor_Fast(~(x), ~(x)), LAB_MulColor_Fast(~(x), ~(x))):(x))
     if((view->flags&LAB_VIEW_FLAT_SHADE)||(block->flags&LAB_BLOCK_FLAT_SHADE))
     {
         LAB_Color light_sides[7];
@@ -311,7 +317,7 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
         LAB_Triangle* tri;
         tri = LAB_ViewMeshAlloc(mesh, model->size, 0);
         if(LAB_UNLIKELY(tri == NULL)) return;
-        int count = LAB_PutModelShadedAt(tri, model, x, y, z, faces, light_sides);
+        int count = LAB_PutModelShadedAt(tri, model, x, y, z, faces, visibility, light_sides);
         mesh->size -= model->size-count;
     }
     else
@@ -378,7 +384,7 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
         LAB_Triangle* tri;
         tri = LAB_ViewMeshAlloc(mesh, model->size, 0);
         if(LAB_UNLIKELY(tri == NULL)) return;
-        int count = LAB_PutModelSmoothShadedAt(tri, model, x, y, z, faces, (const LAB_Color(*)[4])light_sides);
+        int count = LAB_PutModelSmoothShadedAt(tri, model, x, y, z, faces, visibility, (const LAB_Color(*)[4])light_sides);
         mesh->size -= model->size-count;
     }
 
@@ -433,11 +439,16 @@ LAB_STATIC bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
     if(!LAB_View_IsChunkInSight(view, chunk_entry->x, chunk_entry->y, chunk_entry->z))
         return 0;
 
+
+    unsigned visibility = LAB_View_ChunkVisibility(view, chunk_entry->x, chunk_entry->y, chunk_entry->z);
+
     // TODO: enshure light update after at most 1 sec
     if(     (chunk_entry->dirty&LAB_CHUNK_UPDATE_LOCAL)
-        || ((chunk_entry->dirty&LAB_CHUNK_UPDATE_LIGHT) && (rand()&0x1f)==0) )
+        || ((chunk_entry->dirty&LAB_CHUNK_UPDATE_LIGHT) && (rand()&0x1f)==0)
+        || ((chunk_entry->visible_faces&visibility) != visibility) // some faces not visible
+        || ( chunk_entry->visible_faces!=visibility && (rand()&0x1f)==0)) // some faces not hidden -> free memory
     {
-        bool chunk_available = LAB_ViewBuildMesh(view, chunk_entry, view->world);
+        bool chunk_available = LAB_ViewBuildMesh(view, chunk_entry, view->world, visibility);
         if(!chunk_available)
         {
             //chunk_entry->dirty = ~0;
@@ -497,22 +508,23 @@ LAB_STATIC void LAB_ViewUpdateChunks(LAB_View* view)
             rest_update -= LAB_ViewUpdateChunk(view, e);
     });
 }
-
-LAB_STATIC void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_RenderPass pass)
+// TODO use glMultiDrawElements
+LAB_STATIC bool LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_RenderPass pass)
 {
+    //if(view->flags & LAB_VIEW_NO_RENDER) return 0;
     if(!LAB_View_IsChunkInSight(view, chunk_entry->x, chunk_entry->y, chunk_entry->z))
-        return;
+        return 0;
 
     if(!chunk_entry->exist)
-        return;
+        return 0;
 
     LAB_View_Mesh* mesh = &chunk_entry->render_passes[pass];
 
-    if(mesh->size == 0) return;
+    if(mesh->size == 0) return 0;
 
     if(view->flags & LAB_VIEW_USE_VBO)
     {
-        if(!mesh->vbo) return;
+        if(!mesh->vbo) return 0;
         glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
     }
 
@@ -539,8 +551,7 @@ LAB_STATIC void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_en
     }
     glPopMatrix();
 
-    if(view->flags & LAB_VIEW_USE_VBO)
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    return 1;
 }
 
 
@@ -548,6 +559,10 @@ LAB_STATIC void LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_en
 
 void LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass)
 {
+    //if(view->flags & LAB_VIEW_NO_RENDER) return;
+
+    int chunks_rendered = 0;
+
     int backwards = LAB_PrepareRenderPass(pass);
 
     int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
@@ -564,8 +579,21 @@ void LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass)
         e = view->sorted_chunks[i].entry;
         if((e->x-px)*(e->x-px) + (e->y-py)*(e->y-py) + (e->z-pz)*(e->z-pz) <= dist_sq
            && e->visible)
-            LAB_ViewRenderChunk(view, e, pass);
+        {
+            chunks_rendered += (int)LAB_ViewRenderChunk(view, e, pass);
+        }
     }
+
+    if(view->flags & LAB_VIEW_USE_VBO)
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+#if 0
+    if(pass == 0)
+        printf("chunks_rendered:");
+    printf(" %3i", chunks_rendered);
+    if(pass == LAB_RENDER_PASS_COUNT-1)
+        printf("         \r");
+#endif
 }
 
 
@@ -785,7 +813,7 @@ LAB_STATIC void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* ent
 
 
 
-LAB_STATIC void LAB_RenderBlockSelection(LAB_View* view, int x, int y, int z)
+LAB_STATIC void LAB_RenderBlock(LAB_View* view, float x, float y, float z, float w, float h, float d)
 {
 #define O (-0.001f)
 #define I ( 1.001f)
@@ -813,6 +841,7 @@ LAB_STATIC void LAB_RenderBlockSelection(LAB_View* view, int x, int y, int z)
 
     glPushMatrix();
     glTranslatef(x-view->x, y-view->y, z-view->z);
+    if(w!=1||h!=1||d!=1) glScalef(w, h, d);
     glDisable(GL_LINE_SMOOTH);
     glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -849,7 +878,7 @@ LAB_STATIC void LAB_View_RenderBlockSelection(LAB_View* view)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glColor4f(0, 0, 0, 0.7);
         if(memcmp(target, prev, sizeof target) != 0)
-            LAB_RenderBlockSelection(view, target[0], target[1], target[2]);
+            LAB_RenderBlock(view, target[0], target[1], target[2], 1, 1, 1);
         //glColor4f(0, 0, 0, 0.1);
         //LAB_RenderBlockSelection(prev[0], prev[1], prev[2]);
     }
@@ -990,6 +1019,12 @@ void LAB_ViewRenderHud(LAB_View* view)
     }
 }
 
+void LAB_ViewRenderInit(LAB_View* view)
+{
+    glShadeModel(GL_SMOOTH);
+    glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST); // TODO
+}
+
 void LAB_ViewRenderProc(void* user, LAB_Window* window)
 {
     // NO access to world here -> world can update whilst rendering
@@ -1032,6 +1067,20 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
     //glRotatef(view->az, 0, 0, 1);
     //glTranslatef(-view->x, -view->y, -view->z);
 
+    if(view->flags&LAB_VIEW_SHOW_CHUNK_GRID)
+    {
+        float xx, yy, zz;
+        xx = LAB_FastFloorF2I(view->x)&~15;
+        yy = LAB_FastFloorF2I(view->y)&~15;
+        zz = LAB_FastFloorF2I(view->z)&~15;
+        glEnable(GL_DEPTH_TEST);
+        glColor3f(1, 1, 1);
+        glDisable(GL_TEXTURE_2D);
+        glDisable(GL_BLEND);
+        LAB_RenderBlock(view, xx, yy, zz, 16, 16, 16);
+        LAB_RenderBlock(view, xx, yy, zz, 16, 16, 16);
+    }
+
     // Block rendering settings
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
@@ -1039,14 +1088,22 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, LAB_block_terrain_gl_id);
 
+    /*if(view->flags&)
+    {
+        glEnable(GL_POLYGON_OFFSET_EXT);
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glPolygonOffset(1, -1);
+    }
+    else
+    {
+        glDisable(GL_POLYGON_OFFSET_EXT);
+    }*/
 
     glEnableClientState(GL_VERTEX_ARRAY); // TODO once
     glEnableClientState(GL_COLOR_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-    glDisable(GL_BLEND);
-    glShadeModel(GL_SMOOTH);
-    glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+    //glDisable(GL_BLEND);
 
    // glEnable(GL_ALPHA_TEST);
     //glAlphaFunc(GL_GEQUAL, 1/255.f);
@@ -1056,6 +1113,7 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
 
     if(view->flags & LAB_VIEW_USE_VBO)
         LAB_View_UploadChunks(view);
+
 
     LAB_ViewRenderChunks(view, LAB_RENDER_PASS_SOLID);
     LAB_ViewRenderChunks(view, LAB_RENDER_PASS_MASKED);
@@ -1418,6 +1476,23 @@ bool LAB_View_IsChunkInSight(LAB_View* view, int cx, int cy, int cz)
     if(dir[2] > 0) dist += dir[2];
 
     return dist >= treshold;
+}
+
+
+LAB_STATIC unsigned LAB_View_ChunkVisibility(LAB_View* view, int cx, int cy, int cz)
+{
+    int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
+    int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
+    int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
+
+    unsigned faces = 0;
+    if(cx<=px) faces  = LAB_DIR_EAST;
+    if(cx>=px) faces |= LAB_DIR_WEST;
+    if(cy<=py) faces |= LAB_DIR_UP;
+    if(cy>=py) faces |= LAB_DIR_DOWN;
+    if(cz<=pz) faces |= LAB_DIR_SOUTH;
+    if(cz>=pz) faces |= LAB_DIR_NORTH;
+    return faces;
 }
 
 

@@ -29,8 +29,9 @@ LAB_Triangle;               //    96 Bytes
 // the midpoint between [0] and [1] is used
 // to compute the distance to the camera
 
-#define LAB_TRIANGLE_CULL(triangle) ((triangle).v[0].flags)
-#define LAB_TRIANGLE_LIGHT(triangle) ((triangle).v[1].flags)
+#define LAB_TRIANGLE_CULL(triangle)       ((triangle).v[0].flags)
+#define LAB_TRIANGLE_LIGHT(triangle)      ((triangle).v[1].flags)
+#define LAB_TRIANGLE_VISIBILITY(triangle) ((triangle).v[2].flags)
 
 typedef struct LAB_Model
 {
@@ -48,13 +49,13 @@ typedef struct LAB_Model
  *  RETURN: the number of triangles written
  */
 int LAB_PutModelAt(LAB_OUT LAB_Triangle* dst, LAB_Model const* model,
-                   float x, float y, float z, unsigned faces);
+                   float x, float y, float z, unsigned faces, unsigned visibility);
 
 int LAB_PutModelShadedAt(LAB_OUT LAB_Triangle* dst, LAB_Model const* model,
-                         float x, float y, float z, unsigned faces,
+                         float x, float y, float z, unsigned faces, unsigned visibility,
                          const LAB_Color light_sides[6]);
 
 int LAB_PutModelSmoothShadedAt(LAB_OUT LAB_Triangle* dst,
                                LAB_Model const* model,
-                               float x, float y, float z, unsigned faces,
+                               float x, float y, float z, unsigned faces, unsigned visibility,
                                const LAB_Color light_sides[6][4]);

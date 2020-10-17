@@ -52,6 +52,9 @@ typedef struct LAB_ViewChunkEntry
 
              occupied:1;    // table entry occupied
 
+    unsigned pad:1;
+    unsigned visible_faces:6; // the faces that are currently rendered
+
     #if !LAB_VIEW_QUERY_IMMEDIATELY
     unsigned query_id; // 0 for no query done in the last frame
                        // gets generated in OrderQueryBlock
@@ -131,6 +134,8 @@ LAB_INLINE LAB_ChunkPos LAB_MakeChunkPos(int x, int y, int z)
 #define LAB_VIEW_SHOW_FPS_GRAPH    4u
 #define LAB_VIEW_FLAT_SHADE        8u
 #define LAB_VIEW_BRIGHTER         16u
+
+#define LAB_VIEW_SHOW_CHUNK_GRID  32u
 
 // Coordinate info
 typedef struct LAB_ViewInfo

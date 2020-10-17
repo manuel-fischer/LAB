@@ -9,7 +9,7 @@ LAB_STATIC int LAB_FaceSetToLightIndex(int face)
 
 LAB_HOT
 int LAB_PutModelAt(LAB_OUT LAB_Triangle*restrict dst, LAB_Model const* model,
-                   float x, float y, float z, unsigned faces)
+                   float x, float y, float z, unsigned faces, unsigned visibility)
 {
     int count = 0;
     LAB_Triangle* src = model->data;
@@ -18,7 +18,8 @@ int LAB_PutModelAt(LAB_OUT LAB_Triangle*restrict dst, LAB_Model const* model,
     for(; src < src_end; ++src)
     {
         unsigned occlusion = LAB_TRIANGLE_CULL(*src);
-        if(occlusion&faces)
+        unsigned tri_visibility = LAB_TRIANGLE_VISIBILITY(*src);
+        if((tri_visibility&visibility) && (occlusion&faces))
         {
             // main loop: 45 instructions
             //memcpy(dst, src, sizeof *src);
@@ -41,7 +42,7 @@ int LAB_PutModelAt(LAB_OUT LAB_Triangle*restrict dst, LAB_Model const* model,
 
 LAB_HOT
 int LAB_PutModelShadedAt(LAB_OUT LAB_Triangle* dst, LAB_Model const* model,
-                         float x, float y, float z, unsigned faces,
+                         float x, float y, float z, unsigned faces, unsigned visibility,
                          const LAB_Color light_sides[6])
 {
     int count = 0;
@@ -51,7 +52,8 @@ int LAB_PutModelShadedAt(LAB_OUT LAB_Triangle* dst, LAB_Model const* model,
     for(; src < src_end; ++src)
     {
         unsigned occlusion = LAB_TRIANGLE_CULL(*src);
-        if(occlusion&faces)
+        unsigned tri_visibility = LAB_TRIANGLE_VISIBILITY(*src);
+        if((tri_visibility&visibility) && (occlusion&faces))
         {
             //memcpy(dst, src, sizeof *src);
             *dst = *src;
@@ -73,7 +75,7 @@ int LAB_PutModelShadedAt(LAB_OUT LAB_Triangle* dst, LAB_Model const* model,
 LAB_HOT
 int LAB_PutModelSmoothShadedAt(LAB_OUT LAB_Triangle* dst,
                                LAB_Model const* model,
-                               float x, float y, float z, unsigned faces,
+                               float x, float y, float z, unsigned faces, unsigned visibility,
                                const LAB_Color light_sides[6][4])
 {
     int count = 0;
@@ -83,7 +85,8 @@ int LAB_PutModelSmoothShadedAt(LAB_OUT LAB_Triangle* dst,
     for(; src < src_end; ++src)
     {
         unsigned occlusion = LAB_TRIANGLE_CULL(*src);
-        if(occlusion&faces)
+        unsigned tri_visibility = LAB_TRIANGLE_VISIBILITY(*src);
+        if((tri_visibility&visibility) && (occlusion&faces))
         {
             //memcpy(dst, src, sizeof *src);
             *dst = *src;

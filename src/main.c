@@ -69,6 +69,7 @@ int main(int argc, char** argv) {
     //view.load_amount = 3;
     //view.load_amount = 10;
     view.load_amount = 1;
+    //view.load_amount = 100; // DBG
 
     CHECK_INIT(LAB_ConstructViewInput(&view_input, &view));
     LAB_GL_CHECK();

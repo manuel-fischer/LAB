@@ -22,7 +22,7 @@ SDL_Surface* LAB_RenderBlock2D(LAB_Block* block)
     for(int i = 0; i < LAB_ITEM_SIZE*LAB_ITEM_SIZE; ++i)
     {
         LAB_Color* c = &((LAB_Color*)surf->pixels)[i];
-        *c = LAB_MulColor(*c, block_color);
+        *c = LAB_MulColor_Fast(*c, block_color);
 
     }
     ((LAB_Color*)surf->pixels)[0] =
