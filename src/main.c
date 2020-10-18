@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
         ///*if(itr%20 == 0)*/ printf("%i fps          \r", 1000/delta_ms);
         time_ms = time2_ms;
 
-        #if 1
+        #if 0
         LAB_ViewInputTick(&view_input, delta_ms);
         /*if(itr%10==0)*/ LAB_WorldTick(&the_world, delta_ms);
         LAB_ViewTick(&view, delta_ms);
@@ -124,11 +124,16 @@ int main(int argc, char** argv) {
         d_12 = t2-t1;
         d_23 = t3-t2;
 
-        if(itr%16==0)
+        /*if(itr%16==0)
         {
             printf("ViewInput %i\nWorld %i\nView %i\n\n", (int)d_01, (int)d_12, (int)d_23);
         }
-        //printf("%i\r", the_world.chunks.size);
+        //printf("%i\r", the_world.chunks.size);*/
+
+        LAB_FpsGraph_AddSample(&view.fps_graph,       delta_ms);
+        LAB_FpsGraph_AddSample(&view.fps_graph_input, (float)d_01/1000000.f);
+        LAB_FpsGraph_AddSample(&view.fps_graph_world, (float)d_12/1000000.f);
+        LAB_FpsGraph_AddSample(&view.fps_graph_view,  (float)d_23/1000000.f);
         #endif
     }
 

@@ -186,6 +186,10 @@ typedef struct LAB_View
     int w, h; // window size
 
     LAB_FpsGraph fps_graph;
+    LAB_FpsGraph fps_graph_input;
+    LAB_FpsGraph fps_graph_world;
+    LAB_FpsGraph fps_graph_view;
+
     LAB_GuiManager gui_mgr;
 } LAB_View;
 

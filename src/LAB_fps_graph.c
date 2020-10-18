@@ -12,14 +12,15 @@ LAB_STATIC void LAB_FpsGraph_Shift(LAB_FpsGraph* graph)
     {
         //graph->samples[i].x kept
         graph->samples[i].y = graph->samples[i+1].y;
-        graph->samples[i].color &= LAB_ALP_MASK;
-        graph->samples[i].color |= graph->samples[i+1].color & LAB_COL_MASK;
+        //graph->samples[i].color &= LAB_ALP_MASK;
+        //graph->samples[i].color |= graph->samples[i+1].color & LAB_COL_MASK;
     }
 }
 
-bool LAB_FpsGraph_Create(LAB_FpsGraph* graph)
+bool LAB_FpsGraph_Create(LAB_FpsGraph* graph, LAB_Color color)
 {
     graph->start_pos = LAB_FPS_GRAPH_MAX_SAMPLES;
+    //graph->color = color;
     // Fill in constant values
     for(int i = 0; i < LAB_FPS_GRAPH_MAX_SAMPLES; ++i)
     {
@@ -27,7 +28,8 @@ bool LAB_FpsGraph_Create(LAB_FpsGraph* graph)
         //graph->samples[i].y -- changed by add sample
 
         int k = LAB_FPS_GRAPH_MAX_SAMPLES-i-1;
-        graph->samples[i].color = LAB_RGBA(0, 0, 0, 255-k*k*256/LAB_FPS_GRAPH_MAX_SAMPLES/LAB_FPS_GRAPH_MAX_SAMPLES);
+        //graph->samples[i].color = LAB_RGBA(0, 0, 0, 255-k*k*256/LAB_FPS_GRAPH_MAX_SAMPLES/LAB_FPS_GRAPH_MAX_SAMPLES);
+        graph->samples[i].color = LAB_RGBA(0, 0, 0, 255-k*k*256/LAB_FPS_GRAPH_MAX_SAMPLES/LAB_FPS_GRAPH_MAX_SAMPLES)|(color&LAB_COL_MASK);
     }
     return 1;
 }
@@ -36,29 +38,34 @@ void LAB_FpsGraph_Destroy(LAB_FpsGraph* graph)
 {
 }
 
-void LAB_FpsGraph_AddSample(LAB_FpsGraph* graph, int frame_ms)
+void LAB_FpsGraph_AddSample(LAB_FpsGraph* graph, float frame_ms)
 {
     LAB_FpsGraph_Shift(graph);
     graph->samples[LAB_FPS_GRAPH_MAX_SAMPLES-1].y = LAB_FPS_GRAPH_CALC_Y(frame_ms);
-    graph->samples[LAB_FPS_GRAPH_MAX_SAMPLES-1].color |= LAB_RGBA(255, 255, 128, 0);
+    //graph->samples[LAB_FPS_GRAPH_MAX_SAMPLES-1].color |= LAB_RGBA(255, 255, 128, 0);
+}
+
+void LAB_FpsGraph_Render_Prepare()
+{
+    glDisable(GL_TEXTURE_2D);
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 }
 
 void LAB_FpsGraph_Render(LAB_FpsGraph* graph)
 {
     if(graph->start_pos==LAB_FPS_GRAPH_MAX_SAMPLES) return;
-    glDisable(GL_TEXTURE_2D);
-
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_COLOR_ARRAY);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-
 
     glVertexPointer(2, LAB_GL_TYPEOF(graph->samples[0].x), sizeof graph->samples[0], &graph->samples[graph->start_pos].x);
     glColorPointer(4, GL_UNSIGNED_BYTE, sizeof graph->samples[0], &graph->samples[graph->start_pos].color);
 
     glDrawArrays(GL_LINE_STRIP, 0, LAB_FPS_GRAPH_MAX_SAMPLES-graph->start_pos);
+}
 
 
+void LAB_FpsGraph_Render_Base()
+{
     static const LAB_FpsGraphSample line60fps[] =
     {
         { 0, LAB_FPS_GRAPH_CALC_Y(1000/60), LAB_RGBA(0, 128, 255,   0), 0 },

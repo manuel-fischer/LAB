@@ -20,9 +20,11 @@ typedef struct LAB_FpsGraph
 /**
  *  Return 1 on success
  */
-bool LAB_FpsGraph_Create(LAB_FpsGraph* graph);
+bool LAB_FpsGraph_Create(LAB_FpsGraph* graph, LAB_Color color);
 void LAB_FpsGraph_Destroy(LAB_FpsGraph* graph);
 
-void LAB_FpsGraph_AddSample(LAB_FpsGraph* graph, int frame_ms);
+void LAB_FpsGraph_AddSample(LAB_FpsGraph* graph, float frame_ms);
 
+void LAB_FpsGraph_Render_Prepare();
 void LAB_FpsGraph_Render(LAB_FpsGraph* graph);
+void LAB_FpsGraph_Render_Base();

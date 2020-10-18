@@ -82,7 +82,11 @@ bool LAB_ConstructView(LAB_View* view, LAB_World* world)
 
     //LAB_View_ChunkTBL_Create(&view->entry); // not nessesary because already set to 0 above
 
-    LAB_FpsGraph_Create(&view->fps_graph);
+    LAB_FpsGraph_Create(&view->fps_graph,       LAB_RGB(255, 255, 128));
+    LAB_FpsGraph_Create(&view->fps_graph_input, LAB_RGB(255, 128, 128));
+    LAB_FpsGraph_Create(&view->fps_graph_world, LAB_RGB(128, 255, 128));
+    LAB_FpsGraph_Create(&view->fps_graph_view,  LAB_RGB(128, 128, 255));
+
     LAB_GuiManager_Create(&view->gui_mgr);
 
     LAB_ViewRenderInit(view);
@@ -95,6 +99,9 @@ void LAB_DestructView(LAB_View* view)
     LAB_Free(view->sorted_chunks);
 
     LAB_GuiManager_Destroy(&view->gui_mgr);
+    LAB_FpsGraph_Destroy(&view->fps_graph_view);
+    LAB_FpsGraph_Destroy(&view->fps_graph_world);
+    LAB_FpsGraph_Destroy(&view->fps_graph_input);
     LAB_FpsGraph_Destroy(&view->fps_graph);
 
     LAB_ViewChunkEntry* e;
@@ -1160,7 +1167,12 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
         glTranslatef(-0.5,-0.5,-1);
         glLineWidth(2);
         glEnable(GL_LINE_SMOOTH);
+        LAB_FpsGraph_Render_Prepare();
+        LAB_FpsGraph_Render_Base();
         LAB_FpsGraph_Render(&view->fps_graph);
+        LAB_FpsGraph_Render(&view->fps_graph_input);
+        LAB_FpsGraph_Render(&view->fps_graph_world);
+        LAB_FpsGraph_Render(&view->fps_graph_view);
         glPopMatrix();
     }
 
@@ -1400,7 +1412,7 @@ void LAB_ViewTick(LAB_View* view, uint32_t delta_ms)
     LAB_View_FetchQueryChunks(view);
     #endif
     LAB_ViewUpdateChunks(view);
-    LAB_FpsGraph_AddSample(&view->fps_graph, delta_ms);
+    //LAB_FpsGraph_AddSample(&view->fps_graph, delta_ms);
     LAB_GuiManager_Tick(&view->gui_mgr);
     LAB_View_SortChunks(view, delta_ms);
 }
