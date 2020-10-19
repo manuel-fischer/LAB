@@ -46,7 +46,8 @@ LAB_STATIC bool LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_en
 
 LAB_STATIC bool LAB_View_HasChunkVisibleNeighbors(LAB_View* view, int x, int y, int z);
 LAB_STATIC bool LAB_View_IsLocalChunk(LAB_View* view, int cx, int cy, int cz);
-LAB_STATIC unsigned LAB_View_ChunkVisibility(LAB_View* view, int cx, int cy, int cz);
+LAB_STATIC unsigned LAB_View_ChunkVisibility(LAB_View* view, int cx, int cy, int cz);         // inclusive for same coordinates
+LAB_STATIC unsigned LAB_View_ChunkNeighborVisibility(LAB_View* view, int cx, int cy, int cz); // exclusive for same coordinates
 #if !LAB_VIEW_QUERY_IMMEDIATELY
 LAB_STATIC void LAB_View_FetchQueryChunks(LAB_View* view);
 LAB_STATIC void LAB_View_FetchQueryChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
@@ -665,6 +666,7 @@ LAB_STATIC void LAB_View_FetchQueryChunks(LAB_View* view)
 
 LAB_STATIC void LAB_View_FetchQueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
 {
+    #if 0
     unsigned visible = 2;
     glGetQueryObjectuiv(entry->query_id, GL_QUERY_RESULT, &visible);
     LAB_ASSUME(visible < 2); // either 0 or 1
@@ -674,6 +676,24 @@ LAB_STATIC void LAB_View_FetchQueryChunk(LAB_View* view, LAB_ViewChunkEntry* ent
     glDeleteQueries(1, &entry->query_id); LAB_GL_DEBUG_FREE(1);
     entry->query_id = 0;
     LAB_GL_CHECK();
+    #else
+    unsigned available, visible;
+    glGetQueryObjectuiv(entry->query_id, GL_QUERY_RESULT_AVAILABLE, &available);
+    if(available)
+    {
+        glGetQueryObjectuiv(entry->query_id, GL_QUERY_RESULT, &visible);
+        entry->visible = visible;
+
+        glDeleteQueries(1, &entry->query_id); LAB_GL_DEBUG_FREE(1);
+        entry->query_id = 0;
+    }
+    else
+    {
+        //printf("Query not ready\n");
+    }
+    //printf("available = %i\n", available);
+    LAB_GL_CHECK();
+    #endif
 }
 #endif
 
@@ -732,7 +752,8 @@ LAB_STATIC void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* ent
         glGenQueries(1, &query_id); LAB_GL_DEBUG_ALLOC(1);
     }
     #else
-    LAB_ASSUME(entry->query_id == 0);
+    //LAB_ASSUME(entry->query_id == 0);
+    if(entry->query_id != 0) return;
     glGenQueries(1, &entry->query_id); LAB_GL_DEBUG_ALLOC(1);
     unsigned query_id = entry->query_id;
     #endif
@@ -1420,8 +1441,12 @@ void LAB_ViewTick(LAB_View* view, uint32_t delta_ms)
 
 LAB_STATIC bool LAB_View_HasChunkVisibleNeighbors(LAB_View* view, int x, int y, int z)
 {
-    for(int i = 0; i < 6; ++i)
+    int faces = LAB_View_ChunkNeighborVisibility(view, x, y, z);
+    LAB_UNROLL(6)
+    for(; faces; faces&=faces-1)
     {
+        int i = LAB_Ctz(faces);
+
         //const int* off = LAB_offset[i];
         int xx = x + LAB_OX(i);
         int yy = y + LAB_OY(i);
@@ -1491,6 +1516,7 @@ bool LAB_View_IsChunkInSight(LAB_View* view, int cx, int cy, int cz)
 }
 
 
+// Difference of following functions: comparison operators: <= >= vs < >
 LAB_STATIC unsigned LAB_View_ChunkVisibility(LAB_View* view, int cx, int cy, int cz)
 {
     int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
@@ -1504,6 +1530,22 @@ LAB_STATIC unsigned LAB_View_ChunkVisibility(LAB_View* view, int cx, int cy, int
     if(cy>=py) faces |= LAB_DIR_DOWN;
     if(cz<=pz) faces |= LAB_DIR_SOUTH;
     if(cz>=pz) faces |= LAB_DIR_NORTH;
+    return faces;
+}
+
+LAB_STATIC unsigned LAB_View_ChunkNeighborVisibility(LAB_View* view, int cx, int cy, int cz)
+{
+    int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
+    int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
+    int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
+
+    unsigned faces = 0;
+    if(cx<px) faces  = LAB_DIR_EAST;
+    if(cx>px) faces |= LAB_DIR_WEST;
+    if(cy<py) faces |= LAB_DIR_UP;
+    if(cy>py) faces |= LAB_DIR_DOWN;
+    if(cz<pz) faces |= LAB_DIR_SOUTH;
+    if(cz>pz) faces |= LAB_DIR_NORTH;
     return faces;
 }
 

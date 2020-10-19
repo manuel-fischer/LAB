@@ -96,16 +96,22 @@ bool LAB_GuiInventoryList_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, S
         } break;
         case SDL_MOUSEMOTION:
         {
-            cself->selected_slot = slot;
-            return 1;
+            if(cself->selected_slot != slot)
+            {
+                cself->selected_slot = slot;
+                return 1;
+            }
         } break;
     }
     if(LAB_IS_GUI_EVENT(event->type)) switch(LAB_GUI_EVENT(event->type))
     {
         case LAB_GUI_EVENT_UNFOCUS:
         {
-            cself->selected_slot = -1;
-            return 1;
+            if(cself->selected_slot != -1)
+            {
+                cself->selected_slot = -1;
+                return 1;
+            }
         } break;
     }
     return 0;

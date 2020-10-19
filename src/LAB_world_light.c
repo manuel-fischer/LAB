@@ -207,6 +207,7 @@ LAB_STATIC int LAB_UpdateLight_First(LAB_World* world, LAB_Chunk*const chunks[27
             }
         }
         next_side:;
+        LAB_ASSUME(changed <= 63);
     }
     #endif
 
@@ -234,7 +235,10 @@ LAB_STATIC int LAB_UpdateLight_First(LAB_World* world, LAB_Chunk*const chunks[27
             if(*queue_count != queue_cap)
                 queue[(*queue_count)++] = LAB_NBH(x,y,z);
             else
+            {
                 changed |= 128;
+                //printf("QUEUE FULL\n");
+            }
         }
     }
     return changed;
@@ -297,6 +301,7 @@ LAB_STATIC int LAB_CheckLight(LAB_World* world, LAB_Chunk*const chunks[27], LAB_
 }
 #endif
 
+// TODO return bitset of all 27 chunks if they're changed
 LAB_HOT                                                // TODO: |--------------------| not used
 int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, int cz)
 {
@@ -312,7 +317,8 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, 
     {
         LAB_PrepareLight(ctr_cnk, chunks[1+2*3+9], default_color_above);
         ctr_cnk->light_generated = 1;
-        return ~0; // TODO: multiple updates to the view
+        //return ~0; // TODO: multiple updates to the view
+        return 128;
     }
     //return 0; // DBG
 
@@ -327,6 +333,7 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, 
     int faces_changed = LAB_UpdateLight_First(world, chunks, default_color, default_color_above, LAB_LIGHT_QUEUE_SIZE, queue, &queue_count);
     if(!faces_changed) return 0;
     //faces_changed &= 63; // remove change bit
+    faces_changed=0; // TODO:
 
     while(queue_count)
     {
@@ -352,12 +359,12 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, 
             // only one check:
             switch(face)
             {
-                case 0: if(x==-16) goto next_face; else break;
-                case 1: if(x== 31) goto next_face; else break;
-                case 2: if(y==-16) goto next_face; else break;
-                case 3: if(y== 31) goto next_face; else break;
-                case 4: if(z==-16) goto next_face; else break;
-                case 5: if(z== 31) goto next_face; else break;
+                case 0: if(x==-16) { faces_changed |=  1; goto next_face; } else break;
+                case 1: if(x== 31) { faces_changed |=  2; goto next_face; } else break;
+                case 2: if(y==-16) { faces_changed |=  4; goto next_face; } else break;
+                case 3: if(y== 31) { faces_changed |=  8; goto next_face; } else break;
+                case 4: if(z==-16) { faces_changed |= 16; goto next_face; } else break;
+                case 5: if(z== 31) { faces_changed |= 32; goto next_face; } else break;
             }
             #endif
 
@@ -372,12 +379,12 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, 
                 if(cnk->light[block_index] != lum)
                 {
                     cnk->light[block_index] = lum;
-                    if(x<=0)  faces_changed |=  1;
+                    /*if(x<=0)  faces_changed |=  1;
                     if(x>=15) faces_changed |=  2;
                     if(y<=0)  faces_changed |=  4;
                     if(y>=15) faces_changed |=  8;
                     if(z<=0)  faces_changed |= 16;
-                    if(z>=15) faces_changed |= 32;
+                    if(z>=15) faces_changed |= 32;*/
                     faces_changed |= 64;
 
                     if(queue_count != LAB_LIGHT_QUEUE_SIZE)
@@ -385,7 +392,10 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, 
                         queue[(queue_first+(queue_count++))&LAB_LIGHT_QUEUE_MASK] = LAB_NBH(x, y, z);
                     }
                     else
+                    {
                         faces_changed |= 128;
+                        //printf("FULL QUEUE\n");
+                    }
                 }
             }
 

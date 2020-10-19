@@ -181,7 +181,7 @@ void LAB_UpdateChunk(LAB_World* world, int x, int y, int z, LAB_ChunkUpdate upda
         if(faces&128)
         {
             LAB_ASSUME(chunks[1+3+9]);
-            //printf("UPDATE AGAIN");
+            //printf("UPDATE AGAIN\n");
             chunks[1+3+9]->dirty |= LAB_CHUNK_UPDATE_LIGHT; // TODO: |LAB_CHUNK_UPDATE_LOCAL;
         }
 
@@ -387,6 +387,7 @@ void LAB_WorldTick(LAB_World* world, uint32_t delta_ms)
         if(--rest_gen == 0) break;
     }
 
+    // update chunks
     size_t rest_update = world->max_update;
     for(size_t i = 0; i < world->chunks.capacity; ++i)
     {
@@ -400,6 +401,7 @@ void LAB_WorldTick(LAB_World* world, uint32_t delta_ms)
             if(--rest_update == 0) return;
         }
     }
+    //printf("chunks updated %3i/%3i (cap %i)\r", (int)(world->max_update-rest_update), (int)world->chunks.size, (int)world->max_update);
 
     // Unload chunks
     for(size_t i = 0; i < world->chunks.capacity; ++i)

@@ -38,6 +38,9 @@ int LAB_ConstructWindow(LAB_Window* window, int w, int h, uint32_t sdl_flags)
     //  0 for immediate updates,
     //  1 for updates synchronized with the vertical retrace,
     // -1 for adaptive vsync
+    #if 0
+    SDL_GL_SetSwapInterval(0);
+    #else
     if(SDL_GL_SetSwapInterval(-1) < 0) // Adaptive VSync
     {
         if(SDL_GL_SetSwapInterval(1) < 0) // VSync
@@ -46,6 +49,7 @@ int LAB_ConstructWindow(LAB_Window* window, int w, int h, uint32_t sdl_flags)
             goto INIT_ERROR;
         }
     }
+    #endif
 
 #ifdef LAB_USES_GLEW
     GLenum err = glewInit();

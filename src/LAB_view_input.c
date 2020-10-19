@@ -79,13 +79,32 @@ LAB_STATIC void LAB_GrabMouse(LAB_View* view, LAB_Window* window, int grab)
     }
 }
 
+bool LAB_ViewInput_IsMaskedEvent(LAB_View* view, SDL_Event* event)
+{
+    switch(event->type)
+    {
+        case SDL_KEYDOWN:
+        case SDL_KEYUP:
+        {
+            SDL_Keycode key = event->key.keysym.sym;
+            if(key >= SDLK_F1 && key <= SDLK_F24)
+            {
+                return 1;
+            }
+            return 0;
+        } break;
+        default:
+            return 0;
+    }
+}
+
 
 int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
 {
     LAB_ViewInput* view_input = (LAB_ViewInput*)user;
     LAB_View* view = view_input->view;
 
-    if(LAB_GuiManager_HandleEvent(&view->gui_mgr, event))
+    if(!LAB_ViewInput_IsMaskedEvent(view, event) && LAB_GuiManager_HandleEvent(&view->gui_mgr, event))
     {
         LAB_GuiManager_Tick(&view->gui_mgr);
         if(!view->gui_mgr.component)
@@ -305,20 +324,21 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
         {
             if(SDL_GetWindowGrab(window->window))
             {
+                const float speed = 1.f/4.f;
                 int w, h;
                 SDL_GetWindowSize(window->window, &w, &h);
 
                 SDL_MouseMotionEvent* mmevent = (SDL_MouseMotionEvent*)event;
+                float mx, my;
+                mx = (float)(mmevent->x-w/2) * speed;
+                my = (float)(mmevent->y-h/2) * speed;
                 #if LAB_CLIP_AX
-                view->ay+=(float)(mmevent->x-w/2) / 4.f;
-                view->ax+=(float)(mmevent->y-h/2) / 4.f;
+                view->ay+=mx;
+                view->ax+=my;
 
                 if(view->ax < -90) view->ax = -90;
                 if(view->ax >  90) view->ax =  90;
                 #else
-                float mx, my;
-                mx = (float)(mmevent->x-w/2) / 4.f;
-                my = (float)(mmevent->y-h/2) / 4.f;
 
                 float ax, ay, az;
                 ax = view->ax*(LAB_PI/180.f);
