@@ -33,6 +33,12 @@
 #include "HTL_hasharray.t.c"
 #undef HTL_PARAM
 
+/**
+ *  TODO
+ *  - when the only visible blocks of a chunk are at the chunk border, the cube that is rendered for the chunk z-fights with the z data of
+ *    those rendered blocks
+ */
+
 
 ///############################
 
@@ -62,7 +68,7 @@ LAB_STATIC bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
 LAB_STATIC void LAB_View_UploadChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
 LAB_STATIC void LAB_View_UploadChunks(LAB_View* view);
 
-LAB_STATIC void LAB_RenderBlock(LAB_View* view, float x, float y, float z, float w, float h, float d);
+LAB_STATIC void LAB_RenderBox(LAB_View* view, float x, float y, float z, float w, float h, float d);
 LAB_STATIC void LAB_View_RenderBlockSelection(LAB_View* view);
 
 LAB_STATIC int LAB_View_CompareChunksIndirect(const void* a, const void* b);
@@ -841,12 +847,12 @@ LAB_STATIC void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* ent
 
 
 
-LAB_STATIC void LAB_RenderBlock(LAB_View* view, float x, float y, float z, float w, float h, float d)
+LAB_STATIC void LAB_RenderBox(LAB_View* view, float x, float y, float z, float w, float h, float d)
 {
-#define O (-0.001f)
-#define I ( 1.001f)
-//#define O 0
-//#define I 1
+//#define O (-0.001f)
+//#define I ( 1.001f)
+#define O 0
+#define I 1
     static const float box[] = {
         O, O, O, /*--*/ I, O, O,
         O, O, O, /*--*/ O, I, O,
@@ -867,6 +873,7 @@ LAB_STATIC void LAB_RenderBlock(LAB_View* view, float x, float y, float z, float
 #undef I
 #undef O
 
+    glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glTranslatef(x-view->x, y-view->y, z-view->z);
     if(w!=1||h!=1||d!=1) glScalef(w, h, d);
@@ -905,8 +912,17 @@ LAB_STATIC void LAB_View_RenderBlockSelection(LAB_View* view)
         //glHint(GL_LINE_SMOOTH, GL_NICEST);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glColor4f(0, 0, 0, 0.7);
+
+        glMatrixMode(GL_PROJECTION);
+        glPushMatrix();
+        glScalef(0.99, 0.99, 0.99);
+
         if(memcmp(target, prev, sizeof target) != 0)
-            LAB_RenderBlock(view, target[0], target[1], target[2], 1, 1, 1);
+            LAB_RenderBox(view, target[0], target[1], target[2], 1, 1, 1);
+
+        glMatrixMode(GL_PROJECTION);
+        glPopMatrix();
+        glMatrixMode(GL_MODELVIEW);
         //glColor4f(0, 0, 0, 0.1);
         //LAB_RenderBlockSelection(prev[0], prev[1], prev[2]);
     }
@@ -1105,8 +1121,16 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
         glColor3f(1, 1, 1);
         glDisable(GL_TEXTURE_2D);
         glDisable(GL_BLEND);
-        LAB_RenderBlock(view, xx, yy, zz, 16, 16, 16);
-        LAB_RenderBlock(view, xx, yy, zz, 16, 16, 16);
+
+        glMatrixMode(GL_PROJECTION);
+        glPushMatrix();
+        glScalef(0.99, 0.99, 0.99);
+
+        LAB_RenderBox(view, xx, yy, zz, 16, 16, 16);
+
+        glMatrixMode(GL_PROJECTION);
+        glPopMatrix();
+        glMatrixMode(GL_MODELVIEW);
     }
 
     // Block rendering settings
