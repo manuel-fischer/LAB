@@ -352,7 +352,12 @@ LAB_STATIC void LAB_Gen_Cave_Crystals(LAB_GenOverworld* gen, LAB_Chunk* chunk, i
     {
         for(int i = LAB_NextRandom(&random)&15; i > 0; --i)
         {
-            LAB_Block*const LIGHTS[4] = { &LAB_BLOCK_BLUE_LIGHT, &LAB_BLOCK_YELLOW_LIGHT, &LAB_BLOCK_GREEN_LIGHT, &LAB_BLOCK_RED_LIGHT };
+            LAB_Block*const LIGHTS[4] = {
+                &LAB_BLOCK_BLUE_CRYSTAL,
+                &LAB_BLOCK_YELLOW_CRYSTAL,
+                &LAB_BLOCK_GREEN_CRYSTAL,
+                &LAB_BLOCK_RED_CRYSTAL,
+            };
 
             LAB_Block* light = LIGHTS[LAB_NextRandom(&random)&3];
             int xx = LAB_NextRandom(&random) & 0xf;

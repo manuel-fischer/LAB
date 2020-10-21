@@ -38,6 +38,7 @@ typedef uint32_t LAB_BlockFlags;
 #define LAB_BLOCK_FLAT_SHADE   64u // should be in the model
 #define LAB_BLOCK_EMISSIVE     128u
 #define LAB_BLOCK_GLOWING      (LAB_BLOCK_FLAT_SHADE|LAB_BLOCK_EMISSIVE)
+#define LAB_BLOCK_NOSHADE      256u
 
 
 
@@ -81,6 +82,10 @@ extern LAB_Block LAB_BLOCK_OUTSIDE,
                  LAB_BLOCK_YELLOW_LIGHT,
                  LAB_BLOCK_GREEN_LIGHT,
                  LAB_BLOCK_RED_LIGHT,
+                 LAB_BLOCK_BLUE_CRYSTAL,
+                 LAB_BLOCK_YELLOW_CRYSTAL,
+                 LAB_BLOCK_GREEN_CRYSTAL,
+                 LAB_BLOCK_RED_CRYSTAL,
                  LAB_BLOCK_INVISIBLE_LIGHT,
                  LAB_BLOCK_BARRIER;
 

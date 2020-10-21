@@ -314,7 +314,17 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
     //#define MAP_LIGHT_0(x) LAB_ColorHI4(x)
     #define MAP_LIGHT_0(x) (x)
     #define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor_Fast(LAB_MulColor_Fast(~(x), ~(x)), LAB_MulColor_Fast(~(x), ~(x))):(x))
-    if((view->flags&LAB_VIEW_FLAT_SHADE)||(block->flags&LAB_BLOCK_FLAT_SHADE))
+    if(block->flags&LAB_BLOCK_NOSHADE)
+    {
+        const LAB_Model* model = block->model;
+        if(!model) return;
+        LAB_Triangle* tri;
+        tri = LAB_ViewMeshAlloc(mesh, model->size, 0);
+        if(LAB_UNLIKELY(tri == NULL)) return;
+        int count = LAB_PutModelAt(tri, model, x, y, z, faces, visibility);
+        mesh->size -= model->size-count;
+    }
+    else if((view->flags&LAB_VIEW_FLAT_SHADE)||(block->flags&LAB_BLOCK_FLAT_SHADE))
     {
         LAB_Color light_sides[7];
         for(int face_itr=lum_faces; face_itr; face_itr &= face_itr-1)
