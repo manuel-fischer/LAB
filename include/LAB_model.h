@@ -6,6 +6,71 @@
 
 // TODO setting to switch between triangle rendering and quad rendering
 
+/* Triangle occlusion (culling) -- TODO
+ *
+ * 32[     24[     16[      8[      0[
+ * 0b00000000DDDDDDCCCCCCBBBBBBAAAAAA
+ *
+ * Groups
+ * - A: selectors of     solid   faces, those are combined with OR (default true)
+ * - B: selectors of not solid   faces, those are combined with OR (default true)
+ * - C: selectors of     similar faces, those are combined with OR (default true)
+ * - D: selectors of not similar faces, those are combined with OR (default true)
+ * each group combined with AND
+ *
+ * If a bitset group has no bits set in the vertex data, the resulting truth value is true
+ * NOTE: if there are no solid faces, the model is not rendered (see LAB_view.c)
+ *
+ *
+ * combining a selection of a bitset with a binary op can be done easily in C
+ *
+ * Selecting bits for an operation is done as follows
+ *  _____
+ *  \    |
+ *   \
+ *    OP  bits   =  (bits & sel)
+ *   /        i
+ *  /____|
+ *  i ∊ sel
+ *
+ *
+ *  - AND (default true)
+ *      /\
+ *     /  \
+ *    /    \   bits   =  (bits & sel) == sel
+ *   /      \      i
+ *  /        \
+ *    i ∊ sel
+ *
+ *  - OR (default false)
+ *  \        /
+ *   \      /
+ *    \    /   bits   =  (bits & sel) != 0
+ *     \  /        i
+ *      \/
+ *    i ∊ sel
+ *
+ *  - OR (default true) -> LAB_BITOR_TRUE
+ *  \        /
+ *   \      /
+ *    \    /   bits   =  sel == 0 || (bits & sel) != 0
+ *     \  /        i
+ *      \/
+ *    i ∊ sel
+ *
+ */
+#define LAB_CULL_SELECTOR(sel_solid, sel_not_solid, sel_similar, sel_not_similar) \
+            ((sel_solid) | (sel_not_solid) << 6 | (sel_similar) << 12 | (sel_not_similar) << 18)
+#define LAB_CULL_BITS(solid, similar) \
+            ((solid) | (similar) << 6)
+#define LAB_BITOR_TRUE(bits, selector) \
+            ((selector) == 0 | ((bits) & (selector)) != 0)
+#define LAB_CULL_CHECK(bits, selector) \
+            (LAB_BITOR_TRUE((bits)    & 077, (selector)     & 077) & \
+             LAB_BITOR_TRUE((bits)    & 077, (selector)>> 6 & 077) & \
+             LAB_BITOR_TRUE((bits)>>6 & 077, (selector)>>12 & 077) & \
+             LAB_BITOR_TRUE((bits)>>6 & 077, (selector)>>18 & 077))
+
 /**
  *  the flags field of the first vertex of a triangle
  *  contains the faces to cull
