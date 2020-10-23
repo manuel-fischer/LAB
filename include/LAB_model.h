@@ -9,14 +9,31 @@
 /* Triangle occlusion (culling) -- TODO
  *
  * 32[     24[     16[      8[      0[
- * 0b00000000DDDDDDCCCCCCBBBBBBAAAAAA
+ * 0bJJJJJJJJDDDDDDCCCCCCBBBBBBAAAAAA
  *
  * Groups
- * - A: selectors of     solid   faces, those are combined with OR (default true)
- * - B: selectors of not solid   faces, those are combined with OR (default true)
- * - C: selectors of     similar faces, those are combined with OR (default true)
- * - D: selectors of not similar faces, those are combined with OR (default true)
+ * - A: selectors of     solid   faces, those are combined with AND (default true)
+ * - B: selectors of not solid   faces, those are combined with AND (default true)
+ * - C: selectors of     similar faces, those are combined with AND (default true)
+ * - D: selectors of not similar faces, those are combined with AND (default true)
  * each group combined with AND
+ * - J: jump/skip amount, allows to skip multiple triangles, the triangles are only skipped
+ *      if the triangle was not culled
+ *
+ * Previously the bits in a group were combined with OR, it makes more sence to use
+ * AND here, it allows to enable a triangle only for a specific case
+ *
+ * The jump amount allows to simplify the models and allows to only keep one triangle if
+ * its visible from two faces
+ *
+ * TODO: make dependent on all 27 neighboring blocks instead of just 6
+ *       -> allows for connected models and overlays
+ * TODO: add layer property to triangle, triangles in a chunk are sorted by this property
+ *       by iteratively rendering models with the triangles on the first layer, then the
+ *       second etc..
+ *       - multiple render passes with the same blending behavior
+ *       -> allows for overlays
+ *
  *
  * If a bitset group has no bits set in the vertex data, the resulting truth value is true
  * NOTE: if there are no solid faces, the model is not rendered (see LAB_view.c)
@@ -57,6 +74,10 @@
  *     \  /        i
  *      \/
  *    i ∊ sel
+ *
+ */
+/* NOP triangle
+ * - set visible faces to 0, the face is never copied but jumping is possible
  *
  */
 #define LAB_CULL_SELECTOR(sel_solid, sel_not_solid, sel_similar, sel_not_similar) \
