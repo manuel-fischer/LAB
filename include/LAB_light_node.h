@@ -2,7 +2,21 @@
 
 #include <stdlib.h>
 
-/**
+/** V2 Directional Light
+ *
+ *  Each block has 6 light values/light fields, for each side/direction
+ *
+ *  Light is directional, it keeps the direction/light field, unless it is reflected from a block
+ *
+ *  The light propagates from X in the following way, seen from the side:
+ *
+ *  +---+---+---+  ^
+ *  |25%|50%|25%|  |
+ *  +---+---+---+  |
+ *      | X |      |
+ *      +---+      |
+ */
+/** V1
                 x x o o o x x .
                 x x o o o x x .
                 o o x x x o o .
