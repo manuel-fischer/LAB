@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdlib.h>
+#include "LAB_color.h"
 
 /** V2 Directional Light
  *
@@ -10,12 +11,41 @@
  *
  *  The light propagates from X in the following way, seen from the side:
  *
- *  +---+---+---+  ^
- *  |25%|50%|25%|  |
- *  +---+---+---+  |
- *      | X |      |
- *      +---+      |
+ *  +-----+-----+-----+  ^
+ *  | 1/4 | 1/2 | 1/4 |  |
+ *  +-----+-----+-----+  |
+ *        |  X  |        |
+ *        +-----+        |
+ *
+ *  Seen from the direction of the light, there is a 3x3 matrix, that splits up the light among all 9 blocks
+ *
+ *  +-----+-----+-----+
+ *  | 1/16| 1/8 | 1/16|
+ *  +-----+-----+-----+
+ *  | 1/8 | 1/4 | 1/8 |
+ *  +-----+-----+-----+
+ *  | 1/16| 1/8 | 1/16|
+ *  +-----+-----+-----+
+ *
+ *  The values in the matrix correspond to an angle of the light field of 90° (2*45°), it results in a multinomial distribution,
+ *  TODO: is this the widest possible angle, or is an angle of 180° (2*90°) possible
+ *  If the angle of the light field is narrower, more light is concentrated on the center cell.
+ *
+ *  There are 4 parameters that describe the field of light, two for each axis (one for each direction) perpendicular
+ *  to the direction of the light.
+ *  These values describe how much light propagates to the outer column/row, a value of 0 means that no light propagates to
+ *  that outer column,
+ *
+ *  TODO: test light first with a fixed angle parameter of 2*45°
+ *
+ *  The light for rendering is calculated from all 6 light color values
  */
+typedef struct LAB_LightNode
+{
+    LAB_Color faces[6];
+} LAB_LightNode;
+
+ #if 0
 /** V1
                 x x o o o x x .
                 x x o o o x x .
@@ -99,4 +129,4 @@ typedef struct LAB_LightNode
 #define LAB_LIGHT_RIGHT(light_edge)   ((light_edge) <<  4 & 0x0001030707070301ll)
 #define LAB_LIGHT_UP(light_edge)      ((light_edge) >> 32 & 0x00ff7e3c00000000ll)
 #define LAB_LIGHT_DOWN(light_edge)    ((light_edge) << 32 & 0x00000000003c7effll)
-
+#endif
