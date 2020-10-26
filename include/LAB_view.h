@@ -44,6 +44,15 @@ typedef struct LAB_ViewChunkEntry
     LAB_View_Mesh render_passes[LAB_RENDER_PASS_COUNT];
     LAB_TriangleOrder* mesh_order; // for LAB_RENDER_PASS_ALPHA
 
+    // LAB_ViewChunkEntry* neighbors[6]; // TODO: make table entries to pointers, remove occupied flag
+                                         // TODO: point to neighbor entries here,
+                                         //       when a new entry is created:
+                                         //       - iterate neighboring chunk entries
+                                         //         by looking them up in the hash table
+                                         //       - add the chunk entry itself to them
+                                         //       - add neighboring chunk entries to itself
+                                         //    -> use entry->neighbors[face] instead of table lookup with x+LAB_OX(face), ...
+
     unsigned dirty:2,       // chunk needs update
              exist:1,       // chunk exists in world
              visible:1,     // chunk is visible when in sight
@@ -74,12 +83,12 @@ LAB_INLINE LAB_ChunkPos LAB_MakeChunkPos(int x, int y, int z)
 
 #define LAB_VIEW_CHUNK_TBL_NAME              LAB_View_ChunkTBL
 #define LAB_VIEW_CHUNK_TBL_KEY_TYPE          LAB_ChunkPos
-#define LAB_VIEW_CHUNK_TBL_ENTRY_TYPE        LAB_ViewChunkEntry
-#define LAB_VIEW_CHUNK_TBL_KEY_FUNC(e)       (LAB_MakeChunkPos((e)->x, (e)->y, (e)->z))
+#define LAB_VIEW_CHUNK_TBL_ENTRY_TYPE        LAB_ViewChunkEntry*
+#define LAB_VIEW_CHUNK_TBL_KEY_FUNC(e)       (LAB_MakeChunkPos((*(e))->x, (*(e))->y, (*(e))->z))
 #define LAB_VIEW_CHUNK_TBL_HASH_FUNC(k)      LAB_ChunkPosHash(k)
 #define LAB_VIEW_CHUNK_TBL_COMP_FUNC(k1,k2)  LAB_ChunkPosComp(k1, k2)
 
-#define LAB_VIEW_CHUNK_TBL_EMPTY_FUNC(e)     (!(e)->occupied)
+#define LAB_VIEW_CHUNK_TBL_EMPTY_FUNC(e)     (*(e) == NULL)
 
 #define LAB_VIEW_CHUNK_TBL_CALLOC            LAB_Calloc
 #define LAB_VIEW_CHUNK_TBL_FREE              LAB_Free

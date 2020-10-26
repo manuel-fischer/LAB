@@ -62,6 +62,7 @@ LAB_STATIC void LAB_View_OrderQueryChunks(LAB_View* view);
 LAB_STATIC void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
 LAB_STATIC void LAB_ViewRemoveDistantChunks(LAB_View* view);
 LAB_STATIC void LAB_ViewDestructChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
+LAB_STATIC void LAB_ViewDestructFreeChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
 
 LAB_STATIC void LAB_ViewUploadVBO(LAB_View* view, LAB_View_Mesh* mesh);
 LAB_STATIC bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
@@ -112,9 +113,9 @@ void LAB_DestructView(LAB_View* view)
     LAB_FpsGraph_Destroy(&view->fps_graph);
 
     LAB_ViewChunkEntry* e;
-    HTL_HASHARRAY_EACH(LAB_View_ChunkTBL, &view->chunks, e,
+    HTL_HASHARRAY_EACH_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
     {
-        LAB_ViewDestructChunk(view, e);
+        LAB_ViewDestructFreeChunk(view, e);
     });
 
     LAB_View_ChunkTBL_Destroy(&view->chunks);
@@ -521,7 +522,7 @@ LAB_STATIC void LAB_ViewUpdateChunks(LAB_View* view)
 
     int dist_sq = view->render_dist*view->render_dist + 3;
     LAB_ViewChunkEntry* e;
-    HTL_HASHARRAY_EACH(LAB_View_ChunkTBL, &view->chunks, e,
+    HTL_HASHARRAY_EACH_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
     {
         int cx, cy, cz;
         cx = e->x;
@@ -654,7 +655,7 @@ LAB_STATIC void LAB_View_UploadChunks(LAB_View* view)
 
     int dist_sq = view->render_dist*view->render_dist + 3;
     LAB_ViewChunkEntry* e;
-    HTL_HASHARRAY_EACH(LAB_View_ChunkTBL, &view->chunks, e,
+    HTL_HASHARRAY_EACH_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
     {
         int cx, cy, cz;
         cx = e->x;
@@ -673,7 +674,7 @@ LAB_STATIC void LAB_View_UploadChunks(LAB_View* view)
 LAB_STATIC void LAB_View_FetchQueryChunks(LAB_View* view)
 {
     LAB_ViewChunkEntry* e;
-    HTL_HASHARRAY_EACH(LAB_View_ChunkTBL, &view->chunks, e,
+    HTL_HASHARRAY_EACH_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
     {
         if(e->query_id)
             LAB_View_FetchQueryChunk(view, e);
@@ -724,7 +725,7 @@ LAB_STATIC void LAB_View_OrderQueryChunks(LAB_View* view)
 
     int dist_sq = view->render_dist*view->render_dist + 3;
     LAB_ViewChunkEntry* e;
-    HTL_HASHARRAY_EACH(LAB_View_ChunkTBL, &view->chunks, e,
+    HTL_HASHARRAY_EACH_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
     {
         int cx, cy, cz;
         cx = e->x;
@@ -1242,36 +1243,11 @@ void LAB_ViewRemoveDistantChunks(LAB_View* view)
     int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
 
     int dist_sq = view->keep_dist*view->keep_dist + 3;
-    #if 0
-    size_t a = 0;
-    for(size_t i = 0; i < view->chunks.capacity; ++i)
-    if(view->chunks[i].occupied)
-    {
-        int cx, cy, cz;
-        cx = view->chunks[i].x;
-        cy = view->chunks[i].y;
-        cz = view->chunks[i].z;
-        if((cx-px)*(cx-px) + (cy-py)*(cy-py) + (cz-pz)*(cz-pz) <= dist_sq)
-        {
-            if(a != i)
-            {
-                //memcpy(&view->chunks[a], &view->chunks[i], sizeof *view->chunks);
-                view->chunks[a] = view->chunks[i];
-            }
-            ++a;
-        }
-        else
-        {
-            LAB_ViewDestructChunk(view, &view->chunks[i]);
-        }
-    }
-    view->chunk_count = a;
-    #else
+
     LAB_ViewChunkEntry* e;
-    HTL_HASHARRAY_REMOVE(LAB_View_ChunkTBL, &view->chunks, e,
-                         (e->x-px)*(e->x-px) + (e->y-py)*(e->y-py) + (e->z-pz)*(e->z-pz) > dist_sq,
-                         {LAB_ViewDestructChunk(view, e);});
-    #endif
+    HTL_HASHARRAY_REMOVE_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
+                               (e->x-px)*(e->x-px) + (e->y-py)*(e->y-py) + (e->z-pz)*(e->z-pz) > dist_sq,
+                               {LAB_ViewDestructFreeChunk(view, e);});
 }
 
 
@@ -1280,17 +1256,9 @@ void LAB_ViewRemoveDistantChunks(LAB_View* view)
 
 LAB_ViewChunkEntry* LAB_ViewFindChunkEntry(LAB_View* view, int x, int y, int z)
 {
-#if 0
-    for(size_t i = 0; i < view->chunks.capacity; ++i)
-    if(view->chunks[i].occupied)
-    {
-        if(view->chunks[i].x == x && view->chunks[i].y == y && view->chunks[i].z == z)
-            return &view->chunks[i];
-    }
-    return NULL;
-#endif
     LAB_ChunkPos pos = {x, y, z};
-    return LAB_View_ChunkTBL_Get(&view->chunks, pos);
+    LAB_ViewChunkEntry** entry = LAB_View_ChunkTBL_Get(&view->chunks, pos);
+    return entry?*entry:NULL;
 }
 
 /**
@@ -1298,48 +1266,22 @@ LAB_ViewChunkEntry* LAB_ViewFindChunkEntry(LAB_View* view, int x, int y, int z)
  */
 LAB_ViewChunkEntry* LAB_ViewNewChunkEntry(LAB_View* view, int x, int y, int z)
 {
-#if 0
-    LAB_ViewChunkEntry* chunks;
-    size_t chunk_count, chunk_capacity;
-
-    chunks = view->chunks;
-    chunk_count = view->chunk_count;
-    chunk_capacity = view->chunk_capacity;
-
-    //if(LAB_UNLIKELY(view->chunk_count >= chunk_capacity))
-    if(view->chunk_count >= chunk_capacity)
-    {
-        if(chunk_capacity == 0)
-            chunk_capacity = 16;
-        else
-            chunk_capacity *= 2;
-
-        chunks = LAB_ReallocN(chunks, chunk_capacity, sizeof *chunks);
-        if(!chunks) return NULL;
-        view->chunk_capacity = chunk_capacity;
-        view->chunks = chunks;
-    }
-
-    memset(&chunks[chunk_count], 0, sizeof *chunks);
-    chunks[chunk_count].x = x;
-    chunks[chunk_count].y = y;
-    chunks[chunk_count].z = z;
-    //chunks[chunk_count].visible = 1; // <-- TODO: remove from here
-    //chunks[chunk_count].do_query = 1;
-    view->chunk_count++;
-
-    return &chunks[chunk_count];
-#endif
     LAB_ChunkPos pos = {x, y, z};
-    LAB_ViewChunkEntry* entry;
+    LAB_ViewChunkEntry** entry;
     entry = LAB_View_ChunkTBL_PutAlloc(&view->chunks, pos);
     if(LAB_UNLIKELY(!entry)) return NULL;
-    // memset 0
-    entry->x = x;
-    entry->y = y;
-    entry->z = z;
-    entry->occupied = 1;
-    return entry;
+    *entry = LAB_Calloc(1, sizeof**entry);
+    if(!*entry)
+    {
+        LAB_View_ChunkTBL_Discard(&view->chunks, entry);
+        return NULL;
+    }
+
+    // memset 0 -> calloc
+    (*entry)->x = x;
+    (*entry)->y = y;
+    (*entry)->z = z;
+    return *entry;
 }
 
 
@@ -1356,14 +1298,14 @@ void LAB_ViewInvalidateEverything(LAB_View* view, int free_buffers)
 {
     LAB_ViewChunkEntry* e;
 
-    HTL_HASHARRAY_EACH(LAB_View_ChunkTBL, &view->chunks, e,
+    HTL_HASHARRAY_EACH_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
     {
         e->dirty = ~0;
     });
 
     if(free_buffers)
     {
-        HTL_HASHARRAY_EACH(LAB_View_ChunkTBL, &view->chunks, e,
+        HTL_HASHARRAY_EACH_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
         {
             for(int i = 0; i < LAB_RENDER_PASS_COUNT; ++i)
             {
@@ -1442,7 +1384,7 @@ LAB_STATIC void LAB_View_SortChunks(LAB_View* view, uint32_t delta_ms)
     LAB_ViewChunkEntry* e;
     float dir[3];
     LAB_ViewGetDirection(view, dir);
-    HTL_HASHARRAY_EACH(LAB_View_ChunkTBL, &view->chunks, e,
+    HTL_HASHARRAY_EACH_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
     {
         view->sorted_chunks[i].entry = e;
 
@@ -1725,4 +1667,10 @@ void LAB_ViewDestructChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
         glDeleteQueries(1, &chunk_entry->query_id); LAB_GL_DEBUG_FREE(1);
     }
     #endif
+}
+
+void LAB_ViewDestructFreeChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
+{
+    LAB_ViewDestructChunk(view, chunk_entry);
+    LAB_Free(chunk_entry);
 }

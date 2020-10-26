@@ -32,26 +32,6 @@
 #include "HTL_queue.t.c"
 #undef HTL_PARAM*/
 
-unsigned LAB_ChunkPosHash(LAB_ChunkPos pos)
-{
-    //return (unsigned)pos.x*257 + (unsigned)pos.y*8191 + (unsigned)pos.y*65537;
-    //return (unsigned)pos.x*7 + (unsigned)pos.y*13 + (unsigned)pos.y*19;
-    return (unsigned)pos.x
-         ^ (unsigned)pos.y << (unsigned)6 ^ pos.y << 4
-         ^ (unsigned)pos.z << (unsigned)2 ^ pos.z << 7;
-}
-
-int LAB_ChunkPosComp(LAB_ChunkPos a, LAB_ChunkPos b)
-{
-    //return a.x != b.x || a.y != b.y || a.z != b.z;
-    //return (a.x != b.x) | (a.y != b.y) | (a.z != b.z);
-    //return memcmp(&a, &b, sizeof a)!=0;
-    LAB_ChunkPos tmp_a, tmp_b;
-    tmp_a=a; tmp_b=b;
-    return memcmp(&tmp_a, &tmp_b, sizeof a)!=0;
-}
-
-
 
 int LAB_ConstructWorld(LAB_World* world)
 {
