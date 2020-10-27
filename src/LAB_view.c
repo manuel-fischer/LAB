@@ -63,6 +63,9 @@ LAB_STATIC void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* chu
 LAB_STATIC void LAB_ViewRemoveDistantChunks(LAB_View* view);
 LAB_STATIC void LAB_ViewDestructChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
 LAB_STATIC void LAB_ViewDestructFreeChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
+/** unlink, destruct and free chunk **/
+LAB_STATIC void LAB_ViewUnlinkChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
+
 
 LAB_STATIC void LAB_ViewUploadVBO(LAB_View* view, LAB_View_Mesh* mesh);
 LAB_STATIC bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
@@ -115,6 +118,7 @@ void LAB_DestructView(LAB_View* view)
     LAB_ViewChunkEntry* e;
     HTL_HASHARRAY_EACH_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
     {
+        // unlinking not nessesary
         LAB_ViewDestructFreeChunk(view, e);
     });
 
@@ -1247,7 +1251,7 @@ void LAB_ViewRemoveDistantChunks(LAB_View* view)
     LAB_ViewChunkEntry* e;
     HTL_HASHARRAY_REMOVE_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
                                (e->x-px)*(e->x-px) + (e->y-py)*(e->y-py) + (e->z-pz)*(e->z-pz) > dist_sq,
-                               {LAB_ViewDestructFreeChunk(view, e);});
+                               {LAB_ViewUnlinkChunk(view, e);});
 }
 
 
@@ -1281,6 +1285,15 @@ LAB_ViewChunkEntry* LAB_ViewNewChunkEntry(LAB_View* view, int x, int y, int z)
     (*entry)->x = x;
     (*entry)->y = y;
     (*entry)->z = z;
+    for(int face = 0; face < 6; ++face)
+    {
+        LAB_ViewChunkEntry* neighbor = LAB_ViewFindChunkEntry(view, x+LAB_OX(face), y+LAB_OY(face), z+LAB_OZ(face));
+        if(neighbor)
+        {
+            (*entry)->neighbors[face]   = neighbor;
+            neighbor->neighbors[face^1] = *entry;
+        }
+    }
     return *entry;
 }
 
@@ -1673,4 +1686,17 @@ void LAB_ViewDestructFreeChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 {
     LAB_ViewDestructChunk(view, chunk_entry);
     LAB_Free(chunk_entry);
+}
+
+void LAB_ViewUnlinkChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
+{
+    for(int face = 0; face < 6; ++face)
+    {
+        LAB_ViewChunkEntry* neighbor = chunk_entry->neighbors[face];
+        if(neighbor)
+        {
+            neighbor->neighbors[face^1] = NULL;
+        }
+    }
+    LAB_ViewDestructFreeChunk(view, chunk_entry);
 }

@@ -324,7 +324,7 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
         {
             if(SDL_GetWindowGrab(window->window))
             {
-                const float speed = 1.f/4.f;
+                const float speed = 1.f/10.f;
                 int w, h;
                 SDL_GetWindowSize(window->window, &w, &h);
 
