@@ -153,11 +153,12 @@ void LAB_UpdateChunk(LAB_World* world, int x, int y, int z, LAB_ChunkUpdate upda
         LAB_Chunk* chunks[27];
         LAB_GetChunkNeighborhood(world, chunks, x, y, z, LAB_CHUNK_EXISTING);
         int faces = LAB_TickLight(world, chunks, x, y, z);
-        for(int face_itr=faces&63; face_itr; face_itr &= face_itr-1)
+
+        int face;
+        LAB_DIR_EACH(faces&63, face,
         {
-            int face = LAB_Ctz(face_itr);
             LAB_UpdateChunkLater(world, x+LAB_OX(face), y+LAB_OY(face), z+LAB_OZ(face), LAB_CHUNK_UPDATE_LIGHT);
-        }
+        });
         if(faces&128)
         {
             LAB_ASSUME(chunks[1+3+9]);

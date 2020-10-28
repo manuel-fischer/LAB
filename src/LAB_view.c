@@ -50,6 +50,7 @@ LAB_STATIC bool LAB_ViewUpdateChunk(LAB_View* view, LAB_ViewChunkEntry* e);
 LAB_STATIC void LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass);
 LAB_STATIC bool LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_RenderPass pass);
 
+LAB_STATIC bool LAB_View_HasChunkEntryVisibleNeighbors(LAB_View* view, LAB_ViewChunkEntry* e);
 LAB_STATIC bool LAB_View_HasChunkVisibleNeighbors(LAB_View* view, int x, int y, int z);
 LAB_STATIC bool LAB_View_IsLocalChunk(LAB_View* view, int cx, int cy, int cz);
 LAB_STATIC unsigned LAB_View_ChunkVisibility(LAB_View* view, int cx, int cy, int cz);         // inclusive for same coordinates
@@ -332,12 +333,13 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
     else if((view->flags&LAB_VIEW_FLAT_SHADE)||(block->flags&LAB_BLOCK_FLAT_SHADE))
     {
         LAB_Color light_sides[7];
-        for(int face_itr=lum_faces; face_itr; face_itr &= face_itr-1)
+
+        int face;
+        LAB_DIR_EACH(lum_faces, face,
         {
-            int face = LAB_Ctz(face_itr);
-            //const int* o = LAB_offset[face];
             light_sides[face] = MAP_LIGHT(MAP_LIGHT_0(LAB_GetNeighborhoodLight(cnk3x3x3, x+LAB_OX(face), y+LAB_OY(face), z+LAB_OZ(face), LAB_RGB(255, 255, 255))));
-        }
+        });
+
         light_sides[6] = MAP_LIGHT(MAP_LIGHT_0(LAB_GetNeighborhoodLight(cnk3x3x3, x, y, z, LAB_RGB(255, 255, 255))));
 
 
@@ -353,15 +355,16 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
     {
         LAB_Color default_color = chunk_entry->y<-2 ? LAB_RGB(15, 15, 15) : LAB_RGB(255, 255, 255);
         LAB_Color light_sides[7][4];
-        for(int face_itr=lum_faces; face_itr; face_itr &= face_itr-1)
+
+        #define XX(xd, yd, zd) LAB_GetNeighborhoodLight(cnk3x3x3, x+ox+(xd), y+oy+(yd), z+oz+(zd), default_color)
+        int face;
+        LAB_DIR_EACH(lum_faces, face,
         {
-            int face = LAB_Ctz(face_itr);
             //const int* o = LAB_offset[face];
             int ox = LAB_OX(face);
             int oy = LAB_OY(face);
             int oz = LAB_OZ(face);
 
-            #define XX(xd, yd, zd) LAB_GetNeighborhoodLight(cnk3x3x3, x+ox+(xd), y+oy+(yd), z+oz+(zd), default_color)
             int ax = LAB_AX(face>>1); // LAB_offsetA[face>>1][0];
             int ay = LAB_AY(face>>1); // LAB_offsetA[face>>1][1];
             int az = LAB_AZ(face>>1); // LAB_offsetA[face>>1][2];
@@ -399,8 +402,8 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
             light_sides[face][2] = MAP_LIGHT(LAB_MixColor4x25(tmp[3], tmp[4], tmp[6], tmp[7]));
             light_sides[face][3] = MAP_LIGHT(LAB_MixColor4x25(tmp[4], tmp[5], tmp[7], tmp[8]));
 
-            #undef XX
-        }
+        });
+        #undef XX
 
         light_sides[6][0] =
         light_sides[6][1] =
@@ -743,7 +746,7 @@ LAB_STATIC void LAB_View_OrderQueryChunks(LAB_View* view)
             e->visible = 1;
         else if(c_dist_sq <= dist_sq)
         {
-            if(!LAB_View_HasChunkVisibleNeighbors(view, cx, cy, cz))
+            if(!LAB_View_HasChunkEntryVisibleNeighbors(view, e))
             {
                 e->do_query = 0;
                 e->visible = 0;
@@ -1190,8 +1193,15 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
         glDisableClientState(GL_COLOR_ARRAY);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
         glDisable(GL_TEXTURE_2D);
+        glMatrixMode(GL_PROJECTION);
+        glPushMatrix();
+        glScalef(0.999, 0.999, 0.999);
+        glMatrixMode(GL_MODELVIEW);
         glColor4f(1, 1, 1, 1);
         LAB_View_OrderQueryChunks(view);
+        glMatrixMode(GL_PROJECTION);
+        glPopMatrix();
+        glMatrixMode(GL_MODELVIEW);
         glEnableClientState(GL_COLOR_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
         glEnable(GL_TEXTURE_2D);
@@ -1431,21 +1441,33 @@ void LAB_ViewTick(LAB_View* view, uint32_t delta_ms)
 LAB_STATIC bool LAB_View_HasChunkVisibleNeighbors(LAB_View* view, int x, int y, int z)
 {
     int faces = LAB_View_ChunkNeighborVisibility(view, x, y, z);
-    LAB_UNROLL(6)
-    for(; faces; faces&=faces-1)
-    {
-        int i = LAB_Ctz(faces);
 
+    int i;
+    LAB_DIR_EACH(faces, i,
+    {
         //const int* off = LAB_offset[i];
         int xx = x + LAB_OX(i);
         int yy = y + LAB_OY(i);
         int zz = z + LAB_OZ(i);
-        LAB_ViewChunkEntry* entry = LAB_ViewFindChunkEntry(view, xx, yy, zz);
-        if(entry && entry->visible) return 1;
-    }
+        LAB_ViewChunkEntry* neighbor = LAB_ViewFindChunkEntry(view, xx, yy, zz);
+        if(neighbor && neighbor->visible) return 1;
+    });
     return 0;
 }
 
+
+LAB_STATIC bool LAB_View_HasChunkEntryVisibleNeighbors(LAB_View* view, LAB_ViewChunkEntry* entry)
+{
+    int faces = LAB_View_ChunkNeighborVisibility(view, entry->x, entry->y, entry->z);
+
+    int i;
+    LAB_DIR_EACH(faces, i,
+    {
+        LAB_ViewChunkEntry* neighbor = entry->neighbors[i];
+        if(neighbor && neighbor->visible) return 1;
+    });
+    return 0;
+}
 LAB_STATIC bool LAB_View_IsLocalChunk(LAB_View* view, int cx, int cy, int cz)
 {
     int   vxi, vyi, vzi;
@@ -1636,8 +1658,8 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
                             continue;
                         }
 
-                        if(r > 1 && !LAB_View_HasChunkVisibleNeighbors(view, xx, yy, zz))
-                            continue;
+                        //if(r > 1 && !LAB_View_HasChunkVisibleNeighbors(view, xx, yy, zz))
+                        //    continue;
 
                         LAB_ViewChunkEntry* entry = LAB_ViewFindChunkEntry(view, xx, yy, zz);
                         if(entry == NULL)
