@@ -2,14 +2,16 @@
 
 #include "LAB_attr.h"
 
-// TODO: Render passes   ALPHA_TEST           BLEND            MIPMAPPING       CHUNK_ORDER    CHUNK_SORTED  DEPTH_MASK  DEPTH_TEST
-// RENDER_PASS_SOLID         no                 no                yes             forward           no           yes        yes
-// RENDER_PASS_MASKED      >=32                 no                yes             forward           no           yes        yes
-// RENDER_PASS_BLIT        >=32                 no                 no             forward           no           yes        yes
+// Render passes         ALPHA_TEST           BLEND            MIPMAPPING       CHUNK_ORDER    CHUNK_SORTED  DEPTH_MASK  DEPTH_TEST  DEPTH_OFFSET  IMPLEMENTED
+// RENDER_PASS_SOLID         no                 no                yes             forward           no           yes        yes           no           yes
+// RENDER_PASS_MASKED      >=32                 no                yes             forward           no           yes        yes           no           yes
+// RENDER_PASS_BLIT        >=32                 no                 no             forward           no           yes        yes           no           yes
 // -- QUERIES --
-// RENDER_PASS_ALPHA       >= 1       src*src.a+dst*(1-src.a)     yes             backward         yes           yes        yes
-// RENDER_PASS_MULT2       >= 1       src*dst  +dst*src           yes            don't care         no            no        yes
-// RENDER_PASS_ADD         >= 1       src*1    +dst*1             yes            don't care         no            no        yes
+// RENDER_PASS_OVERLAY     >= 1       src*src.a+dst*(1-src.a)     yes             backward          no           yes        yes          yes            no
+// RENDER_PASS_ALPHA       >= 1       src*src.a+dst*(1-src.a)     yes             backward         yes           yes        yes           no           yes
+// RENDER_PASS_MULT2       >= 1       src*dst  +dst*src           yes            don't care         no            no        yes           no            no
+// RENDER_PASS_ADD         >= 1       src*1    +dst*1             yes            don't care         no            no        yes           no            no
+
 
 
 typedef int LAB_RenderPass;

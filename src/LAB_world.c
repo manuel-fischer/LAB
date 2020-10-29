@@ -220,12 +220,14 @@ void LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType flags
     chunk->blocks[LAB_CHUNK_OFFSET(x&LAB_CHUNK_MASK, y&LAB_CHUNK_MASK, z&LAB_CHUNK_MASK)] = block;
     //LAB_NotifyChunkLater(world, cx, cy, cz);
     chunk->modified = 1;
+    chunk->dirty_blocks = LAB_CCPS_AddPos(chunk->dirty_blocks, x&LAB_CHUNK_MASK, y&LAB_CHUNK_MASK, z&LAB_CHUNK_MASK);
     LAB_UpdateChunkLater(world, cx, cy, cz, LAB_CHUNK_UPDATE_BLOCK);
 }
 
 void LAB_FillBlocks(LAB_World* world, int x0, int y0, int z0, int x1, int y1, int z1, LAB_ChunkPeekType flags, LAB_Block* block)
 {
     // TODO optimize without repeeking chunks
+    //      and effectively change chunk->dirty_blocks
     for(int z = z0; z < z1; ++z)
     for(int y = y0; y < y1; ++y)
     for(int x = x0; x < x1; ++x)

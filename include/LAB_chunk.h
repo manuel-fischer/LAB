@@ -3,6 +3,7 @@
 #include "LAB_block.h"
 #include "LAB_light_node.h"
 #include "LAB_color.h"
+#include "LAB_crammed_chunk_pos_set.h"
 
 typedef struct LAB_World LAB_World;
 
@@ -36,6 +37,7 @@ typedef struct LAB_Chunk
                  modified:1,
                  light_generated:1,
                  pseudo:1; // chunk does not exist, this is a dummy chunk
+    LAB_CrammedChunkPosSet dirty_blocks; // used for updating light, set by world
     int age;
 } LAB_Chunk;
 

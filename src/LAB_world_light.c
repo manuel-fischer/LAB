@@ -156,7 +156,10 @@ LAB_STATIC LAB_Color LAB_CalcLight(LAB_World* world, LAB_Chunk*const chunks[27],
  *  S, N, U, D, E, W: Neighboring chunk needs to be updated
  */
 LAB_ALWAYS_INLINE
-LAB_STATIC int LAB_UpdateLight_First(LAB_World* world, LAB_Chunk*const chunks[27], LAB_Color default_color, LAB_Color default_color_above, size_t queue_cap, int* queue, size_t* queue_count)
+LAB_STATIC int LAB_UpdateLight_First(LAB_World* world, LAB_Chunk*const chunks[27],
+                                     LAB_Color default_color, LAB_Color default_color_above,
+                                     size_t queue_cap, int* queue, size_t* queue_count,
+                                     LAB_CrammedChunkPosSet dirty_blocks)
 {
     int changed = 0;
 
@@ -213,9 +216,11 @@ LAB_STATIC int LAB_UpdateLight_First(LAB_World* world, LAB_Chunk*const chunks[27
 
     // check and update center chunk
     LAB_Chunk* cnk = chunks[1+3+9];
-    for(int z = 0; z < 16; ++z)
-    for(int y = 0; y < 16; ++y)
-    for(int x = 0; x < 16; ++x)
+    int x, y, z;
+    //LAB_CCPS_EACH_POS(dirty_blocks, x, y, z,
+    for(z = 0; z < 16; ++z)
+    for(y = 0; y < 16; ++y)
+    for(x = 0; x < 16; ++x)
     {
         int off = LAB_CHUNK_OFFSET(x, y, z);
 
@@ -241,6 +246,7 @@ LAB_STATIC int LAB_UpdateLight_First(LAB_World* world, LAB_Chunk*const chunks[27
             }
         }
     }
+    //});
     return changed;
 }
 
@@ -317,6 +323,7 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, 
     {
         LAB_PrepareLight(ctr_cnk, chunks[1+2*3+9], default_color_above);
         ctr_cnk->light_generated = 1;
+        ctr_cnk->dirty_blocks = ~0; // check all blocks again
         //return ~0; // TODO: multiple updates to the view
         return 128;
     }
@@ -328,9 +335,15 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, 
     size_t queue_first = 0;
     size_t queue_count = 0;
 
+    LAB_CrammedChunkPosSet dirty_blocks = chunks[1+3+9]->dirty_blocks;
+    chunks[1+3+9]->dirty_blocks = 0;
+
     // for simplicity the queue starts at 0, this is not passed to the function
     // because no elements are taken out of the queue
-    int faces_changed = LAB_UpdateLight_First(world, chunks, default_color, default_color_above, LAB_LIGHT_QUEUE_SIZE, queue, &queue_count);
+    int faces_changed = LAB_UpdateLight_First(world, chunks,
+                                              default_color, default_color_above,
+                                              LAB_LIGHT_QUEUE_SIZE, queue, &queue_count,
+                                              dirty_blocks);
     if(!faces_changed) return 0;
     //faces_changed &= 63; // remove change bit
     faces_changed=0; // TODO:

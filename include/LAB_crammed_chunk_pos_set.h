@@ -44,7 +44,7 @@ LAB_CCPS LAB_CCPS_AddPos(LAB_CCPS set, int x, int y, int z)
     return set;
 }
 
-#define LAB_CCPS_EACH_POS(set, x, y, z, execute) do \
+#define LAB_CCPS_EACH_POS(set, x, y, z, ...) do \
 { \
     int LAB_CCPS_x_set, LAB_CCPS_y_set, LAB_CCPS_z_set; \
     int LAB_CCPS_x, LAB_CCPS_y, LAB_CCPS_z; \
@@ -64,10 +64,14 @@ LAB_CCPS LAB_CCPS_AddPos(LAB_CCPS set, int x, int y, int z)
                     (x)=LAB_CCPS_x; \
                     (y)=LAB_CCPS_y; \
                     (z)=LAB_CCPS_z; \
-                    {execute} \
+                    {__VA_ARGS__} \
                 } \
             } \
         } \
     } \
 } \
 while(0)
+
+// TODO: iterate over inserted elements and neighboring elements
+// (if one position is in the set then 7 positions are yielded)
+#define LAB_CCPS_EACH_NEAR_POS(set, x, y, z, ...) TODO
