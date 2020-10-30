@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "LAB_attr.h"
 #include "LAB_bits.h"
 #include "LAB_debug.h"
@@ -44,6 +45,25 @@ LAB_CCPS LAB_CCPS_AddPos(LAB_CCPS set, int x, int y, int z)
     return set;
 }
 
+LAB_PURE LAB_INLINE
+bool LAB_CCPS_HasPos(LAB_CCPS set, int x, int y, int z)
+{
+    LAB_ASSUME((x &~ 15)==0);
+    LAB_ASSUME((y &~ 15)==0);
+    LAB_ASSUME((z &~ 15)==0);
+
+    LAB_CCPS mask = 0;
+
+    // add x, y, z coords
+    mask |= (1ull<< 0) << x;
+    mask |= (1ull<<16) << y;
+    mask |= (1ull<<32) << z;
+
+    // add hashtable entry
+    mask |= (1ull<<48) << LAB_CCPS_PosHash(x, y, z);
+    return (set & mask) == mask; // all four bits set -> true
+}
+
 #define LAB_CCPS_EACH_POS(set, x, y, z, ...) do \
 { \
     int LAB_CCPS_x_set, LAB_CCPS_y_set, LAB_CCPS_z_set; \
@@ -72,6 +92,68 @@ LAB_CCPS LAB_CCPS_AddPos(LAB_CCPS set, int x, int y, int z)
 } \
 while(0)
 
-// TODO: iterate over inserted elements and neighboring elements
+
+
+
+
+#define LAB_CCPS_YIELD(i) do { LAB_CCPS_npos = i; goto LAB_CCPS_LABEL(execute); case i:; } while(0)
+
+#define LAB_CCPS_LABEL__(id, line) id##_##line
+#define LAB_CCPS_LABEL_(id, line) LAB_CCPS_LABEL__(id, line)
+#define LAB_CCPS_LABEL(id) LAB_CCPS_LABEL_(LAB_CCPS_LABEL_##id, __LINE__)
+
+// iterate over inserted elements and neighboring elements, (each position yielded at most once)
 // (if one position is in the set then 7 positions are yielded)
-#define LAB_CCPS_EACH_NEAR_POS(set, x, y, z, ...) TODO
+// x, y, z lvalues, gets assigned a value in [-1, 16]
+#define LAB_CCPS_EACH_NEAR_POS(set, x, y, z, ...) do \
+{ \
+    LAB_CCPS LAB_CCPS_EACH_NEAR_POS_set = (set); \
+    int LAB_CCPS_pos = 0; \
+    while(1) \
+    { \
+        int LAB_CCPS_npos; \
+        switch(LAB_CCPS_pos) \
+        { \
+        case 0: \
+            for((z)=0; (z)<16; ++(z)) \
+            for((y)=0; (y)<16; ++(y)) \
+            for((x)=0; (x)<16; ++(x)) \
+            { \
+                if( \
+                                 LAB_CCPS_HasPos(LAB_CCPS_EACH_NEAR_POS_set,   (x), (y), (z))  || \
+                   ((x) !=  0 && LAB_CCPS_HasPos(LAB_CCPS_EACH_NEAR_POS_set, (x)-1, (y), (z))) || \
+                   ((x) != 15 && LAB_CCPS_HasPos(LAB_CCPS_EACH_NEAR_POS_set, (x)+1, (y), (z))) || \
+                   ((y) !=  0 && LAB_CCPS_HasPos(LAB_CCPS_EACH_NEAR_POS_set, (x), (y)-1, (z))) || \
+                   ((y) != 15 && LAB_CCPS_HasPos(LAB_CCPS_EACH_NEAR_POS_set, (x), (y)+1, (z))) || \
+                   ((z) !=  0 && LAB_CCPS_HasPos(LAB_CCPS_EACH_NEAR_POS_set, (x), (y), (z)-1)) || \
+                   ((z) != 15 && LAB_CCPS_HasPos(LAB_CCPS_EACH_NEAR_POS_set, (x), (y), (z)+1))    \
+                ) \
+                    LAB_CCPS_YIELD(1); \
+            } \
+            for((z)=0; (z)<16; ++(z)) \
+            for((y)=0; (y)<16; ++(y)) \
+            { \
+                if(LAB_CCPS_HasPos(LAB_CCPS_EACH_NEAR_POS_set,  0, (y), (z))) { (x) = -1; LAB_CCPS_YIELD(2); } \
+                if(LAB_CCPS_HasPos(LAB_CCPS_EACH_NEAR_POS_set, 15, (y), (z))) { (x) = 16; LAB_CCPS_YIELD(3); } \
+            } \
+            for((z)=0; (z)<16; ++(z)) \
+            for((x)=0; (x)<16; ++(x)) \
+            { \
+                if(LAB_CCPS_HasPos(LAB_CCPS_EACH_NEAR_POS_set, (x),  0, (z))) { (y) = -1; LAB_CCPS_YIELD(4); } \
+                if(LAB_CCPS_HasPos(LAB_CCPS_EACH_NEAR_POS_set, (x), 15, (z))) { (y) = 16; LAB_CCPS_YIELD(5); } \
+            } \
+            for((y)=0; (y)<16; ++(y)) \
+            for((x)=0; (x)<16; ++(x)) \
+            { \
+                if(LAB_CCPS_HasPos(LAB_CCPS_EACH_NEAR_POS_set, (x), (y),  0)) { (z) = -1; LAB_CCPS_YIELD(6); } \
+                if(LAB_CCPS_HasPos(LAB_CCPS_EACH_NEAR_POS_set, (x), (y), 15)) { (z) = 16; LAB_CCPS_YIELD(7); } \
+            } \
+            goto LAB_CCPS_LABEL(exit); \
+        } \
+        LAB_CCPS_LABEL(execute):; \
+        {__VA_ARGS__} \
+        LAB_CCPS_pos = LAB_CCPS_npos; \
+    } \
+    LAB_CCPS_LABEL(exit):; \
+} \
+while(0)

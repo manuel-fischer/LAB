@@ -163,6 +163,7 @@ LAB_STATIC int LAB_UpdateLight_First(LAB_World* world, LAB_Chunk*const chunks[27
 {
     int changed = 0;
 
+    #if 0
     #if 1
     // check borders (this is needed if light blocks are placed at the border)
     LAB_UNROLL(6)
@@ -229,11 +230,11 @@ LAB_STATIC int LAB_UpdateLight_First(LAB_World* world, LAB_Chunk*const chunks[27
         if(cnk->light[off] != lum)
         {
             cnk->light[off] = lum;
-            if(x==0)  changed |=  1;
-            if(x==15) changed |=  2;
-            if(y==0)  changed |=  4;
-            if(y==15) changed |=  8;
-            if(z==0)  changed |= 16;
+            if(x<=0)  changed |=  1;
+            if(x>=15) changed |=  2;
+            if(y<=0)  changed |=  4;
+            if(y>=15) changed |=  8;
+            if(z<=0)  changed |= 16;
             if(z==15) changed |= 32;
             changed |= 64;
 
@@ -247,6 +248,42 @@ LAB_STATIC int LAB_UpdateLight_First(LAB_World* world, LAB_Chunk*const chunks[27
         }
     }
     //});
+    #endif
+
+    // TODO: check positions at the border x/y/z==0/15, if the face changed
+
+    // x, y, z in [-1, 16]
+    int x, y, z;
+    LAB_CCPS_EACH_NEAR_POS(dirty_blocks, x, y, z,
+    {
+        int off;
+        LAB_Chunk* cnk = LAB_GetNeighborhoodRef(chunks, x, y, z, &off);
+        if(cnk)
+        {
+            LAB_Color lum = LAB_CalcLight(world, chunks, x, y, z, default_color, default_color_above);
+
+            if(cnk->light[off] != lum)
+            {
+                cnk->light[off] = lum;
+                if(x==0)  changed |=  1;
+                if(x==15) changed |=  2;
+                if(y==0)  changed |=  4;
+                if(y==15) changed |=  8;
+                if(z==0)  changed |= 16;
+                if(z==15) changed |= 32;
+                changed |= 64;
+
+                if(*queue_count != queue_cap)
+                    queue[(*queue_count)++] = LAB_NBH(x,y,z);
+                else
+                {
+                    changed |= 128;
+                    //printf("QUEUE FULL\n");
+                }
+            }
+        }
+    });
+
     return changed;
 }
 
