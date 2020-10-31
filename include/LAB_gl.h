@@ -28,13 +28,35 @@ const char* LAB_GL_GetCurrentError(void);
     }                                                                                                          \
 } while(0)
 
-int LAB_gl_debug_alloc_count;
+#ifndef NDEBUG
+extern int LAB_gl_debug_alloc_count;
 
-#define LAB_GL_DEBUG_ALLOC(count) do { \
+/*#define LAB_GL_DEBUG_ALLOC(count, array) do { \
     LAB_gl_debug_alloc_count += (count); \
 } while(0)
-#define LAB_GL_DEBUG_FREE(count) do { \
+#define LAB_GL_DEBUG_FREE(count, array) do { \
     LAB_gl_debug_alloc_count -= (count); \
+} while(0)*/
+
+#define LAB_GL_DEBUG_ALLOC_(count, array) do { \
+    for(int i = 0; i < (count); ++i) \
+        if((array)[i]) ++LAB_gl_debug_alloc_count; \
+} while(0)
+#define LAB_GL_DEBUG_FREE_(count, array) do { \
+    for(int i = 0; i < (count); ++i) \
+        if((array)[i]) --LAB_gl_debug_alloc_count; \
+} while(0)
+#else
+#define LAB_GL_DEBUG_ALLOC_(count, array) ((void)0)
+#define LAB_GL_DEBUG_FREE_(count, array) ((void)0)
+#endif
+#define LAB_GL_ALLOC(function, count, array) do { \
+    (function)(count, array); \
+    LAB_GL_DEBUG_ALLOC_(count, array); \
+} while(0)
+#define LAB_GL_FREE(function, count, array) do { \
+    LAB_GL_DEBUG_FREE_(count, array); \
+    (function)(count, array); \
 } while(0)
 
 

@@ -458,7 +458,7 @@ LAB_STATIC void LAB_ViewUploadVBO(LAB_View* view, LAB_View_Mesh* mesh)
 
     if(!mesh->vbo)
     {
-        glGenBuffers(1, &mesh->vbo); LAB_GL_DEBUG_ALLOC(1);
+        LAB_GL_ALLOC(glGenBuffers, 1, &mesh->vbo);
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
@@ -708,7 +708,7 @@ LAB_STATIC void LAB_View_FetchQueryChunk(LAB_View* view, LAB_ViewChunkEntry* ent
         glGetQueryObjectuiv(entry->query_id, GL_QUERY_RESULT, &visible);
         entry->visible = visible;
 
-        glDeleteQueries(1, &entry->query_id); LAB_GL_DEBUG_FREE(1);
+        LAB_GL_FREE(glDeleteQueries, 1, &entry->query_id);
         entry->query_id = 0;
     }
     else
@@ -778,7 +778,7 @@ LAB_STATIC void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* ent
     #else
     //LAB_ASSUME(entry->query_id == 0);
     if(entry->query_id != 0) return;
-    glGenQueries(1, &entry->query_id); LAB_GL_DEBUG_ALLOC(1);
+    LAB_GL_ALLOC(glGenQueries, 1, &entry->query_id);
     unsigned query_id = entry->query_id;
     #endif
     LAB_ASSUME(query_id != 0);
@@ -1335,7 +1335,7 @@ void LAB_ViewInvalidateEverything(LAB_View* view, int free_buffers)
                 unsigned* p_vbo = &e->render_passes[i].vbo;
                 if(*p_vbo)
                 {
-                    glDeleteBuffers(1, p_vbo); LAB_GL_DEBUG_FREE(1);
+                    LAB_GL_FREE(glDeleteBuffers, 1, p_vbo);
                     *p_vbo = 0;
                 }
             }
@@ -1699,7 +1699,7 @@ void LAB_ViewDestructChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
     #if !LAB_VIEW_QUERY_IMMEDIATELY
     if(chunk_entry->query_id)
     {
-        glDeleteQueries(1, &chunk_entry->query_id); LAB_GL_DEBUG_FREE(1);
+        LAB_GL_FREE(glDeleteQueries, 1, &chunk_entry->query_id);
     }
     #endif
 }

@@ -34,7 +34,7 @@ void LAB_InitAssets(void)
     }
 
     glEnable(GL_TEXTURE_2D);
-    glGenTextures(1, &LAB_block_terrain_gl_id); LAB_GL_DEBUG_ALLOC(1);
+    LAB_GL_ALLOC(glGenTextures, 1, &LAB_block_terrain_gl_id);
     glBindTexture(GL_TEXTURE_2D, LAB_block_terrain_gl_id);
 
     #if LAB_MIPMAPS
@@ -64,7 +64,7 @@ void LAB_InitAssets(void)
 
 void LAB_QuitAssets(void)
 {
-    glDeleteTextures(1, &LAB_block_terrain_gl_id); LAB_GL_DEBUG_FREE(1);
+    LAB_GL_FREE(glDeleteTextures, 1, &LAB_block_terrain_gl_id);
     SDL_FreeSurface(LAB_block_terrain);
 
     LAB_block_terrain_gl_id = 0;

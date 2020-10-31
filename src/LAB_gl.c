@@ -42,7 +42,7 @@ void LAB_GL_ActivateTexture(unsigned* gl_id)
 {
     if(*gl_id == 0)
     {
-        glGenTextures(1, gl_id); LAB_GL_DEBUG_ALLOC(1);
+        LAB_GL_ALLOC(glGenTextures, 1, gl_id);
         glBindTexture(GL_TEXTURE_2D, *gl_id);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
