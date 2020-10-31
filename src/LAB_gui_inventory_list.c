@@ -107,9 +107,9 @@ bool LAB_GuiInventoryList_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, S
     {
         case LAB_GUI_EVENT_UNFOCUS:
         {
-            if(cself->selected_slot != -1)
+            if(cself->selected_slot != -1u)
             {
-                cself->selected_slot = -1;
+                cself->selected_slot = -1u;
                 return 1;
             }
         } break;

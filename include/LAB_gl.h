@@ -39,12 +39,12 @@ extern int LAB_gl_debug_alloc_count;
 } while(0)*/
 
 #define LAB_GL_DEBUG_ALLOC_(count, array) do { \
-    for(int i = 0; i < (count); ++i) \
-        if((array)[i]) ++LAB_gl_debug_alloc_count; \
+    for(int LAB_GL_DEBUG_FREE_i = 0; LAB_GL_DEBUG_FREE_i < (count); ++LAB_GL_DEBUG_FREE_i) \
+        if((array)[LAB_GL_DEBUG_FREE_i]) ++LAB_gl_debug_alloc_count; \
 } while(0)
 #define LAB_GL_DEBUG_FREE_(count, array) do { \
-    for(int i = 0; i < (count); ++i) \
-        if((array)[i]) --LAB_gl_debug_alloc_count; \
+    for(int LAB_GL_DEBUG_FREE_i = 0; LAB_GL_DEBUG_FREE_i < (count); ++LAB_GL_DEBUG_FREE_i) \
+        if((array)[LAB_GL_DEBUG_FREE_i]) --LAB_gl_debug_alloc_count; \
 } while(0)
 #else
 #define LAB_GL_DEBUG_ALLOC_(count, array) ((void)0)

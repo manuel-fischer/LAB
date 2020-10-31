@@ -894,7 +894,7 @@ LAB_STATIC void LAB_RenderBox(LAB_View* view, float x, float y, float z, float w
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glTranslatef(x-view->x, y-view->y, z-view->z);
-    if(w!=1||h!=1||d!=1) glScalef(w, h, d);
+    glScalef(w, h, d);
     glDisable(GL_LINE_SMOOTH);
     glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
