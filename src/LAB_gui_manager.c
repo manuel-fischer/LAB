@@ -44,6 +44,8 @@ void LAB_GuiManager_Destroy(LAB_GuiManager* mgr)
     TTF_CloseFont(mgr->button_font);
     TTF_CloseFont(mgr->title_font);
     TTF_CloseFont(mgr->mono_font);
+
+    LAB_GL_FREE(glDeleteTextures, 1, &mgr->gl_id);
 }
 
 

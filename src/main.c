@@ -12,6 +12,7 @@
 #include "LAB_gen_overworld.h"
 #include "LAB_asset_manager.h"
 #include "LAB_gl.h"
+#include "LAB_sdl.h"
 
 #include "LAB_gui.h"
 
@@ -69,7 +70,7 @@ int main(int argc, char** argv) {
     //view.load_amount = 3;
     //view.load_amount = 10;
     view.load_amount = 1;
-    view.load_amount = 100; // DBG
+    //view.load_amount = 100; // DBG
 
     CHECK_INIT(LAB_ConstructViewInput(&view_input, &view));
     LAB_GL_CHECK();
@@ -155,6 +156,7 @@ EXIT:
     #ifndef NDEBUG
     LAB_DbgMemShow();
     printf("Alive GL-Objects: %i\n", LAB_gl_debug_alloc_count);
+    printf("Alive SDL-Objects: %i\n", LAB_sdl_debug_alloc_count);
     #endif
 
     return return_value;

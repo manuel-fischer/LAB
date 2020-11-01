@@ -87,6 +87,17 @@ LAB_STATIC LAB_Chunk* LAB_GenerateNotifyChunk(LAB_World* world, int x, int y, in
     entry->pos = pos;
     entry->chunk = chunk;
 
+    //update empty bit
+    chunk->empty = 1;
+    for(int i = 0; i < 16*16*16; ++i)
+    {
+        if(chunk->blocks[i] != &LAB_BLOCK_AIR)
+        {
+            chunk->empty = 0;
+            break;
+        }
+    }
+
     LAB_UpdateChunk(world, x, y, z, LAB_CHUNK_UPDATE_BLOCK);
 
     return chunk;
@@ -220,6 +231,7 @@ void LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType flags
     chunk->blocks[LAB_CHUNK_OFFSET(x&LAB_CHUNK_MASK, y&LAB_CHUNK_MASK, z&LAB_CHUNK_MASK)] = block;
     //LAB_NotifyChunkLater(world, cx, cy, cz);
     chunk->modified = 1;
+    if(block != &LAB_BLOCK_AIR) chunk->empty = 0;
     chunk->dirty_blocks = LAB_CCPS_AddPos(chunk->dirty_blocks, x&LAB_CHUNK_MASK, y&LAB_CHUNK_MASK, z&LAB_CHUNK_MASK);
     LAB_UpdateChunkLater(world, cx, cy, cz, LAB_CHUNK_UPDATE_BLOCK);
 }

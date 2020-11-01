@@ -36,6 +36,13 @@ typedef struct LAB_Chunk
     unsigned int dirty:8,
                  modified:1,
                  light_generated:1,
+                 empty:1, // usually set to 0, it is set to 1, if all blocks are air, TODO: this is tested, when the
+                          // the chunk is added to the list
+                          // this bit is only used for optimizations, it might not be set if all blocks are air
+                          // (when changed to this after generation)
+                          // alternative: air-counter, decreases if air got replaced by another block, increases if other block is replaced by air
+                          // 0 -> definitely empty
+                          // 1 -> might be empty, don't care
                  pseudo:1; // chunk does not exist, this is a dummy chunk
     LAB_CrammedChunkPosSet dirty_blocks; // used for updating light, set by world
     int age;

@@ -1,8 +1,10 @@
 #include "LAB_asset_manager.h"
 
-#include "LAB_opt.h"
 #include "LAB_stdinc.h"
 #include "LAB_gl.h"
+#include "LAB_sdl.h"
+
+#include "LAB_opt.h"
 #include "LAB_color.h"
 #include "LAB_memory.h"
 #include "LAB_debug.h"
@@ -22,14 +24,16 @@ void LAB_InitAssets(void)
     if(init) return;
     init = 1;
 
-    SDL_Surface* img = IMG_Load("assets/terrain.png");
+    SDL_Surface* img;
+    LAB_SDL_ALLOC(IMG_Load, &img, "assets/terrain.png");
     if(LAB_UNLIKELY(img == NULL)) return;
 
     if(img->format->format != SDL_PIXELFORMAT_RGBA32)
     {
         SDL_Surface* nImg;
-        nImg = SDL_ConvertSurfaceFormat(img, SDL_PIXELFORMAT_RGBA32, 0);
-        SDL_FreeSurface(img);
+        LAB_SDL_ALLOC(SDL_ConvertSurfaceFormat, &nImg, img, SDL_PIXELFORMAT_RGBA32, 0);
+        if(LAB_UNLIKELY(nImg == NULL)) return;
+        LAB_SDL_FREE(SDL_FreeSurface, &img);
         img = nImg;
     }
 
@@ -65,7 +69,7 @@ void LAB_InitAssets(void)
 void LAB_QuitAssets(void)
 {
     LAB_GL_FREE(glDeleteTextures, 1, &LAB_block_terrain_gl_id);
-    SDL_FreeSurface(LAB_block_terrain);
+    LAB_SDL_FREE(SDL_FreeSurface, &LAB_block_terrain);
 
     LAB_block_terrain_gl_id = 0;
     LAB_block_terrain = NULL;
@@ -173,12 +177,13 @@ LAB_STATIC void LAB_DebugSaveImage(size_t w, size_t h, LAB_Color* data, const ch
     vsnprintf(fname_buf, sizeof(fname_buf), fname_fmt, lst);
     va_end(lst);
 
-    SDL_Surface* surf = SDL_CreateRGBSurfaceWithFormat(0, w, h, 32, SDL_PIXELFORMAT_RGBA32);
+    SDL_Surface* surf;
+    LAB_SDL_ALLOC(SDL_CreateRGBSurfaceWithFormat, &surf, 0, w, h, 32, SDL_PIXELFORMAT_RGBA32);
     LAB_ASSUME(surf);
     memcpy(surf->pixels, data, w*h*sizeof*data);
     printf("LAB_DebugSaveImage \"%s\"\n", fname_buf);
     IMG_SavePNG(surf, fname_buf);
-    SDL_FreeSurface(surf);
+    LAB_SDL_FREE(SDL_FreeSurface, &surf);
 }
 
 

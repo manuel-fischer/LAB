@@ -124,6 +124,10 @@ void LAB_DestructView(LAB_View* view)
     });
 
     LAB_View_ChunkTBL_Destroy(&view->chunks);
+
+
+    // TODO:
+    LAB_GL_FREE(glDeleteTextures, 1, &view->info.gl_texture);
 }
 
 
@@ -773,7 +777,7 @@ LAB_STATIC void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* ent
     static unsigned query_id = 0;
     if(query_id == 0)
     {
-        glGenQueries(1, &query_id); LAB_GL_DEBUG_ALLOC(1);
+        LAB_GL_ALLOC(glGenQueries, 1, &query_id);
     }
     #else
     //LAB_ASSUME(entry->query_id == 0);
@@ -1563,6 +1567,16 @@ LAB_STATIC unsigned LAB_View_ChunkNeighborVisibility(LAB_View* view, int cx, int
 
 void LAB_ViewLoadNearChunks(LAB_View* view)
 {
+    // PROBLEM: unbalanced loading
+    // TODO: new chunk loading design: add hook to world, that asks the view to load another chunk -> allows to
+    //       load multiple chunks, if some chunks were empty (weird approach)
+    //    OR keep the view managing the loading, use queries here (ids to the chunk loading requests)
+    //       - drive the loading by an array that has all possibly rendered chunk(coordinate)s preallocated and sorted
+    //         - special resorting, if current chunk has changed
+    //         - if some entry in the array has a query, load the chunk from the world
+    //    OR - limit loading by time instead of a simple counter
+    //         - empty chunks (above the surface) are faster to load
+
     // TODO: check if gen-queue is full: quit
 
     int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);

@@ -13,7 +13,9 @@
     X(GL_STACK_OVERFLOW, "An attempt has been made to perform an operation that would cause an internal stack to overflow")
 
 
+#ifndef NDEBUG
 int LAB_gl_debug_alloc_count = 0;
+#endif
 
 const char* LAB_GL_GetError(GLenum errorid)
 {
