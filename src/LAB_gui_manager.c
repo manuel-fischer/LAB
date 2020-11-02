@@ -3,6 +3,7 @@
 #include "LAB_memory.h"
 #include "LAB_gl.h"
 #include "LAB_debug.h"
+#include "LAB_sdl.h"
 
 #include <SDL2/SDL_ttf.h>
 
@@ -28,7 +29,7 @@ bool LAB_GuiManager_Create(LAB_GuiManager* mgr)
 
 void LAB_GuiManager_Destroy(LAB_GuiManager* mgr)
 {
-    SDL_FreeSurface(mgr->surf);
+    LAB_SDL_FREE(SDL_FreeSurface, &mgr->surf);
 
     if(mgr->component)
     {
@@ -100,14 +101,14 @@ void LAB_GuiManager_Render(LAB_GuiManager* mgr, int sw, int sh)
             if(c->w*s != mgr->surf->w ||
                c->h*s != mgr->surf->h)
             {
-                SDL_FreeSurface(mgr->surf);
+                LAB_SDL_FREE(SDL_FreeSurface, &mgr->surf);
                 mgr->surf = NULL;
             }
         }
 
         if(!mgr->surf)
         {
-            mgr->surf = SDL_CreateRGBSurfaceWithFormat(0, c->w*s, c->h*s, 32, SDL_PIXELFORMAT_RGBA32);
+            LAB_SDL_ALLOC(SDL_CreateRGBSurfaceWithFormat, &mgr->surf,/**/ 0, c->w*s, c->h*s, 32, SDL_PIXELFORMAT_RGBA32);
             rerender = 1;
             if(!mgr->surf) return;
         }

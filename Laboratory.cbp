@@ -228,6 +228,7 @@
 		<Unit filename="include/LAB_random.h" />
 		<Unit filename="include/LAB_render_item.h" />
 		<Unit filename="include/LAB_render_pass.h" />
+		<Unit filename="include/LAB_sdl.h" />
 		<Unit filename="include/LAB_simplex_noise.h" />
 		<Unit filename="include/LAB_stdinc.h" />
 		<Unit filename="include/LAB_util.h" />
@@ -328,6 +329,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_render_item.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_sdl.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_simplex_noise.c">

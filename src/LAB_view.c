@@ -9,6 +9,7 @@
 #include "LAB_block.h"
 #include "LAB_window.h"
 #include "LAB_gl.h"
+#include "LAB_sdl.h"
 #include "LAB_asset_manager.h"
 
 #include "LAB_render_pass.h"
@@ -1039,7 +1040,7 @@ void LAB_ViewRenderHud(LAB_View* view)
         pz = LAB_FastFloorF2I(view->z);
         if(view->info.surf == NULL)
         {
-            //view->info.surf = SDL_CreateRGBSurface(0, INFO_WIDTH, INFO_HEIGHT, 32, 0, 0, 0, 0);
+            //LAB_SDL_ALLOC(SDL_CreateRGBSurface, &view->info.surf, 0, INFO_WIDTH, INFO_HEIGHT, 32, 0, 0, 0, 0);
             //if(!view->info.surf) return;
             rerender = 1;
         }
@@ -1055,7 +1056,7 @@ void LAB_ViewRenderHud(LAB_View* view)
         LAB_GL_ActivateTexture(&view->info.gl_texture);
         if(rerender)
         {
-            if(view->info.surf != NULL) SDL_FreeSurface(view->info.surf);
+            if(view->info.surf != NULL) LAB_SDL_FREE(SDL_FreeSurface, &view->info.surf);
 
             char buf[64];
             snprintf(buf, sizeof(buf), "%i %i %i", px, py, pz);

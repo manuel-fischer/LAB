@@ -1,5 +1,6 @@
 #include "LAB_gui_list_box.h"
 #include "LAB_memory.h"
+#include "LAB_sdl.h"
 
 void LAB_GuiListBox_Create(LAB_GuiListBox* cself,
                           int x, int y, int w, int h,
@@ -109,7 +110,7 @@ void LAB_GuiListBox_Destroy(LAB_GuiComponent* self)
     LAB_GuiListBox* cself = (LAB_GuiListBox*)self;
     for(size_t i = 0; i < cself->element_count; ++i)
     {
-        SDL_FreeSurface(cself->text_surfs[i]);
+        LAB_SDL_FREE(SDL_FreeSurface, &cself->text_surfs[i]);
     }
     LAB_Free(cself->text_surfs);
 }

@@ -1,6 +1,7 @@
 #include "LAB_gui_inventory_list.h"
 
 #include "LAB_render_item.h"
+#include "LAB_sdl.h"
 
 void LAB_GuiInventoryList_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf, int x, int y);
 bool LAB_GuiInventoryList_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Event* event);
@@ -63,7 +64,7 @@ void LAB_GuiInventoryList_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SD
 
         //SDL_BlitSurface(bsurf, NULL, surf, &dst_rect);
         SDL_BlitScaled(bsurf, NULL, surf, &dst_rect);
-        SDL_FreeSurface(bsurf);
+        LAB_SDL_FREE(SDL_FreeSurface, &bsurf);
         ++i;
     }
 }

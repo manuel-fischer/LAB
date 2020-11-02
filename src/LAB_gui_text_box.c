@@ -1,5 +1,6 @@
 #include "LAB_gui_text_box.h"
 #include "LAB_memory.h"
+#include "LAB_sdl.h"
 
 // TODO sel_start & sel_len
 
@@ -48,7 +49,7 @@ LAB_STATIC bool LAB_GuiTextBox_EnsureCapacity(LAB_GuiTextBox* cself, size_t min_
 
 LAB_STATIC void LAB_GuiTextBox_UpdateText(LAB_GuiTextBox* cself)
 {
-    SDL_FreeSurface(cself->text_surf);
+    LAB_SDL_FREE(SDL_FreeSurface, &cself->text_surf);
     cself->text_surf = NULL;
 }
 
@@ -190,7 +191,7 @@ bool LAB_GuiTextBox_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Eve
 void LAB_GuiTextBox_Destroy(LAB_GuiComponent* self)
 {
     LAB_GuiTextBox* cself = (LAB_GuiTextBox*)self;
-    SDL_FreeSurface(cself->text_surf);
+    LAB_SDL_FREE(SDL_FreeSurface, &cself->text_surf);
     LAB_Free(cself->content);
 }
 

@@ -1,6 +1,7 @@
 #include "LAB_gui.h"
 
 #include <SDL2/SDL_image.h>
+#include "LAB_sdl.h"
 
 static SDL_Surface* gui;
 
@@ -8,7 +9,7 @@ Uint32 LAB_GuiEvent_base;
 
 bool LAB_GuiInit(void)
 {
-    gui = IMG_Load("assets/gui.png");
+    LAB_SDL_ALLOC(IMG_Load, &gui, "assets/gui.png");
     if(!gui) return 0;
 
     LAB_GuiEvent_base = SDL_RegisterEvents(LAB_GUI_EVENT_COUNT);
@@ -19,7 +20,7 @@ bool LAB_GuiInit(void)
 
 void LAB_GuiQuit(void)
 {
-    SDL_FreeSurface(gui);
+    LAB_SDL_FREE(SDL_FreeSurface, &gui);
 }
 
 void LAB_RenderRect(SDL_Surface* surf, int scale, int x, int y, int w, int h, int i, int j)

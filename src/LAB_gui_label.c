@@ -1,6 +1,7 @@
 #include "LAB_gui_label.h"
 
 #include "LAB_gui.h"
+#include "LAB_sdl.h"
 
 void LAB_GuiLabel_Create(LAB_GuiLabel* label,
                          int x, int y, int w, int h,
@@ -44,5 +45,5 @@ void LAB_GuiLabel_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surfac
 void LAB_GuiLabel_Destroy(LAB_GuiComponent* self)
 {
     LAB_GuiLabel* cself = (LAB_GuiLabel*)self;
-    SDL_FreeSurface(cself->text_surf);
+    LAB_SDL_FREE(SDL_FreeSurface, &cself->text_surf);
 }

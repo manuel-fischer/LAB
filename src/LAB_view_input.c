@@ -21,6 +21,7 @@
 
 #include "LAB_memory.h"
 #include "LAB_gl.h"
+#include "LAB_sdl.h"
 
 #include "LAB_ext.h"
 #include "LAB_util.h"
@@ -240,7 +241,8 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                 case SDLK_F2:
                 {
                     // TODO detection if multiple screenshots are saved in the same second
-                    SDL_Surface* surf_screen = SDL_CreateRGBSurfaceWithFormat(0, view->w, view->h, 32, SDL_PIXELFORMAT_RGBA32);
+                    SDL_Surface* surf_screen;
+                    LAB_SDL_ALLOC(SDL_CreateRGBSurfaceWithFormat, &surf_screen, 0, view->w, view->h, 32, SDL_PIXELFORMAT_RGBA32);
                     if(!surf_screen) break;
                     glReadPixels(0, 0, view->w, view->h, GL_RGBA, GL_UNSIGNED_BYTE, surf_screen->pixels);
                     LAB_GL_FixScreenImg(surf_screen->pixels, view->w, view->h);
@@ -255,6 +257,7 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                     strftime(fname, sizeof fname, "screenshots/scr-%Y%m%d-%H%M%S.png", tinf);
                     printf("Saving screenshot to %s\n", fname);
                     IMG_SavePNG(surf_screen, fname);
+                    LAB_SDL_FREE(SDL_FreeSurface, &surf_screen);
                 } break;
 
                 case SDLK_F3:

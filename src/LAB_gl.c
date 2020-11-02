@@ -1,6 +1,7 @@
 #include "LAB_gl.h"
 #include "LAB_bits.h"
 #include "LAB_debug.h"
+#include "LAB_sdl.h"
 
 #define LAB_GL_ERRORS_X(X) \
     X(GL_NO_ERROR, "No error") \
@@ -81,7 +82,7 @@ void LAB_GL_UploadSurf(unsigned gl_id, SDL_Surface* surf)
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, info_width, info_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, surf->w, surf->h, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
-    if(free_surf) SDL_FreeSurface(surf);
+    if(free_surf) LAB_SDL_FREE(SDL_FreeSurface, &surf);
 }
 
 void LAB_GL_DrawSurf(unsigned gl_id, int x, int y, int w, int h, int sw, int sh)

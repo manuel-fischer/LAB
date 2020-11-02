@@ -3,12 +3,16 @@
 #include "LAB_gl.h"
 #include "LAB_direction.h"
 #include "LAB_asset_manager.h"
+#include "LAB_sdl.h"
 
 #include <math.h>
 
+// fails and returns NULL
 SDL_Surface* LAB_RenderBlock2D(LAB_Block* block)
 {
-    SDL_Surface* surf = SDL_CreateRGBSurfaceWithFormat(0, LAB_ITEM_SIZE, LAB_ITEM_SIZE, 32, SDL_PIXELFORMAT_RGBA32);
+    SDL_Surface* surf;
+    LAB_SDL_ALLOC(SDL_CreateRGBSurfaceWithFormat, &surf, 0, LAB_ITEM_SIZE, LAB_ITEM_SIZE, 32, SDL_PIXELFORMAT_RGBA32);
+    if(!surf) return NULL;
 
     SDL_Rect src_rect;
     src_rect.x = LAB_TILE_SIZE*block->item_tx;
