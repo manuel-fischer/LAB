@@ -1072,7 +1072,7 @@ void LAB_ViewRenderHud(LAB_View* view)
             SDL_Color fg = { 255, 255, 255, 255 };
             SDL_Color bg = {   0,   0,   0, 255 };
 
-            view->info.surf = TTF_RenderUTF8_Shaded(font, buf, fg, bg);
+            LAB_SDL_ALLOC(TTF_RenderUTF8_Shaded, &view->info.surf, font, buf, fg, bg);
             if(!view->info.surf) return;
 
 

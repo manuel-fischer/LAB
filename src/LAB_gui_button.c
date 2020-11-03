@@ -39,7 +39,7 @@ void LAB_GuiButton_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surfa
     if(!cself->text_surf)
     {
         SDL_Color fg = { 255, 255, 255, 255 };
-        cself->text_surf = TTF_RenderUTF8_Blended(mgr->button_font, cself->title, fg);
+        LAB_SDL_ALLOC(TTF_RenderUTF8_Blended, &cself->text_surf, mgr->button_font, cself->title, fg);
         if(!cself->text_surf) return;
     }
     SDL_Rect dst;

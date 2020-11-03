@@ -15,13 +15,13 @@ bool LAB_GuiManager_Create(LAB_GuiManager* mgr)
     mgr->zoom = 1;
     mgr->scale = 2;
 
-    mgr->button_font    = TTF_OpenFont("fonts/DejaVuSans.ttf", 12*mgr->scale);
+    LAB_SDL_ALLOC(TTF_OpenFont, &mgr->button_font, "fonts/DejaVuSans.ttf", 12*mgr->scale);
     if(!mgr->button_font) return 0;
 
-    mgr->title_font     = TTF_OpenFont("fonts/DejaVuSans.ttf", 15*mgr->scale);
+    LAB_SDL_ALLOC(TTF_OpenFont, &mgr->title_font, "fonts/DejaVuSans.ttf", 15*mgr->scale);
     if(!mgr->title_font)  return 0;
 
-    mgr->mono_font      = TTF_OpenFont("fonts/DejaVuSansMono.ttf", 11*mgr->scale); // 13
+    LAB_SDL_ALLOC(TTF_OpenFont, &mgr->mono_font, "fonts/DejaVuSansMono.ttf", 11*mgr->scale); // 13
     if(!mgr->mono_font)   return 0;
 
     return 1;
@@ -42,9 +42,9 @@ void LAB_GuiManager_Destroy(LAB_GuiManager* mgr)
         LAB_Free(mgr->dismiss_component);
     }
 
-    TTF_CloseFont(mgr->button_font);
-    TTF_CloseFont(mgr->title_font);
-    TTF_CloseFont(mgr->mono_font);
+    LAB_SDL_FREE(TTF_CloseFont, &mgr->button_font);
+    LAB_SDL_FREE(TTF_CloseFont, &mgr->title_font);
+    LAB_SDL_FREE(TTF_CloseFont, &mgr->mono_font);
 
     LAB_GL_FREE(glDeleteTextures, 1, &mgr->gl_id);
 }
