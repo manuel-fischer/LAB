@@ -68,7 +68,7 @@ void LAB_GL_UploadSurf(unsigned gl_id, SDL_Surface* surf)
     if(surf->format->format != SDL_PIXELFORMAT_RGBA32)
     {
         SDL_Surface* nImg;
-        nImg = SDL_ConvertSurfaceFormat(surf, SDL_PIXELFORMAT_RGBA32, 0);
+        LAB_SDL_ALLOC(SDL_ConvertSurfaceFormat, &nImg, surf, SDL_PIXELFORMAT_RGBA32, 0);
         if(nImg == NULL) return;
         surf = nImg;
         free_surf = 1;

@@ -1056,7 +1056,11 @@ void LAB_ViewRenderHud(LAB_View* view)
         LAB_GL_ActivateTexture(&view->info.gl_texture);
         if(rerender)
         {
+            static SDL_Surface* dbg_surf = NULL;
+            LAB_ASSUME(view->info.surf == dbg_surf);
+
             if(view->info.surf != NULL) LAB_SDL_FREE(SDL_FreeSurface, &view->info.surf);
+            //LAB_SDL_FREE(SDL_FreeSurface, &view->info.surf);
 
             char buf[64];
             snprintf(buf, sizeof(buf), "%i %i %i", px, py, pz);
@@ -1073,6 +1077,7 @@ void LAB_ViewRenderHud(LAB_View* view)
             SDL_Color bg = {   0,   0,   0, 255 };
 
             LAB_SDL_ALLOC(TTF_RenderUTF8_Shaded, &view->info.surf, font, buf, fg, bg);
+            dbg_surf = view->info.surf;
             if(!view->info.surf) return;
 
 

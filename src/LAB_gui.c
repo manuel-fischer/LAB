@@ -51,30 +51,3 @@ void LAB_RenderRect(SDL_Surface* surf, int scale, int x, int y, int w, int h, in
         }
     }
 }
-
-/*
-TTF_Font* LAB_GuiFont(void)
-{
-    static TTF_Font* ttf = NULL;
-    if(!ttf)
-        ttf = TTF_OpenFont("fonts/DejaVuSans.ttf", 12);
-    return ttf;
-}
-
-
-TTF_Font* LAB_GuiTitleFont(void)
-{
-    static TTF_Font* ttf = NULL;
-    if(!ttf)
-        ttf = TTF_OpenFont("fonts/DejaVuSans.ttf", 15);
-    return ttf;
-}
-
-TTF_Font* LAB_GuiMonospaceFont(void)
-{
-    static TTF_Font* ttf = NULL;
-    if(!ttf)
-        ttf = TTF_OpenFont("fonts/DejaVuSansMono.ttf", 13);
-    return ttf;
-}
-*/

@@ -6,13 +6,17 @@
 #ifndef NDEBUG
 extern int LAB_sdl_debug_alloc_count;
 
+#include "LAB_debug.h"
+
 #define LAB_SDL_DEBUG_ALLOC(obj) do \
 { \
+    LAB_ASSUME/*TODO: WARN*/(*(obj)); \
     if(*(obj)) LAB_sdl_debug_alloc_count++; \
 } while(0)
 #define LAB_SDL_DEBUG_FREE(obj) do \
 { \
     if(*(obj)) LAB_sdl_debug_alloc_count--; \
+    LAB_ASSUME(LAB_sdl_debug_alloc_count>=0); \
 } while(0)
 #else
 #define LAB_SDL_DEBUG_ALLOC(obj) ((void)0)
