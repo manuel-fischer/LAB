@@ -560,6 +560,14 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms)
     }
     else
     {
+        // TODO: collect/iterate local collision boxes, all inside the entity box
+        //       and some blocks further out (MAX_COLLISION_SIZE blocks)
+        //     - allows partial blocks like stairs or pipes
+        //     - if the difference between the bottom of the entity and the top
+        //       of the collision box is around 1/2 of a block, the entity gets moved
+        //       up -> walking up stairs smoothly without jumping
+        //
+
         const float d = 0.001;
 
         float dt = (float)delta_ms*(1.f/1000.f);
