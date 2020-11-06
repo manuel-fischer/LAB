@@ -149,9 +149,10 @@ EXIT:
     LAB_DestructWorld(&the_world);
     LAB_DestructWindow(&main_window);
 
-    if(init) LAB_Quit();
-
     LAB_QuitAssets();
+    LAB_GuiQuit();
+
+    if(init) LAB_Quit();
 
     #ifndef NDEBUG
     LAB_DbgMemShow();

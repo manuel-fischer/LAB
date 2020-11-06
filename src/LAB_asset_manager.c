@@ -19,10 +19,8 @@ LAB_STATIC void LAB_Fix0Alpha(size_t w, size_t h, LAB_Color* data);
 
 void LAB_InitAssets(void)
 {
-    // TODO
-    static bool init = 0;
-    if(init) return;
-    init = 1;
+    // TODO: move global state into its own structure
+    if(LAB_block_terrain) return;
 
     SDL_Surface* img;
     LAB_SDL_ALLOC(IMG_Load, &img, "assets/terrain.png");

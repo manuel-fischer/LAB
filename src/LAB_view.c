@@ -127,8 +127,9 @@ void LAB_DestructView(LAB_View* view)
     LAB_View_ChunkTBL_Destroy(&view->chunks);
 
 
-    // TODO:
+    // TODO: move into separate function
     LAB_GL_FREE(glDeleteTextures, 1, &view->info.gl_texture);
+    LAB_SDL_FREE(SDL_FreeSurface, &view->info.surf);
 }
 
 
@@ -1056,9 +1057,6 @@ void LAB_ViewRenderHud(LAB_View* view)
         LAB_GL_ActivateTexture(&view->info.gl_texture);
         if(rerender)
         {
-            static SDL_Surface* dbg_surf = NULL;
-            LAB_ASSUME(view->info.surf == dbg_surf);
-
             if(view->info.surf != NULL) LAB_SDL_FREE(SDL_FreeSurface, &view->info.surf);
             //LAB_SDL_FREE(SDL_FreeSurface, &view->info.surf);
 
@@ -1077,7 +1075,6 @@ void LAB_ViewRenderHud(LAB_View* view)
             SDL_Color bg = {   0,   0,   0, 255 };
 
             LAB_SDL_ALLOC(TTF_RenderUTF8_Shaded, &view->info.surf, font, buf, fg, bg);
-            dbg_surf = view->info.surf;
             if(!view->info.surf) return;
 
 
