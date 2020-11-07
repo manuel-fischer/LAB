@@ -17,18 +17,18 @@ LAB_INLINE float LAB_AbsModF(float num, float den)
 /**
  * Use this if the observable behavior is the same, when
  * x could also be x-1 for integral x
+ *
+ * WARNING: wrong values if x is integral and negative
  */
 LAB_PURE
 LAB_INLINE int LAB_FastFloorF2I(float x)
 {
-    // TODO: wrong values if x is integral and negative
     return (int)x - (x<0);
 }
 
 LAB_PURE
 LAB_INLINE int LAB_FastFloorD2I(double x)
 {
-    // TODO: wrong values if x is integral and negative
     return (int)x - (x<0);
 }
 

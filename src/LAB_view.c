@@ -126,10 +126,7 @@ void LAB_DestructView(LAB_View* view)
 
     LAB_View_ChunkTBL_Destroy(&view->chunks);
 
-
-    // TODO: move into separate function
-    LAB_GL_FREE(glDeleteTextures, 1, &view->info.gl_texture);
-    LAB_SDL_FREE(SDL_FreeSurface, &view->info.surf);
+    LAB_ViewCoordInfo_Destroy(&view->info);
 }
 
 
@@ -1738,4 +1735,18 @@ void LAB_ViewUnlinkChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
         }
     }
     LAB_ViewDestructFreeChunk(view, chunk_entry);
+}
+
+
+
+void LAB_ViewCoordInfo_Create_Zero(LAB_ViewCoordInfo* info)
+{
+    //memset(info, 0, sizeof(info));
+    // TODO LAB_ASSUME LAB_MemCheck(info, 0, sizeof(info));
+}
+
+void LAB_ViewCoordInfo_Destroy(LAB_ViewCoordInfo* info)
+{
+    LAB_GL_FREE(glDeleteTextures, 1, &info->gl_texture);
+    LAB_SDL_FREE(SDL_FreeSurface, &info->surf);
 }

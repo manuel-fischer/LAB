@@ -257,7 +257,6 @@ LAB_Block LAB_BLOCK_RED_CRYSTAL = {
 
 
 
-// TODO: different texture
 LAB_Block LAB_BLOCK_INVISIBLE_LIGHT = {
     .flags = LAB_BLOCK_INTERACTABLE | LAB_BLOCK_EMISSIVE,
     .lum = LAB_RGB(255, 255, 255),

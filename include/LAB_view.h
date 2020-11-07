@@ -145,12 +145,12 @@ LAB_INLINE LAB_ChunkPos LAB_MakeChunkPos(int x, int y, int z)
 #define LAB_VIEW_SHOW_CHUNK_GRID  32u
 
 // Coordinate info
-typedef struct LAB_ViewInfo
+typedef struct LAB_ViewCoordInfo
 {
     int x, y, z;
     unsigned gl_texture;
     SDL_Surface* surf;
-} LAB_ViewInfo;
+} LAB_ViewCoordInfo;
 
 typedef struct LAB_ViewSortedChunkEntry
 {
@@ -189,7 +189,7 @@ typedef struct LAB_View
 
     uint32_t load_amount;
 
-    LAB_ViewInfo info;
+    LAB_ViewCoordInfo info;
     int w, h; // window size
 
     LAB_FpsGraph fps_graph;
@@ -235,3 +235,10 @@ LAB_ViewChunkEntry* LAB_ViewNewChunkEntry(LAB_View* view, int x, int y, int z);
 
 
 bool LAB_View_IsChunkInSight(LAB_View* view, int cx, int cy, int cz);
+
+
+// TODO use Create_Zero convention when an object is assumed to be created from zero memory
+//      use Destroy_Zero convention when the destruction of an object results in
+//          the object being zeroed out
+void LAB_ViewCoordInfo_Create_Zero(LAB_ViewCoordInfo* info);
+void LAB_ViewCoordInfo_Destroy(LAB_ViewCoordInfo* info);

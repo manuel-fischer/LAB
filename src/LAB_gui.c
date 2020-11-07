@@ -4,7 +4,7 @@
 #include "LAB_sdl.h"
 
 // TODO: move global state into struct
-static SDL_Surface* gui;
+static SDL_Surface* gui = NULL;
 
 Uint32 LAB_GuiEvent_base;
 
