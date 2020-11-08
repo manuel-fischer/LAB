@@ -134,7 +134,10 @@ void LAB_ViewChunkProc(void* user, LAB_World* world, int x, int y, int z, LAB_Ch
 {
     LAB_View* view = (LAB_View*)user;
 
-    // TODO: ignore far away chunks
+    // ignore far away chunks
+    // TODO: if neighboring chunk is inside view
+    // TODO: make behavior in LAB_ViewChunkKeep proc into another function without a void* argument
+    if(!LAB_ViewChunkKeepProc(user, world, x, y, z)) return;
 
     /*LAB_ViewChunkEntry* entry = LAB_ViewGetChunkEntry(view, x, y, z);
     if(entry)
