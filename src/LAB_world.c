@@ -402,7 +402,7 @@ void LAB_WorldTick(LAB_World* world, uint32_t delta_ms)
     for(size_t i = 0; i < world->chunks.capacity; ++i)
     {
         // TODO: remove chunkkeep hook, instead add callback to get
-        //       positions and distances,
+        //       position(s) and distance(s), multiple to be considered, if there are multiple views
         LAB_World_ChunkEntry* entry = &world->chunks.table[i];
         LAB_Chunk* chunk = entry->chunk;
         if(chunk)

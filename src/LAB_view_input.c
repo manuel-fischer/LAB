@@ -80,7 +80,7 @@ LAB_STATIC void LAB_GrabMouse(LAB_View* view, LAB_Window* window, int grab)
     }
 }
 
-bool LAB_ViewInput_IsMaskedEvent(LAB_View* view, SDL_Event* event)
+LAB_STATIC bool LAB_ViewInput_IsMaskedEvent(LAB_View* view, SDL_Event* event)
 {
     switch(event->type)
     {

@@ -14,7 +14,7 @@ enum LAB_ChunkUpdate
     LAB_CHUNK_UPDATE_BLOCK = 2+1,
     LAB_CHUNK_UPDATE_LOCAL = 2+0*4, // the chunk itself has changed -> higher priority
                                 // when only the neighboring chunk had changed, the update
-                                // is not propagated
+                                // is not propagated (TODO)
 };
 typedef int LAB_ChunkUpdate;
 
