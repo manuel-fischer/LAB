@@ -1445,7 +1445,7 @@ void LAB_ViewTick(LAB_View* view, uint32_t delta_ms)
 }
 
 
-LAB_STATIC bool LAB_View_HasChunkVisibleNeighbors(LAB_View* view, int x, int y, int z)
+/*LAB_STATIC bool LAB_View_HasChunkVisibleNeighbors(LAB_View* view, int x, int y, int z)
 {
     int faces = LAB_View_ChunkNeighborVisibility(view, x, y, z);
 
@@ -1460,7 +1460,7 @@ LAB_STATIC bool LAB_View_HasChunkVisibleNeighbors(LAB_View* view, int x, int y, 
         if(neighbor && neighbor->visible) return 1;
     });
     return 0;
-}
+}*/
 
 
 LAB_STATIC bool LAB_View_HasChunkEntryVisibleNeighbors(LAB_View* view, LAB_ViewChunkEntry* entry)

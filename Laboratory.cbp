@@ -195,6 +195,7 @@
 		<Unit filename="include/LAB_crammed_chunk_pos_set.h" />
 		<Unit filename="include/LAB_debug.h" />
 		<Unit filename="include/LAB_direction.h" />
+		<Unit filename="include/LAB_entity.h" />
 		<Unit filename="include/LAB_error.h" />
 		<Unit filename="include/LAB_ext.h" />
 		<Unit filename="include/LAB_fps_graph.h" />
@@ -257,6 +258,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_debug.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_entity.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_error.c">
