@@ -1,13 +1,21 @@
 #pragma once
 
+#include "LAB_stdinc.h"
 
-// entities are composed of components, which could
-// be stored in a more spread out way, eg. positions
-// of all entities are stored in an array. Then
-// other data, that is dependent on the individual
-// object(class) is stored in another array
-// components should be relocatable!
-//
+/**
+ * entities are composed of components, which should
+ * able to be stored in a more spread out way, eg. positions
+ * of all entities are stored in an array. Then
+ * other data, that is dependent on the individual
+ * object(class) is stored in another array
+ * components should be relocatable!
+ *
+ * The EntitySet is the base component that holds these arrays together
+ * and creates the collection for the entities. It gets stored
+ * into chunk regions, it should also provide an optimized way to query
+ * all the entities in a given bounding box, by implementing a simple
+ * 3D navigation structure, like a octtree (TODO)
+ */
 
 ///// "data type" /////
 typedef struct LAB_EntityComponent
@@ -22,8 +30,10 @@ typedef struct LAB_EntityComponent
 
     //LAB_EntityComponent* requires[1];
 
-    // do an action on an array of components, destroy etc...
-    int(*func)(size_t count, void*, ...);
+    // do an action on an array of components, destroy, serialize etc...
+    //int(*func)(size_t count, void* array, ...);
+
+    void(*destroy)(size_t count, void* array);
 } LAB_EntityComponent;
 
 ///// behavior /////
@@ -43,7 +53,15 @@ typedef struct LAB_EntityClass
 
 
 
-// collection of entities
+/**
+ *  Provides a collection of entities
+ *
+ *  An entity is constructed in multiple steps by creating an
+ *  entity id (LAB_EntitySet_NewEntity) and then adding
+ *  multiple components to that entity (LAB_EntitySet_AddComponent)
+ *
+ *
+ */
 typedef struct LAB_EntitySet
 {
     size_t component_count; // Is redundant, if all types are fixed
@@ -95,22 +113,37 @@ void LAB_EntitySet_Create(LAB_EntitySet* set);
 void LAB_EntitySet_Destroy(LAB_EntitySet* set);
 
 /**
- * creates an entity, that has no components associated with it
- * Return index/id of new entity
+ *  Creates an entity, that has no components associated with it
+ *  Return index/id of new entity
  */
 size_t LAB_EntitySet_NewEntity(LAB_EntitySet* set, const LAB_EntityClass* clazz);
 
+
 /**
- * Allocate space for the component and link it up in the component_indices array
- * Return index in the component array to the component, same as set->component_indices[id*set->component_count + type_index]
+ *  Add an entity by copying src
+ *  TODO: do not copy if entity gets moved from one entity set to another
  */
- size_t LAB_EntitySet_AddComponent(LAB_EntitySet* set, size_t id, const LAB_EntityComponent* type);
+size_t LAB_EntitySet_AddEntity(LAB_EntitySet* set, LAB_EntityReference* src);
+
+/**
+ *  Remove entity and all associated components
+ */
+size_t LAB_EntitySet_RemoveEntity(LAB_EntitySet* set, size_t entity_id);
+
+/**
+ *  Allocate space for the component and link it up in the component_indices array
+ *
+ *
+ *  Return index in the component array to the component, same as set->component_indices[id*set->component_count + type_index]
+ */
+size_t LAB_EntitySet_AddComponent(LAB_EntitySet* set, size_t entity_id, const LAB_EntityComponent* type);
 
 
 /**
- * Allocate space for the component and link it up in the component_indices array
+ *  Unlink component (and reset component memory to zero)
  */
- size_t LAB_EntitySet_RemoveComponent(LAB_EntitySet* set, size_t id, const LAB_EntityComponent* type);
+size_t LAB_EntitySet_RemoveComponent(LAB_EntitySet* set, size_t entity_id, const LAB_EntityComponent* type);
+
 
 
 
