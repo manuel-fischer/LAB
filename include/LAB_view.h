@@ -53,11 +53,18 @@ typedef struct LAB_ViewChunkEntry
                                              //   - add neighboring chunk entries to itself
                                              // -> use entry->neighbors[face] instead of table lookup with x+LAB_OX(face), ...
 
-    unsigned dirty:2,       // chunk needs update
-             exist:1,       // chunk exists in world
-             visible:1,     // chunk is visible when in sight
-             do_query:1,    // visibility unknown, a query should be submitted
-             upload_vbo:1;  // vbos changed, need reupload, gets set to 0 in last render pass
+    unsigned dirty:2,            // chunk needs update
+             exist:1,            // chunk exists in world
+             visible:1,          // chunk is visible when in sight, changed on every query
+                                 // -> used to update chunks
+                                 // -> possibly used to render chunks, if the orientation of the camera is stable
+             sight_visible:1,    // chunk is currently visible, changed on every query,
+                                 // except when chunk was not completely in the view, that is when the chunk was a little
+                                 // bit outside of the screen, then the flag is never cleared
+                                 // -> used to render chunks; no invisible chunks, when the orientation of the camera changed
+                                 // visible ==> sight_visible <==> ~sight_visible ==> ~visible
+             do_query:1,         // visibility unknown, a query should be submitted
+             upload_vbo:1;       // vbos changed, need reupload, gets set to 0 in last render pass
 
     unsigned pad:1;
     unsigned visible_faces:6; // the faces that are currently rendered
@@ -198,6 +205,11 @@ typedef struct LAB_View
     LAB_FpsGraph fps_graph_view;
 
     LAB_GuiManager gui_mgr;
+
+
+
+    GLdouble projection_mat[16], modelview_mat[16], modlproj_mat[16];
+
 } LAB_View;
 
 
@@ -234,7 +246,15 @@ LAB_ViewChunkEntry* LAB_ViewFindChunkEntry(LAB_View* view, int x, int y, int z);
 LAB_ViewChunkEntry* LAB_ViewNewChunkEntry(LAB_View* view, int x, int y, int z);
 
 
+
+/**
+ *  Superset of Completely in Frustum
+ */
 bool LAB_View_IsChunkInSight(LAB_View* view, int cx, int cy, int cz);
+/**
+ *  Subset of InSight
+ */
+bool LAB_View_IsChunkCompletelyInFrustum(LAB_View* view, int cx, int cy, int cz);
 
 
 // TODO use Create_Zero convention when an object is assumed to be created from zero memory

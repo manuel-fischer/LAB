@@ -31,8 +31,8 @@ typedef int LAB_ChunkUpdate;
 
 typedef struct LAB_Chunk
 {
-    LAB_Block* blocks[LAB_CHUNK_LENGTH];
-    LAB_Color  light[LAB_CHUNK_LENGTH];
+    LAB_Block*     blocks[LAB_CHUNK_LENGTH];
+    LAB_LightNode  light[LAB_CHUNK_LENGTH];
     unsigned int dirty:8,
                  modified:1,
                  light_generated:1,

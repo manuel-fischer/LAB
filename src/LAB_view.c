@@ -616,7 +616,7 @@ void LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass)
     {
         e = view->sorted_chunks[i].entry;
         if((e->x-px)*(e->x-px) + (e->y-py)*(e->y-py) + (e->z-pz)*(e->z-pz) <= dist_sq
-           && e->visible)
+           && e->sight_visible) // && LAB_View_IsChunkCompletelyInFrustum(view, e->x, e->y, e->z))
         {
             chunks_rendered += (int)LAB_ViewRenderChunk(view, e, pass);
         }
@@ -696,34 +696,24 @@ LAB_STATIC void LAB_View_FetchQueryChunks(LAB_View* view)
 
 LAB_STATIC void LAB_View_FetchQueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
 {
-    #if 0
-    unsigned visible = 2;
-    glGetQueryObjectuiv(entry->query_id, GL_QUERY_RESULT, &visible);
-    LAB_ASSUME(visible < 2); // either 0 or 1
-    entry->visible = !!visible;
-    //entry->visible = 1; // DBG
 
-    glDeleteQueries(1, &entry->query_id); LAB_GL_DEBUG_FREE(1);
-    entry->query_id = 0;
-    LAB_GL_CHECK();
-    #else
     unsigned available, visible;
     glGetQueryObjectuiv(entry->query_id, GL_QUERY_RESULT_AVAILABLE, &available);
     if(available)
     {
         glGetQueryObjectuiv(entry->query_id, GL_QUERY_RESULT, &visible);
         entry->visible = visible;
+        if(visible) entry->sight_visible = 1;
+        else if(LAB_View_IsChunkCompletelyInFrustum(view, entry->x, entry->y, entry->z)) entry->sight_visible = 0;
 
         LAB_GL_FREE(glDeleteQueries, 1, &entry->query_id);
         entry->query_id = 0;
     }
     else
     {
-        //printf("Query not ready\n");
+        // Query not ready
     }
-    //printf("available = %i\n", available);
     LAB_GL_CHECK();
-    #endif
 }
 #endif
 
@@ -749,7 +739,8 @@ LAB_STATIC void LAB_View_OrderQueryChunks(LAB_View* view)
 
         //if(c_dist_sq <= 1*1+1*1+1*1)
         if(LAB_View_IsLocalChunk(view, cx, cy, cz))
-            e->visible = 1;
+            e->visible = e->sight_visible = 1;
+
         else if(c_dist_sq <= dist_sq)
         {
             if(!LAB_View_HasChunkEntryVisibleNeighbors(view, e))
@@ -1135,6 +1126,30 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
     glRotatef(view->ay, 0, 1, 0);
     //glRotatef(view->az, 0, 0, 1);
     //glTranslatef(-view->x, -view->y, -view->z);
+
+    {
+        /**
+         *
+         *    m0  m4  m8  m12
+         *    m1  m5  m9  m13
+         *    m2  m6  m10 m14
+         *    m3  m7  m11 m15
+         *
+         */
+        glGetDoublev(GL_PROJECTION_MATRIX, view->projection_mat);
+        glGetDoublev(GL_MODELVIEW_MATRIX, view->modelview_mat);
+
+        // Compute projection_mat * modelview_mat
+        LAB_UNROLL(16)
+        for(int c = 0; c < 16; ++c)
+        {
+            view->modlproj_mat[c] = 0;
+            LAB_UNROLL(4)
+            for(int i = 0; i < 4; ++i)
+                view->modlproj_mat[c] += view->projection_mat[i*4+(c&3)]*view->modelview_mat[i+(c&0xC)];
+        }
+    }
+
 
     if(view->flags&LAB_VIEW_SHOW_CHUNK_GRID)
     {
@@ -1531,6 +1546,40 @@ bool LAB_View_IsChunkInSight(LAB_View* view, int cx, int cy, int cz)
     if(dir[2] > 0) dist += dir[2];
 
     return dist >= treshold;
+}
+
+
+/**
+ *  Project a point onto the screen in range [-1, 1]
+ */
+LAB_STATIC void LAB_View_ProjectPoint(LAB_View* view, float x, float y, float z, float* ox, float* oy, float* oz)
+{
+    float proj_vec[3];
+    LAB_UNROLL(3)
+    for(int i = 0; i < 3; ++i)
+    {
+        proj_vec[i] = view->modlproj_mat[i+4*0]*x+view->modlproj_mat[i+4*1]*y+view->modlproj_mat[i+4*2]*z
+                    + view->modlproj_mat[i+4*3];
+    }
+    *ox = proj_vec[0] / proj_vec[2];
+    *oy = proj_vec[1] / proj_vec[2];
+    *oz = proj_vec[2];
+}
+
+bool LAB_View_IsChunkCompletelyInFrustum(LAB_View* view, int cx, int cy, int cz)
+{
+    for(int i = 0; i < 8; ++i)
+    {
+        float scx, scy, scz;
+
+        LAB_View_ProjectPoint(view, (cx+!!(i&1))*16-view->x,
+                                    (cy+!!(i&2))*16-view->y,
+                                    (cz+!!(i&4))*16-view->z,
+                                    &scx, &scy, &scz);
+
+        if(scz < 0 || scx < -1 || scx > 1 || scy < -1 || scy > 1) return 0;
+    }
+    return 1;
 }
 
 

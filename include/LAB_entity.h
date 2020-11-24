@@ -157,7 +157,7 @@ typedef struct LAB_EntitySet
     size_t* component_indices;
     #endif
 
-} LAB_EntitySet
+} LAB_EntitySet;
 
 
 /**
@@ -168,7 +168,7 @@ typedef struct LAB_EntitySet
 **/
 typedef struct LAB_EntityReference
 {
-    LAB_EntitySet* set
+    LAB_EntitySet* set;
     size_t index;
 } LAB_EntityReference;
 
@@ -243,5 +243,5 @@ const LAB_EntityComponent LAB_EntityPos_component = {
 
 typedef struct LAB_EntityHealth
 {
-    int healthpoints
-} LAB_EntityPos;
+    int healthpoints;
+} LAB_EntityHealth;

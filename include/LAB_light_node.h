@@ -40,10 +40,14 @@
  *
  *  The light for rendering is calculated from all 6 light color values
  */
+ #if 0
 typedef struct LAB_LightNode
 {
     LAB_Color faces[6];
 } LAB_LightNode;
+#else
+typedef LAB_Color LAB_LightNode;
+#endif
 
  #if 0
 /** V1
