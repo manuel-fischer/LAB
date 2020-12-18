@@ -79,7 +79,7 @@ bool LAB_CCPS_HasPos(LAB_CCPS set, int x, int y, int z)
             for(int LAB_CCPS_x_set = LAB_CCPS_set     & 0xffff; LAB_CCPS_x_set; LAB_CCPS_x_set &= LAB_CCPS_x_set-1) \
             { \
                 LAB_CCPS_x = LAB_Ctz(LAB_CCPS_x_set); \
-                if(LAB_CCPS_set & 1<<LAB_CCPS_PosHash(LAB_CCPS_x, LAB_CCPS_y, LAB_CCPS_z)) \
+                if(LAB_CCPS_HasPos(LAB_CCPS_set, LAB_CCPS_x, LAB_CCPS_y, LAB_CCPS_z)) \
                 { \
                     (x)=LAB_CCPS_x; \
                     (y)=LAB_CCPS_y; \
@@ -157,3 +157,7 @@ while(0)
     LAB_CCPS_LABEL(exit):; \
 } \
 while(0)
+
+// TODO
+// Iterate over all 27 neighboring blocks
+//#define LAB_CCPS_EACH_NEAR_DIAG_POS

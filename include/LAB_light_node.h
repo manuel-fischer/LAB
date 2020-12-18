@@ -40,13 +40,15 @@
  *
  *  The light for rendering is calculated from all 6 light color values
  */
- #if 0
+ #define LAB_DIRECTIONAL_LIGHT 0
+#if LAB_DIRECTIONAL_LIGHT == 0
+typedef LAB_Color LAB_LightNode;
+#else
 typedef struct LAB_LightNode
 {
+    // the corresponding face points to the light source
     LAB_Color faces[6];
 } LAB_LightNode;
-#else
-typedef LAB_Color LAB_LightNode;
 #endif
 
  #if 0

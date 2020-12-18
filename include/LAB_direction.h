@@ -13,6 +13,13 @@
 #define LAB_DIR_N 16
 #define LAB_DIR_S 32
 
+#define LAB_I_W  0
+#define LAB_I_E  1
+#define LAB_I_D  2
+#define LAB_I_U  3
+#define LAB_I_N  4
+#define LAB_I_S  5
+
 #define LAB_DIR_ALL 63
 
 #if 0

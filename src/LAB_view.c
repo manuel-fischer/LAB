@@ -303,6 +303,8 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
     LAB_Block* tmp_block;
 #define IS_BLOCK_OPAQUE(bx, by, bz) (tmp_block=GET_BLOCK(bx, by, bz), (!!(tmp_block->flags&LAB_BLOCK_OPAQUE)) | ((tmp_block==block) & (!!(tmp_block->flags&LAB_BLOCK_OPAQUE_SELF))))
 
+#define GET_LIGHT LAB_GetVisualNeighborhoodLight
+
     LAB_Block* block = cnk3x3x3[1+3+9]->blocks[LAB_CHUNK_OFFSET(x, y, z)];
 
     int faces = 0;
@@ -343,10 +345,10 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
         int face;
         LAB_DIR_EACH(lum_faces, face,
         {
-            light_sides[face] = MAP_LIGHT(MAP_LIGHT_0(LAB_GetNeighborhoodLight(cnk3x3x3, x+LAB_OX(face), y+LAB_OY(face), z+LAB_OZ(face), LAB_RGB(255, 255, 255))));
+            light_sides[face] = MAP_LIGHT(MAP_LIGHT_0(GET_LIGHT(cnk3x3x3, x+LAB_OX(face), y+LAB_OY(face), z+LAB_OZ(face), face, LAB_RGB(255, 255, 255))));
         });
 
-        light_sides[6] = MAP_LIGHT(MAP_LIGHT_0(LAB_GetNeighborhoodLight(cnk3x3x3, x, y, z, LAB_RGB(255, 255, 255))));
+        light_sides[6] = MAP_LIGHT(MAP_LIGHT_0(GET_LIGHT(cnk3x3x3, x, y, z, LAB_I_U, LAB_RGB(255, 255, 255))));
 
 
         const LAB_Model* model = block->model;
@@ -362,7 +364,7 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
         LAB_Color default_color = chunk_entry->y<-2 ? LAB_RGB(15, 15, 15) : LAB_RGB(255, 255, 255);
         LAB_Color light_sides[7][4];
 
-        #define XX(xd, yd, zd) LAB_GetNeighborhoodLight(cnk3x3x3, x+ox+(xd), y+oy+(yd), z+oz+(zd), default_color)
+        #define XX(xd, yd, zd) GET_LIGHT(cnk3x3x3, x+ox+(xd), y+oy+(yd), z+oz+(zd), face, default_color)
         int face;
         LAB_DIR_EACH(lum_faces, face,
         {
@@ -411,10 +413,13 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
         });
         #undef XX
 
+        // TODO
+        #define FACE_CENTER 0
+
         light_sides[6][0] =
         light_sides[6][1] =
         light_sides[6][2] =
-        light_sides[6][3] = MAP_LIGHT(LAB_GetNeighborhoodLight(cnk3x3x3, x, y, z, LAB_RGB(255, 255, 255)));
+        light_sides[6][3] = MAP_LIGHT(GET_LIGHT(cnk3x3x3, x, y, z, FACE_CENTER, LAB_RGB(255, 255, 255)));
 
 
         const LAB_Model* model = block->model;

@@ -579,12 +579,24 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms)
 
         // TODO move this collision physics to the world itself
         // clipping
-        int steps = (int)ceilf(LAB_MAX3(fabs(dx), fabs(dy), fabs(dz))/0.0625f + 1);
+        const float maxstep = 0.0625f;
+        float fsteps = ceilf(LAB_MAX3(fabs(dx), fabs(dy), fabs(dz))/maxstep + 1);
+        LAB_ASSUME(fsteps<INT_MAX);
+        int steps = (int)fsteps;
+
+        float ddx = dx/(float)steps, ddy = dy/(float)steps, ddz = dz/(float)steps;
+        LAB_ASSUME(ddx <= maxstep);
+        LAB_ASSUME(ddy <= maxstep);
+        LAB_ASSUME(ddz <= maxstep);
+
+        //printf("steps=%i, %f|%f  %f|%f  %f|%f\n", steps, dx, ddx, dy, ddy, dz, ddz);
+
         for(int step = 0; step < steps; ++step)
         {
-            view->x += dx/(float)steps;
-            view->y += dy/(float)steps;
-            view->z += dz/(float)steps;
+            view->x += ddx;
+            view->y += ddy;
+            view->z += ddz;
+            //printf("    %04i: %f %f %f\n", step, view->x, view->y, view->z);
 
             int bx, by, bz;
             bx = LAB_FastFloorF2I(view->x);
@@ -615,21 +627,21 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms)
                 for(int xx = -1; xx <= 1; ++xx)
                 for(int zz = -1; zz <= 1; ++zz)
                 {
-                    LAB_Block* block  = LAB_GetBlock(view->world, bx+xx, by+yy, bz+zz, LAB_CHUNK_EXISTING);
+                    LAB_Block* block  = LAB_GetBlock(view->world, bx+xx, by+yy, bz+zz, LAB_CHUNK_GENERATE);
 
                     if(xx!=0||zz!=0)
                     {
                         // Blocks on the same axis
-                        LAB_Block* b1 = LAB_GetBlock(view->world, bx+xx, by+0,  bz,    LAB_CHUNK_EXISTING);
-                        LAB_Block* b2 = LAB_GetBlock(view->world, bx+xx, by-1,  bz,    LAB_CHUNK_EXISTING);
-                        LAB_Block* b3 = LAB_GetBlock(view->world, bx,    by+0,  bz+zz, LAB_CHUNK_EXISTING);
-                        LAB_Block* b4 = LAB_GetBlock(view->world, bx,    by-1,  bz+zz, LAB_CHUNK_EXISTING);
+                        LAB_Block* b1 = LAB_GetBlock(view->world, bx+xx, by+0,  bz,    LAB_CHUNK_GENERATE);
+                        LAB_Block* b2 = LAB_GetBlock(view->world, bx+xx, by-1,  bz,    LAB_CHUNK_GENERATE);
+                        LAB_Block* b3 = LAB_GetBlock(view->world, bx,    by+0,  bz+zz, LAB_CHUNK_GENERATE);
+                        LAB_Block* b4 = LAB_GetBlock(view->world, bx,    by-1,  bz+zz, LAB_CHUNK_GENERATE);
                         if(b1->flags&LAB_BLOCK_MASSIVE || b2->flags&LAB_BLOCK_MASSIVE) continue;
                         if(b3->flags&LAB_BLOCK_MASSIVE || b4->flags&LAB_BLOCK_MASSIVE) continue;
 
                         // Blocks possibly in the corners
-                        LAB_Block* b5 = LAB_GetBlock(view->world, bx+xx, by+0,  bz+zz, LAB_CHUNK_EXISTING);
-                        LAB_Block* b6 = LAB_GetBlock(view->world, bx+xx, by-1,  bz+zz, LAB_CHUNK_EXISTING);
+                        LAB_Block* b5 = LAB_GetBlock(view->world, bx+xx, by+0,  bz+zz, LAB_CHUNK_GENERATE);
+                        LAB_Block* b6 = LAB_GetBlock(view->world, bx+xx, by-1,  bz+zz, LAB_CHUNK_GENERATE);
                         if(b5->flags&LAB_BLOCK_MASSIVE || b6->flags&LAB_BLOCK_MASSIVE) continue;
                     }
 
@@ -663,7 +675,7 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms)
                 int zz = xz[i][1];
                 for(int yy = -2; yy <= 1; ++yy)
                 {
-                    LAB_Block* block = LAB_GetBlock(view->world, bx+xx, by+yy, bz+zz, LAB_CHUNK_EXISTING);
+                    LAB_Block* block = LAB_GetBlock(view->world, bx+xx, by+yy, bz+zz, LAB_CHUNK_GENERATE);
                     if(block->flags&LAB_BLOCK_MASSIVE)
                     {
                         int collides = 1;

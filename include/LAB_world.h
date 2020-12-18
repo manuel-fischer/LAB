@@ -224,7 +224,7 @@ void LAB_WorldTick(LAB_World* world, uint32_t delta_ms);
 
 LAB_INLINE LAB_Chunk* LAB_GetNeighborhoodRef(LAB_Chunk*const neighborhood[27], int x, int y, int z, int* /*out*/ index);
 LAB_INLINE LAB_Block* LAB_GetNeighborhoodBlock(LAB_Chunk*const neighborhood[27], int x, int y, int z);
-LAB_INLINE LAB_Color LAB_GetNeighborhoodLight(LAB_Chunk*const neighborhood[27], int x, int y, int z, LAB_Color default_color);
+LAB_INLINE LAB_Color LAB_GetNeighborhoodLight(LAB_Chunk*const neighborhood[27], int x, int y, int z, int face, LAB_Color default_color);
 LAB_INLINE uint32_t LAB_World_PeekFlags3x3(LAB_Chunk* chunk, int x, int y, int z, unsigned flag);
 
 
@@ -271,7 +271,7 @@ LAB_Block* LAB_GetNeighborhoodBlock(LAB_Chunk*const neighborhood[27], int x, int
 }
 
 LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
-LAB_Color LAB_GetNeighborhoodLight(LAB_Chunk*const neighborhood[27], int x, int y, int z, LAB_Color default_color)
+LAB_Color LAB_GetNeighborhoodLight(LAB_Chunk*const neighborhood[27], int x, int y, int z, int face, LAB_Color default_color)
 {
     int block_index;
     LAB_Chunk* chunk;
@@ -279,20 +279,65 @@ LAB_Color LAB_GetNeighborhoodLight(LAB_Chunk*const neighborhood[27], int x, int 
 
     //if(LAB_UNLIKELY(chunk == NULL)) return LAB_RGB(255, 255, 255);
     if(chunk == NULL) return default_color;
+#if LAB_DIRECTIONAL_LIGHT == 0
     return chunk->light[block_index];
+#else
+    return chunk->light[block_index].faces[face];
+#endif
 }
 
 LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
-bool LAB_SetNeighborhoodLight(LAB_Chunk* neighborhood[27], int x, int y, int z, LAB_Color color)
+LAB_Color LAB_GetVisualNeighborhoodLight(LAB_Chunk*const neighborhood[27], int x, int y, int z, int face, LAB_Color default_color)
+{
+#if LAB_DIRECTIONAL_LIGHT == 0
+    return LAB_GetNeighborhoodLight(neighborhood, x, y, z, face, default_color);
+#else
+    int block_index;
+    LAB_Chunk* chunk;
+    chunk = LAB_GetNeighborhoodRef(neighborhood, x, y, z, &block_index);
+
+    //if(LAB_UNLIKELY(chunk == NULL)) return LAB_RGB(255, 255, 255);
+    if(chunk == NULL) return default_color;
+
+    /**
+     *    1
+     *  2 3 4
+     *    5
+    **/
+    LAB_Color c = 0;
+
+    int j = 0;
+    for(int i = 0; i < 6; ++i)
+    {
+        if(i != (face^1))
+        {
+            LAB_Color cf = chunk->light[block_index].faces[i];
+            if(i == face)
+            {
+                //cf = LAB_SubColor(cf, 0x0f0f0f0f);
+                cf = LAB_MulColor2_Saturate(cf);
+                cf = LAB_MulColor2_Saturate(cf);
+            }
+            c = LAB_MaxColor(c, cf);
+        }
+    }
+
+    return c;
+#endif
+}
+
+
+/*LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
+bool LAB_SetNeighborhoodLight(LAB_Chunk* neighborhood[27], int x, int y, int z, int face, LAB_Color color)
 {
     int block_index;
     LAB_Chunk* chunk;
     chunk = LAB_GetNeighborhoodRef(neighborhood, x, y, z, &block_index);
 
     if(chunk == NULL) return 0;
-    chunk->light[block_index] = color;
+    chunk->light[block_index].faces[face] = color;
     return 1;
-}
+}*/
 
 LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
 uint32_t LAB_World_PeekFlags3x3(LAB_Chunk* chunk, int x, int y, int z, unsigned flag)
