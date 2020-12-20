@@ -10,13 +10,13 @@ LAB_STATIC void LAB_Gen_Overworld_Tower(LAB_Placer* p, LAB_Random* rnd);
 
 
 const LAB_StructureLayer overworld_layers[] =
-{ //    salt   probability  count           func
-  //                        <? >?
-    {0x93475493,     32,    1,  5, LAB_Gen_Overworld_DirtPatch},
-    {0x56789abc,    256,    7, 70, LAB_Gen_Overworld_Plant},
-    {0x32547698,    256,    0,  4, LAB_Gen_Overworld_Bush},
-    {0x13579bdf,    256,    0,  3, LAB_Gen_Overworld_Tree},
-    {0xfdb97531,      8,    1,  1, LAB_Gen_Overworld_Tower},
+{ //    salt   probability   count      height range         func
+  //                        <?   >?       <?   >?
+    {0x93475493,     32,     1,   5,     -80,  30,     LAB_Gen_Overworld_DirtPatch},
+    {0x56789abc,    256,     7,  70,     -80,  30,     LAB_Gen_Overworld_Plant},
+    {0x32547698,    256,     0,   4,     -80,  30,     LAB_Gen_Overworld_Bush},
+    {0x13579bdf,    256,     0,   3,     -80,  20,     LAB_Gen_Overworld_Tree},
+    {0xfdb97531,      8,     1,   1,     -80,   5,     LAB_Gen_Overworld_Tower},
 };
 const size_t overworld_layers_count = sizeof(overworld_layers)/sizeof(overworld_layers[0]);
 

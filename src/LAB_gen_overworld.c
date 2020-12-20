@@ -30,9 +30,13 @@ LAB_STATIC void LAB_Gen_Surface_Populate_Func(LAB_GenOverworld* gen, LAB_Placer*
 LAB_STATIC void LAB_Gen_Cave(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
 LAB_STATIC void LAB_Gen_Cave_Carve(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
 LAB_STATIC bool LAB_Gen_Cave_Carve_Func(LAB_GenOverworld* gen, int x, int y, int z); // block is cave
+LAB_STATIC int  LAB_Gen_Cave_Carve_Ceiling(LAB_GenOverworld* gen, int x, int y, int z, int y_dist);
+LAB_STATIC int  LAB_Gen_Cave_Carve_Floor(LAB_GenOverworld* gen, int x, int y, int z, int y_dist);
 LAB_STATIC void LAB_Gen_Cave_Crystals(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
 LAB_STATIC void LAB_Gen_Cave_RockVariety(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
 
+LAB_STATIC void LAB_Gen_Cave_PopulateLayer(LAB_GenOverworld* gen, LAB_Chunk* chunk, const LAB_StructureLayer* lyr, int cx, int cy, int cz);
+LAB_STATIC void LAB_Gen_Cave_PopulateLayer_Func(LAB_GenOverworld* gen, LAB_Placer* p, const LAB_StructureLayer* lyr, int cx, int cy, int cz);
 
 
 #define LAB_SURFACE_MIN_CY (-2)
@@ -91,22 +95,25 @@ LAB_STATIC void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk* chunk, i
                 int yi = 16*y|yy;
 
 
-                LAB_Block* b;
+                LAB_Block* b = &LAB_BLOCK_AIR;
 
-                if(yi == sheight)
-                    b = &LAB_BLOCK_GRASS;
-                else if(yi <= sheight)
+                if(sheight < (int)(LAB_NextRandom(&random)&15) + 20)
                 {
-                    //uint64_t fact = 0x100000000ll/(32+16);
-                    //if((~LAB_NextRandom(&random)>>32) >= (2u*(-yi)-(-sheight))*fact)
-                    if(yi >= sheight-(int)(LAB_NextRandom(&random)&7)-1)
-                    //if(yi >= sheight-2)
-                        b = &LAB_BLOCK_DIRT;
-                    else
-                        continue; // keep stone
+                    if(yi == sheight)
+                        b = &LAB_BLOCK_GRASS;
+                    else if(yi <= sheight)
+                    {
+                        //uint64_t fact = 0x100000000ll/(32+16);
+                        //if((~LAB_NextRandom(&random)>>32) >= (2u*(-yi)-(-sheight))*fact)
+                        if(yi >= sheight-(int)(LAB_NextRandom(&random)&7)-1)
+                        //if(yi >= sheight-2)
+                            b = &LAB_BLOCK_DIRT;
+                        else
+                            continue; // keep stone
+                    }
                 }
-                else
-                    b = &LAB_BLOCK_AIR;
+                else if(yi <= sheight)
+                    continue; // keep stone
 
                 chunk->blocks[LAB_CHUNK_OFFSET(xx, yy, zz)] = b;
             }
@@ -117,20 +124,29 @@ LAB_STATIC void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk* chunk, i
 
 LAB_STATIC int LAB_Gen_Surface_Shape_Func(LAB_GenOverworld* gen, int xi, int zi)
 {
-    #define ML 0.001
-    #define MS 0.03
-    double large = (LAB_SimplexNoise2D(xi*0.001, zi*0.001)+1)*0.5;
+    //#define ML 0.001
+    //#define MS 0.03
+    #define ML 0.0006
+    #define MS 0.007
+
+    double x = xi, z = zi;
+    double dx = LAB_SimplexNoise2D(x*0.03, z*0.1 + 10000);
+    double dz = LAB_SimplexNoise2D(x*0.1+10000, z*0.03);
+    x+=dx*2;
+    z+=dz*2;
+
+    double large = (LAB_SimplexNoise2D(x*0.001, z*0.001)+1)*0.5;
     #define fade(t) ((t)*(t)*(t)*((t)*((t)*6-15)+10))
     #define sqr1(t) ((t)*(2-t))
     #define sqr2(t) ((t)*(t))
-    double small = 0.70*(LAB_SimplexNoise2D(xi*MS*1, zi*MS*1)+1)*0.5
-                 + 0.20*(LAB_SimplexNoise2D(xi*MS*2, zi*MS*2)+1)*0.5
-                 + 0.10*(LAB_SimplexNoise2D(xi*MS*4, zi*MS*4)+1)*0.5;
+    double small = 0.70*(LAB_SimplexNoise2D(x*MS*1, z*MS*1)+1)*0.5
+                 + 0.20*(LAB_SimplexNoise2D(x*MS*2, z*MS*2)+1)*0.5
+                 + 0.10*(LAB_SimplexNoise2D(x*MS*4, z*MS*4)+1)*0.5;
     double displacement = (large*large)*(large*large)*small;
     displacement = sqr1(sqr1(sqr1(displacement)));
     displacement = fade(displacement);
-    double base  = 0.50*(LAB_SimplexNoise2D(xi*ML*2+100, zi*ML*2+100)+1)*0.5
-                 + 0.50*(LAB_SimplexNoise2D(xi*ML*4+100, zi*ML*4+100)+1)*0.5;
+    double base  = 0.50*(LAB_SimplexNoise2D(x*ML*2+100, z*ML*2+100)+1)*0.5
+                 + 0.50*(LAB_SimplexNoise2D(x*ML*4+100, z*ML*4+100)+1)*0.5;
     double n = 0.50*displacement
              + 0.50*base*base*base;
     // TODO LAB_FastFloorF2I == (int)
@@ -175,7 +191,8 @@ LAB_STATIC void LAB_Gen_Surface_PopulateLayer_Func(LAB_GenOverworld* gen, LAB_Pl
 
             // absolute
             int ay = 1+LAB_Gen_Surface_Shape_Func(gen, x|cx<<4, z|cz<<4);
-            if(ay >> 4 == cy && !LAB_Gen_Cave_Carve_Func(gen, x|cx<<4, ay-1, z|cz<<4))
+            if(ay >> 4 == cy && !LAB_Gen_Cave_Carve_Func(gen, x|cx<<4, ay-1, z|cz<<4)
+                             && lyr->min_height <= ay && ay <= lyr->max_height)
             {
                 LAB_Placer p2;
                 p2.chunk = p->chunk;
@@ -189,98 +206,6 @@ LAB_STATIC void LAB_Gen_Surface_PopulateLayer_Func(LAB_GenOverworld* gen, LAB_Pl
     }
 }
 
-#if 0
-LAB_STATIC void LAB_Gen_Surface_Populate(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz)
-{
-    for(int i = 0; i < sizeof(overworld_layers)/sizeof(overworld_layers[0]); ++i)
-    for(int z = -LAB_MAX_STRUCTURE_SIZE; z <= LAB_MAX_STRUCTURE_SIZE; ++z)
-    for(int y = -LAB_MAX_STRUCTURE_SIZE; y <= LAB_MAX_STRUCTURE_SIZE; ++y)
-    for(int x = -LAB_MAX_STRUCTURE_SIZE; x <= LAB_MAX_STRUCTURE_SIZE; ++x)
-    {
-        LAB_Placer p;
-        p.chunk = chunk;
-        p.ox = -16*x;
-        p.oy = -16*y;
-        p.oz = -16*z;
-        LAB_Gen_Surface_Populate_Func(gen, &p, &overworld_layers[i], cx+x, cy+y, cz+z);
-    }
-}
-
-LAB_STATIC void LAB_Gen_Surface_Populate_Func(LAB_GenOverworld* gen, LAB_Placer* p, int cx, int cy, int cz)
-{
-    LAB_Random rnd;
-    LAB_ChunkRandom(&rnd, gen->seed^0x13579, cx, cy, cz);
-
-    int count;
-
-    // place plant groups
-    count = 7+(LAB_NextRandom(&rnd)&63);
-    for(int i = 0; i < count; ++i)
-    {
-        int xz = LAB_NextRandom(&rnd);
-        int x = xz    & 15;
-        int z = xz>>4 & 15;
-
-        // absolute
-        int ay = 1+LAB_Gen_Surface_Shape_Func(gen, x|cx<<4, z|cz<<4);
-        if(ay >> 4 == cy && !LAB_Gen_Cave_Carve_Func(gen, x|cx<<4, ay-1, z|cz<<4))
-        {
-            LAB_Placer p2;
-            p2.chunk = p->chunk;
-            p2.ox = p->ox - x;
-            p2.oy = p->oy - (ay&15);
-            p2.oz = p->oz - z;
-
-            LAB_Block* plant = LAB_NextRandom(&rnd)&1 ? &LAB_BLOCK_TALLGRASS : &LAB_BLOCK_TALLERGRASS;
-
-            LAB_Placer_SetBlock(&p2, 0, 0, 0, plant);
-        }
-    }
-
-    // place trees
-    count = LAB_NextRandom(&rnd)&3;
-    for(int i = 0; i < count; ++i)
-    {
-        int xz = LAB_NextRandom(&rnd);
-        int x = xz    & 15;
-        int z = xz>>4 & 15;
-
-        // absolute
-        int ay = 1+LAB_Gen_Surface_Shape_Func(gen, x|cx<<4, z|cz<<4);
-        if(ay >> 4 == cy && !LAB_Gen_Cave_Carve_Func(gen, x|cx<<4, ay-1, z|cz<<4))
-        {
-            LAB_Placer p2;
-            p2.chunk = p->chunk;
-            p2.ox = p->ox - x;
-            p2.oy = p->oy - (ay&15);
-            p2.oz = p->oz - z;
-
-            LAB_Gen_Overworld_Tree(&p2, &rnd);
-        }
-    }
-
-    // place buildings
-    if((LAB_NextRandom(&rnd)&31) == 0)
-    {
-        int xz = LAB_NextRandom(&rnd);
-        int x = xz    & 15;
-        int z = xz>>4 & 15;
-
-        // absolute
-        int ay = 1+LAB_Gen_Surface_Shape_Func(gen, x|cx<<4, z|cz<<4);
-        if(ay >> 4 == cy && !LAB_Gen_Cave_Carve_Func(gen, x|cx<<4, ay-1, z|cz<<4))
-        {
-            LAB_Placer p2;
-            p2.chunk = p->chunk;
-            p2.ox = p->ox - x;
-            p2.oy = p->oy - (ay&15);
-            p2.oz = p->oz - z;
-
-            LAB_Gen_Overworld_Tower(&p2, &rnd);
-        }
-    }
-}
-#endif
 
 
 
@@ -339,6 +264,26 @@ LAB_STATIC bool LAB_Gen_Cave_Carve_Func(LAB_GenOverworld* gen, int xi, int yi, i
     double treshold = 1-1/(double)(abs(yi)*32*0.001+20)*20;
     return d < treshold*0.2;
 }
+
+
+LAB_STATIC int  LAB_Gen_Cave_Carve_Ceiling(LAB_GenOverworld* gen, int x, int y, int z, int y_dist)
+{
+    for(int yi = y; yi < y+y_dist; ++yi)
+    {
+        if(!LAB_Gen_Cave_Carve_Func(gen, x, yi, z)) return yi;
+    }
+    return y+y_dist;
+}
+
+LAB_STATIC int  LAB_Gen_Cave_Carve_Floor(LAB_GenOverworld* gen, int x, int y, int z, int y_dist)
+{
+    for(int yi = y; yi < y-y_dist; --yi)
+    {
+        if(!LAB_Gen_Cave_Carve_Func(gen, x, yi, z)) return yi;
+    }
+    return y+y_dist;
+}
+
 
 LAB_STATIC void LAB_Gen_Cave_Crystals(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y, int z)
 {

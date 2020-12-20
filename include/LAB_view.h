@@ -195,6 +195,7 @@ typedef struct LAB_View
     uint32_t max_update;
 
     uint32_t load_amount;
+    uint32_t empty_load_amount;
 
     LAB_ViewCoordInfo info;
     int w, h; // window size

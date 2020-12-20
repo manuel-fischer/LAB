@@ -1690,6 +1690,7 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
     **/
 
     int load_amount = view->load_amount; // should be configurable
+    int empty_load_amount = view->empty_load_amount;
 
     for(int r = 0; r <= (int)view->preload_dist; ++r)
     {
@@ -1744,7 +1745,28 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
                         if(!entry->exist)
                         {
                             entry->do_query = 1;
-                            (void)LAB_GetChunk(view->world, xx, yy, zz, LAB_CHUNK_GENERATE_LATER);
+                            #if 0
+                            LAB_GetChunk(view->world, xx, yy, zz, LAB_CHUNK_GENERATE_LATER);
+                            #else
+                            LAB_Chunk* chunk = LAB_GetChunk(view->world, xx, yy, zz, LAB_CHUNK_GENERATE);
+                            if(empty_load_amount)
+                            {
+                                int is_empty = 1;
+                                for(int c_i = 0; c_i < LAB_CHUNK_SIZE; ++c_i)
+                                {
+                                    if(chunk->blocks[c_i] != &LAB_BLOCK_AIR)
+                                    {
+                                        is_empty = 0;
+                                        break;
+                                    }
+                                }
+                                if(is_empty)
+                                {
+                                    load_amount++;
+                                    empty_load_amount--;
+                                }
+                            }
+                            #endif
                             if(!load_amount) return;
                         }
 

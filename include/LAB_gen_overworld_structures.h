@@ -1,16 +1,7 @@
 #pragma once
 
 #include "LAB_gen.h"
-#include "LAB_random.h"
-
-
-typedef struct LAB_StructureLayer
-{
-    int salt;
-    int probability; // in range [0, 256],
-    int min_count, max_count;
-    void (*structure_func)(LAB_Placer* p, LAB_Random* rnd);
-} LAB_StructureLayer;
+#include "LAB_gen_structure.h"
 
 // Note: extern allows the array to be defined without a size
 extern const LAB_StructureLayer overworld_layers[];

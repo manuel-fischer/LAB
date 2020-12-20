@@ -65,11 +65,12 @@ int main(int argc, char** argv) {
     view.render_dist = 5;
     view.preload_dist = LAB_PRELOAD_CHUNK(view.render_dist);
     view.keep_dist = LAB_KEEP_CHUNK(view.render_dist);
-    view.flags = LAB_VIEW_SHOW_HUD;
+    view.flags = LAB_VIEW_SHOW_HUD | LAB_VIEW_USE_VBO;
     view.max_update = 160;
     //view.load_amount = 3;
     //view.load_amount = 10;
     view.load_amount = 1;
+    view.empty_load_amount = 5;
     //view.load_amount = 100; // DBG
 
     CHECK_INIT(LAB_ConstructViewInput(&view_input, &view));
