@@ -2,9 +2,9 @@
 More recent screenshots are at the top, so if you want to see the developement stages from early on, you can start at the bottom and scroll up.
 
 ## Mountain generation
-![](018.png)
-![](017.png)
 ![](016.png)
+![](017.png)
+![](018.png)
 
 ## Tree and tower generation
 ![](015.png)

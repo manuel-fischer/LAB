@@ -1,6 +1,6 @@
 # LAB
 
-![Colored Light](screenshots/013.png)
+![Mountain generation](screenshots/016.png)
 [More screenshots](screenshots/screenshots.md)
 
 A Voxel-Engine, *infinite* world in all three spacial dimensions. Currently
