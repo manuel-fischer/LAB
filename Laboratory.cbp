@@ -202,6 +202,7 @@
 		<Unit filename="include/LAB_gen.h" />
 		<Unit filename="include/LAB_gen_flat.h" />
 		<Unit filename="include/LAB_gen_overworld.h" />
+		<Unit filename="include/LAB_gen_overworld_shape.h" />
 		<Unit filename="include/LAB_gen_overworld_structures.h" />
 		<Unit filename="include/LAB_gen_structure.h" />
 		<Unit filename="include/LAB_gl.h" />
@@ -274,6 +275,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_gen_overworld.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_gen_overworld_shape.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_gen_overworld_structures.c">

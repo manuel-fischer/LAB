@@ -1,6 +1,7 @@
 #include "LAB_gen_overworld_structures.h"
 
 #include "LAB_attr.h"
+#include "LAB_gen_overworld_shape.h"
 
 LAB_STATIC void LAB_Gen_Overworld_DirtPatch(LAB_Placer* p, LAB_Random* rnd);
 LAB_STATIC void LAB_Gen_Overworld_Plant(LAB_Placer* p, LAB_Random* rnd);
@@ -9,21 +10,28 @@ LAB_STATIC void LAB_Gen_Overworld_Rock(LAB_Placer* p, LAB_Random* rnd);
 LAB_STATIC void LAB_Gen_Overworld_Tree(LAB_Placer* p, LAB_Random* rnd);
 LAB_STATIC void LAB_Gen_Overworld_Tower(LAB_Placer* p, LAB_Random* rnd);
 
+LAB_STATIC void LAB_Gen_Cave_CeilingCrystal(LAB_Placer* p, LAB_Random* rnd);
+LAB_STATIC void LAB_Gen_Cave_FloorCrystal(LAB_Placer* p, LAB_Random* rnd);
+
 
 const LAB_StructureLayer overworld_layers[] =
-{ //    salt   probability   count      height range         func
+{ //    salt   probability   count      height range           place                           func
   //                        <?   >?       <?   >?
-    {0x93475493,     32,     1,   5,     -80,  80,     LAB_Gen_Overworld_DirtPatch},
-    {0x91827364,    256,     0,   1,      20, 200,     LAB_Gen_Overworld_Rock},
-    {0x32547698,    256,     0,   4,     -80,  60,     LAB_Gen_Overworld_Bush},
-    {0x56789abc,    256,     7,  70,     -80,  70,     LAB_Gen_Overworld_Plant},
-    {0x13579bdf,    256,     0,   3,     -80,  30,     LAB_Gen_Overworld_Tree},
-    {0xfdb97531,      2,     1,   1,     -80,  10,     LAB_Gen_Overworld_Tower},
+    {0x93475493,     32,     1,   5,     -80,  80,     LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_DirtPatch},
+    {0x91827364,    256,     0,   1,      20, 200,     LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Rock},
+    {0x32547698,    256,     0,   4,     -80,  60,     LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Bush},
+    {0x56789abc,    256,     7,  70,     -80,  70,     LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant},
+    {0x13579bdf,    256,     0,   3,     -80,  30,     LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree},
+    {0xfdb97531,      2,     1,   1,     -80,  10,     LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower},
+
+    {0x21436587,    256,     0,   7, INT_MIN, -50,     LAB_Gen_PlaceOnCaveCeiling,    LAB_Gen_Cave_CeilingCrystal},
+    {0x78563412,    256,     0,   7, INT_MIN, -50,     LAB_Gen_PlaceOnCaveFloor,      LAB_Gen_Cave_FloorCrystal},
 };
 const size_t overworld_layers_count = sizeof(overworld_layers)/sizeof(overworld_layers[0]);
 
 
 
+/***** Surface *****/
 LAB_STATIC void LAB_Gen_Overworld_DirtPatch(LAB_Placer* p, LAB_Random* rnd)
 {
     uint64_t R = LAB_NextRandom(rnd);
@@ -170,5 +178,76 @@ LAB_STATIC void LAB_Gen_Overworld_Tower(LAB_Placer* p, LAB_Random* rnd)
         }
         else if(y < h+2&&(x==-r||x==r || z==-r||z==r)&&(y==h||((x^z)&1)==0))
             LAB_Placer_SetBlock(p, x, y, z, corner);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/***** Cave *****/
+LAB_STATIC void LAB_Gen_Cave_CeilingCrystal(LAB_Placer* p, LAB_Random* rnd)
+{
+    /** TODO
+
+        unsigned amount = LAB_MIN(2*LAB_MAX(0, -y), 100);
+
+        if((LAB_NextRandom(&random)&255) < amount)
+
+     **/
+
+
+
+    LAB_Block*const LIGHTS[4] = {
+        &LAB_BLOCK_BLUE_CRYSTAL,
+        &LAB_BLOCK_YELLOW_CRYSTAL,
+        &LAB_BLOCK_GREEN_CRYSTAL,
+        &LAB_BLOCK_RED_CRYSTAL,
+    };
+
+    LAB_Block* light = LIGHTS[LAB_NextRandom(rnd)&3];
+
+    int h = (LAB_NextRandom(rnd)&3)+2;
+    for(int y = 0; h > 0; --y, --h)
+    {
+        LAB_Placer_SetBlockIfBlock(p, 0, y, 0, light, &LAB_BLOCK_AIR);
+    }
+}
+
+LAB_STATIC void LAB_Gen_Cave_FloorCrystal(LAB_Placer* p, LAB_Random* rnd)
+{
+    /** TODO
+
+        unsigned amount = LAB_MIN(2*LAB_MAX(0, -y), 100);
+
+        if((LAB_NextRandom(&random)&255) < amount)
+
+     **/
+
+
+
+    LAB_Block*const LIGHTS[4] = {
+        &LAB_BLOCK_BLUE_CRYSTAL,
+        &LAB_BLOCK_YELLOW_CRYSTAL,
+        &LAB_BLOCK_GREEN_CRYSTAL,
+        &LAB_BLOCK_RED_CRYSTAL,
+    };
+
+    LAB_Block* light = LIGHTS[LAB_NextRandom(rnd)&3];
+
+    int h = (LAB_NextRandom(rnd)&3)+2;
+    for(int y = 0; h > 0; ++y, --h)
+    {
+        LAB_Placer_SetBlockIfBlock(p, 0, y, 0, light, &LAB_BLOCK_AIR);
     }
 }
