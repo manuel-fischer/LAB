@@ -479,6 +479,7 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms)
                 dx += dir[0]*speed*bw;
                 dy += dir[1]*speed*bw;
                 dz += dir[2]*speed*bw;
+                view->vy += pow((1+dir[1]*bw)*0.5, 0.7)*speed;
             }
             dir_set&=(2|8);
         }

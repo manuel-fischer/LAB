@@ -159,7 +159,7 @@
 			<Add library="opengl32" />
 			<Add library="glew32" />
 		</Linker>
-		<Unit filename="TODO.txt" />
+		<Unit filename="TODO.md" />
 		<Unit filename="include/HTL_hasharray.t.c">
 			<Option compilerVar="CC" />
 			<Option compile="0" />
@@ -203,6 +203,7 @@
 		<Unit filename="include/LAB_gen_flat.h" />
 		<Unit filename="include/LAB_gen_overworld.h" />
 		<Unit filename="include/LAB_gen_overworld_structures.h" />
+		<Unit filename="include/LAB_gen_structure.h" />
 		<Unit filename="include/LAB_gl.h" />
 		<Unit filename="include/LAB_gui.h" />
 		<Unit filename="include/LAB_gui_button.h" />

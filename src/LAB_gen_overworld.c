@@ -39,9 +39,15 @@ LAB_STATIC void LAB_Gen_Cave_PopulateLayer(LAB_GenOverworld* gen, LAB_Chunk* chu
 LAB_STATIC void LAB_Gen_Cave_PopulateLayer_Func(LAB_GenOverworld* gen, LAB_Placer* p, const LAB_StructureLayer* lyr, int cx, int cy, int cz);
 
 
+#define LAB_SURFACE_FACTOR (4)
+//#define LAB_SURFACE_FACTOR (8)
+//#define LAB_SURFACE_FACTOR (1)
 #define LAB_SURFACE_MIN_CY (-2)
 //#define LAB_SURFACE_MAX_CY (0)
-#define LAB_SURFACE_MAX_CY (5)
+//#define LAB_SURFACE_MAX_CY (5)
+#define LAB_SURFACE_MAX_CY (10)
+//#define LAB_SURFACE_MAX_G_CY (100)
+#define LAB_SURFACE_MAX_G_CY LAB_SURFACE_MAX_CY
 #define LAB_SURFACE_MIN_Y (16*LAB_SURFACE_MIN_CY)
 #define LAB_SURFACE_MAX_Y (16*LAB_SURFACE_MAX_CY)
 
@@ -53,7 +59,7 @@ LAB_Chunk* LAB_GenOverworldProc(void* user, /*unused*/LAB_World* world_, int x, 
 {
     LAB_GenOverworld* gen = user;
 
-    LAB_Block* block = y < LAB_SURFACE_MAX_CY ? &LAB_BLOCK_STONE : &LAB_BLOCK_AIR;
+    LAB_Block* block = y < LAB_SURFACE_MAX_G_CY ? &LAB_BLOCK_STONE : &LAB_BLOCK_AIR;
     LAB_Chunk* chunk = LAB_CreateChunk(block);
     if(!chunk) return NULL;
 
@@ -76,13 +82,18 @@ LAB_Chunk* LAB_GenOverworldProc(void* user, /*unused*/LAB_World* world_, int x, 
     LAB_Gen_Surface_Populate(gen, chunk, x, y, z);
 }*/
 
+
+// TODO cache that stores minimum and maximum values for a given cx and cz chunk coordinate
+//      - thread local
+//      - special function that finalizes cache,
+//        - when all height values have been calculated, that is when a chunk has been generated
 LAB_STATIC void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y, int z)
 {
     LAB_Random random;
     LAB_ChunkRandom(&random, gen->seed^LAB_GEN_DIRT_SALT, x, y, z);
 
     //                         v  for dirt generation below the surface
-    if(y >= LAB_SURFACE_MIN_CY-1 && y < LAB_SURFACE_MAX_CY)
+    if(y >= LAB_SURFACE_MIN_CY-1 && y < LAB_SURFACE_MAX_G_CY)
     {
         for(int zz = 0; zz < 16; ++zz)
         for(int xx = 0; xx < 16; ++xx)
@@ -97,7 +108,8 @@ LAB_STATIC void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk* chunk, i
 
                 LAB_Block* b = &LAB_BLOCK_AIR;
 
-                if(sheight < (int)(LAB_NextRandom(&random)&15) + 20)
+                //if(sheight < (int)(LAB_NextRandom(&random)&15) + 20)
+                if(sheight < (int)(LAB_NextRandom(&random)&31) + 40)
                 {
                     if(yi == sheight)
                         b = &LAB_BLOCK_GRASS;
@@ -128,28 +140,93 @@ LAB_STATIC int LAB_Gen_Surface_Shape_Func(LAB_GenOverworld* gen, int xi, int zi)
     //#define MS 0.03
     #define ML 0.0006
     #define MS 0.007
+    //#define MS 0.001
+
+
+    // smooth step between 0 and 1
+    #define fade(t) ((t)*(t)*(t)*((t)*((t)*6-15)+10))
+    // square function with peak at 1: sqr1(x) = -sqr2(1-x)
+    #define sqr1(t) ((t)*(2-t))
+    // square function
+    #define sqr2(t) ((t)*(t))
+
 
     double x = xi, z = zi;
+    // dx, dy in range [-1, 1]
     double dx = LAB_SimplexNoise2D(x*0.03, z*0.1 + 10000);
     double dz = LAB_SimplexNoise2D(x*0.1+10000, z*0.03);
     x+=dx*2;
     z+=dz*2;
 
+    // range [0, 1]
+    #define ridge_noise(x, z) (1-fabs(LAB_SimplexNoise2D((x), (z))))
+    #define peak_noise(x, z) (sqrt(1-(fabs(LAB_SimplexNoise2D((x), (z)))*fabs(LAB_SimplexNoise2D(10000+(x), (z))))))
+
+    // make the noise function pointer but preserve height of the points
+    // by reducing heights, when the length of the gradient of the noise function
+    // gets bigger
+    double peak_noise2_noise, peak_noise2_dx, peak_noise2_dz;
+    #define deriv_h 0.1
+    #define peak_noise2(x, z) ( \
+        (peak_noise2_noise = LAB_SimplexNoise2D((x), (z))), \
+        (peak_noise2_dx = (peak_noise2_noise - LAB_SimplexNoise2D((x)+deriv_h, (z))))/deriv_h, \
+        (peak_noise2_dz = (peak_noise2_noise - LAB_SimplexNoise2D((x), (z)+deriv_h)))/deriv_h, \
+        (peak_noise2_dx = (sqr2(peak_noise2_dx)+sqr2(peak_noise2_dz))), \
+        (peak_noise2_noise+1)*sqrt((1-peak_noise2_dx))-1, \
+    )
+    #define peak_noise3(x, z) ( \
+        (peak_noise2_noise = LAB_SimplexNoise2D(0.5*(x), 0.5*(z))), \
+        (peak_noise2_dx = (peak_noise2_noise - LAB_SimplexNoise2D(0.5*(x)+deriv_h, 0.5*(z))))/deriv_h, \
+        (peak_noise2_dz = (peak_noise2_noise - LAB_SimplexNoise2D(0.5*(x), 0.5*(z)+deriv_h)))/deriv_h, \
+        (peak_noise2_dx = (sqr2(peak_noise2_dx)+sqr2(peak_noise2_dz))), \
+        1-sqrt(peak_noise2_dx) \
+    )
+
+    #define peak_noise4(x, z) sqr2((peak_noise3((x), (z))+peak_noise3((x), (z)+10000))*0.5)
+
+    // large in range [0, 1]
     double large = (LAB_SimplexNoise2D(x*0.001, z*0.001)+1)*0.5;
-    #define fade(t) ((t)*(t)*(t)*((t)*((t)*6-15)+10))
-    #define sqr1(t) ((t)*(2-t))
-    #define sqr2(t) ((t)*(t))
+    //double large = peak_noise(x*0.001, z*0.001);
+    //double large = peak_noise4(x*0.0003, z*0.0003);
+    // small in range [0, 1]
     double small = 0.70*(LAB_SimplexNoise2D(x*MS*1, z*MS*1)+1)*0.5
                  + 0.20*(LAB_SimplexNoise2D(x*MS*2, z*MS*2)+1)*0.5
                  + 0.10*(LAB_SimplexNoise2D(x*MS*4, z*MS*4)+1)*0.5;
-    double displacement = (large*large)*(large*large)*small;
-    displacement = sqr1(sqr1(sqr1(displacement)));
-    displacement = fade(displacement);
+    /*double r0 = peak_noise(x*MS*1, z*MS*1);
+    double r1 = peak_noise(x*MS*2, z*MS*2)*r0;
+    double r2 = peak_noise(x*MS*4, z*MS*4)*(r0+r1)*0.5;
+    double small = r2;//r0*0.5 + (r1+r2)*0.25;*/
+
+    /*double small = 0.70*peak_noise(x*MS*1, z*MS*1)
+                 + 0.20*peak_noise(x*MS*2, z*MS*2)
+                 + 0.10*peak_noise(x*MS*4, z*MS*4);*/
+
+    /*ouble small = 0.90*peak_noise4(x*MS*1, z*MS*1)
+                 + 0.07*peak_noise4(x*MS*2, z*MS*2)
+                 + 0.03*peak_noise4(x*MS*4, z*MS*4);*/
+    // displacement in [0, 1]
+    double displacement = (large*large)*(large*large)*small; // [0, 1]
+    //double displacement = large*small; // [0, 1]
+    displacement = sqr1(sqr1(sqr1(displacement))); // [0, 1]
+    //displacement = sqr1(displacement); // [0, 1]
+    displacement = fade(displacement); // [0, 1]
+
+    // base in [0, 1]
     double base  = 0.50*(LAB_SimplexNoise2D(x*ML*2+100, z*ML*2+100)+1)*0.5
                  + 0.50*(LAB_SimplexNoise2D(x*ML*4+100, z*ML*4+100)+1)*0.5;
+    //base = base*base*base;
+
     double n = 0.50*displacement
-             + 0.50*base*base*base;
+             + 0.50*base;
     // TODO LAB_FastFloorF2I == (int)
+
+    LAB_DEBUG_MINMAX(double, n);
+
+    n = sqr2(n);
+
+    //n = n + pow(8., n-1.);
+    //n *= (1./LAB_SURFACE_FACTOR);
+
     return LAB_FastFloorF2I(n*(LAB_SURFACE_MAX_Y-LAB_SURFACE_MIN_Y-1))+LAB_SURFACE_MIN_Y; // Range [LAB_SURFACE_MIN_Y, LAB_SURFACE_MAX_Y)
 }
 
@@ -241,6 +318,7 @@ LAB_STATIC void LAB_Gen_Cave_Carve(LAB_GenOverworld* gen, LAB_Chunk* chunk, int 
         double yi = y*16|yy;
         double zi = z*16|zz;
         if(LAB_Gen_Cave_Carve_Func(gen, xi, yi, zi))
+        //if(LAB_Gen_Cave_Carve_Func(gen, xi, yi, zi)||LAB_Gen_Cave_Carve_Func(gen, xi, yi-1, zi))
             chunk->blocks[xx|yy<<4|zz<<8] = &LAB_BLOCK_AIR;
     }
 }
@@ -251,17 +329,23 @@ LAB_STATIC bool LAB_Gen_Cave_Carve_Func(LAB_GenOverworld* gen, int xi, int yi, i
     #define CM (1./128.)
     #define DM (1./32.)
     #define KM (1./10.)
-    double ox = LAB_SimplexNoise2D(xi*KM, zi*KM)*0.03;
-    double oz = LAB_SimplexNoise2D(xi*KM, zi*KM+100)*0.03;
 
-    double d0 = LAB_SimplexNoise3D(xi*CM+ox, 2*yi*CM, zi*CM+oz);
+    float x = xi, y = yi, z = zi;
+    //x*=0.5;
+    //y*=0.5;
+    //z*=0.5;
 
-    double d1 = LAB_SimplexNoise3D(xi*DM+ox, 2*yi*CM, zi*CM+oz);
-    double d2 = LAB_SimplexNoise3D(xi*CM+ox, 2*yi*CM, zi*DM+oz);
+    double ox = LAB_SimplexNoise2D(x*KM, z*KM)*0.02; //0.03
+    double oz = LAB_SimplexNoise2D(x*KM, z*KM+100)*0.02;
+
+    double d0 = LAB_SimplexNoise3D(x*CM+ox, 2*y*CM, z*CM+oz);
+
+    double d1 = LAB_SimplexNoise3D(x*DM+ox, 2*y*CM, z*CM+oz);
+    double d2 = LAB_SimplexNoise3D(x*CM+ox, 2*y*CM, z*DM+oz);
 
     double d = d1*d1*d2*d2+d0*d0*2;
 
-    double treshold = 1-1/(double)(abs(yi)*32*0.001+20)*20;
+    double treshold = 1-1/(double)(fabs(y)*32*0.001+20)*20;
     return d < treshold*0.2;
 }
 

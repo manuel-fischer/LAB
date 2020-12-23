@@ -33,3 +33,45 @@ void LAB_AssumptionFailed(const char* expr,
                           const char* file,
                           int line,
                           const char* function);
+
+
+
+
+/**
+ *  Type should be int, float or double
+ */
+#define LAB_DEBUG_MINMAX(type, variable) do {               \
+    static type dbg_min;                                    \
+    static type dbg_max;                                    \
+    static bool dbg_initialized = 0;                        \
+    type dbg_tmp = (variable);                              \
+    if(!dbg_initialized)                                    \
+    {                                                       \
+        dbg_min = dbg_max = dbg_tmp;                        \
+        printf("first encountered value of " #variable ": " \
+                LAB_DEBUG_MINMAX_FMT_##type "\n",           \
+                dbg_tmp);                                   \
+        dbg_initialized = 1;                                \
+    }                                                       \
+    else                                                    \
+    {                                                       \
+        if(dbg_tmp < dbg_min)                               \
+        {                                                   \
+            printf("New minimum for " #variable " found: "  \
+                   LAB_DEBUG_MINMAX_FMT_##type "\n",        \
+                   dbg_tmp);                                \
+            dbg_min = dbg_tmp;                              \
+        }                                                   \
+        if(dbg_tmp > dbg_max)                               \
+        {                                                   \
+            printf("New maximum for " #variable " found: "  \
+                   LAB_DEBUG_MINMAX_FMT_##type "\n",        \
+                   dbg_tmp);                                \
+            dbg_max = dbg_tmp;                              \
+        }                                                   \
+    }                                                       \
+} while(0)
+
+#define LAB_DEBUG_MINMAX_FMT_int "%i"
+#define LAB_DEBUG_MINMAX_FMT_float "%f"
+#define LAB_DEBUG_MINMAX_FMT_double "%f"

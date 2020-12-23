@@ -5,6 +5,7 @@
 LAB_STATIC void LAB_Gen_Overworld_DirtPatch(LAB_Placer* p, LAB_Random* rnd);
 LAB_STATIC void LAB_Gen_Overworld_Plant(LAB_Placer* p, LAB_Random* rnd);
 LAB_STATIC void LAB_Gen_Overworld_Bush(LAB_Placer* p, LAB_Random* rnd);
+LAB_STATIC void LAB_Gen_Overworld_Rock(LAB_Placer* p, LAB_Random* rnd);
 LAB_STATIC void LAB_Gen_Overworld_Tree(LAB_Placer* p, LAB_Random* rnd);
 LAB_STATIC void LAB_Gen_Overworld_Tower(LAB_Placer* p, LAB_Random* rnd);
 
@@ -12,11 +13,12 @@ LAB_STATIC void LAB_Gen_Overworld_Tower(LAB_Placer* p, LAB_Random* rnd);
 const LAB_StructureLayer overworld_layers[] =
 { //    salt   probability   count      height range         func
   //                        <?   >?       <?   >?
-    {0x93475493,     32,     1,   5,     -80,  30,     LAB_Gen_Overworld_DirtPatch},
-    {0x56789abc,    256,     7,  70,     -80,  30,     LAB_Gen_Overworld_Plant},
-    {0x32547698,    256,     0,   4,     -80,  30,     LAB_Gen_Overworld_Bush},
-    {0x13579bdf,    256,     0,   3,     -80,  20,     LAB_Gen_Overworld_Tree},
-    {0xfdb97531,      8,     1,   1,     -80,   5,     LAB_Gen_Overworld_Tower},
+    {0x93475493,     32,     1,   5,     -80,  80,     LAB_Gen_Overworld_DirtPatch},
+    {0x91827364,    256,     0,   1,      20, 200,     LAB_Gen_Overworld_Rock},
+    {0x32547698,    256,     0,   4,     -80,  60,     LAB_Gen_Overworld_Bush},
+    {0x56789abc,    256,     7,  70,     -80,  70,     LAB_Gen_Overworld_Plant},
+    {0x13579bdf,    256,     0,   3,     -80,  30,     LAB_Gen_Overworld_Tree},
+    {0xfdb97531,      2,     1,   1,     -80,  10,     LAB_Gen_Overworld_Tower},
 };
 const size_t overworld_layers_count = sizeof(overworld_layers)/sizeof(overworld_layers[0]);
 
@@ -41,7 +43,7 @@ LAB_STATIC void LAB_Gen_Overworld_Plant(LAB_Placer* p, LAB_Random* rnd)
 {
     LAB_Block* plant = LAB_NextRandom(rnd)&1 ? &LAB_BLOCK_TALLGRASS : &LAB_BLOCK_TALLERGRASS;
 
-    LAB_Placer_SetBlock(p, 0, 0, 0, plant);
+    LAB_Placer_SetBlockIfBlock(p, 0, 0, 0, plant, &LAB_BLOCK_AIR);
 }
 
 LAB_STATIC void LAB_Gen_Overworld_Bush(LAB_Placer* p, LAB_Random* rnd)
@@ -59,6 +61,24 @@ LAB_STATIC void LAB_Gen_Overworld_Bush(LAB_Placer* p, LAB_Random* rnd)
     }
 }
 
+
+LAB_STATIC void LAB_Gen_Overworld_Rock(LAB_Placer* p, LAB_Random* rnd)
+{
+    // tree height
+    uint64_t R = LAB_NextRandom(rnd);
+    int r = 1+(R & 1);
+    //if(LAB_Placer_IsInside...)
+
+    for(int z =-r; z <= 1; ++z)
+    for(int y =-r; y <= 1; ++y)
+    for(int x =-r; x <= 1; ++x)
+    {
+        if(z*(z+1)+y*(y+1)+x*(x+1)+(LAB_NextRandom(rnd)&1)+1 < r*r)
+            LAB_Placer_SetBlockIfBlock(p, x, y, z, &LAB_BLOCK_STONE_COBBLE, &LAB_BLOCK_AIR);
+    }
+}
+
+
 LAB_STATIC void LAB_Gen_Overworld_Tree(LAB_Placer* p, LAB_Random* rnd)
 {
     // tree height
@@ -72,10 +92,16 @@ LAB_STATIC void LAB_Gen_Overworld_Tree(LAB_Placer* p, LAB_Random* rnd)
     for(int y =  0; y <= h+r; ++y)
     for(int x = -r; x <= r; ++x)
     {
+        int yy = y-h;
+        if(r >= 3)
+            yy += (x*x+z*z)>>3;
+        else
+            yy += (x*x+z*z)>>2;
+
         if(x==0 && z==0 && y <= h)
             LAB_Placer_SetBlock(p, x, y, z, &LAB_BLOCK_WOOD);
 
-        else if(x*x+(y-h)*(y-h)+z*z <= r*r+1+(int)(LAB_NextRandom(rnd)&1))
+        else if(x*x+yy*yy+z*z <= r*r+1+(int)(LAB_NextRandom(rnd)&1))
             LAB_Placer_SetBlockIfBlock(p, x, y, z, &LAB_BLOCK_LEAVES, &LAB_BLOCK_AIR);
     }
 }

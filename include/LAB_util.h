@@ -3,10 +3,6 @@
 #include <stdint.h> // uint64_t
 #include "LAB_opt.h"
 
-    LAB_DEPRECATED("inefficient")
-const int LAB_offset[6][3];
-
-
 /**
  *  {-1, 0, 0},
  *  { 1, 0, 0},
@@ -23,9 +19,6 @@ const int LAB_offset[6][3];
 #define LAB_OY(i) LAB_OFFSET_Y(i)
 #define LAB_OZ(i) LAB_OFFSET_Z(i)
 
-
-    LAB_DEPRECATED("inefficient")
-const int LAB_offsetA[3][3];
 /**
  *  { 0, 1, 0 },
  *  { 0, 0, 1 },
@@ -35,9 +28,6 @@ const int LAB_offsetA[3][3];
 #define LAB_AY(i) (int)((i)==0)
 #define LAB_AZ(i) (int)((i)==1)
 
-
-    LAB_DEPRECATED("inefficient")
-const int LAB_offsetB[3][3];
 /**
  *  { 0, 0, 1 },
  *  { 1, 0, 0 },
@@ -47,6 +37,15 @@ const int LAB_offsetB[3][3];
 #define LAB_BY(i) (int)((i)==2)
 #define LAB_BZ(i) (int)((i)==0)
 
+
+#define LAB_OUTWARDS_FACES(x0, y0, z0, x1, y1, z1) ( \
+        ((x0) <= (x1)) << 0 \
+      | ((x0) >= (x1)) << 1 \
+      | ((y0) <= (y1)) << 2 \
+      | ((y0) >= (y1)) << 3 \
+      | ((z0) <= (z1)) << 4 \
+      | ((z0) >= (z1)) << 5 \
+)
 
 
 const char* LAB_Filename(const char* path);

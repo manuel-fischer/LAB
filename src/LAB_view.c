@@ -144,13 +144,24 @@ void LAB_ViewChunkProc(void* user, LAB_World* world, int x, int y, int z, LAB_Ch
         entry->dirty = update;*/
 
     // Handle block update at border correctly
-    for(int iz = -1; iz <= 1; ++iz)
+    /*for(int iz = -1; iz <= 1; ++iz)
     for(int iy = -1; iy <= 1; ++iy)
     for(int ix = -1; ix <= 1; ++ix)
     {
         LAB_ViewChunkEntry* entry = LAB_ViewFindChunkEntry(view, x+ix, y+iy, z+iz);
         if(entry)
             entry->dirty |= update;
+    }*/
+    // TODO update corner chunks
+    LAB_ViewChunkEntry* entry = LAB_ViewFindChunkEntry(view, x, y, z);
+    if(entry)
+    {
+        entry->dirty |= update;
+        for(int i = 0; i < 6; ++i)
+        {
+            if(entry->neighbors[i])
+                entry->neighbors[i]->dirty |= update;
+        }
     }
 }
 
@@ -1102,13 +1113,26 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
     // Sky color
     float f = LAB_MIN(LAB_MAX((view->y+64+32)*(1./64.), 0), 1);
     f*=f;
-    glClearColor(0.5*f, 0.7*f, 0.9*f, 1);
-    /*if(view->y <= -16*4)
-        //glClearColor(0.03, 0.03, 0.03, 1);
-        glClearColor(0.0, 0.0, 0.0, 1);
-    else
-        glClearColor(0.5, 0.7, 0.9, 1);*/
+    float sky_color[4] = {0.4*f, 0.7*f, 1.0*f, 1};
 
+    glEnable(GL_FOG);
+    glFogfv(GL_FOG_COLOR, sky_color);
+    #if 1
+    glFogi(GL_FOG_MODE, GL_LINEAR);
+    float d = LAB_MAX(view->render_dist*16, 48);
+    glFogf(GL_FOG_START, d-32);
+    glFogf(GL_FOG_END, d-16);
+    #else
+    glFogf(GL_FOG_DENSITY, 0.05);
+    #endif
+    if(1) // TODO: check if GL_NV_fog_distance is available
+    {
+        //glEnable(GL_EYE_RADIAL_NV);
+        glFogi(GL_FOG_DISTANCE_MODE_NV, GL_EYE_RADIAL_NV);
+    }
+
+
+    glClearColor(sky_color[0], sky_color[1], sky_color[2], sky_color[3]);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Setup projection matrix
@@ -1241,6 +1265,7 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
     glDisable(GL_ALPHA_TEST);
     glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisable(GL_FOG);
 
 
     // Render Crosshair
@@ -1453,15 +1478,15 @@ LAB_STATIC void LAB_View_SortChunks(LAB_View* view, uint32_t delta_ms)
 
 void LAB_ViewTick(LAB_View* view, uint32_t delta_ms)
 {
-    LAB_ViewRemoveDistantChunks(view);
-    LAB_ViewLoadNearChunks(view);
+    LAB_ViewLoadNearChunks(view); // uses sorted_chunks
+    LAB_ViewRemoveDistantChunks(view); // sorted_chunks has invalid content
     #if !LAB_VIEW_QUERY_IMMEDIATELY
     LAB_View_FetchQueryChunks(view);
     #endif
     LAB_ViewUpdateChunks(view);
     //LAB_FpsGraph_AddSample(&view->fps_graph, delta_ms);
     LAB_GuiManager_Tick(&view->gui_mgr);
-    LAB_View_SortChunks(view, delta_ms);
+    LAB_View_SortChunks(view, delta_ms); // sorted_chunks has valid content again
 }
 
 
@@ -1571,6 +1596,22 @@ LAB_STATIC void LAB_View_ProjectPoint(LAB_View* view, float x, float y, float z,
     *oz = proj_vec[2];
 }
 
+bool LAB_View_IsChunkPartlyInFrustum(LAB_View* view, int cx, int cy, int cz)
+{
+    for(int i = 0; i < 8; ++i)
+    {
+        float scx, scy, scz;
+
+        LAB_View_ProjectPoint(view, (cx+!!(i&1))*16-view->x,
+                                    (cy+!!(i&2))*16-view->y,
+                                    (cz+!!(i&4))*16-view->z,
+                                    &scx, &scy, &scz);
+
+        if(!(scz < 0 || scx < -1 || scx > 1 || scy < -1 || scy > 1)) return 1;
+    }
+    return 0;
+}
+
 bool LAB_View_IsChunkCompletelyInFrustum(LAB_View* view, int cx, int cy, int cz)
 {
     for(int i = 0; i < 8; ++i)
@@ -1640,6 +1681,7 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
     int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
     int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
 
+#if 0
     /**
 
         pyramid index i;
@@ -1724,7 +1766,8 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
                         if(q&2 && y==0) continue; else yy = py+(q&2 ? -y : y);
                         if(q&4 && z==0) continue; else zz = pz+(q&4 ? -z : z);
 
-                        if(!LAB_View_IsChunkInSight(view, xx, yy, zz))
+                        //if(!LAB_View_IsChunkInSight(view, xx, yy, zz))
+                        if(!LAB_View_IsChunkPartlyInFrustum(view, xx, yy, zz))
                         {
                             LAB_ASSUME(r > 0);
                             continue;
@@ -1778,6 +1821,94 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
             }
         }
     }
+
+#else
+    // to be able to use view->sorded_chunks to check for nearest non-loaded chunks
+    // we need to save the size here, otherwise it might be one to big by the loading of
+    // the local chunk
+    int sorted_size = view->chunks.size;
+
+    // Always load local chunk
+    // not counted to the load limit
+    {
+        LAB_ViewChunkEntry* entry = LAB_ViewFindChunkEntry(view, px, py, pz);
+
+        if(entry == NULL)
+        {
+            entry = LAB_ViewNewChunkEntry(view, px, py, pz);
+            if(entry == NULL) return; // NO MEMORY
+            entry->dirty = ~0;
+            LAB_ASSUME(!entry->exist);
+
+            //entry->do_query = 1;
+            entry->visible = 1;
+
+            LAB_Chunk* chunk = LAB_GetChunk(view->world, px, py, pz, LAB_CHUNK_GENERATE);
+        }
+    }
+
+    int load_amount = view->load_amount; // should be configurable
+    int empty_load_amount = view->empty_load_amount;
+
+    for(int i = 0; i < sorted_size; ++i)
+    {
+        LAB_ViewChunkEntry* c = view->sorted_chunks[i].entry;
+        if(c->visible && (    LAB_View_IsChunkPartlyInFrustum(view, c->x, c->y, c->z)
+                           || LAB_View_IsLocalChunk(view, c->x, c->y, c->z)))
+        {
+            if(!c->exist)
+            {
+                --load_amount;
+                c->do_query = 1;
+                LAB_Chunk* chunk = LAB_GetChunk(view->world, c->x, c->y, c->z, LAB_CHUNK_GENERATE);
+            }
+            if(!load_amount) return;
+
+
+            for(int faces = LAB_OUTWARDS_FACES(c->x, c->y, c->z, px, py, pz); faces; faces&=faces-1)
+            {
+                int face = LAB_Ctz(faces);
+
+                int xx = c->x+LAB_OX(face), yy = c->y+LAB_OY(face), zz = c->z+LAB_OZ(face);
+
+                if(c->neighbors[face])
+                    continue;
+
+                if(!LAB_View_IsChunkPartlyInFrustum(view, xx, yy, zz))
+                    continue;
+
+
+                LAB_ViewChunkEntry* entry = LAB_ViewNewChunkEntry(view, xx, yy, zz);
+                if(entry == NULL) return; // NO MEMORY
+                entry->dirty = ~0;
+                --load_amount;
+                LAB_ASSUME(!entry->exist);
+
+                entry->do_query = 1;
+
+                LAB_Chunk* chunk = LAB_GetChunk(view->world, xx, yy, zz, LAB_CHUNK_GENERATE);
+                if(empty_load_amount)
+                {
+                    int is_empty = 1;
+                    for(int c_i = 0; c_i < LAB_CHUNK_SIZE; ++c_i)
+                    {
+                        if(chunk->blocks[c_i] != &LAB_BLOCK_AIR)
+                        {
+                            is_empty = 0;
+                            break;
+                        }
+                    }
+                    if(is_empty)
+                    {
+                        load_amount++;
+                        empty_load_amount--;
+                    }
+                }
+                if(!load_amount) return;
+            }
+        }
+    }
+#endif
 }
 
 

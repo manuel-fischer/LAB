@@ -181,6 +181,7 @@ typedef struct LAB_View
     // Cache
     LAB_View_ChunkTBL chunks;
 
+    // sorted from near to far chunks
     LAB_ViewSortedChunkEntry* sorted_chunks;
 
 
@@ -249,11 +250,15 @@ LAB_ViewChunkEntry* LAB_ViewNewChunkEntry(LAB_View* view, int x, int y, int z);
 
 
 /**
- *  Superset of Completely in Frustum
+ *  Superset of Completely/Partly in Frustum
  */
 bool LAB_View_IsChunkInSight(LAB_View* view, int cx, int cy, int cz);
 /**
- *  Subset of InSight
+ *  Subset of InSight, superset of Completely in Frustum
+ */
+bool LAB_View_IsChunkPartlyInFrustum(LAB_View* view, int cx, int cy, int cz);
+/**
+ *  Subset of InSight, sub of Partly in Frustum
  */
 bool LAB_View_IsChunkCompletelyInFrustum(LAB_View* view, int cx, int cy, int cz);
 
