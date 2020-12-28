@@ -95,10 +95,11 @@ bool LAB_ConstructView(LAB_View* view, LAB_World* world)
 
     //LAB_View_ChunkTBL_Create(&view->entry); // not nessesary because already set to 0 above
 
-    LAB_FpsGraph_Create(&view->fps_graph,       LAB_RGB(255, 255, 128));
-    LAB_FpsGraph_Create(&view->fps_graph_input, LAB_RGB(255, 128, 128));
-    LAB_FpsGraph_Create(&view->fps_graph_world, LAB_RGB(128, 255, 128));
-    LAB_FpsGraph_Create(&view->fps_graph_view,  LAB_RGB(128, 128, 255));
+    LAB_FpsGraph_Create(&view->fps_graph,             LAB_RGB(255, 255, 128));
+    LAB_FpsGraph_Create(&view->fps_graph_input,       LAB_RGB(255, 128, 128));
+    LAB_FpsGraph_Create(&view->fps_graph_world,       LAB_RGB(128, 255, 128));
+    LAB_FpsGraph_Create(&view->fps_graph_view,        LAB_RGB(128, 128, 255));
+    LAB_FpsGraph_Create(&view->fps_graph_view_render, LAB_RGB(255,  32, 128));
 
     LAB_GuiManager_Create(&view->gui_mgr);
 
@@ -112,6 +113,7 @@ void LAB_DestructView(LAB_View* view)
     LAB_Free(view->sorted_chunks);
 
     LAB_GuiManager_Destroy(&view->gui_mgr);
+    LAB_FpsGraph_Destroy(&view->fps_graph_view_render);
     LAB_FpsGraph_Destroy(&view->fps_graph_view);
     LAB_FpsGraph_Destroy(&view->fps_graph_world);
     LAB_FpsGraph_Destroy(&view->fps_graph_input);
@@ -1103,8 +1105,24 @@ void LAB_ViewRenderInit(LAB_View* view)
 
 void LAB_ViewRenderProc(void* user, LAB_Window* window)
 {
-    // NO access to world here -> world can update whilst rendering
     LAB_View* view = (LAB_View*)user;
+
+    int w, h;
+    SDL_GetWindowSize(window->window, &w, &h);
+    view->w = w; view->h = h;
+
+
+    uint64_t t0 = LAB_NanoSeconds();
+    LAB_ViewRender(view);
+    uint64_t t1 = LAB_NanoSeconds();
+    uint64_t d_01;
+    d_01 = t1-t0;
+    LAB_FpsGraph_AddSample(&view->fps_graph_view_render,  (float)d_01/1000000.f);
+}
+
+void LAB_ViewRender(LAB_View* view)
+{
+    // NO access to world here -> world can update whilst rendering
 
     // Block rendering settings
     glEnable(GL_CULL_FACE);
@@ -1138,10 +1156,7 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
     // Setup projection matrix
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    int w, h;
-    SDL_GetWindowSize(window->window, &w, &h);
-    view->w = w; view->h = h;
-    float ratio = h?(float)w/(float)h:1;
+    float ratio = view->h?(float)view->w/(float)view->h:1;
     float nearp = 0.075f;
     float fov = 1;
     float far = view->render_dist*16+32;
@@ -1295,6 +1310,7 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
         LAB_FpsGraph_Render(&view->fps_graph_input);
         LAB_FpsGraph_Render(&view->fps_graph_world);
         LAB_FpsGraph_Render(&view->fps_graph_view);
+        LAB_FpsGraph_Render(&view->fps_graph_view_render);
         glPopMatrix();
     }
 

@@ -9,6 +9,7 @@ typedef struct LAB_StructureLayer
     int probability; // in range [0, 256],
     int min_count, max_count;
     int min_height, max_height; // both inclusive
+    int max_chunk_radius; // maximum size in chunks
     // return true if position was found,
     // read and write to x, y, z, to find the next position near
     // the given position

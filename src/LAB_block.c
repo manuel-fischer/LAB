@@ -26,7 +26,8 @@ IXO_STRUCTDEF(LAB_Block,
 
 
 #define LAB_COLOR_GRASS   LAB_RGB(15, 150, 30) // LAB_RGB(30, 170, 50)
-#define LAB_COLOR_LEAVES  LAB_RGB(10, 130, 20) // LAB_RGB(20, 150, 40)
+#define LAB_COLOR_LEAVES  LAB_RGB(10, 130, 20) // LAB_RGB(0, 100, 10) // LAB_RGB(20, 150, 40)
+#define LAB_COLOR_WOOD    LAB_RGB(93, 75, 45) // LAB_RGB(93, 75, 60)
 
 
 LAB_Block LAB_BLOCK_OUTSIDE = {
@@ -68,10 +69,10 @@ LAB_Block LAB_BLOCK_GLASS = {
     .model = &LAB_MODEL_GLASS,
 };
 
-LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_WOOD, 2, 0, LAB_RGB(93, 75, 60),);
+LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_WOOD, 2, 0, LAB_COLOR_WOOD,);
 LAB_Block LAB_BLOCK_WOOD = {
     .flags = LAB_BLOCK_SOLID,
-    .item_tint = LAB_RGB(93, 75, 60),
+    .item_tint = LAB_COLOR_WOOD,
     .item_tx = 2, 0,
     .model = &LAB_MODEL_WOOD,
 };

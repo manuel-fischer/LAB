@@ -15,7 +15,7 @@ typedef struct LAB_Random
 void LAB_SetRandom(LAB_OUT LAB_Random* random, uint64_t seed);
 
 /**
- *  Advance Random and return value
+ *  Advance Random and return random value
  */
 uint64_t LAB_NextRandom(LAB_INOUT LAB_Random* random);
 
@@ -25,6 +25,10 @@ uint64_t LAB_NextRandom(LAB_INOUT LAB_Random* random);
 uint64_t LAB_GetRandom(LAB_INOUT LAB_Random* random);
 
 
+/**
+ *  Advance Random and return random value in range [min, max)
+ */
+#define LAB_NextRandomRange(random, min, max) (LAB_NextRandom(random) % ((max)-(min))  +  (min))
 
 
 

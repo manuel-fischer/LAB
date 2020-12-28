@@ -28,9 +28,11 @@ LAB_STATIC void LAB_Gen_PopulateLayer_Func(LAB_GenOverworld* gen, LAB_Placer* p,
                                            int cx, int cy, int cz);
 
 
+#if 0
 //LAB_STATIC void LAB_Gen_Surface(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
 LAB_STATIC void LAB_Gen_Surface_PopulateLayer(LAB_GenOverworld* gen, LAB_Chunk* chunk, const LAB_StructureLayer* lyr, int cx, int cy, int cz);
 LAB_STATIC void LAB_Gen_Surface_PopulateLayer_Func(LAB_GenOverworld* gen, LAB_Placer* p, const LAB_StructureLayer* lyr, int cx, int cy, int cz);
+#endif
 #if 0
 LAB_STATIC void LAB_Gen_Surface_Populate(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
 LAB_STATIC void LAB_Gen_Surface_Populate_Func(LAB_GenOverworld* gen, LAB_Placer* p, int cx, int cy, int cz);
@@ -87,16 +89,19 @@ LAB_STATIC void LAB_Gen_PopulateLayers(LAB_GenOverworld* gen, LAB_Chunk* chunk,
     // TODO: check lyr->min/max_height +- 16*LAB_MAX_STRUCTURE_SIZE
 
     for(size_t i = 0; i < layer_count; ++i)
-    for(int z = -LAB_MAX_STRUCTURE_SIZE; z <= LAB_MAX_STRUCTURE_SIZE; ++z)
-    for(int y = -LAB_MAX_STRUCTURE_SIZE; y <= LAB_MAX_STRUCTURE_SIZE; ++y)
-    for(int x = -LAB_MAX_STRUCTURE_SIZE; x <= LAB_MAX_STRUCTURE_SIZE; ++x)
     {
-        LAB_Placer p;
-        p.chunk = chunk;
-        p.ox = -16*x;
-        p.oy = -16*y;
-        p.oz = -16*z;
-        LAB_Gen_PopulateLayer_Func(gen, &p, &layers[i], cx+x, cy+y, cz+z);
+        int structure_radius = layers[i].max_chunk_radius;
+        for(int z = -structure_radius; z <= structure_radius; ++z)
+        for(int y = -structure_radius; y <= structure_radius; ++y)
+        for(int x = -structure_radius; x <= structure_radius; ++x)
+        {
+            LAB_Placer p;
+            p.chunk = chunk;
+            p.ox = -16*x;
+            p.oy = -16*y;
+            p.oz = -16*z;
+            LAB_Gen_PopulateLayer_Func(gen, &p, &layers[i], cx+x, cy+y, cz+z);
+        }
     }
 }
 
@@ -144,6 +149,7 @@ LAB_STATIC void LAB_Gen_PopulateLayer_Func(LAB_GenOverworld* gen, LAB_Placer* p,
 
 
 
+#if 0
 LAB_STATIC void LAB_Gen_Surface_PopulateLayer(LAB_GenOverworld* gen, LAB_Chunk* chunk, const LAB_StructureLayer* lyr, int cx, int cy, int cz)
 {
     for(int z = -LAB_MAX_STRUCTURE_SIZE; z <= LAB_MAX_STRUCTURE_SIZE; ++z)
@@ -193,6 +199,7 @@ LAB_STATIC void LAB_Gen_Surface_PopulateLayer_Func(LAB_GenOverworld* gen, LAB_Pl
         }
     }
 }
+#endif
 
 
 

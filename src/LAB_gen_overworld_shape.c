@@ -25,7 +25,9 @@ void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y
         {
             int xi = 16*x|xx;
             int zi = 16*z|zz;
+            int river = 0;//LAB_Gen_River_Func(gen, xi, zi);
             int sheight = LAB_Gen_Surface_Shape_Func(gen, xi, zi);
+            sheight -= river;
             for(int yy = 15; yy >= 0; --yy)
             {
                 int yi = 16*y|yy;
@@ -51,6 +53,8 @@ void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y
                 }
                 else if(yi <= sheight)
                     continue; // keep stone
+
+                if(river && b != &LAB_BLOCK_AIR) b = &LAB_BLOCK_LAPIZ;
 
                 chunk->blocks[LAB_CHUNK_OFFSET(xx, yy, zz)] = b;
             }
@@ -156,6 +160,26 @@ int LAB_Gen_Surface_Shape_Func(LAB_GenOverworld* gen, int xi, int zi)
 }
 
 
+int  LAB_Gen_River_Func(LAB_GenOverworld* gen, int x, int z)
+{
+    double xx, zz;
+    xx = x;
+    zz = z;
+
+    double xd = LAB_SimplexNoise2D(xx*0.01, zz*0.01+100);
+    double zd = LAB_SimplexNoise2D(xx*0.01, zz*0.01+10000);
+    xx += 20*xd;
+    zz += 20*zd;
+
+    double n0 = LAB_SimplexNoise2D(xx*0.001, zz*0.001+100000);
+    double n1 = LAB_SimplexNoise2D(xx*0.001, zz*0.001+1000);
+
+    double n = n0/(n1+1.1);
+
+    return LAB_MAX(0, LAB_FastFloorD2I((1 - 2000*n*n) * 5));
+}
+
+
 
 
 void LAB_Gen_Cave_Carve(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y, int z)
@@ -210,6 +234,7 @@ bool LAB_Gen_PlaceOnSurface(void* gen, int* x, int* y, int* z)
 {
     *y = 1+LAB_Gen_Surface_Shape_Func((LAB_GenOverworld*)gen, *x, *z);
     return !LAB_Gen_Cave_Carve_Func((LAB_GenOverworld*)gen, *x, *y-1, *z);
+        //&& !LAB_Gen_River_Func((LAB_GenOverworld*)gen, *x, *z);
 }
 
 bool LAB_Gen_PlaceOnCaveCeiling(void* gen, int* x, int* y, int* z)

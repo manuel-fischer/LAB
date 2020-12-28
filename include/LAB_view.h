@@ -205,6 +205,7 @@ typedef struct LAB_View
     LAB_FpsGraph fps_graph_input;
     LAB_FpsGraph fps_graph_world;
     LAB_FpsGraph fps_graph_view;
+    LAB_FpsGraph fps_graph_view_render;
 
     LAB_GuiManager gui_mgr;
 
@@ -230,6 +231,7 @@ void LAB_DestructView(LAB_View* view);
 void LAB_ViewChunkProc(void* user, LAB_World* world, int x, int y, int z, LAB_ChunkUpdate update);
 bool LAB_ViewChunkKeepProc(void* user, LAB_World* world, int x, int y, int z);
 void LAB_ViewRenderProc(void* user, LAB_Window* window);
+void LAB_ViewRender(LAB_View* view);
 
 LAB_ViewChunkEntry* LAB_ViewGetChunkEntry(LAB_View* view, int x, int y, int z);
 void LAB_ViewInvalidateEverything(LAB_View* view, int free_buffers);
