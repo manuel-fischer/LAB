@@ -22,10 +22,26 @@ LAB_Chunk* LAB_CreateChunk(LAB_Block* fill_block)
     chunk->modified = 0;
     chunk->light_generated = 0;
 
+    // initialize neighbors with NULL
+    for(int face = 0; face < 6; ++face)
+    {
+        chunk->neighbors[face] = NULL;
+    }
+    chunk->view_user = NULL;
+
     return chunk;
 }
 
 void LAB_DestroyChunk(LAB_Chunk* chunk)
 {
+    LAB_ASSUME(chunk);
+
+    // unlink neighbors
+    for(int face = 0; face < 6; ++face)
+    {
+        LAB_Chunk* neighbor = chunk->neighbors[face];
+        if(neighbor) neighbor->neighbors[face^1] = NULL;
+    }
+
     LAB_Free(chunk);
 }

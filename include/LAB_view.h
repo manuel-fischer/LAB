@@ -53,6 +53,9 @@ typedef struct LAB_ViewChunkEntry
                                              //   - add neighboring chunk entries to itself
                                              // -> use entry->neighbors[face] instead of table lookup with x+LAB_OX(face), ...
 
+    LAB_Chunk* world_chunk; // pointer into the world, is NULL when there is no chunk in the world
+                            // TODO implement linking
+
     unsigned dirty:2,            // chunk needs update
              exist:1,            // chunk exists in world
              visible:1,          // chunk is visible when in sight, changed on every query
@@ -228,8 +231,8 @@ bool LAB_ConstructView(LAB_View* view, LAB_World* world);
 void LAB_DestructView(LAB_View* view);
 
 
-void LAB_ViewChunkProc(void* user, LAB_World* world, int x, int y, int z, LAB_ChunkUpdate update);
-bool LAB_ViewChunkKeepProc(void* user, LAB_World* world, int x, int y, int z);
+void LAB_ViewChunkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update);
+bool LAB_ViewChunkKeepProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z);
 void LAB_ViewRenderProc(void* user, LAB_Window* window);
 void LAB_ViewRender(LAB_View* view);
 

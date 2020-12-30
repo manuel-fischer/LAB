@@ -138,8 +138,8 @@ typedef struct LAB_World_ChunkEntry
 
 typedef struct LAB_World LAB_World;
 
-typedef void(LAB_ChunkViewer)(void* user, LAB_World* world, int x, int y, int z, LAB_ChunkUpdate update);
-typedef bool(LAB_ChunkKeeper)(void* user, LAB_World* world, int x, int y, int z);
+typedef void(LAB_ChunkViewer)(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update);
+typedef bool(LAB_ChunkKeeper)(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z);
 
 
 /*typedef struct LAB_ChunkEntry
@@ -198,15 +198,21 @@ LAB_Chunk* LAB_GetChunk(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType
 /**
  *
  */
+LAB_DEPRECATED("use LAB_GetChunkNeighbors instead")
 void LAB_GetChunkNeighborhood(LAB_World* world, LAB_Chunk* chunks[27], int x, int y, int z, LAB_ChunkPeekType flags);
+
+void LAB_GetChunkNeighbors(LAB_Chunk* center_chunk, LAB_Chunk* chunks[27]);
+
 
 /**
  *  Refresh a chunk by notifying the view
  */
 //void LAB_NotifyChunk(LAB_World* world, int x, int y, int z);
-void LAB_UpdateChunk(LAB_World* world, int x, int y, int z, LAB_ChunkUpdate update);
+void LAB_UpdateChunk(LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update);
+void LAB_UpdateChunkAt(LAB_World* world, int x, int y, int z, LAB_ChunkUpdate update);
 //void LAB_NotifyChunkLater(LAB_World* world, int x, int y, int z/*, LAB_ChunkPeekType flags*/);
-void LAB_UpdateChunkLater(LAB_World* world, int x, int y, int z, LAB_ChunkUpdate update);
+void LAB_UpdateChunkLater(LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update);
+void LAB_UpdateChunkLaterAt(LAB_World* world, int x, int y, int z, LAB_ChunkUpdate update);
 
 LAB_Block* LAB_GetBlock(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType flags);
 void LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType flags, LAB_Block* block);

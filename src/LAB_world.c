@@ -98,7 +98,19 @@ LAB_STATIC LAB_Chunk* LAB_GenerateNotifyChunk(LAB_World* world, int x, int y, in
         }
     }
 
-    LAB_UpdateChunk(world, x, y, z, LAB_CHUNK_UPDATE_BLOCK);
+    // connect neighbors
+    for(int face = 0; face < 6; ++face)
+    {
+        LAB_ChunkPos pos = { x+LAB_OX(face), y+LAB_OY(face), z+LAB_OZ(face) };
+        LAB_World_ChunkEntry* neighbor = LAB_ChunkTBL_Get(&world->chunks, pos);
+        if(neighbor)
+        {
+            chunk->neighbors[face] = neighbor->chunk;
+            neighbor->chunk->neighbors[face^1] = chunk;
+        }
+    }
+
+    LAB_UpdateChunk(world, chunk, x, y, z, LAB_CHUNK_UPDATE_BLOCK);
 
     return chunk;
 }
@@ -142,8 +154,9 @@ LAB_Chunk* LAB_GetChunk(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType
     }
 }
 
-void LAB_GetChunkNeighborhood(LAB_World* world, LAB_Chunk* /*out*/ chunks[27], int x, int y, int z, LAB_ChunkPeekType flags)
+void LAB_GetChunkNeighborhood_(LAB_World* world, LAB_Chunk* /*out*/ chunks[27], int x, int y, int z, LAB_ChunkPeekType flags)
 {
+    #if 0
     LAB_Chunk** itr = chunks;
     for(int iz = -1; iz <= 1; ++iz)
     for(int iy = -1; iy <= 1; ++iy)
@@ -152,33 +165,105 @@ void LAB_GetChunkNeighborhood(LAB_World* world, LAB_Chunk* /*out*/ chunks[27], i
         *itr = LAB_GetChunk(world, x+ix, y+iy, z+iz, flags);
         itr++;
     }
+    #elif 0
+    #define NEIGHBOR(x, y, z) (chunks[(x)+3*(y)+9*(z)])
+    #define NEIGHBOR_FACE(x, y, z, face) (NEIGBOR(x, y, z)?NEIGBOR(x, y, z)->neighbors[face]:NULL)
+    NEIGHBOR(1, 1, 1) = LAB_GetChunk(world, x, y, z, flags);
+    for(int face = 0; face < 6; ++face)
+    {
+        NEIGHBOR(1+LAB_OX(face), 1+LAB_OY(face), 1+LAB_OZ(face)) = NEIGHBOR_FACE(1, 1, 1, face);
+    }
+    for(int i = 0; i < 12; ++i)
+    {
+        int a = i&1 ? 2 : 0;
+        int b = i&2 ? 2 : 0;
+
+        int xx, yy, zz;
+        switch(i>>2)
+        {
+            case 0: xx = 0; yy = a; zz = b; break;
+            case 1: xx = b; yy = 0; zz = a; break;
+            case 2: xx = a; yy = b; zz = 0; break;
+        }
+
+    }
+    #else
+    #define NEIGHBOR(x, y, z) (chunks[(x)+3*(y)+9*(z)])
+    #define NEIGHBOR_FACE(x, y, z, face) (NEIGHBOR(x, y, z)?NEIGHBOR(x, y, z)->neighbors[face]:NULL)
+    NEIGHBOR(1, 1, 1) = LAB_GetChunk(world, x, y, z, flags);
+    NEIGHBOR(1, 0, 1) = NEIGHBOR_FACE(1, 1, 1, LAB_I_D);
+    NEIGHBOR(1, 2, 1) = NEIGHBOR_FACE(1, 1, 1, LAB_I_U);
+    for(int y = 0; y < 3; ++y)
+    {
+        NEIGHBOR(0, y, 1) = NEIGHBOR_FACE(1, y, 1, LAB_I_W);
+        NEIGHBOR(2, y, 1) = NEIGHBOR_FACE(1, y, 1, LAB_I_E);
+
+        for(int x = 0; x < 3; ++x)
+        {
+            NEIGHBOR(x, y, 0) = NEIGHBOR_FACE(x, y, 1, LAB_I_N);
+            NEIGHBOR(x, y, 2) = NEIGHBOR_FACE(x, y, 1, LAB_I_S);
+        }
+    }
+    #undef NEIGHBOR_FACE
+    #undef NEIGHBOR
+    #endif
+}
+
+void LAB_GetChunkNeighbors(LAB_Chunk* center_chunk, LAB_Chunk* chunks[27])
+{
+    #define NEIGHBOR(x, y, z) (chunks[(x)+3*(y)+9*(z)])
+    #define NEIGHBOR_FACE(x, y, z, face) (NEIGHBOR(x, y, z)?NEIGHBOR(x, y, z)->neighbors[face]:NULL)
+    NEIGHBOR(1, 1, 1) = center_chunk;
+    NEIGHBOR(1, 0, 1) = NEIGHBOR_FACE(1, 1, 1, LAB_I_D);
+    NEIGHBOR(1, 2, 1) = NEIGHBOR_FACE(1, 1, 1, LAB_I_U);
+    for(int y = 0; y < 3; ++y)
+    {
+        NEIGHBOR(0, y, 1) = NEIGHBOR_FACE(1, y, 1, LAB_I_W);
+        NEIGHBOR(2, y, 1) = NEIGHBOR_FACE(1, y, 1, LAB_I_E);
+
+        for(int x = 0; x < 3; ++x)
+        {
+            NEIGHBOR(x, y, 0) = NEIGHBOR_FACE(x, y, 1, LAB_I_N);
+            NEIGHBOR(x, y, 2) = NEIGHBOR_FACE(x, y, 1, LAB_I_S);
+        }
+    }
+    #undef NEIGHBOR_FACE
+    #undef NEIGHBOR
 }
 
 
 
-void LAB_UpdateChunk(LAB_World* world, int x, int y, int z, LAB_ChunkUpdate update)
+void LAB_UpdateChunk(LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update)
 {
     // TODO when block was placed at chunk border
     if(LAB_LIKELY(world->chunkview != NULL))
     {
         LAB_Chunk* chunks[27];
-        LAB_GetChunkNeighborhood(world, chunks, x, y, z, LAB_CHUNK_EXISTING);
+        LAB_GetChunkNeighbors(chunk, chunks);
+
         int faces = LAB_TickLight(world, chunks, x, y, z);
 
         int face;
         LAB_DIR_EACH(faces&63, face,
         {
-            LAB_UpdateChunkLater(world, x+LAB_OX(face), y+LAB_OY(face), z+LAB_OZ(face), LAB_CHUNK_UPDATE_LIGHT);
+            LAB_UpdateChunkLater(world, chunk, x+LAB_OX(face), y+LAB_OY(face), z+LAB_OZ(face), LAB_CHUNK_UPDATE_LIGHT);
         });
         if(faces&128)
         {
             LAB_ASSUME(chunks[1+3+9]);
             //printf("UPDATE AGAIN\n");
-            chunks[1+3+9]->dirty |= LAB_CHUNK_UPDATE_LIGHT; // TODO: |LAB_CHUNK_UPDATE_LOCAL;
+            chunks[1+3+9]->dirty |= LAB_CHUNK_UPDATE_LIGHT; // TODO: ... | LAB_CHUNK_UPDATE_LOCAL;
         }
 
-        (*world->chunkview)(world->chunkview_user, world, x, y, z, update);
+        (*world->chunkview)(world->chunkview_user, world, chunk, x, y, z, update);
     }
+}
+
+void LAB_UpdateChunkAt(LAB_World* world, int x, int y, int z, LAB_ChunkUpdate update)
+{
+    LAB_Chunk* chunk = LAB_GetChunk(world, x, y, z, LAB_CHUNK_EXISTING);
+    if(chunk)
+        LAB_UpdateChunk(world, chunk, x, y, z, update);
 }
 
 
@@ -203,11 +288,15 @@ void LAB_NotifyChunkLater(LAB_World* world, int x, int y, int z)
 }*/
 
 
-void LAB_UpdateChunkLater(LAB_World* world, int x, int y, int z, LAB_ChunkUpdate update)
+void LAB_UpdateChunkLater(LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update)
+{
+    chunk->dirty |= update;
+}
+
+void LAB_UpdateChunkLaterAt(LAB_World* world, int x, int y, int z, LAB_ChunkUpdate update)
 {
     LAB_Chunk* chunk = LAB_GetChunk(world, x, y, z, LAB_CHUNK_EXISTING);
-    //if(chunk) chunk->dirty = 1;
-    if(chunk) chunk->dirty |= update;
+    if(chunk) LAB_UpdateChunkLater(world, chunk, x, y, z, update);
 }
 
 
@@ -233,7 +322,7 @@ void LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType flags
     chunk->modified = 1;
     if(block != &LAB_BLOCK_AIR) chunk->empty = 0;
     chunk->dirty_blocks = LAB_CCPS_AddPos(chunk->dirty_blocks, x&LAB_CHUNK_MASK, y&LAB_CHUNK_MASK, z&LAB_CHUNK_MASK);
-    LAB_UpdateChunkLater(world, cx, cy, cz, LAB_CHUNK_UPDATE_BLOCK);
+    LAB_UpdateChunkLater(world, chunk, cx, cy, cz, LAB_CHUNK_UPDATE_BLOCK);
 }
 
 void LAB_FillBlocks(LAB_World* world, int x0, int y0, int z0, int x1, int y1, int z1, LAB_ChunkPeekType flags, LAB_Block* block)
@@ -392,7 +481,7 @@ void LAB_WorldTick(LAB_World* world, uint32_t delta_ms)
             LAB_ChunkUpdate update = chunk->dirty;
             chunk->dirty = 0;
             LAB_ChunkPos* pos = &world->chunks.table[i].pos;
-            LAB_UpdateChunk(world, pos->x, pos->y, pos->z, update);
+            LAB_UpdateChunk(world, chunk, pos->x, pos->y, pos->z, update);
             if(--rest_update == 0) return;
         }
     }
@@ -414,7 +503,7 @@ void LAB_WorldTick(LAB_World* world, uint32_t delta_ms)
                 cx = entry->pos.x;
                 cy = entry->pos.y;
                 cz = entry->pos.z;
-                bool keep = world->chunkkeep(world->chunkkeep_user, world, cx, cy, cz); // DBG
+                bool keep = world->chunkkeep(world->chunkkeep_user, world, chunk, cx, cy, cz); // DBG
                 if(keep)
                 {
                     chunk->age = 0;

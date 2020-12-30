@@ -132,14 +132,14 @@ void LAB_DestructView(LAB_View* view)
 }
 
 
-void LAB_ViewChunkProc(void* user, LAB_World* world, int x, int y, int z, LAB_ChunkUpdate update)
+void LAB_ViewChunkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update)
 {
     LAB_View* view = (LAB_View*)user;
 
     // ignore far away chunks
     // TODO: if neighboring chunk is inside view
     // TODO: make behavior in LAB_ViewChunkKeep proc into another function without a void* argument
-    if(!LAB_ViewChunkKeepProc(user, world, x, y, z)) return;
+    if(!LAB_ViewChunkKeepProc(user, world, chunk, x, y, z)) return;
 
     /*LAB_ViewChunkEntry* entry = LAB_ViewGetChunkEntry(view, x, y, z);
     if(entry)
@@ -155,19 +155,26 @@ void LAB_ViewChunkProc(void* user, LAB_World* world, int x, int y, int z, LAB_Ch
             entry->dirty |= update;
     }*/
     // TODO update corner chunks
-    LAB_ViewChunkEntry* entry = LAB_ViewFindChunkEntry(view, x, y, z);
-    if(entry)
+    LAB_ViewChunkEntry* entry;
+    entry = chunk->view_user;
+    if(!entry)
     {
-        entry->dirty |= update;
-        for(int i = 0; i < 6; ++i)
-        {
-            if(entry->neighbors[i])
-                entry->neighbors[i]->dirty |= update;
-        }
+        entry = LAB_ViewFindChunkEntry(view, x, y, z);
+        if(!entry) return;
+        // link view entry into the world
+        entry->world_chunk = chunk;
+        chunk->view_user = entry;
+    }
+
+    entry->dirty |= update;
+    for(int i = 0; i < 6; ++i)
+    {
+        if(entry->neighbors[i])
+            entry->neighbors[i]->dirty |= update;
     }
 }
 
-bool LAB_ViewChunkKeepProc(void* user, LAB_World* world, int x, int y, int z)
+bool LAB_ViewChunkKeepProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z)
 {
     LAB_View* view = (LAB_View*)user;
 
@@ -191,15 +198,15 @@ LAB_STATIC bool LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entr
 {
     LAB_Chunk* chunk_neighborhood[27];
 
-    LAB_GetChunkNeighborhood(world, chunk_neighborhood,
-                             chunk_entry->x, chunk_entry->y, chunk_entry->z,
-                             LAB_CHUNK_EXISTING);
+    LAB_Chunk* chunk = chunk_entry->world_chunk;
+    LAB_GetChunkNeighbors(chunk, chunk_neighborhood);
 
     if(chunk_neighborhood[1+3+9] == NULL) return 0;
     //chunk_entry->exist = chunk_neighborhood[1+3+9] != NULL;
     chunk_entry->exist = 1;
     for(int i = 0; i < 27; ++i)
         if(chunk_neighborhood[i] == NULL && (rand()&0x7) == 0) return 0;
+        //if(chunk_neighborhood[i] == NULL) return 0;
 
     chunk_entry->visible_faces = visibility;
     LAB_ViewBuildMeshNeighbored(view, chunk_entry, chunk_neighborhood, visibility);
@@ -1860,6 +1867,11 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
             entry->visible = 1;
 
             LAB_Chunk* chunk = LAB_GetChunk(view->world, px, py, pz, LAB_CHUNK_GENERATE);
+            if(chunk)
+            {
+                chunk->view_user = entry;
+                entry->world_chunk = chunk;
+            }
         }
     }
 
@@ -1877,6 +1889,11 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
                 --load_amount;
                 c->do_query = 1;
                 LAB_Chunk* chunk = LAB_GetChunk(view->world, c->x, c->y, c->z, LAB_CHUNK_GENERATE);
+                if(chunk)
+                {
+                    chunk->view_user = c;
+                    c->world_chunk = chunk;
+                }
             }
             if(!load_amount) return;
 
@@ -1903,6 +1920,11 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
                 entry->do_query = 1;
 
                 LAB_Chunk* chunk = LAB_GetChunk(view->world, xx, yy, zz, LAB_CHUNK_GENERATE);
+                if(chunk)
+                {
+                    chunk->view_user = entry;
+                    entry->world_chunk = chunk;
+                }
                 if(empty_load_amount)
                 {
                     int is_empty = 1;
@@ -1960,6 +1982,9 @@ void LAB_ViewUnlinkChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
             neighbor->neighbors[face^1] = NULL;
         }
     }
+    if(chunk_entry->world_chunk)
+        chunk_entry->world_chunk->view_user = NULL;
+
     LAB_ViewDestructFreeChunk(view, chunk_entry);
 }
 
