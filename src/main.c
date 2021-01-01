@@ -18,7 +18,8 @@
 
 #define GEN_FLAT 0
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
     #define CHECK_INIT(expr) if(expr); else { init_msg = #expr; goto INIT_ERROR; }
 
     char const* init_msg;
@@ -67,9 +68,11 @@ int main(int argc, char** argv) {
     view.keep_dist = LAB_KEEP_CHUNK(view.render_dist);
     view.flags = LAB_VIEW_SHOW_HUD | LAB_VIEW_USE_VBO;
     view.max_update = 160;
+    view.max_unload = 20;
     //view.load_amount = 3;
     //view.load_amount = 10;
-    view.load_amount = 1;
+    //view.load_amount = 1;
+    view.load_amount = 7;
     view.empty_load_amount = 5;
     //view.load_amount = 100; // DBG
 
@@ -81,6 +84,9 @@ int main(int argc, char** argv) {
 
     the_world.chunkkeep      = &LAB_ViewChunkKeepProc;
     the_world.chunkkeep_user = &view;
+
+    the_world.chunkunlink      = &LAB_ViewChunkUnlinkProc;
+    the_world.chunkunlink_user = &view;
 
 
     main_window.onevent      = &LAB_ViewInputOnEventProc;

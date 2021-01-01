@@ -198,6 +198,8 @@ typedef struct LAB_View
 
     uint32_t max_update;
 
+    uint32_t max_unload;
+
     uint32_t load_amount;
     uint32_t empty_load_amount;
 
@@ -233,6 +235,7 @@ void LAB_DestructView(LAB_View* view);
 
 void LAB_ViewChunkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update);
 bool LAB_ViewChunkKeepProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z);
+void LAB_ViewChunkUnlinkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z);
 void LAB_ViewRenderProc(void* user, LAB_Window* window);
 void LAB_ViewRender(LAB_View* view);
 

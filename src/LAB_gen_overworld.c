@@ -39,14 +39,7 @@ LAB_STATIC void LAB_Gen_Surface_Populate_Func(LAB_GenOverworld* gen, LAB_Placer*
 #endif
 LAB_STATIC void LAB_Gen_Cave(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
 
-LAB_DEPRECATED("old")
-LAB_STATIC void LAB_Gen_Cave_Crystals(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
 LAB_STATIC void LAB_Gen_Cave_RockVariety(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
-
-LAB_STATIC void LAB_Gen_Cave_PopulateLayer(LAB_GenOverworld* gen, LAB_Chunk* chunk, const LAB_StructureLayer* lyr, int cx, int cy, int cz);
-LAB_STATIC void LAB_Gen_Cave_PopulateLayer_Func(LAB_GenOverworld* gen, LAB_Placer* p, const LAB_StructureLayer* lyr, int cx, int cy, int cz);
-
-
 
 
 
@@ -228,64 +221,8 @@ LAB_STATIC void LAB_Gen_Cave(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int
 
 
 
-LAB_DEPRECATED("old")
-LAB_STATIC void LAB_Gen_Cave_Crystals(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y, int z)
-{
-    LAB_Random random;
-    LAB_ChunkRandom(&random, gen->seed^LAB_GEN_CRYSTAL_SALT, x, y, z);
-
-    // Less probability that crystals generate at the top
-    unsigned amount = LAB_MIN(2*LAB_MAX(0, -y), 100);
-
-    if((LAB_NextRandom(&random)&255) < amount)
-    {
-        for(int i = LAB_NextRandom(&random)&15; i > 0; --i)
-        {
-            LAB_Block*const LIGHTS[4] = {
-                &LAB_BLOCK_BLUE_CRYSTAL,
-                &LAB_BLOCK_YELLOW_CRYSTAL,
-                &LAB_BLOCK_GREEN_CRYSTAL,
-                &LAB_BLOCK_RED_CRYSTAL,
-            };
-
-            LAB_Block* light = LIGHTS[LAB_NextRandom(&random)&3];
-            int xx = LAB_NextRandom(&random) & 0xf;
-            int zz = LAB_NextRandom(&random) & 0xf;
-            int yy;
-            for(yy = 0; yy < 16; ++yy)
-                if(chunk->blocks[xx+16*yy+16*16*zz] == &LAB_BLOCK_STONE)
-                    break;
-            if(yy == 16) continue;
-
-            int h = (LAB_NextRandom(&random)&3)+2;
-            for(--yy; yy >= 0 && h > 0; --yy, --h)
-            {
-                chunk->blocks[xx+16*yy+16*16*zz] = light;
-            }
-        }
-    }
-}
-
-
 LAB_STATIC void LAB_Gen_Cave_RockVariety(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y, int z)
 {
-    #if 0
-    static uint64_t noise[17*17*17];
-    static uint32_t smooth[16*16*16];
-
-    LAB_ChunkNoise3D(noise, gen->seed^0x12345, x, y, z);
-    LAB_SmoothNoise3D(smooth, noise);
-    for(int zz = 0; zz < 16*16*16; zz+=16*16)
-    for(int yy = 0; yy < 16*16;    yy+=16)
-    for(int xx = 0; xx < 16;       xx++)
-    {
-        uint32_t n = smooth[xx|yy|zz];
-        if(SMTST(n, 0x20000000, 0x80000000) && chunk->blocks[xx|yy|zz] == &LAB_BLOCK_STONE)
-        {
-            chunk->blocks[xx|yy|zz] = &LAB_BLOCK_MARBLE;
-        }
-    }
-    #else
     for(int zz = 0; zz < 16; ++zz)
     for(int yy = 0; yy < 16; ++yy)
     for(int xx = 0; xx < 16; ++xx)
@@ -307,5 +244,4 @@ LAB_STATIC void LAB_Gen_Cave_RockVariety(LAB_GenOverworld* gen, LAB_Chunk* chunk
                 chunk->blocks[xx|yy<<4|zz<<8] = &LAB_BLOCK_BASALT;
         }
     }
-    #endif
 }

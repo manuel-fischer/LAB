@@ -50,7 +50,11 @@ void LAB_DestructWorld(LAB_World* world)
     {
         LAB_World_ChunkEntry* entry = &world->chunks.table[i];
         if(entry->chunk != NULL)
+        {
+            //if(entry->chunk->view_user && world->chunkunlink)
+            //    world->chunkunlink(world->chunkunlink_user, world, entry->chunk, entry->pos.x, entry->pos.y, entry->pos.z);
             LAB_DestroyChunk(entry->chunk);
+        }
     }
     LAB_ChunkTBL_Destroy(&world->chunks);
 }
@@ -101,8 +105,8 @@ LAB_STATIC LAB_Chunk* LAB_GenerateNotifyChunk(LAB_World* world, int x, int y, in
     // connect neighbors
     for(int face = 0; face < 6; ++face)
     {
-        LAB_ChunkPos pos = { x+LAB_OX(face), y+LAB_OY(face), z+LAB_OZ(face) };
-        LAB_World_ChunkEntry* neighbor = LAB_ChunkTBL_Get(&world->chunks, pos);
+        LAB_ChunkPos pos2 = { x+LAB_OX(face), y+LAB_OY(face), z+LAB_OZ(face) };
+        LAB_World_ChunkEntry* neighbor = LAB_ChunkTBL_Get(&world->chunks, pos2);
         if(neighbor)
         {
             chunk->neighbors[face] = neighbor->chunk;
@@ -152,61 +156,6 @@ LAB_Chunk* LAB_GetChunk(LAB_World* world, int x, int y, int z, LAB_ChunkPeekType
     {
         return NULL;
     }
-}
-
-void LAB_GetChunkNeighborhood_(LAB_World* world, LAB_Chunk* /*out*/ chunks[27], int x, int y, int z, LAB_ChunkPeekType flags)
-{
-    #if 0
-    LAB_Chunk** itr = chunks;
-    for(int iz = -1; iz <= 1; ++iz)
-    for(int iy = -1; iy <= 1; ++iy)
-    for(int ix = -1; ix <= 1; ++ix)
-    {
-        *itr = LAB_GetChunk(world, x+ix, y+iy, z+iz, flags);
-        itr++;
-    }
-    #elif 0
-    #define NEIGHBOR(x, y, z) (chunks[(x)+3*(y)+9*(z)])
-    #define NEIGHBOR_FACE(x, y, z, face) (NEIGBOR(x, y, z)?NEIGBOR(x, y, z)->neighbors[face]:NULL)
-    NEIGHBOR(1, 1, 1) = LAB_GetChunk(world, x, y, z, flags);
-    for(int face = 0; face < 6; ++face)
-    {
-        NEIGHBOR(1+LAB_OX(face), 1+LAB_OY(face), 1+LAB_OZ(face)) = NEIGHBOR_FACE(1, 1, 1, face);
-    }
-    for(int i = 0; i < 12; ++i)
-    {
-        int a = i&1 ? 2 : 0;
-        int b = i&2 ? 2 : 0;
-
-        int xx, yy, zz;
-        switch(i>>2)
-        {
-            case 0: xx = 0; yy = a; zz = b; break;
-            case 1: xx = b; yy = 0; zz = a; break;
-            case 2: xx = a; yy = b; zz = 0; break;
-        }
-
-    }
-    #else
-    #define NEIGHBOR(x, y, z) (chunks[(x)+3*(y)+9*(z)])
-    #define NEIGHBOR_FACE(x, y, z, face) (NEIGHBOR(x, y, z)?NEIGHBOR(x, y, z)->neighbors[face]:NULL)
-    NEIGHBOR(1, 1, 1) = LAB_GetChunk(world, x, y, z, flags);
-    NEIGHBOR(1, 0, 1) = NEIGHBOR_FACE(1, 1, 1, LAB_I_D);
-    NEIGHBOR(1, 2, 1) = NEIGHBOR_FACE(1, 1, 1, LAB_I_U);
-    for(int y = 0; y < 3; ++y)
-    {
-        NEIGHBOR(0, y, 1) = NEIGHBOR_FACE(1, y, 1, LAB_I_W);
-        NEIGHBOR(2, y, 1) = NEIGHBOR_FACE(1, y, 1, LAB_I_E);
-
-        for(int x = 0; x < 3; ++x)
-        {
-            NEIGHBOR(x, y, 0) = NEIGHBOR_FACE(x, y, 1, LAB_I_N);
-            NEIGHBOR(x, y, 2) = NEIGHBOR_FACE(x, y, 1, LAB_I_S);
-        }
-    }
-    #undef NEIGHBOR_FACE
-    #undef NEIGHBOR
-    #endif
 }
 
 void LAB_GetChunkNeighbors(LAB_Chunk* center_chunk, LAB_Chunk* chunks[27])
@@ -514,6 +463,7 @@ void LAB_WorldTick(LAB_World* world, uint32_t delta_ms)
                     // might be moved into this entry, the array itself is not
                     // reallocated when removing entries
                     //printf("Unload chunk %i %i %i\n", cx, cy, cz);
+                    if(chunk->view_user) world->chunkunlink(world->chunkunlink_user, world, chunk, cx, cy, cz);
                     LAB_DestroyChunk(chunk);
                     LAB_ChunkTBL_RemoveEntry(&world->chunks, &world->chunks.table[i]);
                     --i; // repeat index

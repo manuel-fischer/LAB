@@ -12,7 +12,6 @@ LAB_STATIC void LAB_Gen_Overworld_Tree(LAB_Placer* p, LAB_Random* rnd);
 LAB_STATIC void LAB_Gen_Overworld_Tower(LAB_Placer* p, LAB_Random* rnd);
 
 LAB_STATIC void LAB_Gen_Cave_CeilingCrystal(LAB_Placer* p, LAB_Random* rnd);
-LAB_STATIC void LAB_Gen_Cave_FloorCrystal(LAB_Placer* p, LAB_Random* rnd);
 
 
 const LAB_StructureLayer overworld_layers[] =

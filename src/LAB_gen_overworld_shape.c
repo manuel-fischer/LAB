@@ -94,7 +94,7 @@ int LAB_Gen_Surface_Shape_Func(LAB_GenOverworld* gen, int xi, int zi)
     // make the noise function pointer but preserve height of the points
     // by reducing heights, when the length of the gradient of the noise function
     // gets bigger
-    double peak_noise2_noise, peak_noise2_dx, peak_noise2_dz;
+    //double peak_noise2_noise, peak_noise2_dx, peak_noise2_dz;
     #define deriv_h 0.1
     #define peak_noise2(x, z) ( \
         (peak_noise2_noise = LAB_SimplexNoise2D((x), (z))), \

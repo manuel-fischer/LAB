@@ -140,6 +140,7 @@ typedef struct LAB_World LAB_World;
 
 typedef void(LAB_ChunkViewer)(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update);
 typedef bool(LAB_ChunkKeeper)(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z);
+typedef void(LAB_ChunkUnlinker)(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z);
 
 
 /*typedef struct LAB_ChunkEntry
@@ -153,11 +154,15 @@ typedef struct LAB_World
     LAB_ChunkGenerator* chunkgen;
     void*               chunkgen_user;
 
+
     LAB_ChunkViewer* chunkview;
     void*            chunkview_user;
 
     LAB_ChunkKeeper* chunkkeep;
     void*            chunkkeep_user;
+
+    LAB_ChunkUnlinker* chunkunlink;
+    void*              chunkunlink_user;
 
     LAB_ChunkTBL chunks;
 

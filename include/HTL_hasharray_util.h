@@ -1,10 +1,19 @@
 #pragma once
+/** @file HTL_hasharray_util.h
+ *
+ *  Utility macros for hash arrays
+ */
 
-// UTILITIES
 
-/**
- *  e should be an lvalue of a pointer to an entry,
- *  arr should be a pointer to a hasharray
+/** \def HTL_HASHARRAY_EACH_DEREF
+ *
+ *  Iterate through the hash array.
+ *  Receive pointers to the elements.
+ *
+ *  \param array_type  hash array type,         text (no alias)
+ *  \param arr         pointer to a hasharray
+ *  \param e           entry pointer,           by name (lvalue)
+ *  \param ...         iteration statement,     statement
  */
 #define HTL_HASHARRAY_EACH(array_type, arr, e, ...) do { \
     for(size_t HTL_HASHARRAY_i = 0; HTL_HASHARRAY_i < (arr)->capacity; ++HTL_HASHARRAY_i) \
@@ -14,9 +23,23 @@
     } \
 } while(0)
 
-/**
- *  e should be an lvalue of a pointer to an entry,
- *  arr should be a pointer to a hasharray
+/** \def HTL_HASHARRAY_REMOVE
+ *
+ *  Iterate through the hash array and remove entries.
+ *  Receive pointers to the elements.
+ *
+ *  \param array_type  hash array type,         text (no alias)
+ *  \param arr         pointer to a hasharray
+ *  \param e           entry pointer,           by name (lvalue)
+ *  \param cond        condition,               by name (re-evaluated)
+ *  \param ...         cleanup statement,       statement
+ *
+ *  \attention
+ *      Do not jump out of \a ... after invalidation.
+ *      Use \a cond to skip elements instead!
+ *      Otherwise the entry wouldn't be removed correctly.
+ *
+ *  \todo there should be a way to break out of the loop directly
  */
 #define HTL_HASHARRAY_REMOVE(array_type, arr, e, cond, ...) do { \
     for(size_t HTL_HASHARRAY_i = 0; HTL_HASHARRAY_i < (arr)->capacity; ++HTL_HASHARRAY_i) \
@@ -33,9 +56,15 @@
 
 
 
-/**
- *  e should be an lvalue of an entry,
- *  arr should be a pointer to a hasharray
+/** \def HTL_HASHARRAY_EACH_DEREF
+ *
+ *  Iterate through the hash array.
+ *  Receive value copy of the elements.
+ *
+ *  \param array_type  hash array type,         text (no alias)
+ *  \param arr         pointer to a hasharray
+ *  \param e           entry value,             by name (lvalue)
+ *  \param ...         iteration statement,     statement
  */
 #define HTL_HASHARRAY_EACH_DEREF(array_type, arr, e, ...) do { \
     for(size_t HTL_HASHARRAY_i = 0; HTL_HASHARRAY_i < (arr)->capacity; ++HTL_HASHARRAY_i) \
@@ -45,9 +74,23 @@
     } \
 } while(0)
 
-/**
- *  e should be an lvalue of an entry,
- *  arr should be a pointer to a hasharray
+/** \def HTL_HASHARRAY_REMOVE_DEREF
+ *
+ *  Iterate through the hash array and remove entries.
+ *  Receive value copy of the elements.
+ *
+ *  \param array_type  hash array type,         text (no alias)
+ *  \param arr         pointer to a hasharray
+ *  \param e           entry value,             by name (lvalue)
+ *  \param cond        condition,               by name (re-evaluated)
+ *  \param ...         cleanup statement,       statement
+ *
+ *  \attention
+ *      Do not jump out of \a ... after invalidation.
+ *      Use \a cond to skip elements instead!
+ *      Otherwise the entry wouldn't be removed correctly.
+ *
+ *  \todo there should be a way to break out of the loop directly
  */
 #define HTL_HASHARRAY_REMOVE_DEREF(array_type, arr, e, cond, ...) do { \
     for(size_t HTL_HASHARRAY_i = 0; HTL_HASHARRAY_i < (arr)->capacity; ++HTL_HASHARRAY_i) \
@@ -55,7 +98,7 @@
         (e)=(arr)->table[HTL_HASHARRAY_i]; \
         if(array_type##_IsEntry((arr), &(e)) && (cond)) \
         { \
-            __VA_ARGS__ \
+            { __VA_ARGS__ } \
             array_type##_RemoveEntry((arr), &(arr)->table[HTL_HASHARRAY_i]); \
             --HTL_HASHARRAY_i; /* repeat */ \
         } \

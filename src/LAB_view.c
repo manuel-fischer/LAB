@@ -52,7 +52,6 @@ LAB_STATIC void LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass);
 LAB_STATIC bool LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_RenderPass pass);
 
 LAB_STATIC bool LAB_View_HasChunkEntryVisibleNeighbors(LAB_View* view, LAB_ViewChunkEntry* e);
-LAB_STATIC bool LAB_View_HasChunkVisibleNeighbors(LAB_View* view, int x, int y, int z);
 LAB_STATIC bool LAB_View_IsLocalChunk(LAB_View* view, int cx, int cy, int cz);
 LAB_STATIC unsigned LAB_View_ChunkVisibility(LAB_View* view, int cx, int cy, int cz);         // inclusive for same coordinates
 LAB_STATIC unsigned LAB_View_ChunkNeighborVisibility(LAB_View* view, int cx, int cy, int cz); // exclusive for same coordinates
@@ -123,7 +122,9 @@ void LAB_DestructView(LAB_View* view)
     HTL_HASHARRAY_EACH_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
     {
         // unlinking not nessesary
-        LAB_ViewDestructFreeChunk(view, e);
+        // but when the world gets destroyed all links to the world should be removed
+        LAB_ViewUnlinkChunk(view, e);
+        //LAB_ViewDestructFreeChunk(view, e);
     });
 
     LAB_View_ChunkTBL_Destroy(&view->chunks);
@@ -187,6 +188,15 @@ bool LAB_ViewChunkKeepProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x
     int dz = z-pz;
     unsigned int dist = dx*dx+dy*dy+dz*dz;
     return dist <= view->keep_dist*view->keep_dist+3;
+}
+
+void LAB_ViewChunkUnlinkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z)
+{
+    LAB_ASSUME(chunk->view_user);
+
+    LAB_ViewChunkEntry* entry = chunk->view_user;
+    entry->world_chunk = NULL;
+    // does not need to clear chunk->view_user, because chunk gets destroyed
 }
 
 
@@ -298,18 +308,6 @@ LAB_STATIC void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* 
             }
         }
     }
-}
-
-
-// TODO move to world
-LAB_HOT LAB_ALWAYS_INLINE
-LAB_BlockFlags LAB_GetNeighborhoodBlockFlags(LAB_Chunk* neighborhood[27], int x, int y, int z)
-{
-    int block_index;
-    LAB_Chunk* chunk;
-    chunk = LAB_GetNeighborhoodRef(neighborhood, x, y, z, &block_index);
-    if(LAB_UNLIKELY(chunk == NULL)) return 0;
-    return chunk->blocks[block_index]->flags;
 }
 
 
@@ -507,7 +505,7 @@ LAB_STATIC bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
 
     // TODO: enshure light update after at most 1 sec
     if(     (chunk_entry->dirty&LAB_CHUNK_UPDATE_LOCAL)
-        || ((chunk_entry->dirty&LAB_CHUNK_UPDATE_LIGHT) && (rand()&0x1f)==0)
+        || ((chunk_entry->dirty&LAB_CHUNK_UPDATE_LIGHT) && (rand()&0xf)==0) // TODO parameterize probability
         || ((chunk_entry->visible_faces&visibility) != visibility) // some faces not visible
         || ( chunk_entry->visible_faces!=visibility && (rand()&0x1f)==0)) // some faces not hidden -> free memory
     {
@@ -523,9 +521,9 @@ LAB_STATIC bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
         chunk_entry->exist = 1;
         chunk_entry->upload_vbo = 1;
 
-        if(view->flags & LAB_VIEW_USE_VBO)
-            //LAB_ViewUploadVBO(view, chunk_entry);
-            LAB_ViewUpdateChunk(view, chunk_entry);
+        //if(view->flags & LAB_VIEW_USE_VBO)
+            ////LAB_ViewUploadVBO(view, chunk_entry);
+            //LAB_ViewUpdateChunk(view, chunk_entry);
 
         return 1;
     }
@@ -569,6 +567,7 @@ LAB_STATIC void LAB_ViewUpdateChunks(LAB_View* view)
         if((cx-px)*(cx-px) + (cy-py)*(cy-py) + (cz-pz)*(cz-pz) <= dist_sq
            && e->visible)
             rest_update -= LAB_ViewUpdateChunk(view, e);
+        if(!rest_update) return;
     });
 }
 // TODO use glMultiDrawElements
@@ -689,7 +688,6 @@ LAB_STATIC void LAB_View_UploadChunks(LAB_View* view)
     int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
     int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
     int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
-
 
     int dist_sq = view->render_dist*view->render_dist + 3;
     LAB_ViewChunkEntry* e;
@@ -1333,10 +1331,15 @@ void LAB_ViewRemoveDistantChunks(LAB_View* view)
 
     int dist_sq = view->keep_dist*view->keep_dist + 3;
 
+    unsigned rest_unload = view->max_unload;
+
     LAB_ViewChunkEntry* e;
     HTL_HASHARRAY_REMOVE_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
-                               (e->x-px)*(e->x-px) + (e->y-py)*(e->y-py) + (e->z-pz)*(e->z-pz) > dist_sq,
-                               {LAB_ViewUnlinkChunk(view, e);});
+                               rest_unload && (e->x-px)*(e->x-px) + (e->y-py)*(e->y-py) + (e->z-pz)*(e->z-pz) > dist_sq,
+                               {
+        LAB_ViewUnlinkChunk(view, e);
+        --rest_unload;
+    });
 }
 
 
