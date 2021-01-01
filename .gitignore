@@ -64,3 +64,10 @@ screenshots/scr-*
 
 # Debug output files
 dbg_*
+
+
+# Ignore Doxygen for now
+doc*
+doxygen/*
+*.bmarks
+!doxygen/doxyfile
