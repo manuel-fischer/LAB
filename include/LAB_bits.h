@@ -1,7 +1,14 @@
 #pragma once
+/** \file LAB_bits.h
+ *
+ *  Some bit utility functions.
+ */
 
 #include "LAB_opt.h"
 #include "LAB_attr.h"
+#include "LAB_debug.h"
+
+#ifndef DOXYGEN
 
 #ifdef __GNUC__
 
@@ -16,7 +23,7 @@
 #define LAB_Ctz(intnum) __builtin_ctz(intnum)
 
 #else
-LAB_PURE
+LAB_CONST
 LAB_INLINE int LAB_PopCnt(uint32_t v)
 {
     // Slightly modified:  https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetKernighan
@@ -31,9 +38,10 @@ LAB_INLINE int LAB_PopCnt(uint32_t v)
     return c;
 }
 
-LAB_PURE
+LAB_CONST
 LAB_INLINE int LAB_Ctz(uint32_t v)
 {
+    LAB_ASSUME(v != 0);
     // Slightly modified:  https://graphics.stanford.edu/~seander/bithacks.html#ZerosOnRightParallel
     // v: 32-bit word input to count zero bits on right
     uint32_t c = 32; // c will be the number of zero bits on the right
@@ -49,22 +57,28 @@ LAB_INLINE int LAB_Ctz(uint32_t v)
 
 #endif
 
+LAB_CONST
+LAB_INLINE int LAB_IsPow2(int v)
+{
+    LAB_ASSUME(v != 0);
+    return (v & (v - 1)) == 0;
+}
 
 #if (-1 >> 1) == -1
 #define LAB_Sar(x, n) ((x) >> (n))
 #else
-// Because C does not guarantee that x >> n sign extends for
-// signed numbers, here is an implementation that does this
-LAB_PURE
+
+LAB_CONST
 LAB_INLINE int LAB_Sar(int x, int n)
 {
     return x < 0 ? ~(~x >> n) : x >> n;
 }
 #endif
 
-LAB_PURE
+LAB_CONST
 LAB_INLINE uint32_t LAB_CeilPow2(uint32_t x)
 {
+    LAB_ASSUME(x != 0);
     x--;
     x |= x >> 1;
     x |= x >> 2;
@@ -74,3 +88,64 @@ LAB_INLINE uint32_t LAB_CeilPow2(uint32_t x)
     x++;
     return x;
 }
+
+
+#else /* DOXYGEN SECTION */
+
+
+
+/**
+ *  Count set bits,
+ *
+ *  Used to get the cardinality of a bitset V
+ *
+ *  For the condition `|V| > 0` simply use `v != 0` or `v` instead
+ *
+ *  `LAB_PopCnt(v) == 1` checks if v is a pow of two, use
+ *  `v != 0 && \ref LAB_IsPow2 (v)` instead
+ */
+int LAB_PopCnt(uint32_t v);
+
+// Count leading zeros
+//#define LAB_Clz(intnum) __builtin_clz(intnum)
+
+/**
+ *  Count trailing zeros
+ *
+ *  Used to get smallest set bit of a bitset
+ *
+ *  UB if v is 0
+ *
+ *  Instead of `LAB_MIN(LAB_Ctz(v), c)` use `LAB_Ctz(v|1<<c)`, to
+ *  allow for v being 0.
+ */
+int LAB_Ctz(uint32_t v);
+
+/**
+ *  Check if a number is a power of two
+ *
+ *  UB if v is 0
+ */
+int LAB_IsPow2(int v);
+
+
+/**
+ *  Shift arithmetic right, the same as `x >> n` for positive `x`.
+ *  For negative `x`, the sign is used to fill the upper bits.
+ *
+ *  Because C does not guarantee that x >> n sign extends for
+ *  signed numbers, this is an implementation that does this
+ *
+ *  Note: if `(-1 >> 1) == -1` is true at preprocessing time
+ *        the expression `x >> n` is also used for negative x
+ */
+int LAB_Sar(int x, int n);
+
+/**
+ *  Round integer to the next power of 2
+ *
+ *  UB if x is 0
+ */
+uint32_t LAB_CeilPow2(uint32_t x);
+
+#endif
