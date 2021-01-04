@@ -214,9 +214,10 @@ LAB_STATIC bool LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entr
     if(chunk_neighborhood[1+3+9] == NULL) return 0;
     //chunk_entry->exist = chunk_neighborhood[1+3+9] != NULL;
     chunk_entry->exist = 1;
-    for(int i = 0; i < 27; ++i)
-        if(chunk_neighborhood[i] == NULL && (rand()&0x7) == 0) return 0;
-        //if(chunk_neighborhood[i] == NULL) return 0;
+    if(LAB_View_IsLocalChunk(view, chunk_entry->x, chunk_entry->y, chunk_entry->z))
+        for(int i = 0; i < 27; ++i)
+            if(chunk_neighborhood[i] == NULL && (rand()&0x3) == 0) return 0;
+            //if(chunk_neighborhood[i] == NULL) return 0;
 
     chunk_entry->visible_faces = visibility;
     LAB_ViewBuildMeshNeighbored(view, chunk_entry, chunk_neighborhood, visibility);
@@ -1144,9 +1145,14 @@ void LAB_ViewRender(LAB_View* view)
     glFogi(GL_FOG_MODE, GL_LINEAR);
     float d = LAB_MAX(view->render_dist*16, 48);
     glFogf(GL_FOG_START, d-32);
+    //glFogf(GL_FOG_START, (d-16)*0.8);
+    glFogf(GL_FOG_START, (d-16)*0.7);
     glFogf(GL_FOG_END, d-16);
-    #else
+    #elif 0
     glFogf(GL_FOG_DENSITY, 0.05);
+    #else
+    glFogi(GL_FOG_MODE, GL_EXP2);
+    glFogf(GL_FOG_DENSITY, 0.1/view->render_dist);
     #endif
     if(1) // TODO: check if GL_NV_fog_distance is available
     {

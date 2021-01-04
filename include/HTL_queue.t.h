@@ -4,9 +4,9 @@
  *
  *  Template header (multiple inclusion)
  *
- *  @param NAME       name of the generated type, prefix of all functions
- *  @param TYPE       content type
- *  @param CAPACITY   maximum amount of elements
+ *  \param NAME       name of the generated type, prefix of all functions
+ *  \param TYPE       content type
+ *  \param CAPACITY   maximum amount of elements
  */
 
 #include "HTL_pp.h"

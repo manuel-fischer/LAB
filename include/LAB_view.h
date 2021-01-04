@@ -196,6 +196,7 @@ typedef struct LAB_View
              keep_dist;
     // TODO: query enable/disable setting
 
+    // Limits
     uint32_t max_update;
 
     uint32_t max_unload;

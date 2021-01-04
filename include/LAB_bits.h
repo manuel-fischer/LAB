@@ -102,7 +102,7 @@ LAB_INLINE uint32_t LAB_CeilPow2(uint32_t x)
  *  For the condition `|V| > 0` simply use `v != 0` or `v` instead
  *
  *  `LAB_PopCnt(v) == 1` checks if v is a pow of two, use
- *  `v != 0 && \ref LAB_IsPow2 (v)` instead
+ *  `v != 0 &&` \ref LAB_IsPow2 `(v)` instead
  */
 int LAB_PopCnt(uint32_t v);
 
