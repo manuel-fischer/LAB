@@ -22,4 +22,9 @@ const char* LAB_Filename(const char* path);
 
 #define LAB_MAX3(a, b, c) (  (a)>(b) ? ( (a)>(c) ? (a) : (c) ) : ( (b)>(c) ? (b) : (c) )  )
 
+#define LAB_PTR_OFFSET(ptr, index, size) ((void*)((char*)(ptr) + (index)*(size)))
+
 uint64_t LAB_NanoSeconds();
+
+
+size_t LAB_StrHash(const char* str);

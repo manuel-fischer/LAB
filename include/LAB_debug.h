@@ -29,6 +29,19 @@
 #  define LAB_ASSUME_0 LAB_ASSUME // no parameter aliasing -> keep text replacement behavior
 #endif
 
+
+/**
+ *  Assume a precondition for expr
+ */
+#ifndef __GNUC__
+#  define LAB_CORRECT_IF(cond, expr) (expr)
+#else
+#  define LAB_CORRECT_IF(cond, expr) ({ \
+    LAB_ASSUME(cond); \
+    (expr); \
+})
+#endif
+
 void LAB_AssumptionFailed(const char* expr,
                           const char* file,
                           int line,

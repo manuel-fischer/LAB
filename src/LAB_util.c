@@ -22,3 +22,13 @@ uint64_t LAB_NanoSeconds()
     clock_gettime(CLOCK_REALTIME, &ts);
     return  (uint64_t)ts.tv_sec*1000000000ull + ts.tv_nsec;
 }
+
+size_t LAB_StrHash(const char* str)
+{
+    size_t hash = 0xabcdef;
+
+    for(;*str; ++str)
+        hash = ((hash << 5) + hash) + (int)*str;
+
+    return hash;
+}

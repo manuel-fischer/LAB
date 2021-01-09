@@ -8,7 +8,7 @@
  *  @param KEY_TYPE           key type (\c KeyType)
  *  @param ENTRY_TYPE         entry type (\c EntryType)
  *  @param KEY_FUNC(e)        key function, takes pointer to entry
- *  @param HASH_FUNC(k)       hash function, takes key
+ *  @param HASH_FUNC(k)       hash function, takes key, return size_t
  *  @param COMP_FUNC(k1,k2)   comparison function, takes key, return 0 if equal
  *
  *  @param EMPTY_FUNC(e)      function to check if entry is empty,
@@ -111,7 +111,7 @@ EntryType* HashArray_Locate(HashArray* hasharray, KeyType key);
 /**
  *  Create room for the entry with the given key, if it is not already present
  *
- *  The return value points to NULL, when allocation failed
+ *  The return value points to NULL, when allocation failed.
  *  If it was already present, the return value points to that entry
  *
  *  The entry itself is not inserted.
@@ -121,11 +121,13 @@ EntryType* HashArray_Locate(HashArray* hasharray, KeyType key);
  *
  *  \post All references to entries get invalidated, because the array
  *        might have been relocated
+ *
+ *  \see HashArray_Discard
  */
 EntryType* HashArray_PutAlloc(HashArray* hasharray, KeyType key);
 
 /**
- *  Locate the element with the given key, if it is present
+ *  Locate the element with the given key, if it is present.
  *  Return NULL if it was not found
  *
  *  \post The function does not change the array
@@ -173,6 +175,8 @@ bool HashArray_IsEntry(HashArray* hasharray, EntryType* entry);
  *  when no element was found
  *
  *  \todo should locate/get be allowed in between?
+ *
+ *  \see HashArray_PutAlloc
  */
 void HashArray_Discard(HashArray* hasharray, EntryType* entry);
 #endif
