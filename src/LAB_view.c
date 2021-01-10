@@ -502,6 +502,7 @@ LAB_STATIC bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
         return 0;
 
 
+    // TODO update this when cam moved.
     unsigned visibility = LAB_View_ChunkVisibility(view, chunk_entry->x, chunk_entry->y, chunk_entry->z);
 
     // TODO: enshure light update after at most 1 sec
@@ -537,6 +538,7 @@ LAB_STATIC bool LAB_ViewUpdateChunk(LAB_View* view, LAB_ViewChunkEntry* e)
     if(e->mesh_order && (updated || (rand()&0x1f) == 0))
     //if(e->mesh_order)
     {
+        // TODO move this section out of here
         LAB_View_Mesh* alpha_pass = &e->render_passes[LAB_RENDER_PASS_ALPHA];
         float cam[3];
         cam[0] = view->x-e->x*16;
@@ -800,6 +802,7 @@ LAB_STATIC void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* ent
     //LAB_ASSUME(entry->query_id == 0);
     if(entry->query_id != 0) return;
     LAB_GL_ALLOC(glGenQueries, 1, &entry->query_id);
+    // TODO what if query couldn't be allocated?
     unsigned query_id = entry->query_id;
     #endif
     LAB_ASSUME(query_id != 0);

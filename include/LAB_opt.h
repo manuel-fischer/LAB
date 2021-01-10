@@ -36,6 +36,8 @@
 #define LAB_PURE          __attribute__((pure))
 #define LAB_CONST         __attribute__((const))
 
+#define LAB_UNUSED        __attribute__((unused))
+
 //#define LAB_UNROLL(n) _Pragma("GCC unroll " #n)
 #define LAB_PRAGMA(str) _Pragma(#str)
 #define LAB_UNROLL(n) LAB_PRAGMA(GCC unroll n)
@@ -69,6 +71,8 @@
 #define LAB_PURE
 #define LAB_CONST
 
+#define LAB_UNUSED
+
 #define LAB_UNROLL(n)
 
 
@@ -83,6 +87,8 @@
 #define LAB_IS_CONSTANT(expr)   0
 
 #endif
+
+#define LAB_EMPTY_TU LAB_UNUSED static char empty_tu = 0
 
 #else /* DOXYGEN SECTION */
 
@@ -230,4 +236,15 @@
  */
 #define LAB_IS_CONSTANT(expr)
 
+/**
+ *  Use whenever a translation unit (TU) file does not contain anything, note this expands to a statement
+ *  and a semicolon is expected:
+ *
+ *  ```
+ *  // file.c
+ *  #include "file.h"
+ *  LAB_EMPTY_TU;
+ *  ```
+ */
+#define LAB_EMPTY_TU
 #endif

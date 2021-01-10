@@ -203,6 +203,8 @@ bool LAB_AssetMgr_Create(LAB_AssetMgr* mgr, const LAB_AssetMgr_Behavior* behavio
     LAB_AssetMgrTbl_Create(&mgr->table);
     mgr->resource_capacity = 0;
     mgr->resource_vector   = NULL;
+
+    return true;
 }
 
 void LAB_AssetMgr_Destroy(LAB_AssetMgr* mgr)
@@ -214,7 +216,7 @@ void LAB_AssetMgr_Destroy(LAB_AssetMgr* mgr)
     });
 
     if(mgr->behavior.destroy_resource)
-        for(int i = 0; i < mgr->table.size; ++i)
+        for(size_t i = 0; i < mgr->table.size; ++i)
         {
             mgr->behavior.destroy_resource(mgr->user, LAB_AssetMgr_GetResource(mgr, i));
         }
@@ -246,7 +248,7 @@ void* LAB_AssetMgr_Load(LAB_AssetMgr* mgr, const char* resource_name)
             size_t new_cap = mgr->resource_capacity;
             if(new_cap == 0) new_cap = 1;
 
-            void* new_data = LAB_Realloc(mgr->resource_vector, new_cap*mgr->behavior.resource_size);
+            void* new_data = LAB_ReallocN(mgr->resource_vector, new_cap, mgr->behavior.resource_size);
             if(new_data == NULL)
                 goto fail;
 

@@ -1,22 +1,72 @@
+/** \file LAB_color.h
+ *
+ *  All around handling RGBA colors.
+ */
+
 #pragma once
 
 #include "LAB_util.h"
 #include "LAB_attr.h"
+#include "LAB_check.h"
 
 #include "LAB_stdinc.h"
 
+#if 0 //!defined __LITTLE_ENDIAN__ || !__LITTLE_ENDIAN__
+#error RGB-Format not supported on this platform
+#endif
+
+/**
+ *  The type used to represent colors
+ */
 typedef uint32_t LAB_Color;
 
-#if 1
+/**
+ *  Create a color from red, green and blue channels, each in the range
+ *  [0, 255].
+ *  Alpha is set to 255.
+ *  LAB_RGBX provides a more compact way to define a color
+ *
+ *  \see LAB_RGBX
+ */
 #define LAB_RGB(r, g, b) ((uint32_t)(r) | (uint32_t)(g) << 8 | (uint32_t)(b) << 16 | 0xff000000u)
+/**
+ *  Create a color from red, green, blue and alpha channels, each in the range
+ *  [0, 255].
+ */
 #define LAB_RGBA(r, g, b, a) ((uint32_t)(r) | (uint32_t)(g) << 8 | (uint32_t)(b) << 16 | (uint32_t)(a) << 24)
-// LAB_RGBX(RRGGBB)
+/**
+ *  Create a color from red, green and blue channels
+ *
+ *  Syntax
+ *  ```
+ *  LAB_RGBX(RRGGBB)
+ *  ```
+ */
 #define LAB_RGBX(hex) LAB_RGB((0x##hex) >> 16 & 0xff, (0x##hex) >> 8 & 0xff, (0x##hex) & 0xff)
-// LAB_RGBAX(RRGGBBAA)
+/**
+ *  Create a color from red, green and blue channels
+ *
+ *  Syntax
+ *  ```
+ *  LAB_RGBX(RRGGBBAA)
+ *  ```
+ */
 #define LAB_RGBAX(hex) LAB_RGB((0x##hex) >> 24 & 0xff, (0x##hex) >> 16 & 0xff, (0x##hex) >> 8 & 0xff, (0x##hex) & 0xff)
+/**
+ *  Get the red channel of a color
+ */
 #define LAB_RED(col) ((col)       & 0xffu)
+/**
+ *  Get the green channel of a color
+ */
 #define LAB_GRN(col) ((col) >>  8 & 0xffu)
+/**
+ *  Get the blue channel of a color
+ */
 #define LAB_BLU(col) ((col) >> 16 & 0xffu)
+/**
+ *  Get the alpha channel of a color
+ */
 #define LAB_ALP(col) ((col) >> 24 & 0xffu)
 
 #define LAB_RED_MASK 0x000000ffu
@@ -26,15 +76,12 @@ typedef uint32_t LAB_Color;
 
 #define LAB_COL_MASK 0x00ffffffu
 
-#else
-#error RGB-Format not implemented
-#endif
 
 
-
-
-// saturated
-LAB_PURE
+/**
+ *  Add two colors component wise, saturate values greater than 255 to 255
+ */
+LAB_CONST
 LAB_INLINE LAB_Color LAB_AddColor(LAB_Color a, LAB_Color b)
 {
     LAB_Color s0 =  (a&0x00ff00ffu)     +  (b&0x00ff00ffu);
@@ -51,8 +98,10 @@ LAB_INLINE LAB_Color LAB_AddColor(LAB_Color a, LAB_Color b)
     return x0|x1;
 }
 
-// saturated
-LAB_PURE
+/**
+ *  Subtract two colors component wise, saturate values less than 0 to 0
+ */
+LAB_CONST
 LAB_INLINE LAB_Color LAB_SubColor(LAB_Color a, LAB_Color b)
 {
     return ~LAB_AddColor(~a, b);
@@ -60,7 +109,8 @@ LAB_INLINE LAB_Color LAB_SubColor(LAB_Color a, LAB_Color b)
 
 
 // branching, alpha gets 255
-LAB_PURE
+LAB_DEPRECATED("use LAB_MaxColor instead")
+LAB_CONST
 LAB_INLINE LAB_Color LAB_MaxColorB(LAB_Color a, LAB_Color b)
 {
     int ar, ag, ab, br, bg, bb;
@@ -69,7 +119,12 @@ LAB_INLINE LAB_Color LAB_MaxColorB(LAB_Color a, LAB_Color b)
     return LAB_RGB(ar<br?br:ar, ag<bg?bg:ag, ab<bb?bb:ab);
 }
 
-// branchless
+/**
+ *  Get the maximum values for each channel component wise.
+ *  It happens without any branches.
+ *
+ *  \see LAB_MinColor
+ */
 LAB_PURE
 LAB_INLINE LAB_Color LAB_MaxColor(LAB_Color a, LAB_Color b)
 {
@@ -80,7 +135,8 @@ LAB_INLINE LAB_Color LAB_MaxColor(LAB_Color a, LAB_Color b)
 }
 
 // branching, alpha gets 255
-LAB_PURE
+LAB_DEPRECATED("use LAB_MinColor instead")
+LAB_CONST
 LAB_INLINE LAB_Color LAB_MinColorB(LAB_Color a, LAB_Color b)
 {
     int ar, ag, ab, br, bg, bb;
@@ -89,8 +145,13 @@ LAB_INLINE LAB_Color LAB_MinColorB(LAB_Color a, LAB_Color b)
     return LAB_RGB(ar>br?br:ar, ag>bg?bg:ag, ab>bb?bb:ab);
 }
 
-// branchless
-LAB_PURE
+/**
+ *  Get the minimum values for each channel component wise.
+ *  It happens without any branches.
+ *
+ *  \see LAB_MaxColor
+ */
+LAB_CONST
 LAB_INLINE LAB_Color LAB_MinColor(LAB_Color a, LAB_Color b)
 {
     LAB_Color ga_mask = ((((a>>8&0x00ff00ff)|0x00100000)-(b>>8&0x00ff00ff))    & 0x01000100)*0xff;
@@ -99,8 +160,10 @@ LAB_INLINE LAB_Color LAB_MinColor(LAB_Color a, LAB_Color b)
     return b ^ ((a^b) & (rb_mask|ga_mask));
 }
 
-// fill channels where a < b with 0xff
-LAB_PURE
+/**
+ *  fill channels where a < b with 0xff
+ */
+LAB_CONST
 LAB_INLINE LAB_Color LAB_CompMask(LAB_Color a, LAB_Color b)
 {
     LAB_Color ga_mask = ((((a>>8&0x00ff00ff)|0x00100000)-(b>>8&0x00ff00ff))    & 0x01000100)*0xff;
@@ -109,16 +172,21 @@ LAB_INLINE LAB_Color LAB_CompMask(LAB_Color a, LAB_Color b)
     return rb_mask|ga_mask;
 }
 
-// use in contstant context or when the a, b can be reevaluated
+/**
+ *  Multiply two colors
+ *  Use in contstant context or when the a, b can be reevaluated
+ *
+ *  \see LAB_MulColor
+ */
 #define LAB_MUL_COLOR(a, b) \
     LAB_RGBA(LAB_RED(a)*LAB_RED(b)/255, \
              LAB_GRN(a)*LAB_GRN(b)/255, \
              LAB_BLU(a)*LAB_BLU(b)/255, \
              LAB_ALP(a)*LAB_ALP(b)/255)
 
-#define LAB_SQR_COLOR(a) LAB_MUL_COLOR(a, a)
+//#define LAB_SQR_COLOR(a) LAB_MUL_COLOR(a, a)
 
-LAB_PURE
+LAB_CONST
 LAB_INLINE LAB_Color LAB_MulColor(LAB_Color a, LAB_Color b)
 {
     return LAB_RGBA(LAB_RED(a)*LAB_RED(b)/255,
@@ -149,7 +217,7 @@ LAB_INLINE LAB_Color LAB_MulColor_Fast(LAB_Color a, LAB_Color b)
  *         ^
  *  Does not affect result
  */
-LAB_PURE
+LAB_CONST
 LAB_INLINE LAB_Color LAB_MulColor_Fast(LAB_Color a, LAB_Color b)
 {
     uint32_t a02 = a&0x00ff00ffu;
@@ -182,7 +250,7 @@ LAB_INLINE LAB_Color LAB_MulColor_Fast(LAB_Color a, LAB_Color b)
 
 
 
-LAB_PURE
+LAB_CONST
 LAB_INLINE LAB_Color LAB_MixColor50(LAB_Color a, LAB_Color b)
 {
     uint32_t x = (a>>1 & 0x7f7f7f7fu) + (b>>1 & 0x7f7f7f7fu);
@@ -190,7 +258,7 @@ LAB_INLINE LAB_Color LAB_MixColor50(LAB_Color a, LAB_Color b)
     return x;
 }
 
-LAB_PURE
+LAB_CONST
 LAB_INLINE LAB_Color LAB_MixColor4x25(LAB_Color a, LAB_Color b,
                                       LAB_Color c, LAB_Color d)
 {
@@ -213,7 +281,7 @@ LAB_INLINE LAB_Color LAB_MixColor4x25(LAB_Color a, LAB_Color b,
  *    +---------------->
  *
  */
-LAB_PURE
+LAB_CONST
 LAB_INLINE LAB_Color LAB_MulColor2_Saturate(LAB_Color c)
 {
     LAB_Color x = c << 1;
@@ -222,7 +290,7 @@ LAB_INLINE LAB_Color LAB_MulColor2_Saturate(LAB_Color c)
 }
 
 
-LAB_PURE
+LAB_CONST
 LAB_INLINE LAB_Color LAB_HighColor(LAB_Color c)
 {
     // ASSUME: Little endian, 0xAA'CC'CC'CC, where C consists of R G B
@@ -240,7 +308,7 @@ LAB_INLINE LAB_Color LAB_HighColor(LAB_Color c)
     return LAB_MixColor50(c, LAB_MulColor2_Saturate(LAB_MixColor50(c, s)));
 }
 
-LAB_PURE
+LAB_CONST
 LAB_INLINE LAB_Color LAB_HighColor2(LAB_Color c)
 {
     c = LAB_HighColor(c);
@@ -254,7 +322,7 @@ LAB_INLINE LAB_Color LAB_HighColor2(LAB_Color c)
     return LAB_RGBA(r, g, b, LAB_ALP(c));
 }
 
-LAB_PURE
+LAB_CONST
 LAB_INLINE LAB_Color LAB_OversaturateColor(LAB_Color c)
 {
     uint32_t r, g, b, m;
@@ -269,7 +337,7 @@ LAB_INLINE LAB_Color LAB_OversaturateColor(LAB_Color c)
 }
 
 
-LAB_PURE
+LAB_CONST
 LAB_INLINE LAB_Color LAB_InterpolateColor2f(LAB_Color a, LAB_Color b, float m)
 {
     return LAB_RGBA(
@@ -292,7 +360,7 @@ LAB_INLINE LAB_Color LAB_InterpolateColor4vf(LAB_Color* colors,
 }
 
 
-LAB_PURE
+LAB_CONST
 LAB_INLINE LAB_Color LAB_InterpolateColor2i(LAB_Color a, LAB_Color b, int m)
 {
     #if 0
@@ -339,7 +407,7 @@ LAB_INLINE LAB_Color LAB_InterpolateColor4vi(const LAB_Color* colors,
 }
 
 
-LAB_PURE
+LAB_CONST
 LAB_INLINE LAB_Color LAB_ColorHI4(LAB_Color c)
 {
     //return (c&0xf0f0f0f0)|(c&0xf0f0f0f0)>>4;

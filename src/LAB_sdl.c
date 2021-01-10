@@ -1,5 +1,8 @@
+#include "LAB_opt.h"
+
 #ifndef NDEBUG
 int LAB_sdl_debug_alloc_count = 0;
-#endif // NDEBUG
+#else
+LAB_EMPTY_TU;
+#endif
 
-static int LAB_sdl_dummy = 0;

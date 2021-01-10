@@ -1,7 +1,10 @@
 #pragma once
 #include "LAB_stdinc.h"
+#include "LAB_opt.h"
 
+#ifndef NDEBUG
 #define LAB_DEBUG_ALLOC
+#endif
 
 #ifndef LAB_CUSTOM_ALLOC
 #ifndef LAB_DEBUG_ALLOC
@@ -9,11 +12,15 @@
 #define LAB_Realloc(memory, size) realloc(memory, size)
 #define LAB_Calloc(count, size)   calloc(count, size)
 #define LAB_Free(memory)          free(memory)
-#define LAB_ReallocN(memory, count, size) LAB_RealReallocN(memory, count, size)
+// overflow safe version of LAB_Realloc
+#define LAB_ReallocN(memory, count, size) ( \
+    (LAB_UNLIKELY(((size_t)(count)*(size_t)(size))/(size_t)(size) < (size_t)(count))) \
+        ? NULL \
+        : LAB_Realloc(memory, (size_t)(count)*(size_t)(size)) \
+)
 
 #define LAB_StrDup(str)           strdup(str)
 
-#define LAB_RealRealloc LAB_Realloc
 #else
 #define LAB_Malloc(size)          LAB_DbgMalloc(size, __FILE__, __LINE__)
 #define LAB_Realloc(memory, size) LAB_DbgRealloc(memory, size, __FILE__, __LINE__)
@@ -37,7 +44,8 @@ void* LAB_DbgReallocN(void* memory, size_t count, size_t size, const char* file,
 
 char* LAB_DbgStrDup(const char* str, const char* file, int line);
 
+void  LAB_DbgMemShow(void);
+
 #endif
 #endif
 
-void  LAB_DbgMemShow(void);

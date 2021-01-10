@@ -23,7 +23,7 @@ LAB_STATIC bool LAB_GuiWorldSelection_ListDir(size_t* world_count, char*** world
             {
                 if(world_capacity == 0) world_capacity = 4;
                 else                    world_capacity*= 2;
-                char** mem = LAB_Realloc(*world_names, world_capacity*sizeof(*mem));
+                char** mem = LAB_ReallocN(*world_names, world_capacity, sizeof *mem);
                 if(!mem)
                 {
                     success = 0;

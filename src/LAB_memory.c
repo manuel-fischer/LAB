@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#ifndef NDEBUG
 static size_t mem_allocs = 0;
 static size_t mem_relocs = 0;
 static size_t mem_frees = 0;
@@ -169,3 +170,6 @@ void LAB_DbgMemShow(void)
             (u)(mem_allocs-mem_frees),
             (void*)mem_checksum);
 }
+#else
+LAB_EMPTY_TU;
+#endif

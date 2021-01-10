@@ -27,4 +27,5 @@ const char* LAB_Filename(const char* path);
 uint64_t LAB_NanoSeconds();
 
 
+LAB_PURE
 size_t LAB_StrHash(const char* str);
