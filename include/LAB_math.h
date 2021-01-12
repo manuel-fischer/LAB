@@ -10,7 +10,7 @@ LAB_INLINE float LAB_AbsModF(float num, float den)
 {
     float t = fmod(num, den);
     if(num < 0) t+=den;
-    if(!(abs(t)<abs(den))) t = 0;
+    if(!(fabs(t)<fabs(den))) t = 0;
     return t;
 }
 

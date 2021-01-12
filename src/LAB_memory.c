@@ -141,7 +141,7 @@ void* LAB_DbgReallocN(void* memory, size_t count, size_t size, const char* file,
 
 char* LAB_DbgStrDup(const char* str, const char* file, int line)
 {
-    char* new_string = strdup(str);
+    char* new_string = LAB_RealStrDup(str);
     LAB_DbgMemPrint("strdup(%s) -> %p\n", file, line, str, new_string);
 
     if(new_string != NULL)

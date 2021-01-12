@@ -19,7 +19,7 @@
         : LAB_Realloc(memory, (size_t)(count)*(size_t)(size)) \
 )
 
-#define LAB_StrDup(str)           strdup(str)
+#define LAB_StrDup(str)           LAB_RealStrDup(str)
 
 #else
 #define LAB_Malloc(size)          LAB_DbgMalloc(size, __FILE__, __LINE__)
@@ -47,5 +47,19 @@ char* LAB_DbgStrDup(const char* str, const char* file, int line);
 void  LAB_DbgMemShow(void);
 
 #endif
+
+#if 0
+#define LAB_RealStrDup(str) strdup(str)
+#else
+// Do not use this function directly
+static inline char* LAB_RealStrDup(const char* str)
+{
+    size_t len = strlen(str);
+    char* n_str = malloc(len+1);
+    if(n_str) memcpy(n_str, str, len+1);
+    return n_str;
+}
+#endif
+
 #endif
 

@@ -5,6 +5,7 @@
  */
 
 #include <stdint.h> // uint64_t
+#include <stddef.h> // size_t
 #include "LAB_opt.h"
 
 

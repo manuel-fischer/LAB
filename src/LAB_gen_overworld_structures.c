@@ -1,5 +1,7 @@
 #include "LAB_gen_overworld_structures.h"
 
+#include <limits.h> // INT_MIN
+
 #include "LAB_attr.h"
 #include "LAB_gen_overworld_shape.h"
 #include "LAB_simplex_noise.h"

@@ -147,17 +147,13 @@
 		</Compiler>
 		<Linker>
 			<Add option="[[if(PLATFORM == PLATFORM_MSW )" />
-			<Add option='print(_(&quot;-lmingw32 -luser32 -lgdi32 -lwinmm -ldxguid&quot;));' />
+			<Add option='print(_(&quot;-lmingw32 -luser32 -lgdi32 -lwinmm -ldxguid -lglew32 -lSDL2main -lSDL2.dll -lSDL2_image -lSDL2_ttf -lopengl32&quot;));' />
 			<Add option="else if(PLATFORM == PLATFORM_X11 )" />
-			<Add option='printf(_(&quot;-lX11&quot;));' />
+			<Add option='printf(_(&quot;-lX11 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf -lGL -lGLU&quot;));' />
+			<Add option="else" />
+			<Add option='print(_(&quot;-lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf -lGL -lGLU&quot;));' />
 			<Add option="]]" />
 			<Add option="--verbose" />
-			<Add library="SDL2main" />
-			<Add library="SDL2.dll" />
-			<Add library="SDL2_image" />
-			<Add library="SDL2_ttf" />
-			<Add library="opengl32" />
-			<Add library="glew32" />
 		</Linker>
 		<Unit filename="TODO.md" />
 		<Unit filename="include/HTL_hasharray.t.c">

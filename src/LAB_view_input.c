@@ -18,6 +18,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <time.h>
+#include <limits.h> // INT_MAX
 
 #include "LAB_memory.h"
 #include "LAB_gl.h"

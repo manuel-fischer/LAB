@@ -3,9 +3,9 @@
 #ifdef __WINNT__
 #include <GL/glew.h>
 #define LAB_USES_GLEW
-#else
 //#define GL3_PROTOTYPES
-#include <GL/gl3.h>
+#else
+#include <GLES3/gl3.h>
 #endif
 
 #include <GL/gl.h>
