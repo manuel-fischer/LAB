@@ -89,5 +89,5 @@ extern LAB_Block LAB_BLOCK_OUTSIDE,
                  LAB_BLOCK_INVISIBLE_LIGHT,
                  LAB_BLOCK_BARRIER;
 
-LAB_Block** LAB_blocks;
+extern LAB_Block** LAB_blocks;
 extern size_t LAB_block_count;

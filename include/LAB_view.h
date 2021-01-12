@@ -17,6 +17,7 @@
  *  - LAB_ViewChunkProc
  *  - LAB_ViewRenderProc
  *  - LAB_ViewTick
+ * TODO: put them into an individual struct
  */
 
 // DEPEND

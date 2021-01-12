@@ -29,7 +29,7 @@
  *  \see LAB_block_terrain_gl_id
  */
 LAB_DEPRECATED("replaced by LAB_AssetMgr")
-SDL_Surface* LAB_block_terrain;
+extern SDL_Surface* LAB_block_terrain;
 
 /**
  *  Reference to the OpenGL object of the texture atlas
@@ -37,7 +37,7 @@ SDL_Surface* LAB_block_terrain;
  *  \see LAB_block_terrain
  */
 LAB_DEPRECATED("replaced by LAB_AssetMgr")
-unsigned     LAB_block_terrain_gl_id;
+extern unsigned     LAB_block_terrain_gl_id;
 
 /**
  *  Init assets
