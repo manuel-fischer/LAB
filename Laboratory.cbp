@@ -142,6 +142,7 @@
 			<Add option="-std=c17" />
 			<Add option="-march=native" />
 			<Add option="-Wno-unused-parameter" />
+			<Add option="-D_POSIX_C_SOURCE=200101L" />
 			<Add directory="$(#sdl2.include)" />
 			<Add directory="include" />
 		</Compiler>
@@ -190,6 +191,7 @@
 		<Unit filename="include/LAB_color_defs.h" />
 		<Unit filename="include/LAB_crammed_chunk_pos_set.h" />
 		<Unit filename="include/LAB_debug.h" />
+		<Unit filename="include/LAB_debug_options.h" />
 		<Unit filename="include/LAB_direction.h" />
 		<Unit filename="include/LAB_entity.h" />
 		<Unit filename="include/LAB_error.h" />

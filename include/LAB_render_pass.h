@@ -1,6 +1,7 @@
 #pragma once
 
 #include "LAB_attr.h"
+#include "LAB_debug_options.h"
 
 // Render passes         ALPHA_TEST           BLEND            MIPMAPPING       CHUNK_ORDER    CHUNK_SORTED  DEPTH_MASK  DEPTH_TEST  DEPTH_OFFSET  IMPLEMENTED
 // RENDER_PASS_SOLID         no                 no                yes             forward           no           yes        yes           no           yes
@@ -34,7 +35,7 @@ enum
 // Return if chunks are rendered backwards and sorted
 LAB_INLINE bool LAB_PrepareRenderPass(LAB_RenderPass pass)
 {
-    #if 0 // DBG
+    #if LAB_DBG_SEETHROUGH_RENDER // DBG
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR); // REENABLE MIPMAPPING
             glEnable(GL_ALPHA_TEST);
         glAlphaFunc(GL_GEQUAL, 1/255.f);

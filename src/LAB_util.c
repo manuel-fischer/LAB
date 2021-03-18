@@ -18,12 +18,9 @@ const char* LAB_Filename(const char* path)
 uint64_t LAB_NanoSeconds()
 {
     struct timespec ts;
-#ifdef __WINNT__
     clock_gettime(CLOCK_REALTIME, &ts);
-#else
-    timespec_get(&ts, TIME_UTC);
-#endif
-    return  (uint64_t)ts.tv_sec*1000000000ull + ts.tv_nsec;
+    //timespec_get(&ts, TIME_UTC);
+    return (uint64_t)ts.tv_sec*1000000000ull + ts.tv_nsec;
 }
 
 size_t LAB_StrHash(const char* str)

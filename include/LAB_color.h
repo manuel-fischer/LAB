@@ -51,7 +51,7 @@ typedef uint32_t LAB_Color;
  *  LAB_RGBX(RRGGBBAA)
  *  ```
  */
-#define LAB_RGBAX(hex) LAB_RGB((0x##hex) >> 24 & 0xff, (0x##hex) >> 16 & 0xff, (0x##hex) >> 8 & 0xff, (0x##hex) & 0xff)
+#define LAB_RGBAX(hex) LAB_RGBA((0x##hex) >> 24 & 0xff, (0x##hex) >> 16 & 0xff, (0x##hex) >> 8 & 0xff, (0x##hex) & 0xff)
 /**
  *  Get the red channel of a color
  */

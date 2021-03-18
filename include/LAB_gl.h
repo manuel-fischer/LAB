@@ -51,12 +51,12 @@ extern int LAB_gl_debug_alloc_count;
 #define LAB_GL_DEBUG_FREE_(count, array) ((void)0)
 #endif
 #define LAB_GL_ALLOC(function, count, array) do { \
-    (function)(count, array); \
+    function(count, array); \
     LAB_GL_DEBUG_ALLOC_(count, array); \
 } while(0)
 #define LAB_GL_FREE(function, count, array) do { \
     LAB_GL_DEBUG_FREE_(count, array); \
-    (function)(count, array); \
+    function(count, array); \
 } while(0)
 
 

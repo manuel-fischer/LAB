@@ -1,5 +1,7 @@
 #include "LAB_view.h"
 
+#include "LAB_debug_options.h"
+
 #include "LAB_memory.h"
 #include "LAB_error.h"
 #include "LAB_math.h"
@@ -33,6 +35,15 @@
 #define HTL_PARAM LAB_VIEW_CHUNK_TBL
 #include "HTL_hasharray.t.c"
 #undef HTL_PARAM
+
+#if 0
+#undef glGenQueries
+#undef glDeleteQueries
+#undef glGetQueryObjectuiv
+#define glGenQueries(count, ids) do { for(int i = 0; i < (count); ++i) (ids)[i] = 0; } while(0)
+#define glDeleteQueries(count, ids) ((void)0)
+#define glGetQueryObjectuiv(id, pname, param) ((*param) = 1)
+#endif
 
 /**
  *  TODO
@@ -347,6 +358,10 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
     //#define MAP_LIGHT_0(x) LAB_ColorHI4(x)
     #define MAP_LIGHT_0(x) (x)
     #define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor_Fast(LAB_MulColor_Fast(~(x), ~(x)), LAB_MulColor_Fast(~(x), ~(x))):(x))
+    //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor_Fast(~(x), ~(x)):(x))
+    //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor_Fast(~(x), ~(x)):LAB_MulColor_Fast((x), (x)))
+    //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor_Fast(~(x), ~(x)):LAB_AddColor(LAB_MulColor_Fast((x), (x)), LAB_MulColor_Fast((x), (x))))
+    //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor_Fast(~(x), ~(x)):LAB_AddColor(LAB_SubColor((x), LAB_RGBAX(10101000)), LAB_SubColor((x), LAB_RGBAX(10101000))))
     if(block->flags&LAB_BLOCK_NOSHADE)
     {
         const LAB_Model* model = block->model;
@@ -723,8 +738,9 @@ LAB_STATIC void LAB_View_FetchQueryChunks(LAB_View* view)
 LAB_STATIC void LAB_View_FetchQueryChunk(LAB_View* view, LAB_ViewChunkEntry* entry)
 {
 
-    unsigned available, visible;
+    unsigned available LAB_INIT_DBG(= 2), visible;
     glGetQueryObjectuiv(entry->query_id, GL_QUERY_RESULT_AVAILABLE, &available);
+    LAB_ASSUME(available < 2);
     if(available)
     {
         glGetQueryObjectuiv(entry->query_id, GL_QUERY_RESULT, &visible);
@@ -738,6 +754,15 @@ LAB_STATIC void LAB_View_FetchQueryChunk(LAB_View* view, LAB_ViewChunkEntry* ent
     else
     {
         // Query not ready
+        #if 0
+        entry->sight_visible = entry->visible = 1;
+
+        //if((rand() & 7) == 0)
+        {
+            LAB_GL_FREE(glDeleteQueries, 1, &entry->query_id);
+            entry->query_id = 0;
+        }
+        #endif
     }
     LAB_GL_CHECK();
 }
@@ -805,6 +830,11 @@ LAB_STATIC void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* ent
     // TODO what if query couldn't be allocated?
     unsigned query_id = entry->query_id;
     #endif
+    if(!query_id)
+    {
+        entry->sight_visible = entry->visible = 1;
+        return;
+    }
     LAB_ASSUME(query_id != 0);
     //LAB_ASSUME(glIsQuery(query_id));
     //if(!glIsQuery(query_id)) printf("%i is not a query\n", query_id);
@@ -813,11 +843,22 @@ LAB_STATIC void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* ent
     // TODO fixed sized buffer of queries, glGetQueryObject called
     //      in the next frame, in LAB_View_Tick
     glPushMatrix();
-    #define DBG_QUERY 0
-    #if !DBG_QUERY
+    #if !LAB_DBG_CHUNK_QUERY
     glColorMask(0, 0, 0, 0);
+    #else
+    static uint32_t stipple[32] = {0};
+    if(stipple[0] == 0)
+        for(int i = 0; i < 32; i+=2)
+        {
+            stipple[i] = ~0xaaaaaaaa;
+            stipple[i+1] = ~0x55555555;
+        }
+    glEnable(GL_POLYGON_STIPPLE);
+    glPolygonStipple((unsigned char*)stipple);
     #endif
     glDepthMask(0);
+
+
 
     glBeginQuery(GL_ANY_SAMPLES_PASSED, query_id);
 
@@ -845,7 +886,7 @@ LAB_STATIC void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* ent
             {1, 1, 0}, {1, 1, 1}, {0, 1, 0},
         };
 
-    #if DBG_QUERY
+    #if LAB_DBG_CHUNK_QUERY
         if(entry->do_query)
             glColor4f(0, 1, 0, 1);
         else
@@ -859,6 +900,10 @@ LAB_STATIC void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* ent
     //if(!glIsQuery(query_id)) printf("%i is not a query\n", query_id);
     LAB_ASSUME(glIsQuery(query_id));
 
+    #if LAB_DBG_CHUNK_QUERY
+    glDisable(GL_POLYGON_STIPPLE);
+    #endif
+
     glDepthMask(1);
     glColorMask(1, 1, 1, 1);
     glPopMatrix();
@@ -867,6 +912,8 @@ LAB_STATIC void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* ent
     unsigned visible = 1;
     glGetQueryObjectuiv(query_id, GL_QUERY_RESULT, &visible);
     entry->visible = visible;
+    if(visible) entry->sight_visible = 1;
+    else if(LAB_View_IsChunkCompletelyInFrustum(view, entry->x, entry->y, entry->z)) entry->sight_visible = 0;
     #endif
 
     entry->do_query = 0;

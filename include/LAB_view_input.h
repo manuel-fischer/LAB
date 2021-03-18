@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdbool.h>
+
 typedef struct LAB_View LAB_View;
 typedef struct LAB_Window LAB_Window;
 typedef union SDL_Event SDL_Event;
@@ -12,10 +14,14 @@ typedef struct LAB_ViewInput
     //int dir_set;
     //int updown;
     unsigned flags;
+    unsigned mouse_grabbed : 1;
     unsigned state;
     float speed;
     unsigned brushsize;
     LAB_Block* selected_block;
+
+    bool space_pressed;
+    uint32_t prev_space_down;
 } LAB_ViewInput;
 
 #define LAB_VIEWINPUT_FORWARD 1u

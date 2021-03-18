@@ -16,6 +16,7 @@
 #    define LAB_ASSUME(cond) (void)(0)
 #  endif
 #  define LAB_ASSUME_0(cond) (void)(0)
+#  define LAB_INIT_DBG(...)
 #else
 #  ifdef __GNUC__
 #    define LAB_FUNCTION() __builtin_FUNCTION()
@@ -27,6 +28,7 @@
         LAB_AssumptionFailed(#cond, __FILE__, __LINE__, LAB_FUNCTION()); \
     } while(0)
 #  define LAB_ASSUME_0 LAB_ASSUME // no parameter aliasing -> keep text replacement behavior
+#  define LAB_INIT_DBG(...) __VA_ARGS__
 #endif
 
 

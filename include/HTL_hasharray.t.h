@@ -71,7 +71,8 @@ typedef struct HashArray
 
 /********* LIFETIME *********/
 
-/**
+/** \memberof HashArray
+ *
  *  Create an empty hasharray at the referenced location
  *  Return 1 on success, 0 on failure
  *
@@ -83,7 +84,8 @@ typedef struct HashArray
  */
 bool HashArray_Create(HashArray* hasharray);
 
-/**
+/** \memberof HashArray
+ *
  *  Destroy a hasharray at the referenced location
  *  Dynamic memory gets cleaned up
  *
@@ -96,7 +98,8 @@ void HashArray_Destroy(HashArray* hasharray);
 
 /********* ENTRY ACCESS *********/
 
-/**
+/** \memberof HashArray
+ *
  *  Locate the element with the given key or where it should be
  *
  *  \pre  The element is available in the array
@@ -108,7 +111,8 @@ void HashArray_Destroy(HashArray* hasharray);
  */
 EntryType* HashArray_Locate(HashArray* hasharray, KeyType key);
 
-/**
+/** \memberof HashArray
+ *
  *  Create room for the entry with the given key, if it is not already present
  *
  *  The return value points to NULL, when allocation failed.
@@ -126,7 +130,8 @@ EntryType* HashArray_Locate(HashArray* hasharray, KeyType key);
  */
 EntryType* HashArray_PutAlloc(HashArray* hasharray, KeyType key);
 
-/**
+/** \memberof HashArray
+ *
  *  Locate the element with the given key, if it is present.
  *  Return NULL if it was not found
  *
@@ -134,7 +139,8 @@ EntryType* HashArray_PutAlloc(HashArray* hasharray, KeyType key);
  */
 EntryType* HashArray_Get(HashArray* hasharray, KeyType key);
 
-/**
+/** \memberof HashArray
+ *
  *  Remove an entry by the given reference to the entry
  *
  *  \pre  entry is a valid entry that is not an empty entry
@@ -150,7 +156,8 @@ EntryType* HashArray_Get(HashArray* hasharray, KeyType key);
  */
 void HashArray_RemoveEntry(HashArray* hasharray, EntryType* entry);
 
-/**
+/** \memberof HashArray
+ *
  *  Remove the entry with the given key, if it is present
  *
  *  \post All references to entries get invalidated but keep dereferenceable,
@@ -158,14 +165,16 @@ void HashArray_RemoveEntry(HashArray* hasharray, EntryType* entry);
  */
 void HashArray_Remove(HashArray* hasharray, KeyType key);
 
-/**
+/** \memberof HashArray
+ *
  *  Function to check if an entry is empty
  *
  *  INFO: this function could be used when iterating through hasharray->table,
  */
 bool HashArray_IsEntry(HashArray* hasharray, EntryType* entry);
 
-/**
+/** \memberof HashArray
+ *
  *  When an entry has been allocated, this function allows to do a fast
  *  return of the memory. This should only be called when the last call
  *  to the map was Put (or Put followed by one or more IsEntry calls)

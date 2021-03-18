@@ -30,7 +30,7 @@
 LAB_STATIC int LAB_ViewInputInteract(LAB_ViewInput* view_input, int right);
 LAB_STATIC void LAB_ShowGuiMenu(LAB_View* view);
 LAB_STATIC void LAB_ShowGuiInventory(LAB_View* view, LAB_Block** block);
-LAB_STATIC void LAB_GrabMouse(LAB_View* view, LAB_Window* window, int grab);
+LAB_STATIC void LAB_GrabMouse(LAB_ViewInput* view_input, LAB_Window* window, bool grab);
 
 //static int selected_block = 1;
 
@@ -67,13 +67,12 @@ LAB_STATIC void LAB_ShowGuiInventory(LAB_View* view, LAB_Block** block)
 }
 
 
-LAB_STATIC void LAB_GrabMouse(LAB_View* view, LAB_Window* window, int grab)
+LAB_STATIC void LAB_GrabMouse(LAB_ViewInput* view_input, LAB_Window* window, bool grab)
 {
-    //int grab;
-    //grab = !SDL_GetWindowGrab(window->window);
-    SDL_SetWindowGrab_Fix(window->window, grab);
-    SDL_ShowCursor(!grab);
-    if(grab)
+    view_input->mouse_grabbed = grab;
+    SDL_SetRelativeMouseMode(grab);
+
+    if(!grab)
     {
         int w, h;
         SDL_GetWindowSize(window->window, &w, &h);
@@ -110,7 +109,7 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
     {
         LAB_GuiManager_Tick(&view->gui_mgr);
         if(!view->gui_mgr.component)
-            LAB_GrabMouse(view, window, 1);
+            LAB_GrabMouse(view_input, window, 1);
     }
     else switch(event->type)
     {
@@ -138,6 +137,22 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                     int other_scancode = (key+(SDL_SCANCODE_U-SDLK_u))^(SDL_SCANCODE_U^SDL_SCANCODE_I);
                     if(state[other_scancode]) view->az = 0;
                 } break;
+
+                case SDLK_SPACE:
+                {
+                    if(!view_input->space_pressed)
+                    {
+                        uint32_t time = SDL_GetTicks();
+                        if(time-view_input->prev_space_down < 300/*ms*/)
+                        {
+                            view_input->flags ^= LAB_VIEWINPUT_NOCLIP;
+                            view->vx = view->vy = view->vz = 0;
+                        }
+
+                        view_input->space_pressed = true;
+                        view_input->prev_space_down = time;
+                    }
+                } break;
             }
         } break;
         case SDL_KEYUP:
@@ -146,6 +161,11 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
 
             switch(key)
             {
+                case SDLK_SPACE:
+                {
+                    view_input->space_pressed = false;
+                } break;
+
                 /*case SDLK_w: view_input->dir_set &= ~1; break;
                 case SDLK_a: view_input->dir_set &= ~2; break;
                 case SDLK_s: view_input->dir_set &= ~4; break;
@@ -220,13 +240,13 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                 case SDLK_ESCAPE:
                 {
                     LAB_ShowGuiMenu(view);
-                    LAB_GrabMouse(view, window, 0);
+                    LAB_GrabMouse(view_input, window, 0);
                 } break;
 
                 case SDLK_e:
                 {
                     LAB_ShowGuiInventory(view, &view_input->selected_block);
-                    LAB_GrabMouse(view, window, 0);
+                    LAB_GrabMouse(view_input, window, 0);
                 } break;
 
                 case SDLK_F1:
@@ -326,16 +346,13 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
 
         case SDL_MOUSEMOTION:
         {
-            if(SDL_GetWindowGrab(window->window))
+            if(view_input->mouse_grabbed)
             {
-                const float speed = 1.f/16.f;
-                int w, h;
-                SDL_GetWindowSize(window->window, &w, &h);
-
                 SDL_MouseMotionEvent* mmevent = (SDL_MouseMotionEvent*)event;
+                const float speed = 1.f/16.f;
                 float mx, my;
-                mx = (float)(mmevent->x-w/2) * speed;
-                my = (float)(mmevent->y-h/2) * speed;
+                mx = (float)(mmevent->xrel) * speed;
+                my = (float)(mmevent->yrel) * speed;
                 #if LAB_CLIP_AX
                 view->ay+=mx;
                 view->ax+=my;
@@ -355,18 +372,11 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                 view->ax+=        cz*my +         sz*mx;
                 view->ay+=    cx*-sz*my +      cx*cz*mx;
                 view->az+=                    -sx*   mx;
-                //view->az+=0;
 
                 view->ax = LAB_AbsModF(view->ax, 360.f);
                 view->ay = LAB_AbsModF(view->ay, 360.f);
                 view->az = LAB_AbsModF(view->az, 360.f);
-
-                //if(view->ax < -90) view->ax = -90;
-                //if(view->ax >  90) view->ax =  90;
                 #endif
-                //view->az = view->ay;
-
-                SDL_WarpMouseInWindow(window->window, w/2, h/2);
             }
 
         } break;
@@ -375,18 +385,13 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
         {
             SDL_MouseButtonEvent* mbevent = (SDL_MouseButtonEvent*)event;
 
-            if(SDL_GetWindowGrab(window->window))
+            if(view_input->mouse_grabbed)
             {
                 LAB_ViewInputInteract(view_input, mbevent->button);
             }
             else
             {
-                SDL_SetWindowGrab_Fix(window->window, 1);
-                SDL_ShowCursor(0);
-
-                int w, h;
-                SDL_GetWindowSize(window->window, &w, &h);
-                SDL_WarpMouseInWindow(window->window, w/2, h/2);
+                LAB_GrabMouse(view_input, window, 1);
             }
         } break;
 
@@ -480,7 +485,7 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms)
                 dx += dir[0]*speed*bw;
                 dy += dir[1]*speed*bw;
                 dz += dir[2]*speed*bw;
-                view->vy += pow((1+dir[1]*bw)*0.5, 0.7)*speed;
+                if(!(view_input->flags & LAB_VIEWINPUT_NOCLIP)) view->vy += pow((1+dir[1]*bw)*0.5, 0.7)*speed;
             }
             dir_set&=(2|8);
         }
@@ -555,10 +560,19 @@ void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms)
 
     if(view_input->flags & LAB_VIEWINPUT_NOCLIP)
     {
-        view->x += dx;
-        view->y += dy;
-        view->z += dz;
-        view->vy = 0;
+        view->vx *= 0.95;
+        view->vy *= 0.95;
+        view->vz *= 0.95;
+
+        view->vx += dx*0.5;
+        view->vy += dy*0.5;
+        view->vz += dz*0.5;
+
+        view->x += view->vx;
+        view->y += view->vy;
+        view->z += view->vz;
+
+        //view->vy = 0;
     }
     else
     {

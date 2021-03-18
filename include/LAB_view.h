@@ -73,6 +73,12 @@ typedef struct LAB_ViewChunkEntry
     unsigned pad:1;
     unsigned visible_faces:6; // the faces that are currently rendered
 
+    unsigned seethrough_faces:6; // TODO >>> if at least one block at the chunk border faces is not culled
+                                 // set when the mesh is built
+                                 // Allows fast optimization to check if a chunk is visible from another chunk.
+                                 // if a face does not contain nonculled faces, the chunk is not visible from that
+                                 // direction.
+
     #if !LAB_VIEW_QUERY_IMMEDIATELY
     unsigned query_id; // 0 for no query done in the last frame
                        // gets generated in OrderQueryBlock
