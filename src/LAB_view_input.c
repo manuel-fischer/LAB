@@ -193,6 +193,7 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                 case SDLK_f:
                 {
                     view_input->flags ^= LAB_VIEWINPUT_NOCLIP;
+                    view->vx = view->vy = view->vz = 0;
                 } break;
 
                 case SDLK_MINUS:

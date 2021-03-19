@@ -5,6 +5,7 @@
 #include "LAB_model.h"
 
 #include "LAB_blt_block.h"
+#include "LAB_aabb.h"
 
 //#include "IXO/IXO_classdef.h"
 
@@ -52,6 +53,7 @@ typedef struct LAB_Block
     uint8_t item_tx, item_ty; // Offset of the texture tile for the item, might be removed
 
     LAB_Model const* model;
+    float bounds[2][3];
 } LAB_Block;
 
 //IXO_DECLARE_CLASS(LAB_Block);

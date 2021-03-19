@@ -16,6 +16,9 @@
 #define LAB_OUT
 #define LAB_INOUT
 
+#define LAB_NONULL
+#define LAB_RESTRICT restrict
+
 #define LAB_PP_(a, b) a##b
 #define LAB_PP(a, b) LAB_PP_(a, b)
 #define LAB_UNQ(name) LAB_PP(name, __LINE__)

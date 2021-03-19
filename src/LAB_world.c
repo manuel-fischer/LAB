@@ -11,6 +11,7 @@
 #include "LAB_util.h"
 #include "LAB_bits.h"
 #include "LAB_world_light.h"
+#include "LAB_vec_algo.h"
 
 #include <math.h>
 #include <stdio.h> // DBG
@@ -361,21 +362,48 @@ int LAB_TraceBlock(LAB_World* world, int max_distance, float vpos[3], float dir[
     target[1] = y;
     target[2] = z;
 
-
-    if(LAB_GetBlock(world, x, y, z, flags)->flags&block_flags)
-    {
-        prev[0] = x;
-        prev[1] = y;
-        prev[2] = z;
-        return 1;
-    }
+    //     LAB_Vec3Algo_RayVsRect()
+//    if(LAB_GetBlock(world, x, y, z, flags)->flags&block_flags
+//       /* TODO */)
+//    {
+//        prev[0] = x;
+//        prev[1] = y;
+//        prev[2] = z;
+//        return 1;
+//    }
 
     // loop
-    while(tMaxX < max_distance || tMaxY < max_distance || tMaxZ < max_distance)
+    do
     {
-        prev[0] = x;
-        prev[1] = y;
-        prev[2] = z;
+        LAB_Block* b = LAB_GetBlock(world, x, y, z, flags);
+        if(b->flags&block_flags)
+        {
+            float rect1[3], rect2[3];
+            LAB_Vec3_Add(rect1, target, b->bounds[0]);
+            LAB_Vec3_Add(rect2, target, b->bounds[1]);
+
+            if(   rect1[0] <= vpos[0] && vpos[0] <= rect2[0]
+               && rect1[1] <= vpos[1] && vpos[1] <= rect2[1]
+               && rect1[2] <= vpos[2] && vpos[2] <= rect2[2])
+            {
+                LAB_Vec3_Copy(prev, target);
+                return 1;
+            }
+
+            float collision_point[3];
+            float collision_steps;
+            int   collision_face;
+            if(LAB_Vec3Algo_RayVsRect(collision_point, &collision_steps, &collision_face,
+                                      vpos, dir, rect1, rect2)
+               && collision_steps < max_distance)
+            {
+                prev[0] = target[0] + LAB_OX(collision_face);
+                prev[1] = target[1] + LAB_OY(collision_face);
+                prev[2] = target[2] + LAB_OZ(collision_face);
+                return 1;
+            }
+        }
+
 
         if(tMaxX < tMaxY)
         {
@@ -395,12 +423,8 @@ int LAB_TraceBlock(LAB_World* world, int max_distance, float vpos[3], float dir[
         target[0] = x;
         target[1] = y;
         target[2] = z;
-
-        if(LAB_GetBlock(world, x, y, z, flags)->flags&block_flags)
-        {
-            return 1;
-        }
     }
+    while(tMaxX < max_distance || tMaxY < max_distance || tMaxZ < max_distance);
 
     return 0;
     #endif

@@ -17,6 +17,7 @@
         .item_tint = color, \
         .item_tx = tx, ty, \
         .model = &LAB_MODEL_##name, \
+        .bounds = LAB_AABB_FULL_CUBE, \
     }
 
 
@@ -34,6 +35,7 @@
         .item_tint = color, \
         .item_tx = 0, 0, \
         .model = &LAB_MODEL_##name, \
+        .bounds = LAB_AABB_FULL_CUBE, \
     }; \
     \
     LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_##name##_COBBLE, 1, 0, color, \
@@ -43,6 +45,7 @@
         .item_tint = color, \
         .item_tx = 1, 0, \
         .model = &LAB_MODEL_##name##_COBBLE, \
+        .bounds = LAB_AABB_FULL_CUBE, \
     }; \
     \
     LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_##name##_BRICKS, 1, 1, color, \
@@ -52,6 +55,7 @@
         .item_tint = color, \
         .item_tx = 1, 1, \
         .model = &LAB_MODEL_##name##_BRICKS, \
+        .bounds = LAB_AABB_FULL_CUBE, \
     }; \
     \
     LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_##name##_SMOOTH, 0, 1, color, \
@@ -61,5 +65,6 @@
         .item_tint = color, \
         .item_tx = 0, 1, \
         .model = &LAB_MODEL_##name##_SMOOTH, \
+        .bounds = LAB_AABB_FULL_CUBE, \
     }
 

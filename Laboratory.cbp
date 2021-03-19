@@ -178,6 +178,9 @@
 		</Unit>
 		<Unit filename="include/HTL_queue.t.h" />
 		<Unit filename="include/LAB.h" />
+		<Unit filename="include/LAB_aabb.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="include/LAB_asset_manager.h" />
 		<Unit filename="include/LAB_attr.h" />
 		<Unit filename="include/LAB_bits.h" />
@@ -233,6 +236,12 @@
 		<Unit filename="include/LAB_simplex_noise.h" />
 		<Unit filename="include/LAB_stdinc.h" />
 		<Unit filename="include/LAB_util.h" />
+		<Unit filename="include/LAB_vec.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="include/LAB_vec_algo.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="include/LAB_view.h" />
 		<Unit filename="include/LAB_view_input.h" />
 		<Unit filename="include/LAB_view_mesh.h" />

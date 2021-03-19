@@ -1007,7 +1007,13 @@ LAB_STATIC void LAB_View_RenderBlockSelection(LAB_View* view)
         glScalef(0.99, 0.99, 0.99);
 
         if(memcmp(target, prev, sizeof target) != 0)
-            LAB_RenderBox(view, target[0], target[1], target[2], 1, 1, 1);
+        {
+            LAB_Block* b = LAB_GetBlock(view->world, target[0], target[1], target[2], LAB_CHUNK_GENERATE);
+            float pos[3], size[3];
+            LAB_Vec3_Add(pos,  target,       b->bounds[0]);
+            LAB_Vec3_Sub(size, b->bounds[1], b->bounds[0]);
+            LAB_RenderBox(view, pos[0], pos[1], pos[2], size[0], size[1], size[2]);
+        }
 
         glMatrixMode(GL_PROJECTION);
         glPopMatrix();
