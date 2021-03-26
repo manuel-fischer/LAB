@@ -8,6 +8,7 @@
 #include "LAB_world.h"
 #include "LAB_memory.h"
 #include "LAB_view_mesh.h"
+#include "LAB_perf_info.h"
 #include <SDL2/SDL_ttf.h>
 
 #define LAB_VIEW_QUERY_IMMEDIATELY 0
@@ -79,6 +80,9 @@ typedef struct LAB_ViewChunkEntry
                                  // if a face does not contain nonculled faces, the chunk is not visible from that
                                  // direction.
 
+    #if 0
+    unsigned delay_ticks; // delaying ticks to do updates
+    #endif
     #if !LAB_VIEW_QUERY_IMMEDIATELY
     unsigned query_id; // 0 for no query done in the last frame
                        // gets generated in OrderQueryBlock
@@ -214,11 +218,12 @@ typedef struct LAB_View
     LAB_ViewCoordInfo info;
     int w, h; // window size
 
-    LAB_FpsGraph fps_graph;
+    /*LAB_FpsGraph fps_graph;
     LAB_FpsGraph fps_graph_input;
     LAB_FpsGraph fps_graph_world;
     LAB_FpsGraph fps_graph_view;
-    LAB_FpsGraph fps_graph_view_render;
+    LAB_FpsGraph fps_graph_view_render;*/
+    LAB_PerfInfo* perf_info;
 
     LAB_GuiManager gui_mgr;
 
@@ -245,6 +250,7 @@ void LAB_ViewChunkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, in
 bool LAB_ViewChunkKeepProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z);
 void LAB_ViewChunkUnlinkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z);
 void LAB_ViewRenderProc(void* user, LAB_Window* window);
+
 void LAB_ViewRender(LAB_View* view);
 
 LAB_ViewChunkEntry* LAB_ViewGetChunkEntry(LAB_View* view, int x, int y, int z);

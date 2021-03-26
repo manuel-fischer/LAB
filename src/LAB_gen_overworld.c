@@ -8,6 +8,7 @@
 
 #include "LAB_gen_overworld_shape.h"
 #include "LAB_gen_overworld_structures.h"
+#include "LAB_gen_overworld_biomes.h"
 
 
 
@@ -121,6 +122,9 @@ LAB_STATIC void LAB_Gen_PopulateLayer_Func(LAB_GenOverworld* gen, LAB_Placer* p,
             int ax = (xz    & 15) | cx<<4;
             int ay = (xz>>4 & 15) | cy<<4;
             int az = (xz>>8 & 15) | cz<<4;
+
+            const LAB_Gen_Biome* biome = LAB_Gen_Biome_Func(gen, ax, az, LAB_NextRandom(&rnd));
+            if(!(biome->tags & lyr->tags)) continue;
 
             if(lyr->near_place_func(gen, &ax, &ay, &az)
                 && ax>>4 == cx

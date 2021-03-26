@@ -3,6 +3,7 @@
 #include "LAB_simplex_noise.h"
 #include "LAB_math.h"
 #include "LAB_random.h"
+#include "LAB_gen_overworld_biomes.h"
 
 #define LAB_GEN_DIRT_SALT        0x12345
 #define LAB_GEN_UNDERGROUND_SALT 0x54321
@@ -25,28 +26,30 @@ void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y
         {
             int xi = 16*x|xx;
             int zi = 16*z|zz;
+
             int river = 0;//LAB_Gen_River_Func(gen, xi, zi);
             int sheight = LAB_Gen_Surface_Shape_Func(gen, xi, zi);
             sheight -= river;
             for(int yy = 15; yy >= 0; --yy)
             {
+                const LAB_Gen_Biome* biome = LAB_Gen_Biome_Func(gen, xi, zi, LAB_NextRandom(&random));
+
                 int yi = 16*y|yy;
 
-
-                LAB_Block* b = &LAB_BLOCK_AIR;
+                const LAB_Block* b = &LAB_BLOCK_AIR;
 
                 //if(sheight < (int)(LAB_NextRandom(&random)&15) + 20)
                 if(sheight < (int)(LAB_NextRandom(&random)&31) + 40)
                 {
                     if(yi == sheight)
-                        b = &LAB_BLOCK_GRASS;
+                        b = biome->surface_block;
                     else if(yi <= sheight)
                     {
                         //uint64_t fact = 0x100000000ll/(32+16);
                         //if((~LAB_NextRandom(&random)>>32) >= (2u*(-yi)-(-sheight))*fact)
                         if(yi >= sheight-(int)(LAB_NextRandom(&random)&7)-1)
                         //if(yi >= sheight-2)
-                            b = &LAB_BLOCK_DIRT;
+                            b = biome->ground_block;
                         else
                             continue; // keep stone
                     }
@@ -56,7 +59,7 @@ void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y
 
                 if(river && b != &LAB_BLOCK_AIR) b = &LAB_BLOCK_LAPIZ;
 
-                chunk->blocks[LAB_CHUNK_OFFSET(xx, yy, zz)] = b;
+                chunk->blocks[LAB_CHUNK_OFFSET(xx, yy, zz)] = (LAB_Block* /*TODO make this all const*/)b;
             }
         }
     }
@@ -79,11 +82,13 @@ int LAB_Gen_Surface_Shape_Func(LAB_GenOverworld* gen, int xi, int zi)
     // square function
     #define sqr2(t) ((t)*(t))
 
+    double seed_a = (gen->seed^gen->seed<<1) & 0xffff;
+    double seed_b = gen->seed & 0xffff;
 
     double x = xi, z = zi;
     // dx, dy in range [-1, 1]
     double dx = LAB_SimplexNoise2D(x*0.03, z*0.1 + 10000);
-    double dz = LAB_SimplexNoise2D(x*0.1+10000, z*0.03);
+    double dz = LAB_SimplexNoise2D(x*0.1 + 10000, z*0.03);
     x+=dx*2;
     z+=dz*2;
 
@@ -114,7 +119,7 @@ int LAB_Gen_Surface_Shape_Func(LAB_GenOverworld* gen, int xi, int zi)
     #define peak_noise4(x, z) sqr2((peak_noise3((x), (z))+peak_noise3((x), (z)+10000))*0.5)
 
     // large in range [0, 1]
-    double large = (LAB_SimplexNoise2D(x*0.001, z*0.001)+1)*0.5;
+    double large = (LAB_SimplexNoise2D(seed_a+x*0.001, seed_b+z*0.001)+1)*0.5;
     //double large = peak_noise(x*0.001, z*0.001);
     //double large = peak_noise4(x*0.0003, z*0.0003);
     // small in range [0, 1]

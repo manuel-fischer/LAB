@@ -16,6 +16,8 @@
 
 #include "LAB_gui.h"
 
+#include "LAB_perf_info.h"
+
 #define GEN_FLAT 0
 
 int main(int argc, char** argv)
@@ -27,9 +29,11 @@ int main(int argc, char** argv)
 
     int init = 0;
     static LAB_Window     main_window = {0};
+    static LAB_PerfInfo   perf_info   = {0};
     static LAB_World      the_world   = {0};
     static LAB_View       view        = {0};
     static LAB_ViewInput  view_input  = {0};
+
     #if GEN_FLAT
     static LAB_GenFlat    gen_flat    = {0};
     #else
@@ -44,7 +48,7 @@ int main(int argc, char** argv)
 
     uint32_t sdl_window_flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL;
     CHECK_INIT(LAB_ConstructWindow(&main_window, 1024, 576, sdl_window_flags));
-    LAB_GL_CHECK();
+    CHECK_INIT(LAB_PerfInfo_Create(&perf_info));
     //SDL_SetWindowFullscreen(main_window->window, SDL_WINDOW_FULLSCREEN);
 
 
@@ -55,6 +59,8 @@ int main(int argc, char** argv)
     the_world.chunkgen_user = &gen_flat;
     #else
     gen_overworld.seed = 0x13579bdf;
+    //gen_overworld.seed = 2347818473829147;
+    //gen_overworld.seed = 58925789342573489;
     the_world.chunkgen      = &LAB_GenOverworldProc;
     the_world.chunkgen_user = &gen_overworld;
     #endif
@@ -67,7 +73,7 @@ int main(int argc, char** argv)
     view.preload_dist = LAB_PRELOAD_CHUNK(view.render_dist);
     view.keep_dist = LAB_KEEP_CHUNK(view.render_dist);
     view.flags = LAB_VIEW_SHOW_HUD | LAB_VIEW_USE_VBO;
-    view.max_update = 160;
+    view.max_update = 10;//160;
     view.max_unload = 20;
     //view.load_amount = 3;
     //view.load_amount = 10;
@@ -75,6 +81,7 @@ int main(int argc, char** argv)
     view.load_amount = 7;
     view.empty_load_amount = 5;
     //view.load_amount = 100; // DBG
+    view.perf_info = &perf_info;
 
     CHECK_INIT(LAB_ConstructViewInput(&view_input, &view));
     LAB_GL_CHECK();
@@ -119,7 +126,7 @@ int main(int argc, char** argv)
         /*if(itr%10==0)*/ LAB_WorldTick(&the_world, delta_ms);
         LAB_ViewTick(&view, delta_ms);
         #else
-            uint64_t t0 = LAB_NanoSeconds();
+        /*    uint64_t t0 = LAB_NanoSeconds();
         LAB_ViewInputTick(&view_input, delta_ms);
             uint64_t t1 = LAB_NanoSeconds();
         LAB_WorldTick(&the_world, delta_ms);
@@ -130,7 +137,7 @@ int main(int argc, char** argv)
         uint64_t d_01, d_12, d_23;
         d_01 = t1-t0;
         d_12 = t2-t1;
-        d_23 = t3-t2;
+        d_23 = t3-t2;*/
 
         /*if(itr%16==0)
         {
@@ -138,10 +145,25 @@ int main(int argc, char** argv)
         }
         //printf("%i\r", the_world.chunks.size);*/
 
-        LAB_FpsGraph_AddSample(&view.fps_graph,       delta_ms);
-        LAB_FpsGraph_AddSample(&view.fps_graph_input, (float)d_01/1000000.f);
-        LAB_FpsGraph_AddSample(&view.fps_graph_world, (float)d_12/1000000.f);
-        LAB_FpsGraph_AddSample(&view.fps_graph_view,  (float)d_23/1000000.f);
+
+        LAB_PerfInfo_Tick(&perf_info);
+
+        LAB_PerfInfo_Next(&perf_info, LAB_TG_INPUT);
+        LAB_ViewInputTick(&view_input, delta_ms);
+
+        LAB_PerfInfo_Next(&perf_info, LAB_TG_WORLD);
+        LAB_WorldTick(&the_world, delta_ms);
+
+        LAB_PerfInfo_Next(&perf_info, LAB_TG_VIEW);
+        LAB_ViewTick(&view, delta_ms);
+
+        LAB_PerfInfo_Next(&perf_info, LAB_TG_NONE);
+
+
+        LAB_FpsGraph_SetSample(&perf_info.fps_graphs[LAB_TG_WHOLE], delta_ms);
+        /*LAB_FpsGraph_AddSample(&perf_info.fps_graphs[LAB_TG_INPUT], (float)d_01/1000000.f);
+        LAB_FpsGraph_AddSample(&perf_info.fps_graphs[LAB_TG_WORLD], (float)d_12/1000000.f);
+        LAB_FpsGraph_AddSample(&perf_info.fps_graphs[LAB_TG_VIEW],  (float)d_23/1000000.f);*/
         #endif
     }
 
@@ -154,6 +176,7 @@ EXIT:
     LAB_DestructViewInput(&view_input);
     LAB_DestructView(&view);
     LAB_DestructWorld(&the_world);
+    LAB_PerfInfo_Destroy(&perf_info);
     LAB_DestructWindow(&main_window);
 
     LAB_QuitAssets();

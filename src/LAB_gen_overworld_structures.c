@@ -5,6 +5,7 @@
 #include "LAB_attr.h"
 #include "LAB_gen_overworld_shape.h"
 #include "LAB_simplex_noise.h"
+#include "LAB_gen_tags.h"
 
 LAB_STATIC void LAB_Gen_Overworld_DirtPatch(LAB_Placer* p, LAB_Random* rnd);
 LAB_STATIC void LAB_Gen_Overworld_Plant(LAB_Placer* p, LAB_Random* rnd);
@@ -17,16 +18,16 @@ LAB_STATIC void LAB_Gen_Cave_CeilingCrystal(LAB_Placer* p, LAB_Random* rnd);
 
 
 const LAB_StructureLayer overworld_layers[] =
-{ //    salt   probability   count      height range  radius         place                           func
+{ //    salt   probability   count      height range  radius         place                           func                        tags
   //                        <?   >?       <?   >?
-    {0x93475493,     32,     1,   5,     -80,  80,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_DirtPatch},
-    {0x91827364,    256,     0,   1,      20, 200,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Rock},
-    {0x32547698,    256,     0,   4,     -80,  60,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Bush},
-    {0x56789abc,    256,     7,  70,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant},
-    {0x13579bdf,    256,     0,   3,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree},
-    {0xfdb97531,      2,     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower},
+    {0x93475493,     32,     1,   5,     -80,  80,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_DirtPatch,   LAB_GEN_TAG_DIRT },
+    {0x91827364,    256,     0,   1,      20, 200,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Rock,        LAB_GEN_TAG_MOUNTAINS },
+    {0x32547698,    256,     0,   4,     -80,  60,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Bush,        LAB_GEN_TAG_BUSHES },
+    {0x56789abc,    256,     7,  70,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_GRASS },
+    {0x13579bdf,    256,     3,   5,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_TREES },
+    {0xfdb97531,      2,     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_RUINS },
 
-    {0x21436587,    256,     0,   5, INT_MIN, -50,      1,    LAB_Gen_PlaceOnCaveCeiling,    LAB_Gen_Cave_CeilingCrystal},
+    {0x21436587,    256,     0,   5, INT_MIN, -50,      1,    LAB_Gen_PlaceOnCaveCeiling,    LAB_Gen_Cave_CeilingCrystal,   LAB_GEN_TAG_CAVE },
 };
 const size_t overworld_layers_count = sizeof(overworld_layers)/sizeof(overworld_layers[0]);
 

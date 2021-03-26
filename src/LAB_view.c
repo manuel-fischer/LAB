@@ -57,7 +57,7 @@
 LAB_STATIC bool LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_World* world, unsigned visibility);
 LAB_STATIC void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_IN LAB_Chunk* chunk_neighborhood[27], unsigned visibility);
 LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_IN LAB_Chunk* chunk_neighborhood[27], int x, int y, int z, unsigned visibility);
-LAB_STATIC void LAB_ViewUpdateChunks(LAB_View* view);
+LAB_STATIC int  LAB_ViewUpdateChunks(LAB_View* view); // return updated chunks
 LAB_STATIC bool LAB_ViewUpdateChunk(LAB_View* view, LAB_ViewChunkEntry* e);
 LAB_STATIC void LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass);
 LAB_STATIC bool LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_RenderPass pass);
@@ -105,11 +105,11 @@ bool LAB_ConstructView(LAB_View* view, LAB_World* world)
 
     //LAB_View_ChunkTBL_Create(&view->entry); // not nessesary because already set to 0 above
 
-    LAB_FpsGraph_Create(&view->fps_graph,             LAB_RGB(255, 255, 128));
+    /*LAB_FpsGraph_Create(&view->fps_graph,             LAB_RGB(255, 255, 128));
     LAB_FpsGraph_Create(&view->fps_graph_input,       LAB_RGB(255, 128, 128));
     LAB_FpsGraph_Create(&view->fps_graph_world,       LAB_RGB(128, 255, 128));
     LAB_FpsGraph_Create(&view->fps_graph_view,        LAB_RGB(128, 128, 255));
-    LAB_FpsGraph_Create(&view->fps_graph_view_render, LAB_RGB(255,  32, 128));
+    LAB_FpsGraph_Create(&view->fps_graph_view_render, LAB_RGB(255,  32, 128));*/
 
     LAB_GuiManager_Create(&view->gui_mgr);
 
@@ -123,11 +123,12 @@ void LAB_DestructView(LAB_View* view)
     LAB_Free(view->sorted_chunks);
 
     LAB_GuiManager_Destroy(&view->gui_mgr);
-    LAB_FpsGraph_Destroy(&view->fps_graph_view_render);
+
+    /*LAB_FpsGraph_Destroy(&view->fps_graph_view_render);
     LAB_FpsGraph_Destroy(&view->fps_graph_view);
     LAB_FpsGraph_Destroy(&view->fps_graph_world);
     LAB_FpsGraph_Destroy(&view->fps_graph_input);
-    LAB_FpsGraph_Destroy(&view->fps_graph);
+    LAB_FpsGraph_Destroy(&view->fps_graph);*/
 
     LAB_ViewChunkEntry* e;
     HTL_HASHARRAY_EACH_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
@@ -183,6 +184,7 @@ void LAB_ViewChunkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, in
     {
         if(entry->neighbors[i])
             entry->neighbors[i]->dirty |= update;
+        //entry->delay_ticks = 30;
     }
 }
 
@@ -512,6 +514,21 @@ LAB_STATIC void LAB_ViewUploadVBO(LAB_View* view, LAB_View_Mesh* mesh)
 
 LAB_STATIC bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 {
+    // TODO: do optimization: when blocks at the chunk-border from an other chunk
+    //                        changed, only update the neighboring 16x16 blocks --> possibly a 16x speedup
+
+    #if 0
+    unsigned required_ticks = abs(LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT)-chunk_entry->x)
+                            + abs(LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT)-chunk_entry->y)
+                            + abs(LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT)-chunk_entry->z);
+
+    if(chunk_entry->delay_ticks < 60)// && chunk_entry->delay_ticks+2 < 10*required_ticks)
+    {
+        chunk_entry->delay_ticks++;
+        return 0;
+    }
+    #endif
+
     // TODO: only build chunk if all neighbors are generated
     if(!LAB_View_IsChunkInSight(view, chunk_entry->x, chunk_entry->y, chunk_entry->z))
         return 0;
@@ -524,7 +541,8 @@ LAB_STATIC bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
     if(     (chunk_entry->dirty&LAB_CHUNK_UPDATE_LOCAL)
         || ((chunk_entry->dirty&LAB_CHUNK_UPDATE_LIGHT) && (rand()&0xf)==0) // TODO parameterize probability
         || ((chunk_entry->visible_faces&visibility) != visibility) // some faces not visible
-        || ( chunk_entry->visible_faces!=visibility && (rand()&0x1f)==0)) // some faces not hidden -> free memory
+        //|| ( chunk_entry->visible_faces!=visibility && (rand()&0x1f)==0) // some faces not hidden -> TODO: free memory
+    )
     {
         bool chunk_available = LAB_ViewBuildMesh(view, chunk_entry, view->world, visibility);
         if(!chunk_available)
@@ -537,6 +555,10 @@ LAB_STATIC bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
         chunk_entry->dirty = 0;
         chunk_entry->exist = 1;
         chunk_entry->upload_vbo = 1;
+
+        #if 0
+        chunk_entry->delay_ticks = 0;
+        #endif
 
         //if(view->flags & LAB_VIEW_USE_VBO)
             ////LAB_ViewUploadVBO(view, chunk_entry);
@@ -565,7 +587,7 @@ LAB_STATIC bool LAB_ViewUpdateChunk(LAB_View* view, LAB_ViewChunkEntry* e)
 }
 
 
-LAB_STATIC void LAB_ViewUpdateChunks(LAB_View* view)
+LAB_STATIC int LAB_ViewUpdateChunks(LAB_View* view)
 {
     unsigned rest_update = view->max_update;
 
@@ -576,31 +598,36 @@ LAB_STATIC void LAB_ViewUpdateChunks(LAB_View* view)
 
     int dist_sq = view->render_dist*view->render_dist + 3;
     LAB_ViewChunkEntry* e;
-    HTL_HASHARRAY_EACH_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
+    //HTL_HASHARRAY_EACH_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
+    for(int i = 0; i < view->chunks.size; ++i)
     {
+        e = view->sorted_chunks[i].entry;
+
         int cx, cy, cz;
         cx = e->x;
         cy = e->y;
         cz = e->z;
         if((cx-px)*(cx-px) + (cy-py)*(cy-py) + (cz-pz)*(cz-pz) <= dist_sq
-           && e->visible)
+           && (e->visible/* || !(rand() & 0x3f)*/))
             rest_update -= LAB_ViewUpdateChunk(view, e);
-        if(!rest_update) return;
-    });
+        if(!rest_update) return view->max_update;
+    }//);
+    return view->max_update - rest_update;
 }
 // TODO use glMultiDrawElements
 LAB_STATIC bool LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_RenderPass pass)
 {
-    //if(view->flags & LAB_VIEW_NO_RENDER) return 0;
-    if(!LAB_View_IsChunkInSight(view, chunk_entry->x, chunk_entry->y, chunk_entry->z))
+    LAB_View_Mesh* mesh = &chunk_entry->render_passes[pass];
+    if(mesh->size == 0)
         return 0;
 
     if(!chunk_entry->exist)
         return 0;
 
-    LAB_View_Mesh* mesh = &chunk_entry->render_passes[pass];
+    //if(view->flags & LAB_VIEW_NO_RENDER) return 0;
+    if(!LAB_View_IsChunkInSight(view, chunk_entry->x, chunk_entry->y, chunk_entry->z))
+        return 0;
 
-    if(mesh->size == 0) return 0;
 
     if(view->flags & LAB_VIEW_USE_VBO)
     {
@@ -681,24 +708,27 @@ void LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass)
 
 LAB_STATIC void LAB_View_UploadChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 {
-    if(!LAB_View_IsChunkInSight(view, chunk_entry->x, chunk_entry->y, chunk_entry->z))
+    LAB_ASSUME(view->flags & LAB_VIEW_USE_VBO);
+
+    if(!chunk_entry->upload_vbo)
         return;
 
     if(!chunk_entry->exist)
         return;
 
-    if((view->flags & LAB_VIEW_USE_VBO) && chunk_entry->upload_vbo)
+    if(!LAB_View_IsChunkInSight(view, chunk_entry->x, chunk_entry->y, chunk_entry->z))
+        return;
+
+
+    for(int i = 0; i < LAB_RENDER_PASS_COUNT; ++i)
     {
-        for(int i = 0; i < LAB_RENDER_PASS_COUNT; ++i)
-        {
-            LAB_View_Mesh* mesh = &chunk_entry->render_passes[i];
+        LAB_View_Mesh* mesh = &chunk_entry->render_passes[i];
 
-            if(mesh->size == 0) continue;
+        if(mesh->size == 0) continue;
 
-            LAB_ViewUploadVBO(view, mesh);
-        }
-        chunk_entry->upload_vbo = 0;
+        LAB_ViewUploadVBO(view, mesh);
     }
+    chunk_entry->upload_vbo = 0;
 }
 
 LAB_STATIC void LAB_View_UploadChunks(LAB_View* view)
@@ -716,7 +746,7 @@ LAB_STATIC void LAB_View_UploadChunks(LAB_View* view)
         cy = e->y;
         cz = e->z;
         if((cx-px)*(cx-px) + (cy-py)*(cy-py) + (cz-pz)*(cz-pz) <= dist_sq
-           && e->visible)
+           && e->visible) // NOTE: when also invisible chunks are updated, this should be removed
             LAB_View_UploadChunk(view, e);
     });
 }
@@ -1179,7 +1209,7 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
     uint64_t t1 = LAB_NanoSeconds();
     uint64_t d_01;
     d_01 = t1-t0;
-    LAB_FpsGraph_AddSample(&view->fps_graph_view_render,  (float)d_01/1000000.f);
+    LAB_FpsGraph_SetSample(&view->perf_info->fps_graphs[LAB_TG_VIEW_RENDER],  (float)d_01/1000000.f);
 }
 
 void LAB_ViewRender(LAB_View* view)
@@ -1371,13 +1401,7 @@ void LAB_ViewRender(LAB_View* view)
         glTranslatef(-0.5,-0.5,-1);
         glLineWidth(2);
         glEnable(GL_LINE_SMOOTH);
-        LAB_FpsGraph_Render_Prepare();
-        LAB_FpsGraph_Render_Base();
-        LAB_FpsGraph_Render(&view->fps_graph);
-        LAB_FpsGraph_Render(&view->fps_graph_input);
-        LAB_FpsGraph_Render(&view->fps_graph_world);
-        LAB_FpsGraph_Render(&view->fps_graph_view);
-        LAB_FpsGraph_Render(&view->fps_graph_view_render);
+        LAB_PerfInfo_Render(view->perf_info);
         glPopMatrix();
     }
 
@@ -1571,10 +1595,13 @@ void LAB_ViewTick(LAB_View* view, uint32_t delta_ms)
     #if !LAB_VIEW_QUERY_IMMEDIATELY
     LAB_View_FetchQueryChunks(view);
     #endif
-    LAB_ViewUpdateChunks(view);
+    LAB_View_SortChunks(view, delta_ms); // sorted_chunks has valid content again
+
+    int update_count = LAB_ViewUpdateChunks(view);
+    LAB_FpsGraph_SetSample(&view->perf_info->fps_graphs[LAB_TG_MESH], 32+update_count*2);
     //LAB_FpsGraph_AddSample(&view->fps_graph, delta_ms);
     LAB_GuiManager_Tick(&view->gui_mgr);
-    LAB_View_SortChunks(view, delta_ms); // sorted_chunks has valid content again
+    //LAB_View_SortChunks(view, delta_ms); // sorted_chunks has valid content again
 }
 
 

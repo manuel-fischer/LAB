@@ -16,4 +16,5 @@ typedef struct LAB_StructureLayer
     // x, y, z might be changed anyway, if no position was found
     bool (*near_place_func)(void* gen_ctx, int* x, int* y, int* z);
     void (*structure_func)(LAB_Placer* p, LAB_Random* rnd);
+    uint64_t tags;
 } LAB_StructureLayer;

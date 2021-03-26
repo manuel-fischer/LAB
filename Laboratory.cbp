@@ -203,9 +203,11 @@
 		<Unit filename="include/LAB_gen.h" />
 		<Unit filename="include/LAB_gen_flat.h" />
 		<Unit filename="include/LAB_gen_overworld.h" />
+		<Unit filename="include/LAB_gen_overworld_biomes.h" />
 		<Unit filename="include/LAB_gen_overworld_shape.h" />
 		<Unit filename="include/LAB_gen_overworld_structures.h" />
 		<Unit filename="include/LAB_gen_structure.h" />
+		<Unit filename="include/LAB_gen_tags.h" />
 		<Unit filename="include/LAB_gl.h" />
 		<Unit filename="include/LAB_gui.h" />
 		<Unit filename="include/LAB_gui_button.h" />
@@ -222,12 +224,14 @@
 		<Unit filename="include/LAB_i_inventory.h" />
 		<Unit filename="include/LAB_inventory.h" />
 		<Unit filename="include/LAB_light_node.h" />
+		<Unit filename="include/LAB_main.h" />
 		<Unit filename="include/LAB_math.h" />
 		<Unit filename="include/LAB_memory.h" />
 		<Unit filename="include/LAB_model.h" />
 		<Unit filename="include/LAB_model_order.h" />
 		<Unit filename="include/LAB_opt.h" />
 		<Unit filename="include/LAB_perf.h" />
+		<Unit filename="include/LAB_perf_info.h" />
 		<Unit filename="include/LAB_pp.h" />
 		<Unit filename="include/LAB_random.h" />
 		<Unit filename="include/LAB_render_item.h" />
@@ -282,6 +286,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_gen_overworld.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_gen_overworld_biomes.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_gen_overworld_shape.c">
@@ -339,6 +346,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_model_order.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_perf_info.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_random.c">

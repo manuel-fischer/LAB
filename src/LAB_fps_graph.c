@@ -3,20 +3,6 @@
 
 #define LAB_FPS_GRAPH_CALC_Y(frame_ms) ((float)(frame_ms)*0.005f)
 
-LAB_STATIC void LAB_FpsGraph_Shift(LAB_FpsGraph* graph)
-{
-    // shift all the samples to the left, keeping the alpha channel of the
-    // color and the x position at the original position
-    if(graph->start_pos != 0) graph->start_pos--;
-    for(int i = graph->start_pos; i < LAB_FPS_GRAPH_MAX_SAMPLES-1; ++i)
-    {
-        //graph->samples[i].x kept
-        graph->samples[i].y = graph->samples[i+1].y;
-        //graph->samples[i].color &= LAB_ALP_MASK;
-        //graph->samples[i].color |= graph->samples[i+1].color & LAB_COL_MASK;
-    }
-}
-
 bool LAB_FpsGraph_Create(LAB_FpsGraph* graph, LAB_Color color)
 {
     graph->start_pos = LAB_FPS_GRAPH_MAX_SAMPLES;
@@ -38,11 +24,30 @@ void LAB_FpsGraph_Destroy(LAB_FpsGraph* graph)
 {
 }
 
+void LAB_FpsGraph_Shift(LAB_FpsGraph* graph)
+{
+    // shift all the samples to the left, keeping the alpha channel of the
+    // color and the x position at the original position
+    if(graph->start_pos != 0) graph->start_pos--;
+    for(int i = graph->start_pos; i < LAB_FPS_GRAPH_MAX_SAMPLES-1; ++i)
+    {
+        //graph->samples[i].x kept
+        graph->samples[i].y = graph->samples[i+1].y;
+        //graph->samples[i].color &= LAB_ALP_MASK;
+        //graph->samples[i].color |= graph->samples[i+1].color & LAB_COL_MASK;
+    }
+}
+
+void LAB_FpsGraph_SetSample(LAB_FpsGraph* graph, float frame_ms)
+{
+    graph->samples[LAB_FPS_GRAPH_MAX_SAMPLES-1].y = LAB_FPS_GRAPH_CALC_Y(frame_ms);
+    //graph->samples[LAB_FPS_GRAPH_MAX_SAMPLES-1].color |= LAB_RGBA(255, 255, 128, 0);
+}
+
 void LAB_FpsGraph_AddSample(LAB_FpsGraph* graph, float frame_ms)
 {
     LAB_FpsGraph_Shift(graph);
-    graph->samples[LAB_FPS_GRAPH_MAX_SAMPLES-1].y = LAB_FPS_GRAPH_CALC_Y(frame_ms);
-    //graph->samples[LAB_FPS_GRAPH_MAX_SAMPLES-1].color |= LAB_RGBA(255, 255, 128, 0);
+    LAB_FpsGraph_SetSample(graph, frame_ms);
 }
 
 void LAB_FpsGraph_Render_Prepare()
