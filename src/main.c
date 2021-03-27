@@ -66,6 +66,7 @@ int main(int argc, char** argv)
     #endif
     the_world.max_gen = 0;
     the_world.max_update = 0;
+    the_world.perf_info = &perf_info;
 
     CHECK_INIT(LAB_ConstructView(&view, &the_world));
     LAB_GL_CHECK();

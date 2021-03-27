@@ -3,6 +3,7 @@
 #include "LAB_gen.h"
 #include "LAB_gen_structure.h"
 
+// TODO: LAB_ namespace!!!
 // Note: extern allows the array to be defined without a size
 extern const LAB_StructureLayer overworld_layers[];
 extern const size_t overworld_layers_count;

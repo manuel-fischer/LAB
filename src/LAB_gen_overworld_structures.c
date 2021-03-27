@@ -7,34 +7,50 @@
 #include "LAB_simplex_noise.h"
 #include "LAB_gen_tags.h"
 
-LAB_STATIC void LAB_Gen_Overworld_DirtPatch(LAB_Placer* p, LAB_Random* rnd);
-LAB_STATIC void LAB_Gen_Overworld_Plant(LAB_Placer* p, LAB_Random* rnd);
-LAB_STATIC void LAB_Gen_Overworld_Bush(LAB_Placer* p, LAB_Random* rnd);
-LAB_STATIC void LAB_Gen_Overworld_Rock(LAB_Placer* p, LAB_Random* rnd);
-LAB_STATIC void LAB_Gen_Overworld_Tree(LAB_Placer* p, LAB_Random* rnd);
-LAB_STATIC void LAB_Gen_Overworld_Tower(LAB_Placer* p, LAB_Random* rnd);
+LAB_STATIC void LAB_Gen_Overworld_DirtPatch(LAB_Placer* p, LAB_Random* rnd, const void* param);
+LAB_STATIC void LAB_Gen_Overworld_Plant(LAB_Placer* p, LAB_Random* rnd, const void* param);
+LAB_STATIC void LAB_Gen_Overworld_Bush(LAB_Placer* p, LAB_Random* rnd, const void* param);
+LAB_STATIC void LAB_Gen_Overworld_Rock(LAB_Placer* p, LAB_Random* rnd, const void* param);
+LAB_STATIC void LAB_Gen_Overworld_Tree(LAB_Placer* p, LAB_Random* rnd, const void* param);
+LAB_STATIC void LAB_Gen_Overworld_Tower(LAB_Placer* p, LAB_Random* rnd, const void* param);
 
-LAB_STATIC void LAB_Gen_Cave_CeilingCrystal(LAB_Placer* p, LAB_Random* rnd);
+LAB_STATIC void LAB_Gen_Cave_CeilingCrystal(LAB_Placer* p, LAB_Random* rnd, const void* param);
+
+
+typedef struct LAB_Gen_Overworld_Tree_Params
+{
+    LAB_Block* wood;
+    LAB_Block* leaves;
+} LAB_Gen_Overworld_Tree_Params;
+
+static const LAB_Gen_Overworld_Tree_Params oak_tree   = { &LAB_BLOCK_WOOD, &LAB_BLOCK_LEAVES };
+static const LAB_Gen_Overworld_Tree_Params birch_tree = { &LAB_BLOCK_BIRCH_WOOD, &LAB_BLOCK_BIRCH_LEAVES };
 
 
 const LAB_StructureLayer overworld_layers[] =
-{ //    salt   probability   count      height range  radius         place                           func                        tags
+{ //    salt   probability   count      height range  radius         place                           func                        tags                      param
   //                        <?   >?       <?   >?
-    {0x93475493,     32,     1,   5,     -80,  80,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_DirtPatch,   LAB_GEN_TAG_DIRT },
-    {0x91827364,    256,     0,   1,      20, 200,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Rock,        LAB_GEN_TAG_MOUNTAINS },
-    {0x32547698,    256,     0,   4,     -80,  60,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Bush,        LAB_GEN_TAG_BUSHES },
-    {0x56789abc,    256,     7,  70,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_GRASS },
-    {0x13579bdf,    256,     3,   5,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_TREES },
-    {0xfdb97531,      2,     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_RUINS },
+    {0x91827364,    256,     0,   1,      20, 200,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Rock,        LAB_GEN_TAG_MOUNTAINS,         NULL            },
+    {0x32547698,    256,     0,   4,     -80,  60,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Bush,        LAB_GEN_TAG_BUSHES,            NULL            },
+    {0x56789abc,    256,     3,  35,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_GRASS,             &LAB_BLOCK_TALLGRASS            },
+    {0xd8f8e945,    256,     3,  35,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_GRASS,             &LAB_BLOCK_TALLERGRASS            },
+    {0xfd874567,    128,     1,  10,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_GRASS,             &LAB_BLOCK_RED_TULIP            },
+    {0xfbc90356,    128,     1,  10,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_GRASS,             &LAB_BLOCK_YELLOW_TULIP            },
+    {0xfbc90356,    256,    64, 192,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_BIRCH_FOREST,      &LAB_BLOCK_FALLEN_LEAVES            },
+    {0x93475493,     32,     1,   5,     -80,  80,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_DirtPatch,   LAB_GEN_TAG_FOREST,            NULL            },
+    {0x13579bdf,    256,     3,   5,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_FOREST,            &oak_tree       },
+    {0x85484857,    128,     0,   2,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_FOREST,            &birch_tree     },
+    {0x85484857,    256,     3,   6,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_BIRCH_FOREST,      &birch_tree     },
+    {0xfdb97531,      2,     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_RUINS,             NULL            },
 
-    {0x21436587,    256,     0,   5, INT_MIN, -50,      1,    LAB_Gen_PlaceOnCaveCeiling,    LAB_Gen_Cave_CeilingCrystal,   LAB_GEN_TAG_CAVE },
+    {0x21436587,    256,     0,   5, INT_MIN, -50,      1,    LAB_Gen_PlaceOnCaveCeiling,    LAB_Gen_Cave_CeilingCrystal,   LAB_GEN_TAG_CAVE,              NULL            },
 };
 const size_t overworld_layers_count = sizeof(overworld_layers)/sizeof(overworld_layers[0]);
 
 
 
 /***** Surface *****/
-LAB_STATIC void LAB_Gen_Overworld_DirtPatch(LAB_Placer* p, LAB_Random* rnd)
+LAB_STATIC void LAB_Gen_Overworld_DirtPatch(LAB_Placer* p, LAB_Random* rnd, const void* param)
 {
     uint64_t R = LAB_NextRandom(rnd);
     int r = 1+(R&7)+5;
@@ -49,14 +65,14 @@ LAB_STATIC void LAB_Gen_Overworld_DirtPatch(LAB_Placer* p, LAB_Random* rnd)
     }
 }
 
-LAB_STATIC void LAB_Gen_Overworld_Plant(LAB_Placer* p, LAB_Random* rnd)
+LAB_STATIC void LAB_Gen_Overworld_Plant(LAB_Placer* p, LAB_Random* rnd, const void* param)
 {
-    LAB_Block* plant = LAB_NextRandom(rnd)&1 ? &LAB_BLOCK_TALLGRASS : &LAB_BLOCK_TALLERGRASS;
+    LAB_Block* plant = (void*)param;
 
     LAB_Placer_SetBlockIfBlock(p, 0, 0, 0, plant, &LAB_BLOCK_AIR);
 }
 
-LAB_STATIC void LAB_Gen_Overworld_Bush(LAB_Placer* p, LAB_Random* rnd)
+LAB_STATIC void LAB_Gen_Overworld_Bush(LAB_Placer* p, LAB_Random* rnd, const void* param)
 {
     // tree height
     uint64_t R = LAB_NextRandom(rnd);
@@ -72,7 +88,7 @@ LAB_STATIC void LAB_Gen_Overworld_Bush(LAB_Placer* p, LAB_Random* rnd)
 }
 
 
-LAB_STATIC void LAB_Gen_Overworld_Rock(LAB_Placer* p, LAB_Random* rnd)
+LAB_STATIC void LAB_Gen_Overworld_Rock(LAB_Placer* p, LAB_Random* rnd, const void* param)
 {
     // tree height
     uint64_t R = LAB_NextRandom(rnd);
@@ -89,10 +105,12 @@ LAB_STATIC void LAB_Gen_Overworld_Rock(LAB_Placer* p, LAB_Random* rnd)
 }
 
 
-LAB_STATIC void LAB_Gen_Overworld_Tree(LAB_Placer* p, LAB_Random* rnd)
+LAB_STATIC void LAB_Gen_Overworld_Tree(LAB_Placer* p, LAB_Random* rnd, const void* param)
 {
     // tree height
-    if((LAB_NextRandom(rnd)&3) == 0) LAB_Gen_Overworld_DirtPatch(p, rnd);
+    //if((LAB_NextRandom(rnd)&3) == 0) LAB_Gen_Overworld_DirtPatch(p, rnd, NULL);
+
+    const LAB_Gen_Overworld_Tree_Params* blocks = param;
 
     uint64_t R = LAB_NextRandom(rnd);
     int h = 4+(R    & 3)+2;
@@ -111,14 +129,14 @@ LAB_STATIC void LAB_Gen_Overworld_Tree(LAB_Placer* p, LAB_Random* rnd)
             yy += (x*x+z*z)>>2;
 
         if(x==0 && z==0 && y <= h)
-            LAB_Placer_SetBlock(p, x, y, z, &LAB_BLOCK_WOOD);
+            LAB_Placer_SetBlock(p, x, y, z, blocks->wood);
 
         else if(x*x+yy*yy+z*z <= r*r+1+(int)(LAB_NextRandom(rnd)&1))
-            LAB_Placer_SetBlockIfBlock(p, x, y, z, &LAB_BLOCK_LEAVES, &LAB_BLOCK_AIR);
+            LAB_Placer_SetBlockIfBlock(p, x, y, z, blocks->leaves, &LAB_BLOCK_AIR);
     }
 }
 
-LAB_STATIC void LAB_Gen_Overworld_Tower(LAB_Placer* p, LAB_Random* rnd)
+LAB_STATIC void LAB_Gen_Overworld_Tower(LAB_Placer* p, LAB_Random* rnd, const void* param)
 {
     // tree height
     uint64_t R = LAB_NextRandom(rnd);
@@ -210,7 +228,7 @@ LAB_STATIC void LAB_Gen_Overworld_Tower(LAB_Placer* p, LAB_Random* rnd)
 
 
 /***** Cave *****/
-LAB_STATIC void LAB_Gen_Cave_CeilingCrystal(LAB_Placer* p, LAB_Random* rnd)
+LAB_STATIC void LAB_Gen_Cave_CeilingCrystal(LAB_Placer* p, LAB_Random* rnd, const void* param)
 {
     /** TODO
 

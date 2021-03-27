@@ -7,15 +7,23 @@
 
 const LAB_Gen_Biome LAB_biome_forest =
 {
-    .tags           = LAB_GEN_TAG_TREES | LAB_GEN_TAG_BUSHES | LAB_GEN_TAG_GRASS | LAB_GEN_TAG_DIRT
+    .tags           = LAB_GEN_TAG_FOREST | LAB_GEN_TAG_BUSHES | LAB_GEN_TAG_GRASS
                     | LAB_GEN_TAG_CAVE | LAB_GEN_TAG_MOUNTAINS,
     .surface_block  = &LAB_BLOCK_GRASS,
     .ground_block   = &LAB_BLOCK_DIRT,
 };
 
+const LAB_Gen_Biome LAB_biome_birch_forest =
+{
+    .tags           = LAB_GEN_TAG_BIRCH_FOREST | LAB_GEN_TAG_BUSHES | LAB_GEN_TAG_GRASS | LAB_GEN_TAG_FLOWERS
+                    | LAB_GEN_TAG_CAVE | LAB_GEN_TAG_MOUNTAINS,
+    .surface_block  = &LAB_BLOCK_GRASS, //LAB_BLOCK_BIRCH_LEAVES,
+    .ground_block   = &LAB_BLOCK_DIRT,
+};
+
 const LAB_Gen_Biome LAB_biome_plains =
 {
-    .tags           = LAB_GEN_TAG_BUSHES | LAB_GEN_TAG_GRASS | LAB_GEN_TAG_DIRT
+    .tags           = LAB_GEN_TAG_BUSHES | LAB_GEN_TAG_GRASS | LAB_GEN_TAG_FLOWERS
                     | LAB_GEN_TAG_RUINS
                     | LAB_GEN_TAG_CAVE | LAB_GEN_TAG_MOUNTAINS,
     .surface_block  = &LAB_BLOCK_GRASS, //_PLAINS,
@@ -35,9 +43,9 @@ float LAB_Gen_Biome_Temperature_Func(LAB_GenOverworld* gen, int x, int z)
     int xx = ((gen->seed&0xffff)^0x1234)+x;
     int zz = ((gen->seed&0xffff)^0x9876)+z;
 
-    return LAB_SimplexNoise2D(xx*0.01 , zz*0.01 ) * 0.7
-         + LAB_SimplexNoise2D(xx*0.002, zz*0.002) * 1;
-         + LAB_SimplexNoise2D(xx*0.004, zz*0.004) * 0.3;
+    return LAB_SimplexNoise2D(xx*0.05*0.01 , zz*0.05*0.01 ) * 0.7
+         + LAB_SimplexNoise2D(xx*0.05*0.002, zz*0.05*0.002) * 1
+         + LAB_SimplexNoise2D(xx*0.05*0.004, zz*0.05*0.004) * 0.3;
 }
 
 float LAB_Gen_Biome_Humidity_Func(LAB_GenOverworld* gen, int x, int z)
@@ -45,7 +53,7 @@ float LAB_Gen_Biome_Humidity_Func(LAB_GenOverworld* gen, int x, int z)
     int xx = ((gen->seed&0xffff)^0x6543)+x;
     int zz = ((gen->seed&0xffff)^0x789a)+z;
 
-    return LAB_SimplexNoise2D(xx*0.03, zz*0.03);
+    return LAB_SimplexNoise2D(xx*0.05*0.03, zz*0.05*0.03);
 }
 
 const LAB_Gen_Biome* LAB_Gen_Biome_Func(LAB_GenOverworld* gen, int x, int z, uint64_t rand_val)
@@ -59,7 +67,13 @@ const LAB_Gen_Biome* LAB_Gen_Biome_Func(LAB_GenOverworld* gen, int x, int z, uin
     /*float temperature = LAB_Gen_Biome_Temperature_Func(gen, x, z) + (rand_val&0xf)*(0.4/15)-0.2;
     float humidity    = LAB_Gen_Biome_Humidity_Func(gen, x, z);*/
 
-    if(temperature < -0.3) return &LAB_biome_forest;
+    if(temperature < -0.3)
+    {
+        if(humidity < 0)
+            return &LAB_biome_forest;
+        else
+            return &LAB_biome_birch_forest;
+    }
     if(temperature <  0.3) return &LAB_biome_plains;
     else return &LAB_biome_desert;
 }

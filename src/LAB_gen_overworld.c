@@ -138,7 +138,7 @@ LAB_STATIC void LAB_Gen_PopulateLayer_Func(LAB_GenOverworld* gen, LAB_Placer* p,
                 p2.oy = p->oy - (ay&15);
                 p2.oz = p->oz - (az&15);
 
-                lyr->structure_func(&p2, &rnd);
+                lyr->structure_func(&p2, &rnd, lyr->param);
             }
         }
     }

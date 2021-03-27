@@ -45,7 +45,7 @@ typedef struct LAB_Chunk
                           // 1 -> might be empty, don't care
                  pseudo:1; // chunk does not exist, this is a dummy chunk
     LAB_CrammedChunkPosSet dirty_blocks; // used for updating light, set by world
-    int neighbor_faces;
+    LAB_CrammedChunkPosSet relit_blocks; // wich blocks are relit.
     int age;
     struct LAB_Chunk* neighbors[6];
     void* view_user; // managed by the view, non owning pointer, set to NULL when

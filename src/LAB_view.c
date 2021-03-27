@@ -180,12 +180,18 @@ void LAB_ViewChunkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, in
     }
 
     entry->dirty |= update;
-    for(int i = 0; i < 6; ++i)
+    /*for(int i = 0; i < 6; ++i)
     {
         if(entry->neighbors[i])
             entry->neighbors[i]->dirty |= update;
         //entry->delay_ticks = 30;
-    }
+    }*/
+    int i;
+    LAB_DIR_EACH(LAB_CCPS_Faces(chunk->dirty_blocks|chunk->relit_blocks), i,
+    {
+        if(entry->neighbors[i])
+            entry->neighbors[i]->dirty |= update;
+    });
 }
 
 bool LAB_ViewChunkKeepProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z)
@@ -485,14 +491,15 @@ LAB_STATIC LAB_Triangle* LAB_ViewMeshAlloc(LAB_View_Mesh* mesh, size_t add_size,
     //if(LAB_UNLIKELY(new_mesh_count+extra_size > mesh_capacity))
     if(new_mesh_count+extra_size > mesh_capacity)
     {
-        if(mesh_capacity == 0) mesh_capacity = 1;
-        while(new_mesh_count+extra_size > mesh_capacity) mesh_capacity *= 2;
+        if(mesh_capacity == 0) mesh_capacity = 1<<3;
+        while(new_mesh_count+extra_size > mesh_capacity) mesh_capacity <<= 1;
+        //if(mesh_capacity > (1<<9)) return NULL; else mesh_capacity = 1<<9;// TEST ---
         LAB_Triangle* mesh_data = LAB_ReallocN(mesh->data, mesh_capacity, sizeof *mesh_data);
         if(!mesh_data) {
             return NULL;
         }
         mesh->data = mesh_data;
-        mesh->capacity=mesh_capacity;
+        mesh->capacity = mesh_capacity;
     }
     mesh->size=new_mesh_count;
 
@@ -536,6 +543,7 @@ LAB_STATIC bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
 
     // TODO update this when cam moved.
     unsigned visibility = LAB_View_ChunkVisibility(view, chunk_entry->x, chunk_entry->y, chunk_entry->z);
+    visibility = 077; // TODO
 
     // TODO: enshure light update after at most 1 sec
     if(     (chunk_entry->dirty&LAB_CHUNK_UPDATE_LOCAL)
@@ -1591,6 +1599,7 @@ LAB_STATIC void LAB_View_SortChunks(LAB_View* view, uint32_t delta_ms)
 void LAB_ViewTick(LAB_View* view, uint32_t delta_ms)
 {
     LAB_ViewLoadNearChunks(view); // uses sorted_chunks
+    //view->perf_info->current_time = LAB_NanoSeconds();
     LAB_ViewRemoveDistantChunks(view); // sorted_chunks has invalid content
     #if !LAB_VIEW_QUERY_IMMEDIATELY
     LAB_View_FetchQueryChunks(view);
@@ -1980,7 +1989,7 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
             {
                 --load_amount;
                 c->do_query = 1;
-                LAB_Chunk* chunk = LAB_GetChunk(view->world, c->x, c->y, c->z, LAB_CHUNK_GENERATE);
+                LAB_Chunk* chunk = LAB_GetChunk(view->world, c->x, c->y, c->z, LAB_CHUNK_GENERATE_LATER);
                 if(chunk)
                 {
                     chunk->view_user = c;
@@ -2011,27 +2020,27 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
 
                 entry->do_query = 1;
 
-                LAB_Chunk* chunk = LAB_GetChunk(view->world, xx, yy, zz, LAB_CHUNK_GENERATE);
+                LAB_Chunk* chunk = LAB_GetChunk(view->world, xx, yy, zz, LAB_CHUNK_GENERATE_LATER);
                 if(chunk)
                 {
                     chunk->view_user = entry;
                     entry->world_chunk = chunk;
-                }
-                if(empty_load_amount)
-                {
-                    int is_empty = 1;
-                    for(int c_i = 0; c_i < LAB_CHUNK_SIZE; ++c_i)
+                    if(empty_load_amount)
                     {
-                        if(chunk->blocks[c_i] != &LAB_BLOCK_AIR)
+                        int is_empty = 1;
+                        for(int c_i = 0; c_i < LAB_CHUNK_SIZE; ++c_i)
                         {
-                            is_empty = 0;
-                            break;
+                            if(chunk->blocks[c_i] != &LAB_BLOCK_AIR)
+                            {
+                                is_empty = 0;
+                                break;
+                            }
                         }
-                    }
-                    if(is_empty)
-                    {
-                        load_amount++;
-                        empty_load_amount--;
+                        if(is_empty)
+                        {
+                            load_amount++;
+                            empty_load_amount--;
+                        }
                     }
                 }
                 if(!load_amount) return;

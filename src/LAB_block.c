@@ -27,9 +27,11 @@ IXO_STRUCTDEF(LAB_Block,
 
 #define LAB_COLOR_GRASS_PLAINS   LAB_RGB(60, 150, 20) // LAB_RGB(30, 170, 50)
 
-#define LAB_COLOR_GRASS   LAB_RGB(15, 150, 30) // LAB_RGB(30, 170, 50)
+#define LAB_COLOR_GRASS   LAB_RGBX(0f961e) // LAB_RGB(15, 150, 30) // LAB_RGB(30, 170, 50)
 #define LAB_COLOR_LEAVES  LAB_RGB(10, 130, 20) // LAB_RGB(0, 100, 10) // LAB_RGB(20, 150, 40)
 #define LAB_COLOR_WOOD    LAB_RGB(93, 75, 45) // LAB_RGB(93, 75, 60)
+
+#define LAB_COLOR_BIRCH_LEAVES LAB_RGBX(ee8811) // LAB_RGB(0, 100, 10) // LAB_RGB(20, 150, 40)
 
 
 LAB_Block LAB_BLOCK_OUTSIDE = {
@@ -73,6 +75,8 @@ LAB_Block LAB_BLOCK_GLASS = {
     .bounds = LAB_AABB_FULL_CUBE,
 };
 
+LAB_DEF_BLOCK_CUBE(LEAVES, 2, 2, LAB_COLOR_LEAVES, LAB_RGB(130, 200, 130), LAB_RENDER_PASS_MASKED, LAB_BLOCK_MASSIVE|LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL);
+
 LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_WOOD, 2, 0, LAB_COLOR_WOOD,);
 LAB_Block LAB_BLOCK_WOOD = {
     .flags = LAB_BLOCK_SOLID,
@@ -100,27 +104,17 @@ LAB_Block LAB_BLOCK_WOOD_PLANKS_DARK = {
     .bounds = LAB_AABB_FULL_CUBE,
 };
 
-/*LAB_DEF_MODEL_CUBE_ALL(LAB_MODEL_LEAVES, 2, 2, LAB_RGB(20, 150, 40),
-                       .render_pass = LAB_RENDER_PASS_MASKED);
-LAB_Block LAB_BLOCK_LEAVES = {
-    .flags = (LAB_BLOCK_MASSIVE|LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL),
-    //.tint = LAB_RGB(20, 75, 10),
-    .dia = LAB_RGB(130, 200, 130),
-    .item_tint = LAB_RGB(20, 150, 40),
-    .item_tx = 2, 2,
-    .model = &LAB_MODEL_LEAVES,
-};*/
-// TODO: add low detail model: for leaves a model that makes inner faces invisible
-// Fancy
-LAB_DEF_BLOCK_CUBE(LEAVES, 2, 2, LAB_COLOR_LEAVES, LAB_RGB(130, 200, 130), LAB_RENDER_PASS_MASKED, LAB_BLOCK_MASSIVE|LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL);
-// Fast
-//LAB_DEF_BLOCK_CUBE(LEAVES, 2, 2, LAB_COLOR_LEAVES, LAB_RGB(130, 200, 130), LAB_RENDER_PASS_MASKED, LAB_BLOCK_MASSIVE|LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL|LAB_BLOCK_OPAQUE_SELF);
+
+LAB_DEF_BLOCK_CUBE(BIRCH_LEAVES, 2, 2, LAB_COLOR_BIRCH_LEAVES, LAB_COLOR_BIRCH_LEAVES, LAB_RENDER_PASS_MASKED, LAB_BLOCK_MASSIVE|LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL);
+
+LAB_DEF_BLOCK_CUBE(BIRCH_WOOD,   5, 0, LAB_RGBX(ffffff), 0,LAB_RENDER_PASS_SOLID, LAB_BLOCK_SOLID);
+
 
 LAB_DEF_MODEL_CROSS(LAB_MODEL_TALLGRASS, 3, 2, LAB_COLOR_GRASS,
                     .render_pass = LAB_RENDER_PASS_MASKED);
 LAB_Block LAB_BLOCK_TALLGRASS = {
     .flags = (LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL|LAB_BLOCK_FLAT_SHADE),
-    .dia = LAB_RGB(255, 255, 255),
+    .dia = LAB_RGBX(dddddd),
     .item_tint = LAB_COLOR_GRASS,
     .item_tx = 3, 2,
     .model = &LAB_MODEL_TALLGRASS,
@@ -132,7 +126,7 @@ LAB_DEF_MODEL_CROSS(LAB_MODEL_TALLERGRASS, 3, 3, LAB_COLOR_GRASS,
                     .render_pass = LAB_RENDER_PASS_MASKED);
 LAB_Block LAB_BLOCK_TALLERGRASS = {
     .flags = (LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL|LAB_BLOCK_FLAT_SHADE),
-    .dia = LAB_RGB(255, 255, 255),
+    .dia = LAB_RGBX(dddddd),
     .item_tint = LAB_COLOR_GRASS,
     .item_tx = 3, 3,
     .model = &LAB_MODEL_TALLERGRASS,
@@ -159,6 +153,52 @@ LAB_Block LAB_BLOCK_DIRT = {
     .model = &LAB_MODEL_DIRT,
     .bounds = LAB_AABB_FULL_CUBE,
 };
+
+
+LAB_DEF_MODEL_CROSS(LAB_MODEL_RED_TULIP, 5, 4, LAB_RGBX(ffffff),
+                    .render_pass = LAB_RENDER_PASS_MASKED);
+LAB_Block LAB_BLOCK_RED_TULIP = {
+    .flags = (LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL|LAB_BLOCK_FLAT_SHADE),
+    .dia = LAB_RGBX(dddddd),
+    .item_tint = LAB_RGBX(ffffff),
+    .item_tx = 5, 4,
+    .model = &LAB_MODEL_RED_TULIP,
+    .bounds = {{0.25, 0, 0.25}, {0.75, 0.875, 0.75}},
+};
+
+LAB_DEF_MODEL_CROSS(LAB_MODEL_YELLOW_TULIP, 6, 4, LAB_RGBX(ffffff),
+                    .render_pass = LAB_RENDER_PASS_MASKED);
+LAB_Block LAB_BLOCK_YELLOW_TULIP = {
+    .flags = (LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL|LAB_BLOCK_FLAT_SHADE),
+    .dia = LAB_RGBX(dddddd),
+    .item_tint = LAB_RGBX(ffffff),
+    .item_tx = 6, 4,
+    .model = &LAB_MODEL_YELLOW_TULIP,
+    .bounds = {{0.25, 0, 0.25}, {0.75, 0.875, 0.75}},
+};
+
+
+LAB_DEF_MODEL(LAB_MODEL_FALLEN_LEAVES, (.render_pass = LAB_RENDER_PASS_MASKED),
+              LAB_MK_QUAD_1UV(0, 0.0625, 0,
+                              1, 0.0625, 0,
+                              0, 0.0625, 1,
+                              1, 0.0625, 1,
+                        /*uv*/2, 4,
+                              LAB_COLOR_BIRCH_LEAVES,
+                              LAB_DIR_ALL,
+                              0,
+                              LAB_DIR_UP)
+);
+LAB_Block LAB_BLOCK_FALLEN_LEAVES = {
+    .flags = (LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL|LAB_BLOCK_FLAT_SHADE),
+    .dia = LAB_RGBX(ffffff),
+    .item_tint = LAB_COLOR_BIRCH_LEAVES,
+    .item_tx = 2, 4,
+    .model = &LAB_MODEL_FALLEN_LEAVES,
+    .bounds = {{0, 0, 0}, {1, 0.0625, 1}},
+};
+
+
 
 
 LAB_DEF_BLOCK_CUBE(METAL, 4, 0, LAB_RGBX(ffffff), LAB_COLOR_BLACK, LAB_RENDER_PASS_SOLID, LAB_BLOCK_SOLID);
@@ -318,9 +358,14 @@ LAB_Block* LAB_blocks_arr[] =
     &LAB_BLOCK_WOOD,
     &LAB_BLOCK_WOOD_PLANKS,
     &LAB_BLOCK_WOOD_PLANKS_DARK,
+    &LAB_BLOCK_BIRCH_LEAVES,
+    &LAB_BLOCK_BIRCH_WOOD,
     &LAB_BLOCK_TALLGRASS,
     &LAB_BLOCK_TALLERGRASS,
     &LAB_BLOCK_GRASS,
+    &LAB_BLOCK_RED_TULIP,
+    &LAB_BLOCK_YELLOW_TULIP,
+    &LAB_BLOCK_FALLEN_LEAVES,
     //&LAB_BLOCK_GRASS_PLAINS,
     &LAB_BLOCK_DIRT,
     &LAB_BLOCK_METAL,

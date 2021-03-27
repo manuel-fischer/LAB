@@ -4,6 +4,7 @@
 #pragma once
 #include "LAB_model.h"
 #include "LAB_direction.h"
+#include "LAB_pp.h"
 
 #define LAB_SHADE_X LAB_RGBX(EBEBEB) // west east
 #define LAB_SHADE_Y LAB_RGBX(C0C0C0) // bottom
@@ -57,6 +58,28 @@
                x1, y1, z1,  u1, v1, \
                x3, y3, z3,  u3, v3, \
                color, cull, light, vis)
+
+#define LAB_MK_QUAD_1UV(x0, y0, z0, \
+                        x1, y1, z1, \
+                        x2, y2, z2, \
+                        x3, y3, z3,  u0, v0, \
+                        color, cull, light, vis) \
+    LAB_MK_QUAD(x0, y0, z0,  (u0)+0, (v0)+0,            \
+                x1, y1, z1,  (u0)+1, (v0)+0,            \
+                x2, y2, z2,  (u0)+0, (v0)+1,            \
+                x3, y3, z3,  (u0)+1, (v0)+1,            \
+                color,                                  \
+                cull, light, vis),
+
+
+
+#define LAB_DEF_MODEL(name, args, ...) \
+    static LAB_Triangle name##_data[] = { __VA_ARGS__ };          \
+    LAB_Model name = {                                            \
+        .size = sizeof(name##_data) / sizeof(LAB_Triangle),       \
+        .data = name##_data,                                      \
+        LAB_PP_UNPACK(args)                                       \
+    }
 
 
 #define LAB_DEF_MODEL_CUBE_BASE(name,  wu, wv, wc,  eu, ev, ec, \

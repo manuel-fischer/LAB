@@ -7,6 +7,7 @@
 
 #include "LAB_check.h"
 #include "LAB_opt.h"
+#include "LAB_perf_info.h"
 
 
 typedef struct LAB_ChunkPos
@@ -173,6 +174,8 @@ typedef struct LAB_World
            max_update;
 
     //LAB_LightUpdateQueue light_queue;
+
+    LAB_PerfInfo* perf_info;
 } LAB_World;
 
 

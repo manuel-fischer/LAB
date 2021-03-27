@@ -28,20 +28,29 @@ LAB_CCPS LAB_CCPS_PosHash(int x, int y, int z)
 }
 
 LAB_PURE LAB_INLINE
-LAB_CCPS LAB_CCPS_AddPos(LAB_CCPS set, int x, int y, int z)
+LAB_CCPS LAB_CCPS_Pos(int x, int y, int z)
 {
     LAB_ASSUME((x &~ 15)==0);
     LAB_ASSUME((y &~ 15)==0);
     LAB_ASSUME((z &~ 15)==0);
 
+    LAB_CCPS bits = 0;
+
     // add x, y, z coords
-    set |= (1ull<< 0) << x;
-    set |= (1ull<<16) << y;
-    set |= (1ull<<32) << z;
+    bits |= (1ull<< 0) << x;
+    bits |= (1ull<<16) << y;
+    bits |= (1ull<<32) << z;
 
     // add hashtable entry
-    set |= (1ull<<48) << LAB_CCPS_PosHash(x, y, z);
+    bits |= (1ull<<48) << LAB_CCPS_PosHash(x, y, z);
 
+    return bits;
+}
+
+LAB_PURE LAB_INLINE
+LAB_CCPS LAB_CCPS_AddPos(LAB_CCPS set, int x, int y, int z)
+{
+    set |= LAB_CCPS_Pos(x, y, z);
     return set;
 }
 
@@ -52,16 +61,20 @@ bool LAB_CCPS_HasPos(LAB_CCPS set, int x, int y, int z)
     LAB_ASSUME((y &~ 15)==0);
     LAB_ASSUME((z &~ 15)==0);
 
-    LAB_CCPS mask = 0;
-
-    // add x, y, z coords
-    mask |= (1ull<< 0) << x;
-    mask |= (1ull<<16) << y;
-    mask |= (1ull<<32) << z;
-
-    // add hashtable entry
-    mask |= (1ull<<48) << LAB_CCPS_PosHash(x, y, z);
+    LAB_CCPS mask = LAB_CCPS_Pos(x, y, z);
     return (set & mask) == mask; // all four bits set -> true
+}
+
+LAB_PURE LAB_INLINE
+int LAB_CCPS_Faces(LAB_CCPS set)
+{
+    // which outer faces are touched?
+    // check outer column bits and generate face set
+
+    return (set&          1ull     )
+         | (set&(1ull<<15|1ull<<16)) >> (15-1)
+         | (set&(1ull<<31|1ull<<32)) >> (31-3)
+         | (set&(1ull<<47         )) >> (47-5);
 }
 
 #define LAB_CCPS_EACH_POS(set, x, y, z, ...) do \

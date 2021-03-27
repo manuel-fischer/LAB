@@ -1,6 +1,6 @@
 # LAB
 
-![Newest Screenshot](screenshots/021.png)
+![Newest Screenshot](screenshots/024.png)
 [More screenshots](screenshots/screenshots.md)
 
 A Voxel-Engine, *infinite* world in all three spacial dimensions. Currently

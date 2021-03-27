@@ -5,6 +5,17 @@
 
 // TODO: remove LAB_BLOCK_ prefix
 
+#define LAB_DEF_BLOCK(name, args, model_args, ...) \
+    LAB_DEF_MODEL(LAB_MODEL_##name, model_args, __VA_ARGS__); \
+    LAB_Block LAB_BLOCK_##name = { \
+        .flags = block_flags, \
+        .dia = block_dia, \
+        .item_tint = color, \
+        .item_tx = tx, ty, \
+        .model = &LAB_MODEL_##name, \
+        .bounds = LAB_AABB_FULL_CUBE, \
+    }
+
 #define LAB_ENM_BLOCK_CUBE(prefix, name) \
     prefix LAB_BLOCK_##name
 

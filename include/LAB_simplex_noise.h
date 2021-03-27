@@ -1,7 +1,8 @@
 #pragma once
 
 #include "LAB_opt.h"
+typedef double LAB_NoiseFloat;
 
-LAB_CONST double LAB_SimplexNoise2D(double xin, double yin);
-LAB_CONST double LAB_SimplexNoise3D(double xin, double yin, double zin);
-LAB_CONST double LAB_SimplexNoise4D(double xin, double yin, double zin, double win);
+LAB_CONST LAB_NoiseFloat LAB_SimplexNoise2D(LAB_NoiseFloat xin, LAB_NoiseFloat yin);
+LAB_CONST LAB_NoiseFloat LAB_SimplexNoise3D(LAB_NoiseFloat xin, LAB_NoiseFloat yin, LAB_NoiseFloat zin);
+LAB_CONST LAB_NoiseFloat LAB_SimplexNoise4D(LAB_NoiseFloat xin, LAB_NoiseFloat yin, LAB_NoiseFloat zin, LAB_NoiseFloat win);
