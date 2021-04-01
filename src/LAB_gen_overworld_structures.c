@@ -12,6 +12,7 @@ LAB_STATIC void LAB_Gen_Overworld_Plant(LAB_Placer* p, LAB_Random* rnd, const vo
 LAB_STATIC void LAB_Gen_Overworld_Bush(LAB_Placer* p, LAB_Random* rnd, const void* param);
 LAB_STATIC void LAB_Gen_Overworld_Rock(LAB_Placer* p, LAB_Random* rnd, const void* param);
 LAB_STATIC void LAB_Gen_Overworld_Tree(LAB_Placer* p, LAB_Random* rnd, const void* param);
+LAB_STATIC void LAB_Gen_Overworld_LargeTree(LAB_Placer* p, LAB_Random* rnd, const void* param);
 LAB_STATIC void LAB_Gen_Overworld_Tower(LAB_Placer* p, LAB_Random* rnd, const void* param);
 
 LAB_STATIC void LAB_Gen_Cave_CeilingCrystal(LAB_Placer* p, LAB_Random* rnd, const void* param);
@@ -34,13 +35,14 @@ const LAB_StructureLayer overworld_layers[] =
     {0x32547698,    256,     0,   4,     -80,  60,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Bush,        LAB_GEN_TAG_BUSHES,            NULL            },
     {0x56789abc,    256,     3,  35,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_GRASS,             &LAB_BLOCK_TALLGRASS            },
     {0xd8f8e945,    256,     3,  35,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_GRASS,             &LAB_BLOCK_TALLERGRASS            },
-    {0xfd874567,    128,     1,  10,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_GRASS,             &LAB_BLOCK_RED_TULIP            },
-    {0xfbc90356,    128,     1,  10,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_GRASS,             &LAB_BLOCK_YELLOW_TULIP            },
-    {0xfbc90356,    256,    64, 192,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_BIRCH_FOREST,      &LAB_BLOCK_FALLEN_LEAVES            },
+    {0xfd874567,    128,     1,  10,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_FLOWERS,           &LAB_BLOCK_RED_TULIP            },
+    {0xfbc90356,    128,     1,  10,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_FLOWERS,           &LAB_BLOCK_YELLOW_TULIP            },
+    {0xfbc90356,    256,    64, 192,     -80,  33,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_BIRCH_FOREST,      &LAB_BLOCK_FALLEN_LEAVES            },
     {0x93475493,     32,     1,   5,     -80,  80,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_DirtPatch,   LAB_GEN_TAG_FOREST,            NULL            },
     {0x13579bdf,    256,     3,   5,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_FOREST,            &oak_tree       },
     {0x85484857,    128,     0,   2,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_FOREST,            &birch_tree     },
     {0x85484857,    256,     3,   6,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_BIRCH_FOREST,      &birch_tree     },
+    {0x85484857,    256,     2,   4,     -80,  30,      2,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_LargeTree,   LAB_GEN_TAG_TAIGA,             NULL     },
     {0xfdb97531,      2,     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_RUINS,             NULL            },
 
     {0x21436587,    256,     0,   5, INT_MIN, -50,      1,    LAB_Gen_PlaceOnCaveCeiling,    LAB_Gen_Cave_CeilingCrystal,   LAB_GEN_TAG_CAVE,              NULL            },
@@ -133,6 +135,38 @@ LAB_STATIC void LAB_Gen_Overworld_Tree(LAB_Placer* p, LAB_Random* rnd, const voi
 
         else if(x*x+yy*yy+z*z <= r*r+1+(int)(LAB_NextRandom(rnd)&1))
             LAB_Placer_SetBlockIfBlock(p, x, y, z, blocks->leaves, &LAB_BLOCK_AIR);
+    }
+}
+
+LAB_STATIC void LAB_Gen_Overworld_LargeTree(LAB_Placer* p, LAB_Random* rnd, const void* param)
+{
+    uint64_t R = LAB_NextRandom(rnd);
+    int l = 3+(R    &  7);
+    int h = l+(R>>3 & 15);
+    int r = 5+(R>>7 & (1+2));
+    //if(LAB_Placer_IsInside...)
+
+    for(int z = 0; z < 2; ++z)
+    for(int x = 0; x < 2; ++x)
+    {
+        LAB_Placer_SetBlock(p, x, -1, z, &LAB_BLOCK_DIRT);
+        LAB_Placer_SetBlock(p, x, h+r+1, z, &LAB_BLOCK_SPRUCE_LEAVES);
+    }
+
+    int hr = h+2*r;
+    int hr2 = hr*hr;
+    int rr = (int)(LAB_NextRandom(rnd)&3);
+    for(int y =  0; y <= h+r; ++y, rr = (int)(LAB_NextRandom(rnd)&3))
+    for(int z = -r; z <= r; ++z)
+    for(int x = -r; x <= r; ++x)
+    {
+        int hry2 = (hr-y)*(hr-y);
+
+        if((x&~1)==0 && (z&~1)==0 && y <= h)
+            LAB_Placer_SetBlock(p, x, y, z, &LAB_BLOCK_SPRUCE_WOOD);
+
+        else if(y > l && hr2*(x*(x-1)+z*(z-1)) < hry2*((r-rr)*(r-(rr>>1))-(int)(LAB_NextRandom(rnd)&7)))
+            LAB_Placer_SetBlockIfBlock(p, x, y, z, &LAB_BLOCK_SPRUCE_LEAVES, &LAB_BLOCK_AIR);
     }
 }
 

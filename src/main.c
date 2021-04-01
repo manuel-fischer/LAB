@@ -10,6 +10,7 @@
 
 #include "LAB_gen_flat.h"
 #include "LAB_gen_overworld.h"
+#include "LAB_gen_overworld_shape.h"
 #include "LAB_asset_manager.h"
 #include "LAB_gl.h"
 #include "LAB_sdl.h"
@@ -58,9 +59,11 @@ int main(int argc, char** argv)
     the_world.chunkgen      = &LAB_GenFlatProc;
     the_world.chunkgen_user = &gen_flat;
     #else
-    gen_overworld.seed = 0x13579bdf;
+    //gen_overworld.seed = 0x13579bdf;
     //gen_overworld.seed = 2347818473829147;
     //gen_overworld.seed = 58925789342573489;
+    //gen_overworld.seed = 78434678123467586;
+    gen_overworld.seed = 7823489034819884932;
     the_world.chunkgen      = &LAB_GenOverworldProc;
     the_world.chunkgen_user = &gen_overworld;
     #endif
@@ -83,6 +86,9 @@ int main(int argc, char** argv)
     view.empty_load_amount = 5;
     //view.load_amount = 100; // DBG
     view.perf_info = &perf_info;
+
+    view.x = view.z = 0.5;
+    view.y = LAB_Gen_Surface_Shape_Func(&gen_overworld, 0, 0) + 3;
 
     CHECK_INIT(LAB_ConstructViewInput(&view_input, &view));
     LAB_GL_CHECK();

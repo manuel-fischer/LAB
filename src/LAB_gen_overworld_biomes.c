@@ -21,6 +21,14 @@ const LAB_Gen_Biome LAB_biome_birch_forest =
     .ground_block   = &LAB_BLOCK_DIRT,
 };
 
+const LAB_Gen_Biome LAB_biome_taiga =
+{
+    .tags           = LAB_GEN_TAG_TAIGA | LAB_GEN_TAG_BUSHES | LAB_GEN_TAG_GRASS
+                    | LAB_GEN_TAG_CAVE | LAB_GEN_TAG_MOUNTAINS,
+    .surface_block  = &LAB_BLOCK_DIRT, //LAB_BLOCK_BIRCH_LEAVES,
+    .ground_block   = &LAB_BLOCK_DIRT,
+};
+
 const LAB_Gen_Biome LAB_biome_plains =
 {
     .tags           = LAB_GEN_TAG_BUSHES | LAB_GEN_TAG_GRASS | LAB_GEN_TAG_FLOWERS
@@ -61,18 +69,26 @@ const LAB_Gen_Biome* LAB_Gen_Biome_Func(LAB_GenOverworld* gen, int x, int z, uin
     uint64_t r;
     r = rand_val;
 
-    float temperature = LAB_Gen_Biome_Temperature_Func(gen, x+(r&0xf), z+(r>>4&0xf));
-    float humidity    = LAB_Gen_Biome_Humidity_Func(gen, x+(r>>8&0xf), z+(r>>12&0xf));
+    /*float temperature = LAB_Gen_Biome_Temperature_Func(gen, x+(r&0xf), z+(r>>4&0xf));
+    float humidity    = LAB_Gen_Biome_Humidity_Func(gen, x+(r>>8&0xf), z+(r>>12&0xf));*/
+
+    float temperature = LAB_Gen_Biome_Temperature_Func(gen, x+(r&0x3f), z+(r>>6&0x3f));
+    float humidity    = LAB_Gen_Biome_Humidity_Func(gen, x+(r>>12&0x3f), z+(r>>18&0x3f));
+
+    /*float temperature = LAB_Gen_Biome_Temperature_Func(gen, x+(r&0xff), z+(r>>8&0xff));
+    float humidity    = LAB_Gen_Biome_Humidity_Func(gen, x+(r>>16&0xff), z+(r>>24&0xff));*/
 
     /*float temperature = LAB_Gen_Biome_Temperature_Func(gen, x, z) + (rand_val&0xf)*(0.4/15)-0.2;
     float humidity    = LAB_Gen_Biome_Humidity_Func(gen, x, z);*/
 
     if(temperature < -0.3)
     {
-        if(humidity < 0)
+        if(humidity < -0.3)
+            return &LAB_biome_birch_forest;
+        else if(humidity < 0.3)
             return &LAB_biome_forest;
         else
-            return &LAB_biome_birch_forest;
+            return &LAB_biome_taiga;
     }
     if(temperature <  0.3) return &LAB_biome_plains;
     else return &LAB_biome_desert;
