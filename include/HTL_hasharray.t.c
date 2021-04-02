@@ -61,6 +61,8 @@ HTL_DEF HTL_P(ENTRY_TYPE)* HTL_MEMBER(PutAlloc)(HTL_P(NAME)* hasharray, HTL_P(KE
         HTL_P(ENTRY_TYPE)* old_table;
         HTL_P(ENTRY_TYPE)* new_table;
         new_capacity = (hasharray->capacity == 0) ? HTL_P(INITIAL_CAPACITY) : hasharray->capacity * HTL_P(GROW_FACTOR);
+        printf("A " HTL_STR(HTL_P(NAME)) " was resized to a capacity of %zu, with current size %zu\n",
+               new_capacity, hasharray->size);
         new_table = HTL_P(CALLOC)(new_capacity, (sizeof *new_table));
         if(new_table == NULL) return NULL;
 

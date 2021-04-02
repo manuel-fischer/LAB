@@ -8,7 +8,7 @@
 #include "LAB_window.h"
 #include "LAB_world.h"
 #include "LAB_view.h"
-#include "LAB_view_input.h"
+#include "LAB_input.h"
 
 
 /**

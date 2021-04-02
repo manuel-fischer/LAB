@@ -1,5 +1,7 @@
 #pragma once
 
+typedef int LAB_Dir;
+
 #define LAB_DIR_WEST   1
 #define LAB_DIR_EAST   2
 #define LAB_DIR_DOWN   4
@@ -50,6 +52,10 @@
 #define LAB_AY(i) (int)((i)==0)
 #define LAB_AZ(i) (int)((i)==1)
 
+#define LAB_AXF(i) LAB_AX(LAB_FACE_AXIS(i))
+#define LAB_AYF(i) LAB_AY(LAB_FACE_AXIS(i))
+#define LAB_AZF(i) LAB_AZ(LAB_FACE_AXIS(i))
+
 /**
  *  { 0, 0, 1 },
  *  { 1, 0, 0 },
@@ -59,6 +65,9 @@
 #define LAB_BY(i) (int)((i)==2)
 #define LAB_BZ(i) (int)((i)==0)
 
+#define LAB_BXF(i) LAB_BX(LAB_FACE_AXIS(i))
+#define LAB_BYF(i) LAB_BY(LAB_FACE_AXIS(i))
+#define LAB_BZF(i) LAB_BZ(LAB_FACE_AXIS(i))
 
 #define LAB_OUTWARDS_FACES(x0, y0, z0, x1, y1, z1) ( \
         ((x0) <= (x1)) << 0 \
@@ -68,6 +77,9 @@
       | ((z0) <= (z1)) << 4 \
       | ((z0) >= (z1)) << 5 \
 )
+
+#define LAB_FACE_AXIS(i) ((i) >> 1)
+#define LAB_FACE_POSITIVE(i) ((i) & 1)
 
 
 

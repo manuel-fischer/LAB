@@ -8,7 +8,7 @@ typedef union SDL_Event SDL_Event;
 
 #define LAB_CLIP_AX 1
 
-typedef struct LAB_ViewInput
+typedef struct LAB_Input
 {
     LAB_View* view;
     //int dir_set;
@@ -22,7 +22,7 @@ typedef struct LAB_ViewInput
 
     bool space_pressed;
     uint32_t prev_space_down;
-} LAB_ViewInput;
+} LAB_Input;
 
 #define LAB_VIEWINPUT_FORWARD 1u
 #define LAB_VIEWINPUT_DESTROY 2u
@@ -32,15 +32,14 @@ typedef struct LAB_ViewInput
 
 
 /**
- *  Create view input, with given world
+ *  Create input, with given view
  */
-bool LAB_ConstructViewInput(LAB_ViewInput* view_input, LAB_View* view);
+bool LAB_Input_Create(LAB_Input* input, LAB_View* view);
 
 /**
- *  Destruct view input
- *  The view can be filled with 0 bytes
+ *  Destruct input
  */
-void LAB_DestructViewInput(LAB_ViewInput* view_input);
+void LAB_Input_Destroy(LAB_Input* input);
 
-int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event);
-void LAB_ViewInputTick(LAB_ViewInput* view_input, uint32_t delta_ms);
+int LAB_Input_OnEvent_Proc(void* user, LAB_Window* window, SDL_Event* event);
+void LAB_Input_Tick(LAB_Input* input, uint32_t delta_ms);

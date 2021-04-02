@@ -14,13 +14,12 @@ const char* LAB_Filename(const char* path)
     return path;
 }
 
-
-uint64_t LAB_NanoSeconds()
+LAB_Nanos LAB_NanoSeconds()
 {
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
     //timespec_get(&ts, TIME_UTC);
-    return (uint64_t)ts.tv_sec*1000000000ull + ts.tv_nsec;
+    return (LAB_Nanos)ts.tv_sec*1000000000ull + (LAB_Nanos)ts.tv_nsec;
 }
 
 size_t LAB_StrHash(const char* str)

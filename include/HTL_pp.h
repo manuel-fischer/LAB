@@ -13,6 +13,9 @@
 
 #define HTL_MEMBER(name) HTL_CAT_U(HTL_P(NAME), name)
 
+#define HTL_STR_0(txt) #txt
+#define HTL_STR(txt) HTL_STR_0(txt)
+
 #ifndef HTL_DEF
 #define HTL_DEF
 #endif

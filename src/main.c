@@ -33,7 +33,7 @@ int main(int argc, char** argv)
     static LAB_PerfInfo   perf_info   = {0};
     static LAB_World      the_world   = {0};
     static LAB_View       view        = {0};
-    static LAB_ViewInput  view_input  = {0};
+    static LAB_Input      input       = {0};
 
     #if GEN_FLAT
     static LAB_GenFlat    gen_flat    = {0};
@@ -91,7 +91,7 @@ int main(int argc, char** argv)
     view.x = view.z = 0.5;
     view.y = LAB_Gen_Surface_Shape_Func(&gen_overworld, 0, 0) + 3;
 
-    CHECK_INIT(LAB_ConstructViewInput(&view_input, &view));
+    CHECK_INIT(LAB_Input_Create(&input, &view));
     LAB_GL_CHECK();
 
     the_world.chunkview      = &LAB_ViewChunkProc;
@@ -104,8 +104,8 @@ int main(int argc, char** argv)
     the_world.chunkunlink_user = &view;
 
 
-    main_window.onevent      = &LAB_ViewInputOnEventProc;
-    main_window.onevent_user = &view_input;
+    main_window.onevent      = &LAB_Input_OnEvent_Proc;
+    main_window.onevent_user = &input;
 
     main_window.render       = &LAB_ViewRenderProc;
     main_window.render_user  = &view;
@@ -157,7 +157,7 @@ int main(int argc, char** argv)
         LAB_PerfInfo_Tick(&perf_info);
 
         LAB_PerfInfo_Next(&perf_info, LAB_TG_INPUT);
-        LAB_ViewInputTick(&view_input, delta_ms);
+        LAB_Input_Tick(&input, delta_ms);
 
         LAB_PerfInfo_Next(&perf_info, LAB_TG_WORLD);
         LAB_WorldTick(&the_world, delta_ms);
@@ -181,7 +181,7 @@ int main(int argc, char** argv)
 
 EXIT:
     // Null destructable
-    LAB_DestructViewInput(&view_input);
+    LAB_Input_Destroy(&input);
     LAB_DestructView(&view);
     LAB_DestructWorld(&the_world);
     LAB_PerfInfo_Destroy(&perf_info);

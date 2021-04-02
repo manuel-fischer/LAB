@@ -42,8 +42,9 @@ const char* LAB_Filename(const char* path);
     } \
 } while(0)
 
+typedef uint64_t LAB_Nanos;
 
-uint64_t LAB_NanoSeconds();
+LAB_Nanos LAB_NanoSeconds();
 
 
 LAB_PURE

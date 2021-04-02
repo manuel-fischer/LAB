@@ -9,6 +9,8 @@ enum LAB_TimeGraph
     LAB_TG_WORLD,
     LAB_TG_VIEW,
     LAB_TG_VIEW_RENDER,
+    LAB_TG_VIEW_RENDER_UPLOAD,
+    LAB_TG_VIEW_RENDER_QUERY,
     LAB_TG_MESH,
 // =====================
     LAB_TG_COUNT,
@@ -25,7 +27,7 @@ typedef struct LAB_PerfInfo
 {
     uint64_t enabled; // if 0, all are enabled again
     enum LAB_TimeGraph current_graph;
-    uint64_t current_time;
+    LAB_Nanos current_time;
 
     LAB_FpsGraph fps_graphs[LAB_TG_COUNT];
 } LAB_PerfInfo;
@@ -38,3 +40,5 @@ void LAB_PerfInfo_Render(LAB_PerfInfo* perf_info);
 
 void LAB_PerfInfo_Tick(LAB_PerfInfo* perf_info);
 void LAB_PerfInfo_Next(LAB_PerfInfo* perf_info, enum LAB_TimeGraph graph);
+
+void LAB_PerfInfo_FinishNS(LAB_PerfInfo* perf_info, enum LAB_TimeGraph graph, LAB_Nanos ns_start);

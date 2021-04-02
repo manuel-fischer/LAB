@@ -41,6 +41,7 @@ extern int LAB_gl_debug_alloc_count;
 #define LAB_GL_DEBUG_ALLOC_(count, array) do { \
     for(int LAB_GL_DEBUG_FREE_i = 0; LAB_GL_DEBUG_FREE_i < (count); ++LAB_GL_DEBUG_FREE_i) \
         if((array)[LAB_GL_DEBUG_FREE_i]) ++LAB_gl_debug_alloc_count; \
+        else LAB_ASSUME(!"failed to allocate for " #array " in OpenGL"); \
 } while(0)
 #define LAB_GL_DEBUG_FREE_(count, array) do { \
     for(int LAB_GL_DEBUG_FREE_i = 0; LAB_GL_DEBUG_FREE_i < (count); ++LAB_GL_DEBUG_FREE_i) \

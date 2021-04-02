@@ -31,18 +31,21 @@
 #include "LAB_gui.h"
 #include "LAB_gui_component.h"
 #include "LAB_gui_menu.h"
+#include "LAB_gui_inventory.h"
+#include "LAB_inventory.h"
 
 #define HTL_PARAM LAB_VIEW_CHUNK_TBL
 #include "HTL_hasharray.t.c"
 #undef HTL_PARAM
 
-#if 0
-#undef glGenQueries
-#undef glDeleteQueries
-#undef glGetQueryObjectuiv
-#define glGenQueries(count, ids) do { for(int i = 0; i < (count); ++i) (ids)[i] = 0; } while(0)
-#define glDeleteQueries(count, ids) ((void)0)
-#define glGetQueryObjectuiv(id, pname, param) ((*param) = 1)
+#if 1
+#define LAB_glGenQueries(count, ids) do { for(int i = 0; i < (count); ++i) (ids)[i] = 0; } while(0)
+#define LAB_glDeleteQueries(count, ids) ((void)0)
+#define LAB_glGetQueryObjectuiv(id, pname, param) ((*param) = 1)
+#else
+#define LAB_glGenQueries        glGenQueries
+#define LAB_glDeleteQueries     glDeleteQueries
+#define LAB_glGetQueryObjectuiv glGetQueryObjectuiv
 #endif
 
 /**
@@ -66,12 +69,15 @@ LAB_STATIC bool LAB_View_HasChunkEntryVisibleNeighbors(LAB_View* view, LAB_ViewC
 LAB_STATIC bool LAB_View_IsLocalChunk(LAB_View* view, int cx, int cy, int cz);
 LAB_STATIC unsigned LAB_View_ChunkVisibility(LAB_View* view, int cx, int cy, int cz);         // inclusive for same coordinates
 LAB_STATIC unsigned LAB_View_ChunkNeighborVisibility(LAB_View* view, int cx, int cy, int cz); // exclusive for same coordinates
+LAB_STATIC void LAB_View_UpdateChunkSeethrough(LAB_View* view, LAB_ViewChunkEntry* e); // exclusive for same coordinates
+#if LAB_VIEW_ENABLE_QUERY
 #if !LAB_VIEW_QUERY_IMMEDIATELY
 LAB_STATIC void LAB_View_FetchQueryChunks(LAB_View* view);
 LAB_STATIC void LAB_View_FetchQueryChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
 #endif
 LAB_STATIC void LAB_View_OrderQueryChunks(LAB_View* view);
 LAB_STATIC void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
+#endif
 LAB_STATIC void LAB_ViewRemoveDistantChunks(LAB_View* view);
 LAB_STATIC void LAB_ViewDestructChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
 LAB_STATIC void LAB_ViewDestructFreeChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
@@ -445,17 +451,16 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
         int face;
         LAB_DIR_EACH(lum_faces, face,
         {
-            //const int* o = LAB_offset[face];
             int ox = LAB_OX(face);
             int oy = LAB_OY(face);
             int oz = LAB_OZ(face);
 
-            int ax = LAB_AX(face>>1); // LAB_offsetA[face>>1][0];
-            int ay = LAB_AY(face>>1); // LAB_offsetA[face>>1][1];
-            int az = LAB_AZ(face>>1); // LAB_offsetA[face>>1][2];
-            int bx = LAB_BX(face>>1); // LAB_offsetB[face>>1][0];
-            int by = LAB_BY(face>>1); // LAB_offsetB[face>>1][1];
-            int bz = LAB_BZ(face>>1); // LAB_offsetB[face>>1][2];
+            int ax = LAB_AXF(face);
+            int ay = LAB_AYF(face);
+            int az = LAB_AZF(face);
+            int bx = LAB_BXF(face);
+            int by = LAB_BYF(face);
+            int bz = LAB_BZF(face);
 
             LAB_Color tmp[9];
             for(int v = -1; v <= 1; ++v)
@@ -614,7 +619,11 @@ LAB_STATIC bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
 
 LAB_STATIC bool LAB_ViewUpdateChunk(LAB_View* view, LAB_ViewChunkEntry* e)
 {
+    if(e->dirty & LAB_CHUNK_UPDATE_BLOCK)
+        LAB_View_UpdateChunkSeethrough(view, e);
+
     bool updated = LAB_ViewBuildChunk(view, e);
+
     if(e->mesh_order && (updated || (rand()&0x1f) == 0))
     //if(e->mesh_order)
     {
@@ -642,7 +651,7 @@ LAB_STATIC int LAB_ViewUpdateChunks(LAB_View* view)
 
     int dist_sq = view->render_dist*view->render_dist + 3;
     LAB_ViewChunkEntry* e;
-    for(int i = 0; i < view->chunks.size; ++i)
+    for(size_t i = 0; i < view->chunks.size; ++i)
     {
         e = view->sorted_chunks[i].entry;
 
@@ -800,6 +809,7 @@ LAB_STATIC void LAB_View_UploadChunks(LAB_View* view)
 
 
 
+#if LAB_VIEW_ENABLE_QUERY
 #if !LAB_VIEW_QUERY_IMMEDIATELY
 LAB_STATIC void LAB_View_FetchQueryChunks(LAB_View* view)
 {
@@ -815,16 +825,16 @@ LAB_STATIC void LAB_View_FetchQueryChunk(LAB_View* view, LAB_ViewChunkEntry* ent
 {
 
     unsigned available LAB_INIT_DBG(= 2), visible;
-    glGetQueryObjectuiv(entry->query_id, GL_QUERY_RESULT_AVAILABLE, &available);
+    LAB_glGetQueryObjectuiv(entry->query_id, GL_QUERY_RESULT_AVAILABLE, &available);
     LAB_ASSUME(available < 2);
     if(available)
     {
-        glGetQueryObjectuiv(entry->query_id, GL_QUERY_RESULT, &visible);
+        LAB_glGetQueryObjectuiv(entry->query_id, GL_QUERY_RESULT, &visible);
         entry->visible = visible;
         if(visible) entry->sight_visible = 1;
         else if(LAB_View_IsChunkCompletelyInFrustum(view, entry->x, entry->y, entry->z)) entry->sight_visible = 0;
 
-        LAB_GL_FREE(glDeleteQueries, 1, &entry->query_id);
+        LAB_GL_FREE(LAB_glDeleteQueries, 1, &entry->query_id);
         entry->query_id = 0;
     }
     else
@@ -835,7 +845,7 @@ LAB_STATIC void LAB_View_FetchQueryChunk(LAB_View* view, LAB_ViewChunkEntry* ent
 
         //if((rand() & 7) == 0)
         {
-            LAB_GL_FREE(glDeleteQueries, 1, &entry->query_id);
+            LAB_GL_FREE(LAB_glDeleteQueries, 1, &entry->query_id);
             entry->query_id = 0;
         }
         #endif
@@ -843,7 +853,6 @@ LAB_STATIC void LAB_View_FetchQueryChunk(LAB_View* view, LAB_ViewChunkEntry* ent
     LAB_GL_CHECK();
 }
 #endif
-
 
 
 LAB_STATIC void LAB_View_OrderQueryChunks(LAB_View* view)
@@ -986,7 +995,7 @@ LAB_STATIC void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* ent
 
     #if LAB_VIEW_QUERY_IMMEDIATELY
     unsigned visible = 1;
-    glGetQueryObjectuiv(query_id, GL_QUERY_RESULT, &visible);
+    LAB_glGetQueryObjectuiv(query_id, GL_QUERY_RESULT, &visible);
     entry->visible = visible;
     if(visible) entry->sight_visible = 1;
     else if(LAB_View_IsChunkCompletelyInFrustum(view, entry->x, entry->y, entry->z)) entry->sight_visible = 0;
@@ -995,6 +1004,7 @@ LAB_STATIC void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* ent
     entry->do_query = 0;
     LAB_GL_CHECK();
 }
+#endif
 
 
 
@@ -1390,14 +1400,20 @@ void LAB_ViewRender(LAB_View* view)
     //glAlphaFunc(GL_GEQUAL, 64/255.f);
 
 
+    LAB_Nanos upload_start = LAB_NanoSeconds();
     if(view->flags & LAB_VIEW_USE_VBO)
+    {
         LAB_View_UploadChunks(view);
+    }
+    LAB_PerfInfo_FinishNS(view->perf_info, LAB_TG_VIEW_RENDER_UPLOAD, upload_start);
 
 
     LAB_ViewRenderChunks(view, LAB_RENDER_PASS_SOLID);
     LAB_ViewRenderChunks(view, LAB_RENDER_PASS_MASKED);
     LAB_ViewRenderChunks(view, LAB_RENDER_PASS_BLIT);
 
+    LAB_Nanos query_start = LAB_NanoSeconds();
+    #if LAB_VIEW_ENABLE_QUERY
     {
         glDisableClientState(GL_COLOR_ARRAY);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -1407,7 +1423,9 @@ void LAB_ViewRender(LAB_View* view)
         glScalef(0.999, 0.999, 0.999);
         glMatrixMode(GL_MODELVIEW);
         glColor4f(1, 1, 1, 1);
+
         LAB_View_OrderQueryChunks(view);
+
         glMatrixMode(GL_PROJECTION);
         glPopMatrix();
         glMatrixMode(GL_MODELVIEW);
@@ -1415,6 +1433,9 @@ void LAB_ViewRender(LAB_View* view)
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
         glEnable(GL_TEXTURE_2D);
     }
+    #endif
+    LAB_PerfInfo_FinishNS(view->perf_info, LAB_TG_VIEW_RENDER_QUERY, query_start);
+
 
     LAB_ViewRenderChunks(view, LAB_RENDER_PASS_ALPHA);
 
@@ -1514,6 +1535,9 @@ LAB_ViewChunkEntry* LAB_ViewNewChunkEntry(LAB_View* view, int x, int y, int z)
             neighbor->neighbors[face^1] = *entry;
         }
     }
+    #if !LAB_VIEW_ENABLE_QUERY
+    (*entry)->sight_visible = (*entry)->visible = 1;
+    #endif
     return *entry;
 }
 
@@ -1649,7 +1673,7 @@ void LAB_ViewTick(LAB_View* view, uint32_t delta_ms)
     LAB_ViewLoadNearChunks(view); // uses sorted_chunks
     //view->perf_info->current_time = LAB_NanoSeconds();
     LAB_ViewRemoveDistantChunks(view); // sorted_chunks has invalid content
-    #if !LAB_VIEW_QUERY_IMMEDIATELY
+    #if !LAB_VIEW_QUERY_IMMEDIATELY && LAB_VIEW_ENABLE_QUERY
     LAB_View_FetchQueryChunks(view);
     #endif
     LAB_View_SortChunks(view, delta_ms); // sorted_chunks has valid content again
@@ -1834,6 +1858,34 @@ LAB_STATIC unsigned LAB_View_ChunkNeighborVisibility(LAB_View* view, int cx, int
     return faces;
 }
 
+LAB_STATIC void LAB_View_UpdateChunkSeethrough(LAB_View* view, LAB_ViewChunkEntry* e)
+{
+    LAB_Chunk* chunk = e->world_chunk;
+    if(!chunk) return;
+
+    int faces = 0;
+
+    LAB_UNROLL(6)
+    for(int face = 0; face < 6; ++face)
+    {
+        const int  c = LAB_FACE_POSITIVE(face) ? 15 << (LAB_FACE_AXIS(face)*4) : 0;
+        const int da = LAB_AXF(face) | LAB_AYF(face)<<4 | LAB_AZF(face)<<8;
+        const int db = LAB_BXF(face) | LAB_BYF(face)<<4 | LAB_BZF(face)<<8;
+
+        for(int ib = 0, b = 0; ib < 16; ++ib, b+=db)
+        for(int ia = 0, a = 0; ia < 16; ++ia, a+=da)
+        {
+            if(!(chunk->blocks[c|a|b]->flags & LAB_BLOCK_OPAQUE))
+            {
+                faces |= 1 << face;
+                goto finish_face;
+            }
+        }
+
+        finish_face:;
+    }
+    e->seethrough_faces = faces;
+}
 
 void LAB_ViewLoadNearChunks(LAB_View* view)
 {
@@ -2047,7 +2099,7 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
             if(!load_amount) return;
 
 
-            for(int faces = LAB_OUTWARDS_FACES(c->x, c->y, c->z, px, py, pz); faces; faces&=faces-1)
+            for(int faces = LAB_OUTWARDS_FACES(c->x, c->y, c->z, px, py, pz) & c->seethrough_faces; faces; faces&=faces-1)
             {
                 int face = LAB_Ctz(faces);
 
@@ -2107,10 +2159,10 @@ void LAB_ViewDestructChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
     if(chunk_entry->mesh_order)
         LAB_Free(chunk_entry->mesh_order);
 
-    #if !LAB_VIEW_QUERY_IMMEDIATELY
+    #if !LAB_VIEW_QUERY_IMMEDIATELY && LAB_VIEW_ENABLE_QUERY
     if(chunk_entry->query_id)
     {
-        LAB_GL_FREE(glDeleteQueries, 1, &chunk_entry->query_id);
+        LAB_GL_FREE(LAB_glDeleteQueries, 1, &chunk_entry->query_id);
     }
     #endif
 }
@@ -2149,4 +2201,25 @@ void LAB_ViewCoordInfo_Destroy(LAB_ViewCoordInfo* info)
 {
     LAB_GL_FREE(glDeleteTextures, 1, &info->gl_texture);
     LAB_SDL_FREE(SDL_FreeSurface, &info->surf);
+}
+
+
+
+
+
+
+void LAB_View_ShowGuiMenu(LAB_View* view)
+{
+    LAB_GuiMenu* gui = LAB_Malloc(sizeof *gui);
+    if(!gui) return;
+    LAB_GuiMenu_Create(gui, view->world);
+    LAB_GuiManager_ShowDialog(&view->gui_mgr, (LAB_GuiComponent*)gui);
+}
+
+void LAB_View_ShowGuiInventory(LAB_View* view, LAB_Block** block)
+{
+    LAB_GuiInventory* gui = LAB_Malloc(sizeof *gui);
+    if(!gui) return;
+    LAB_GuiInventory_Create(gui, &LAB_cheat_inventory, block);
+    LAB_GuiManager_ShowDialog(&view->gui_mgr, (LAB_GuiComponent*)gui);
 }
