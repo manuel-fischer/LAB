@@ -32,6 +32,17 @@ const char* LAB_Filename(const char* path);
 
 #define LAB_PTR_OFFSET(ptr, index, size) ((void*)((char*)(ptr) + (index)*(size)))
 
+
+#define LAB_BITS_EACH(bits, lval_bit_index, ...) do \
+{ \
+    for(int LAB_BITS_EACH_bits = (bits); LAB_BITS_EACH_bits; LAB_BITS_EACH_bits&=LAB_BITS_EACH_bits-1) \
+    { \
+        (lval_bit_index) = LAB_Ctz(LAB_BITS_EACH_bits); \
+        {__VA_ARGS__} \
+    } \
+} while(0)
+
+
 uint64_t LAB_NanoSeconds();
 
 

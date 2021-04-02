@@ -21,6 +21,7 @@ LAB_Chunk* LAB_CreateChunk(LAB_Block* fill_block)
     chunk->age = 0;
     chunk->modified = 0;
     chunk->light_generated = 0;
+    //chunk->empty = fill_block == &LAB_BLOCK_AIR;
 
     // initialize neighbors with NULL
     for(int face = 0; face < 6; ++face)

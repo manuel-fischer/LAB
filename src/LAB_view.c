@@ -144,6 +144,21 @@ void LAB_DestructView(LAB_View* view)
     LAB_ViewCoordInfo_Destroy(&view->info);
 }
 
+void LAB_View_Clear(LAB_View* view)
+{
+    LAB_ViewChunkEntry* e;
+    HTL_HASHARRAY_EACH_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
+    {
+        LAB_ViewUnlinkChunk(view, e);
+    });
+    LAB_View_ChunkTBL_Destroy(&view->chunks);
+    memset(&view->chunks, 0, sizeof view->chunks);
+
+    LAB_Free(view->sorted_chunks);
+    view->sorted_chunks = 0;
+    view->sorted_chunks_capacity = 0;
+}
+
 
 void LAB_ViewChunkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update)
 {
@@ -186,12 +201,29 @@ void LAB_ViewChunkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, in
             entry->neighbors[i]->dirty |= update;
         //entry->delay_ticks = 30;
     }*/
-    int i;
+    /*int i;
     LAB_DIR_EACH(LAB_CCPS_Faces(chunk->dirty_blocks|chunk->relit_blocks), i,
     {
         if(entry->neighbors[i])
             entry->neighbors[i]->dirty |= update;
-    });
+    });*/
+
+    /*int bits = LAB_CCPS_Neighborhood(chunk->dirty_blocks|chunk->relit_blocks)
+             & ~(1 << (1+3+9));
+
+    if(bits)
+    {
+        LAB_Chunk* chunks[27];
+        // TODO LAB_GetChunkEntryNeighbors(entry, ...)
+        LAB_GetChunkNeighbors(chunk, chunks);
+        int i;
+        LAB_BITS_EACH(bits, i,
+        {
+            LAB_ASSUME(0 <= i && i < 27 && i != 1+3+9);
+            if(chunks[i] && chunks[i]->view_user)
+                ((LAB_ViewChunkEntry*)chunks[i]->view_user)->dirty |= update;
+        });
+    }*/
 }
 
 bool LAB_ViewChunkKeepProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z)
@@ -370,6 +402,9 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
     //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor_Fast(~(x), ~(x)):LAB_MulColor_Fast((x), (x)))
     //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor_Fast(~(x), ~(x)):LAB_AddColor(LAB_MulColor_Fast((x), (x)), LAB_MulColor_Fast((x), (x))))
     //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor_Fast(~(x), ~(x)):LAB_AddColor(LAB_SubColor((x), LAB_RGBAX(10101000)), LAB_SubColor((x), LAB_RGBAX(10101000))))
+    //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor_Fast(~(LAB_MulColor_Fast((x), (x))), ~(x)):LAB_MulColor_Fast((x), (x)))
+    //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?LAB_MulColor_Fast(~LAB_MulColor_Fast(~(x), ~(x)), ~LAB_MulColor_Fast(~(x), ~(x))):LAB_MulColor_Fast((x), (x)))
+
     if(block->flags&LAB_BLOCK_NOSHADE)
     {
         const LAB_Model* model = block->model;
@@ -598,6 +633,7 @@ LAB_STATIC bool LAB_ViewUpdateChunk(LAB_View* view, LAB_ViewChunkEntry* e)
 LAB_STATIC int LAB_ViewUpdateChunks(LAB_View* view)
 {
     unsigned rest_update = view->max_update;
+    uint64_t nanos = LAB_NanoSeconds();
 
     int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
     int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
@@ -606,7 +642,6 @@ LAB_STATIC int LAB_ViewUpdateChunks(LAB_View* view)
 
     int dist_sq = view->render_dist*view->render_dist + 3;
     LAB_ViewChunkEntry* e;
-    //HTL_HASHARRAY_EACH_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
     for(int i = 0; i < view->chunks.size; ++i)
     {
         e = view->sorted_chunks[i].entry;
@@ -618,7 +653,10 @@ LAB_STATIC int LAB_ViewUpdateChunks(LAB_View* view)
         if((cx-px)*(cx-px) + (cy-py)*(cy-py) + (cz-pz)*(cz-pz) <= dist_sq
            && (e->visible/* || !(rand() & 0x3f)*/))
             rest_update -= LAB_ViewUpdateChunk(view, e);
-        if(!rest_update) return view->max_update;
+
+        if(LAB_NanoSeconds() - nanos > 4000*1000) break; // 3.5 ms
+        if(!rest_update) break;
+
     }//);
     return view->max_update - rest_update;
 }
@@ -1566,14 +1604,24 @@ LAB_STATIC int LAB_View_CompareChunksIndirect(const void* a, const void* b)
 
 LAB_STATIC void LAB_View_SortChunks(LAB_View* view, uint32_t delta_ms)
 {
-    LAB_ViewSortedChunkEntry* sorted_chunks = LAB_ReallocN(view->sorted_chunks, view->chunks.size, sizeof*sorted_chunks);
-    if(!sorted_chunks)
+    if(view->chunks.size > view->sorted_chunks_capacity)
     {
-        view->sorted_chunks = NULL;
-        perror("You might reduce render distance");
-        abort();
+        size_t capacity = view->sorted_chunks_capacity;
+        if(capacity == 0) capacity = 1;
+        while(view->chunks.size > capacity) capacity <<= 1;
+        LAB_ViewSortedChunkEntry* sorted_chunks = LAB_ReallocN(view->sorted_chunks, capacity, sizeof*sorted_chunks);
+
+
+        if(!sorted_chunks)
+        {
+            view->sorted_chunks = NULL;
+            perror("You might reduce render distance");
+            abort(); // TODO bad!
+        }
+        view->sorted_chunks_capacity = capacity;
+        view->sorted_chunks = sorted_chunks;
     }
-    view->sorted_chunks = sorted_chunks;
+
     int i = 0;
 
     LAB_ViewChunkEntry* e;

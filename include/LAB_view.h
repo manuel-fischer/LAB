@@ -196,6 +196,7 @@ typedef struct LAB_View
     LAB_View_ChunkTBL chunks;
 
     // sorted from near to far chunks
+    size_t sorted_chunks_capacity;
     LAB_ViewSortedChunkEntry* sorted_chunks;
 
 
@@ -244,6 +245,7 @@ bool LAB_ConstructView(LAB_View* view, LAB_World* world);
  *  The view can be filled with 0 bytes
  */
 void LAB_DestructView(LAB_View* view);
+void LAB_View_Clear(LAB_View* view);
 
 
 void LAB_ViewChunkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update);

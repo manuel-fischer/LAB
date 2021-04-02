@@ -77,6 +77,28 @@ int LAB_CCPS_Faces(LAB_CCPS set)
          | (set&(1ull<<47         )) >> (47-5);
 }
 
+// return 27 bit bitset
+LAB_PURE LAB_INLINE
+int LAB_CCPS_Neighborhood(LAB_CCPS set)
+{
+    int bits = 0;
+    int i = 0;
+    LAB_UNROLL(3)
+    for(int z = 0; z < 3; ++z)
+    LAB_UNROLL(3)
+    for(int y = 0; y < 3; ++y)
+    LAB_UNROLL(3)
+    for(int x = 0; x < 3; ++x, ++i)
+    {
+        LAB_CCPS mask = ((LAB_CCPS)(x==0)<<0 | (LAB_CCPS)(x==2)<<15) <<  0
+                      | ((LAB_CCPS)(y==0)<<0 | (LAB_CCPS)(y==2)<<15) << 16
+                      | ((LAB_CCPS)(z==0)<<0 | (LAB_CCPS)(z==2)<<15) << 32;
+        bits |= (int)((set&mask)==mask) << i;
+    }
+    LAB_ASSUME(i == 27);
+    return bits;
+}
+
 #define LAB_CCPS_EACH_POS(set, x, y, z, ...) do \
 { \
     int LAB_CCPS_x_set, LAB_CCPS_y_set, LAB_CCPS_z_set; \

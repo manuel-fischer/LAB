@@ -181,6 +181,7 @@
 		<Unit filename="include/LAB_aabb.h">
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
+		<Unit filename="include/LAB_array.h" />
 		<Unit filename="include/LAB_asset_manager.h" />
 		<Unit filename="include/LAB_attr.h" />
 		<Unit filename="include/LAB_bits.h" />
@@ -239,6 +240,7 @@
 		<Unit filename="include/LAB_sdl.h" />
 		<Unit filename="include/LAB_simplex_noise.h" />
 		<Unit filename="include/LAB_stdinc.h" />
+		<Unit filename="include/LAB_table.h" />
 		<Unit filename="include/LAB_util.h" />
 		<Unit filename="include/LAB_vec.h">
 			<Option target="&lt;{~None~}&gt;" />

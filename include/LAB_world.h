@@ -45,8 +45,10 @@ LAB_INLINE int LAB_ChunkPosComp(LAB_ChunkPos a, LAB_ChunkPos b)
 //#define LAB_MAX_LOAD_CHUNK 16
 #define LAB_MAX_LOAD_CHUNK 256
 
-#define LAB_PRELOAD_CHUNK(chunk_dist) ((chunk_dist)+1)
-#define LAB_KEEP_CHUNK(chunk_dist)    ((chunk_dist)+2)
+//#define LAB_PRELOAD_CHUNK(chunk_dist) ((chunk_dist)+1)
+//#define LAB_KEEP_CHUNK(chunk_dist)    ((chunk_dist)+2)
+#define LAB_PRELOAD_CHUNK(chunk_dist) ((chunk_dist)+3)
+#define LAB_KEEP_CHUNK(chunk_dist)    ((chunk_dist)*2+3)
 
 
 

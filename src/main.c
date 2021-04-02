@@ -77,7 +77,8 @@ int main(int argc, char** argv)
     view.preload_dist = LAB_PRELOAD_CHUNK(view.render_dist);
     view.keep_dist = LAB_KEEP_CHUNK(view.render_dist);
     view.flags = LAB_VIEW_SHOW_HUD | LAB_VIEW_USE_VBO;
-    view.max_update = 10;//160;
+    //view.max_update = 10;//160;
+    view.max_update = 100;
     view.max_unload = 20;
     //view.load_amount = 3;
     //view.load_amount = 10;

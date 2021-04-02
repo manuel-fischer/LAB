@@ -1,7 +1,7 @@
 #include "LAB_view.h"
 #include "LAB_world.h"
 
-#include "LAB_view_input.h"
+#include "LAB_input.h"
 #include "LAB_window.h"
 #include "LAB_block.h"
 #include "LAB_chunk.h"
@@ -307,6 +307,11 @@ int LAB_ViewInputOnEventProc(void* user, LAB_Window* window, SDL_Event* event)
                     view->flags ^= LAB_VIEW_FLAT_SHADE;
                     LAB_ViewInvalidateEverything(view, /*free_buffers*/0);
 
+                } break;
+
+                case SDLK_F10:
+                {
+                    LAB_View_Clear(view);
                 } break;
 
                 case SDLK_F11:

@@ -252,12 +252,40 @@ void LAB_UpdateChunk(LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LA
 
         int reupdate = faces&128;
 
+
+        int bits = LAB_CCPS_Neighborhood(dirty_blocks|chunk->relit_blocks);
+
+        int i = 0;
+        for(int zz = -1; zz < 2; ++zz)
+        for(int yy = -1; yy < 2; ++yy)
+        for(int xx = -1; xx < 2; ++xx, ++i)
+        {
+            if(chunks[i] && (chunks[i]->relit_blocks || (bits & 1<<i)))
+            {
+                //LAB_ChunkUpdate upd = (i != 1+3+9) ? LAB_CHUNK_UPDATE_LIGHT : update;
+                LAB_ChunkUpdate upd = update;
+                //LAB_UpdateChunkLater(world, chunks[i], x+xx, y+yy, z+zz, upd);
+                //if(i == 1+3+9)
+                (*world->chunkview)(world->chunkview_user, world, chunks[i], x+xx, y+yy, z+zz, upd);
+                //if(reupdate)
+
+                /*if(i != 1+3+9)
+                {
+                    chunks[i]->dirty_blocks |= chunks[i]->relit_blocks;
+                    chunks[i]->dirty |= LAB_CHUNK_UPDATE_LIGHT;
+                }*/
+                chunks[i]->dirty_blocks |= chunks[i]->relit_blocks;
+                chunks[i]->relit_blocks = 0;
+            }
+        }
+
         /*int face;
         LAB_DIR_EACH(faces&63, face,
         {
                                     //  vvvvv BUG!!!
             LAB_UpdateChunkLater(world, chunk, x+LAB_OX(face), y+LAB_OY(face), z+LAB_OZ(face), LAB_CHUNK_UPDATE_LIGHT);
         });*/
+        #if 0
         int i = 0;
         for(int zz = -1; zz < 2; ++zz)
         for(int yy = -1; yy < 2; ++yy)
@@ -282,6 +310,7 @@ void LAB_UpdateChunk(LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LA
                 }
             }
         }
+        #endif
 
         /*if(reupdate)
         {
@@ -527,7 +556,7 @@ void LAB_WorldTick(LAB_World* world, uint32_t delta_ms)
         pos = LAB_ChunkPosQueue_Front(&world->gen_queue);
         LAB_GenerateNotifyChunk(world, pos->x, pos->y, pos->z);
         LAB_ChunkPosQueue_PopFront(&world->gen_queue);
-        if(LAB_NanoSeconds() - nanos > 2500*1000) break; // 2 ms
+        if(LAB_NanoSeconds() - nanos > 2500*1000) break; // 2.5 ms
         if(--rest_gen == 0) break;
     }
     //world->perf_info->current_time = LAB_NanoSeconds();
@@ -543,7 +572,7 @@ void LAB_WorldTick(LAB_World* world, uint32_t delta_ms)
             chunk->dirty = 0;
             LAB_ChunkPos* pos = &world->chunks.table[i].pos;
             LAB_UpdateChunk(world, chunk, pos->x, pos->y, pos->z, update);
-            if(LAB_NanoSeconds() - nanos > 5000*1000) break; // 2 ms
+            if(LAB_NanoSeconds() - nanos > 4000*1000) break; // 4 ms
             if(--rest_update == 0) return;
         }
     }
