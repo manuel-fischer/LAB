@@ -1,0 +1,10 @@
+LAB main include file
+
+@fn int LAB_Init(void)
+	@briefx Init LAB
+	@return 0 on error
+	@sidefx Initializes global resources
+	
+@fn void LAB_Quit(void)
+	@brief Quit LAB
+	@sidefx Frees global resources

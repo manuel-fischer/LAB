@@ -42,3 +42,7 @@ The only thing that is not pure C is the use of GCCs attributes and builtins,
 which can even be used with Clang. When compiling with any other compiler,
 the attributes and builtins are disabled and replaced by a pure C alternative:
 either by nothing or by an (inline) implementation.
+
+The python script [`xmd.py`](xmd.py) comes from one of my other repositories
+[XMD](https://github.com/manuel-fischer/XMD) and generates the markdown files
+of the [documentation](doc/table.md)
