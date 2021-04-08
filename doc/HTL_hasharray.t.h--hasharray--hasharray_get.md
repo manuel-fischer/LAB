@@ -1,4 +1,4 @@
-[&#8592; HashArray_PutAlloc](HTL_hasharray.t.h--hasharray--hasharray_putalloc.md) | [&#8593; HashArray](HTL_hasharray.t.h--hasharray.md) | [&#8594; HashArray_RemoveEntry](HTL_hasharray.t.h--hasharray--hasharray_removeentry.md)
+[&#8592; HashArray_Locate](HTL_hasharray.t.h--hasharray--hasharray_locate.md) | [&#8593; HashArray](HTL_hasharray.t.h--hasharray.md) | [&#8594; HashArray_IsEntry](HTL_hasharray.t.h--hasharray--hasharray_isentry.md)
 ***
 
 # `HashArray_Get`

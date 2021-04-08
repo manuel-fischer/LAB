@@ -5,7 +5,7 @@
 **Synopsis**
 
 ```cpp
-KeyType KEY_FUNC(e)
+KeyType KEY_FUNC(EntryType* e)
 ```
 
 

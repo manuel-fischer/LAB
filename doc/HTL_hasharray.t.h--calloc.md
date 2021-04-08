@@ -5,6 +5,7 @@
 **Synopsis**
 
 ```cpp
-CALLOC(num, size)
+void* CALLOC(size_t num, size_t size)
+
 ```
 

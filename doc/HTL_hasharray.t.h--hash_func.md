@@ -1,11 +1,11 @@
-[&#8592; KEY_FUNC](HTL_hasharray.t.h--key_func.md) | [&#8593; HTL_hasharray.t.h](HTL_hasharray.t.h.md) | [&#8594; EMPTY_FUNC](HTL_hasharray.t.h--empty_func.md)
+[&#8592; KEY_FUNC](HTL_hasharray.t.h--key_func.md) | [&#8593; HTL_hasharray.t.h](HTL_hasharray.t.h.md) | [&#8594; COMP_FUNC](HTL_hasharray.t.h--comp_func.md)
 ***
 
 # `HASH_FUNC`
 **Synopsis**
 
 ```cpp
-size_t HASH_FUNC(k)
+size_t HASH_FUNC(KeyType k)
 ```
 
 

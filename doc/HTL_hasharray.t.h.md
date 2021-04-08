@@ -14,7 +14,7 @@ Template header (multiple inclusion)
 **`ENTRY_TYPE`** &#8213; entry type (`EntryType`)  
 **[`KEY_FUNC`](HTL_hasharray.t.h--key_func.md)** &#8213; key function, takes pointer to entry  
 **[`HASH_FUNC`](HTL_hasharray.t.h--hash_func.md)** &#8213; hash function, takes key, return `size_t`  
-**`COMP_FUNC`** &#8213; (k1,k2)   comparison function, takes key, return 0 if equal  
+**[`COMP_FUNC`](HTL_hasharray.t.h--comp_func.md)** &#8213; comparison function, takes key, return 0 if equal  
 **[`EMPTY_FUNC`](HTL_hasharray.t.h--empty_func.md)** &#8213; Function to check if entry is empty.  
 **[`CALLOC`](HTL_hasharray.t.h--calloc.md)**  
 **[`FREE`](HTL_hasharray.t.h--free.md)**  

@@ -1,4 +1,4 @@
-[&#8592; HashArray_Create](HTL_hasharray.t.h--hasharray--hasharray_create.md) | [&#8593; HashArray](HTL_hasharray.t.h--hasharray.md)
+[&#8592; HashArray_Create](HTL_hasharray.t.h--hasharray--hasharray_create.md) | [&#8593; HashArray](HTL_hasharray.t.h--hasharray.md) | [&#8594; HashArray_PutAlloc](HTL_hasharray.t.h--hasharray--hasharray_putalloc.md)
 ***
 
 # `HashArray_Destroy`

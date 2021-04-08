@@ -1,4 +1,4 @@
-[&#8592; HashArray_Remove](HTL_hasharray.t.h--hasharray--hasharray_remove.md) | [&#8593; HashArray](HTL_hasharray.t.h--hasharray.md) | [&#8594; HashArray_Discard](HTL_hasharray.t.h--hasharray--hasharray_discard.md)
+[&#8592; HashArray_Get](HTL_hasharray.t.h--hasharray--hasharray_get.md) | [&#8593; HashArray](HTL_hasharray.t.h--hasharray.md)
 ***
 
 # `HashArray_IsEntry`

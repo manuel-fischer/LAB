@@ -1,11 +1,11 @@
-[&#8592; HASH_FUNC](HTL_hasharray.t.h--hash_func.md) | [&#8593; HTL_hasharray.t.h](HTL_hasharray.t.h.md) | [&#8594; CALLOC](HTL_hasharray.t.h--calloc.md)
+[&#8592; COMP_FUNC](HTL_hasharray.t.h--comp_func.md) | [&#8593; HTL_hasharray.t.h](HTL_hasharray.t.h.md) | [&#8594; CALLOC](HTL_hasharray.t.h--calloc.md)
 ***
 
 # `EMPTY_FUNC`
 **Synopsis**
 
 ```cpp
-bool EMPTY_FUNC(e)
+bool EMPTY_FUNC(EntryType* e)
 ```
 
 

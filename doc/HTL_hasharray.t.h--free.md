@@ -5,7 +5,7 @@
 **Synopsis**
 
 ```cpp
-FREE(mem)
+void FREE(void* mem)
 
 ```
 
