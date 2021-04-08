@@ -1,0 +1,29 @@
+Global asset management.
+
+@def LAB_TILE_SIZE
+	@briefx Size in pixels of a texture tile.
+	@todo Remove this.
+	
+@def LAB_MIPMAPS
+	@briefx Boolean flag if mipmaps are enabled.
+	@todo Remove this.
+
+@var LAB_block_terrain
+	@syn SDL_Surface* LAB_block_terrain
+	@briefx Texture atlas.
+	@see LAB_block_terrain_gl_id
+	@todo Remove this.
+	
+@var LAB_block_terrain_gl_id
+	@syn unsigned LAB_block_terrain_gl_id
+	@briefx Reference to the OpenGL object of the texture atlas.
+	@see LAB_block_terrain
+	
+@fn void LAB_InitAssets(void)
+	@briefx Init assets.
+	@todo What if it fails.
+	
+@fn void LAB_QuitAssets(void)
+	@briefx Free assets.
+	@pre `LAB_InitAssets` was called before.
+	

@@ -46,6 +46,7 @@ del X
 SECTION_ORDER = """
     syn
     description
+    note
 
     param
 
@@ -63,6 +64,8 @@ SECTION_ORDER = """
     attr
 
     default
+    pre
+    post
     return
     retval
     sidefx
@@ -74,6 +77,10 @@ SECTION_ORDER = """
     def
     
     example
+
+    see
+
+    todo
 """.split()
 
 
@@ -84,8 +91,13 @@ SPECIAL_SECTIONS = {
     "default": "# Default Value\n",
     "return": "# Return Value\n",
     "sidefx": "# Side Effects\n",
+    "pre":  "# Preconditions\n",
+    "post":  "# Postconditions\n",
+    "todo": "# TODO\n",
+    "see": "# See also\n",
+    "note": "**Note**  \n",
     "description": "",
-    "example":  "# Example",
+    "example":  "# Example\n",
 }
 
 
@@ -194,6 +206,9 @@ def parse_group(tokens, start=0, group="[]"):
     else:
         return (start, start, start)
 
+def pack_code(code):
+    return f"```{LANG}\n{code}\n```"
+
 def parse_xmd(xmd_lines, proto, line_no=1):
     (
         type,
@@ -227,7 +242,7 @@ def parse_xmd(xmd_lines, proto, line_no=1):
                         e_signature = ll[text_slice(tokens, rest)]
                         e_display = signature2display(e_signature)
                         e_brief = ""
-                    e_sections = {"syn": f"```{LANG}\n{e_signature}\n```"} if e_signature != e_display else {}
+                    e_sections = {"syn": pack_code(e_signature)} if e_signature != e_display else {}
                         
                     entity = parse_xmd(
                         block,
@@ -252,7 +267,9 @@ def parse_xmd(xmd_lines, proto, line_no=1):
                         sections["description"] += content+"\n"
                     elif tag == "disp":
                         display = content.strip()
-                    elif tag in SPECIAL_SECTIONS:
+                    elif tag in SPECIAL_SECTIONS or tag == "syn*":
+                        if tag == "syn": content = pack_code(content)
+                        if tag == "syn*": tag = "syn"
                         try:             sections[tag] += content+"\n"
                         except KeyError: sections[tag]  = content+"\n"
                     else:
@@ -302,15 +319,6 @@ def generate_browse(parent, files, i):
         (generate_browse_link("right", files[i+1]) if i != len(files)-1 else "")
     ]) + "\n"
 
-
-"""
-def generate_table(lst_entities, path="", i0=0):
-    md = ""
-    md += "## Overview\n"
-    for i, e in enumerate(lst_entities):
-        md += f"{i+i0}. [{e.display}]({path}#{to_md_anchor(e.display)})\n"
-    return md
-"""
 
 def xmd2md(xmd_entity, parent_file, files, file_index, depth=999, section_depth=1):
     file = files[file_index]
@@ -432,37 +440,7 @@ def generate_md_files(cwd, o_files, file_index, entity):
 
     for fn, display, md in file_contents:
         write_file(os.path.join(cwd,"doc",fn), md)
-
-
-"""
-def process_xmd_file(cwd, o_files, file_index, i_file):
-    xmd_ifile = os.path.join(cwd,"xdoc",i_file)
-    md_ofile = os.path.join(cwd,"doc",os.path.splitext(i_file)[0]+".md")
-    xmd_src = read_file(xmd_ifile)
-
-    entity = parse_xmd(
-        xmd_src.split("\n"),
-        Entity(
-            type = "file",  
-            category = "",
-            brief = "",
-            display = os.path.split(md_ofile)[-1],
-            sections = {},
-            childs = []
-        )
-    )
-
-    file_contents = xmd2md(
-        entity,
-        ("table.md", "table"),
-        o_files,
-        file_index,
-        depth=999
-    )
-
-    for fn, display, md in file_contents:
-        write_file(os.path.join(cwd,"doc",fn), md)
-"""
+        
 
 def process_doc(cwd):
     table_ofile = os.path.join(cwd,"doc","table.md")
