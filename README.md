@@ -11,6 +11,9 @@ added).
 ## Building
 To build LAB follow the instructions [here](setup-dev.md)
 
+## Documentation
+The documentation can be found [here](doc/table.md).
+
 ## The language choice: C
 
 Why do I use C for this project? For me its clean compared to other commonly
