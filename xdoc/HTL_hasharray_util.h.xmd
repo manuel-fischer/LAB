@@ -1,0 +1,54 @@
+Utility macros for hash arrays
+
+@def void HTL_HASHARRAY_EACH(type array_type, HashArray* arr, HashEntry*# e, {} ...code)
+	Iterate through the hash array.
+	Receive pointers to the elements.
+	
+	@param array_type  hash array type,         text (no alias)
+	@param arr         pointer to a hasharray
+	@param e           entry pointer,           by name (lvalue)
+	@param code        iteration statement,     code block
+	
+@def void HTL_HASHARRAY_REMOVE(type array_type, HashArray* arr, HashEntry*# e, bool# cond, {} ...code)
+	Iterate through the hash array and remove entries.
+	Receive pointers to the elements.
+	
+	@param array_type  hash array type,         text (no alias)
+	@param arr         pointer to a hasharray
+	@param e           entry pointer,           by name (lvalue)
+	@param cond        condition,               by name (re-evaluated)
+	@param ...         cleanup statement,       code block
+	
+	@note
+		Do not jump out of `code` after invalidation.
+		Use `cond` to skip elements instead!
+		Otherwise the entry wouldn't be removed correctly.
+	
+	@todo there should be a way to break out of the loop directly
+	
+@def HTL_HASHARRAY_EACH_DEREF(type array_type, HashArray* arr, HashEntry# e, {} ...code)
+	Iterate through the hash array.
+	Receive value copy of the elements.
+	
+	@param array_type  hash array type,         text (no alias)
+	@param arr         pointer to a hasharray
+	@param e           entry value,             by name (lvalue)
+	@param code        iteration statement,     code block
+	
+@def HTL_HASHARRAY_REMOVE_DEREF(type array_type, HashArray* arr, HashEntry# e, bool# cond, {} ...code)
+	
+	Iterate through the hash array and remove entries.
+	Receive value copy of the elements.
+	
+	@param array_type  hash array type,         text (no alias)
+	@param arr         pointer to a hasharray
+	@param e           entry value,             by name (lvalue)
+	@param cond        condition,               by name (re-evaluated)
+	@param code        cleanup statement,       code block
+	
+	@note
+		Do not jump out of `code` after invalidation.
+		Use `cond` to skip elements instead!
+		Otherwise the entry wouldn't be removed correctly.
+	
+	@todo there should be a way to break out of the loop directly
