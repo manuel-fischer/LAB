@@ -13,7 +13,11 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-g" />
+					<Add option="-O0" />
 				</Compiler>
+				<Linker>
+					<Add option="-ldbghelp" />
+				</Linker>
 			</Target>
 			<Target title="Release">
 				<Option output="bin/Release/Laboratory" prefix_auto="1" extension_auto="1" />
@@ -117,6 +121,20 @@
 				</Compiler>
 				<Linker>
 					<Add option="-pg -lgmon" />
+				</Linker>
+			</Target>
+			<Target title="Debug-Clang">
+				<Option output="bin/Debug/Laboratory" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="clang" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-O0" />
+					<Add option="-fgnuc-version=8.1.0" />
+				</Compiler>
+				<Linker>
+					<Add option="-ldbghelp" />
 				</Linker>
 			</Target>
 		</Build>
@@ -223,6 +241,7 @@
 		<Unit filename="include/LAB_gui_text_box.h" />
 		<Unit filename="include/LAB_gui_world_selection.h" />
 		<Unit filename="include/LAB_i_inventory.h" />
+		<Unit filename="include/LAB_input.h" />
 		<Unit filename="include/LAB_inventory.h" />
 		<Unit filename="include/LAB_light_node.h" />
 		<Unit filename="include/LAB_main.h" />
@@ -249,7 +268,9 @@
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/LAB_view.h" />
-		<Unit filename="include/LAB_view_input.h" />
+		<Unit filename="include/LAB_view_chunk.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="include/LAB_view_mesh.h" />
 		<Unit filename="include/LAB_window.h" />
 		<Unit filename="include/LAB_world.h" />
@@ -338,6 +359,9 @@
 		<Unit filename="src/LAB_gui_world_selection.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="src/LAB_input.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="src/LAB_inventory.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -369,9 +393,6 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_view.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/LAB_view_input.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_window.c">

@@ -129,6 +129,8 @@ typedef struct LAB_View
     // Velocity
     double vx, vy, vz;
 
+    double fov_factor;
+
     int on_ground;
 
     // Cache

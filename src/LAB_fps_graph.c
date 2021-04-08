@@ -1,10 +1,13 @@
 #include "LAB_fps_graph.h"
 #include "LAB_gl.h"
+#include "LAB_debug.h"
 
 #define LAB_FPS_GRAPH_CALC_Y(frame_ms) ((float)(frame_ms)*0.005f)
 
 bool LAB_FpsGraph_Create(LAB_FpsGraph* graph, LAB_Color color)
 {
+    LAB_PRECONDITION(LAB_PROPER(graph));
+
     graph->start_pos = LAB_FPS_GRAPH_MAX_SAMPLES;
     //graph->color = color;
     // Fill in constant values
@@ -22,10 +25,13 @@ bool LAB_FpsGraph_Create(LAB_FpsGraph* graph, LAB_Color color)
 
 void LAB_FpsGraph_Destroy(LAB_FpsGraph* graph)
 {
+    LAB_PRECONDITION(LAB_PROPER(graph));
 }
 
 void LAB_FpsGraph_Shift(LAB_FpsGraph* graph)
 {
+    LAB_PRECONDITION(LAB_PROPER(graph));
+
     // shift all the samples to the left, keeping the alpha channel of the
     // color and the x position at the original position
     if(graph->start_pos != 0) graph->start_pos--;
@@ -40,12 +46,17 @@ void LAB_FpsGraph_Shift(LAB_FpsGraph* graph)
 
 void LAB_FpsGraph_SetSample(LAB_FpsGraph* graph, float frame_ms)
 {
+    LAB_PRECONDITION(LAB_PROPER(graph));
+    //LAB_PRECONDITION(graph->start_pos!=LAB_FPS_GRAPH_MAX_SAMPLES); // TODO
+
     graph->samples[LAB_FPS_GRAPH_MAX_SAMPLES-1].y = LAB_FPS_GRAPH_CALC_Y(frame_ms);
     //graph->samples[LAB_FPS_GRAPH_MAX_SAMPLES-1].color |= LAB_RGBA(255, 255, 128, 0);
 }
 
 void LAB_FpsGraph_AddSample(LAB_FpsGraph* graph, float frame_ms)
 {
+    LAB_PRECONDITION(LAB_PROPER(graph));
+
     LAB_FpsGraph_Shift(graph);
     LAB_FpsGraph_SetSample(graph, frame_ms);
 }
@@ -60,6 +71,8 @@ void LAB_FpsGraph_Render_Prepare()
 
 void LAB_FpsGraph_Render(LAB_FpsGraph* graph)
 {
+    LAB_PRECONDITION(LAB_PROPER(graph));
+
     if(graph->start_pos==LAB_FPS_GRAPH_MAX_SAMPLES) return;
 
     glVertexPointer(2, LAB_GL_TYPEOF(graph->samples[0].x), sizeof graph->samples[0], &graph->samples[graph->start_pos].x);

@@ -246,6 +246,7 @@ void LAB_UpdateChunk(LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LA
     {
         LAB_Chunk* chunks[27];
         LAB_GetChunkNeighbors(chunk, chunks);
+        //for(int i = 0; i < 27; ++i) if(chunks[i] == NULL) return;
         LAB_CCPS dirty_blocks = chunk->dirty_blocks;
 
         int faces = LAB_TickLight(world, chunks, x, y, z);

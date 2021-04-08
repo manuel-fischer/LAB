@@ -11,9 +11,9 @@
 #ifdef NDEBUG
 #  ifdef __GNUC__
      /* hint to compiler */
-#    define LAB_ASSUME(cond) do { if (!(cond)) LAB_UNREACHABLE(); } while(0)
+#    define LAB_ASSUME2(type, cond, cond_str) do { if (!(cond)) LAB_UNREACHABLE(); } while(0)
 #  else
-#    define LAB_ASSUME(cond) (void)(0)
+#    define LAB_ASSUME2(type, cond, cond_str) (void)(0)
 #  endif
 #  define LAB_ASSUME_0(cond) (void)(0)
 #  define LAB_INIT_DBG(...)
@@ -23,13 +23,24 @@
 #  else
 #    define LAB_FUNCTION() NULL
 #  endif
-#  define LAB_ASSUME(cond) do { \
+#  define LAB_ASSUME2(type, cond, cond_str) do { \
     if(!(cond)) \
-        LAB_AssumptionFailed(#cond, __FILE__, __LINE__, LAB_FUNCTION()); \
+        LAB_AssumptionFailed(type, cond_str, __FILE__, __LINE__, LAB_FUNCTION()); \
     } while(0)
 #  define LAB_ASSUME_0 LAB_ASSUME // no parameter aliasing -> keep text replacement behavior
 #  define LAB_INIT_DBG(...) __VA_ARGS__
 #endif
+
+// TODO remove ASSUME
+#define LAB_ASSUME(cond) LAB_ASSUME2("assumption", cond, #cond)
+#define LAB_ASSERT(cond) LAB_ASSUME2("assertion", cond, #cond)
+#define LAB_PRECONDITION(cond) LAB_ASSUME2("precondition", cond, #cond)
+#define LAB_POSTCONDITION(cond) LAB_ASSUME2("postcondition", cond, #cond)
+
+#define LAB_READABLE(ptr) ((ptr) != NULL)
+#define LAB_WRITABLE(ptr) ((ptr) != NULL)
+// readable (and writable if not const)
+#define LAB_PROPER(ptr) ((ptr) != NULL)
 
 
 /**
@@ -39,12 +50,13 @@
 #  define LAB_CORRECT_IF(cond, expr) (expr)
 #else
 #  define LAB_CORRECT_IF(cond, expr) ({ \
-    LAB_ASSUME(cond); \
+    LAB_PRECONDITION(cond); \
     (expr); \
 })
 #endif
 
-void LAB_AssumptionFailed(const char* expr,
+void LAB_AssumptionFailed(const char* type,
+                          const char* expr,
                           const char* file,
                           int line,
                           const char* function);

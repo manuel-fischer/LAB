@@ -109,6 +109,8 @@ bool LAB_ConstructView(LAB_View* view, LAB_World* world)
 
     view->y = 1.5;
 
+    view->fov_factor = 1.0;
+
     //LAB_View_ChunkTBL_Create(&view->entry); // not nessesary because already set to 0 above
 
     /*LAB_FpsGraph_Create(&view->fps_graph,             LAB_RGB(255, 255, 128));
@@ -409,7 +411,7 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
     //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor_Fast(~(x), ~(x)):LAB_AddColor(LAB_MulColor_Fast((x), (x)), LAB_MulColor_Fast((x), (x))))
     //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor_Fast(~(x), ~(x)):LAB_AddColor(LAB_SubColor((x), LAB_RGBAX(10101000)), LAB_SubColor((x), LAB_RGBAX(10101000))))
     //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor_Fast(~(LAB_MulColor_Fast((x), (x))), ~(x)):LAB_MulColor_Fast((x), (x)))
-    //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?LAB_MulColor_Fast(~LAB_MulColor_Fast(~(x), ~(x)), ~LAB_MulColor_Fast(~(x), ~(x))):LAB_MulColor_Fast((x), (x)))
+//    #define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?LAB_MulColor_Fast(~LAB_MulColor_Fast(~(x), ~(x)), ~LAB_MulColor_Fast(~(x), ~(x))):LAB_MulColor_Fast((x), (x)))
 
     if(block->flags&LAB_BLOCK_NOSHADE)
     {
@@ -761,6 +763,71 @@ void LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass)
 
 
 
+void LAB_ViewRenderChunkGrids(LAB_View* view)
+{
+    int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
+    int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
+    int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
+
+    int dist_sq = view->render_dist*view->render_dist + 3;
+    LAB_ViewChunkEntry* e;
+    for(int i = 0; i < view->chunks.size; ++i)
+    {
+        e = view->sorted_chunks[i].entry;
+        if((e->x-px)*(e->x-px) + (e->y-py)*(e->y-py) + (e->z-pz)*(e->z-pz) <= dist_sq
+           && e->sight_visible) // && LAB_View_IsChunkCompletelyInFrustum(view, e->x, e->y, e->z))
+        {
+            int condition = 2;
+            switch(condition)
+            {
+                case 0:
+                {
+                    if(   e->neighbors[0] && e->neighbors[1]
+                       && e->neighbors[2] && e->neighbors[3]
+                       && e->neighbors[4] && e->neighbors[5]) continue;
+                } break;
+
+                case 1:
+                {
+                    bool has_mesh = false;
+                    for(int i = 0; i < LAB_RENDER_PASS_COUNT; ++i)
+                    {
+                        if(e->render_passes[i].size)
+                        {
+                            has_mesh = true;
+                            break;
+                        }
+                    }
+                    if(!has_mesh) continue;
+                } break;
+
+                case 2:
+                {
+                    if(!e->dirty) continue;
+                } break;
+
+                case 3:
+                {
+                    if(e->exist) continue;
+                } break;
+
+                case 4:
+                {
+                    if(e->world_chunk) continue;
+                } break;
+            }
+
+            float dx = LAB_CHUNK_SIZE*e->x;//-view->x;
+            float dy = LAB_CHUNK_SIZE*e->y;//-view->y;
+            float dz = LAB_CHUNK_SIZE*e->z;//-view->z;
+            //glPushMatrix();
+            LAB_RenderBox(view, dx, dy, dz, 16, 16, 16);
+            //glPopMatrix();
+        }
+    }
+}
+
+
 LAB_STATIC void LAB_View_UploadChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 {
     LAB_ASSUME(view->flags & LAB_VIEW_USE_VBO);
@@ -1057,7 +1124,7 @@ LAB_STATIC void LAB_RenderBox(LAB_View* view, float x, float y, float z, float w
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glVertexPointer(3, GL_FLOAT, 0, box);
     glLineWidth(2);
-    glDepthRange(0, 0.9999);
+//    glDepthRange(0, 0.9999);
     glDrawArrays(GL_LINES, 0, sizeof(box)/sizeof(*box)/3);
     glDepthRange(0, 1);
     glPopMatrix();
@@ -1111,8 +1178,6 @@ LAB_STATIC void LAB_View_RenderBlockSelection(LAB_View* view)
 
 void LAB_ViewRenderHud(LAB_View* view)
 {
-    LAB_View_RenderBlockSelection(view);
-
     float pix = 1.f/(float)view->h;
 
     glMatrixMode(GL_MODELVIEW);
@@ -1311,7 +1376,7 @@ void LAB_ViewRender(LAB_View* view)
     glLoadIdentity();
     float ratio = view->h?(float)view->w/(float)view->h:1;
     float nearp = 0.075f;
-    float fov = 1;
+    float fov = view->fov_factor;
     float far = view->render_dist*16+32;
     glFrustum(-fov*nearp*ratio, fov*nearp*ratio, -fov*nearp, fov*nearp, nearp, far);
 
@@ -1346,14 +1411,13 @@ void LAB_ViewRender(LAB_View* view)
                 view->modlproj_mat[c] += view->projection_mat[i*4+(c&3)]*view->modelview_mat[i+(c&0xC)];
         }
     }
+    glMatrixMode(GL_PROJECTION);
+    //glScalef(0.2, 0.2, 1);
+    glMatrixMode(GL_MODELVIEW);
 
 
     if(view->flags&LAB_VIEW_SHOW_CHUNK_GRID)
     {
-        float xx, yy, zz;
-        xx = LAB_FastFloorF2I(view->x)&~15;
-        yy = LAB_FastFloorF2I(view->y)&~15;
-        zz = LAB_FastFloorF2I(view->z)&~15;
         glEnable(GL_DEPTH_TEST);
         glColor3f(1, 1, 1);
         glDisable(GL_TEXTURE_2D);
@@ -1361,9 +1425,15 @@ void LAB_ViewRender(LAB_View* view)
 
         glMatrixMode(GL_PROJECTION);
         glPushMatrix();
-        glScalef(0.99, 0.99, 0.99);
+        //glScalef(0.99, 0.99, 0.99);
+        glMatrixMode(GL_MODELVIEW);
 
-        LAB_RenderBox(view, xx, yy, zz, 16, 16, 16);
+        /*float xx, yy, zz;
+        xx = LAB_FastFloorF2I(view->x)&~15;
+        yy = LAB_FastFloorF2I(view->y)&~15;
+        zz = LAB_FastFloorF2I(view->z)&~15;*/
+        //LAB_RenderBox(view, xx, yy, zz, 16, 16, 16);
+        LAB_ViewRenderChunkGrids(view);
 
         glMatrixMode(GL_PROJECTION);
         glPopMatrix();
@@ -1446,6 +1516,12 @@ void LAB_ViewRender(LAB_View* view)
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glDisable(GL_FOG);
 
+    LAB_View_RenderBlockSelection(view);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glFrustum(-1*nearp*ratio, 1*nearp*ratio, -1*nearp, 1*nearp, nearp, far);
+    glMatrixMode(GL_MODELVIEW);
 
     // Render Crosshair
     if(view->flags & LAB_VIEW_SHOW_HUD)
@@ -1752,7 +1828,7 @@ LAB_STATIC bool LAB_View_IsLocalChunk(LAB_View* view, int cx, int cy, int cz)
 
 bool LAB_View_IsChunkInSight(LAB_View* view, int cx, int cy, int cz)
 {
-    //if(cy < -2 || cy >= 0) return 0; // DBG
+    /*//if(cy < -2 || cy >= 0) return 0; // DBG
     // TODO: might be inaccurate for large coordinates
     float dir[3];
     LAB_ViewGetDirection(view, dir);
@@ -1771,7 +1847,9 @@ bool LAB_View_IsChunkInSight(LAB_View* view, int cx, int cy, int cz)
     if(dir[1] > 0) dist += dir[1];
     if(dir[2] > 0) dist += dir[2];
 
-    return dist >= treshold;
+    return dist >= treshold;*/
+
+    return LAB_View_IsChunkPartlyInFrustum(view, cx, cy, cz);
 }
 
 
@@ -1794,6 +1872,10 @@ LAB_STATIC void LAB_View_ProjectPoint(LAB_View* view, float x, float y, float z,
 
 bool LAB_View_IsChunkPartlyInFrustum(LAB_View* view, int cx, int cy, int cz)
 {
+    // TODO: if the chunk is near the camera, edge points can be located outside
+    //       of the screen, while parts of the chunk are visible to the screen
+    int bits_outside_inside = 0;
+
     for(int i = 0; i < 8; ++i)
     {
         float scx, scy, scz;
@@ -1803,8 +1885,23 @@ bool LAB_View_IsChunkPartlyInFrustum(LAB_View* view, int cx, int cy, int cz)
                                     (cz+!!(i&4))*16-view->z,
                                     &scx, &scy, &scz);
 
+        /**/ if(scx < -1) bits_outside_inside |=  1;
+        else if(scx >  1) bits_outside_inside |=  2;
+        else              bits_outside_inside |=  4;
+
+        /**/ if(scy < -1) bits_outside_inside |=  8;
+        else if(scy >  1) bits_outside_inside |= 16;
+        else              bits_outside_inside |= 32;
+
+        if(scz > 0) bits_outside_inside |= 64;
+
         if(!(scz < 0 || scx < -1 || scx > 1 || scy < -1 || scy > 1)) return 1;
     }
+
+    if(bits_outside_inside
+        && ((bits_outside_inside& 3 ) ==  3  || (bits_outside_inside& 4 ))
+        && ((bits_outside_inside&030) == 030 || (bits_outside_inside&040))) return 1;
+
     return 0;
 }
 
@@ -2079,6 +2176,10 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
     int load_amount = view->load_amount; // should be configurable
     int empty_load_amount = view->empty_load_amount;
 
+
+    LAB_Block* block = LAB_GetBlock(view->world, (int)floorf(view->x), (int)floorf(view->y), (int)floorf(view->z), LAB_CHUNK_EXISTING);
+    bool is_xray = !!(block->flags & LAB_BLOCK_OPAQUE);
+
     for(int i = 0; i < sorted_size; ++i)
     {
         LAB_ViewChunkEntry* c = view->sorted_chunks[i].entry;
@@ -2099,10 +2200,11 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
             if(!load_amount) return;
 
 
-            for(int faces = LAB_OUTWARDS_FACES(c->x, c->y, c->z, px, py, pz) & c->seethrough_faces; faces; faces&=faces-1)
+            int faces = LAB_OUTWARDS_FACES(c->x, c->y, c->z, px, py, pz);
+            if(!is_xray) faces &= c->seethrough_faces;
+            int face;
+            LAB_DIR_EACH(faces, face,
             {
-                int face = LAB_Ctz(faces);
-
                 int xx = c->x+LAB_OX(face), yy = c->y+LAB_OY(face), zz = c->z+LAB_OZ(face);
 
                 if(c->neighbors[face])
@@ -2144,7 +2246,7 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
                     }
                 }
                 if(!load_amount) return;
-            }
+            });
         }
     }
 #endif

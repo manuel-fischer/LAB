@@ -7,6 +7,7 @@
 #include <stdint.h> // uint64_t
 #include <stddef.h> // size_t
 #include "LAB_opt.h"
+#include "LAB_attr.h"
 
 
 /**
@@ -23,6 +24,26 @@ const char* LAB_Filename(const char* path);
 
 #define LAB_MIN3(a, b, c) (  (a)<(b) ? ( (a)<(c) ? (a) : (c) ) : ( (b)<(c) ? (b) : (c) )  )
 #define LAB_MAX3(a, b, c) (  (a)>(b) ? ( (a)>(c) ? (a) : (c) ) : ( (b)>(c) ? (b) : (c) )  )
+
+#define LAB_CLAMP(x, a, b) ((x) < (a) ? (a) : (x) > (b) ? (b) : (a))
+
+
+LAB_PURE LAB_INLINE
+float LAB_fMix(float a, float b, float mult)
+{
+    return a + (b-a)*mult;
+}
+
+LAB_PURE LAB_INLINE
+float LAB_fSmoothMin(float a, float b, float k)
+{
+    float mult = 0.5f + 0.5f*(a-b)/k;
+    mult = LAB_CLAMP(mult, 0.f, 1.f);
+    return LAB_fMix(a, b, mult) - k*mult*(1.f-mult);
+}
+
+#define LAB_fSmoothMax(a, b, c) (-LAB_fSmoothMin(-(a), -(b), c))
+
 
 #define LAB_SELECT_MAX(a,va, b,vb) ((a)>(b) ? (va) : (vb))
 #define LAB_SELECT_MIN(a,va, b,vb) ((a)<(b) ? (va) : (vb))

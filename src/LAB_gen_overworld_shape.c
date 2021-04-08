@@ -206,6 +206,7 @@ void LAB_Gen_Cave_Carve(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y, i
 bool LAB_Gen_Cave_Carve_Func(LAB_GenOverworld* gen, int xi, int yi, int zi)
 {
 
+#if 0
     #define CM (1./128.)
     #define DM (1./32.)
     #define KM (1./10.)
@@ -227,6 +228,140 @@ bool LAB_Gen_Cave_Carve_Func(LAB_GenOverworld* gen, int xi, int yi, int zi)
 
     double treshold = 1-1/(double)(fabs(y)*32*0.001+20)*20;
     return d < treshold*0.2;
+#elif 0
+    float x = xi, y = yi, z = zi;
+    //x*=0.5;
+    //y*=0.5;
+    //z*=0.5;
+
+    //float rot = LAB_SimplexNoise3D(x*0.01, y*0.01, z*0.01);
+    //float xx = x*rot+z*(1-rot);
+    //float zz = z*rot+x*(1-rot);
+    //x=xx; z=zz;
+
+    //float r1 = LAB_SimplexNoise2D(4123789+x*0.01, z*0.01);
+    //float r2 = LAB_SimplexNoise2D(8923543+x*0.01, z*0.01);
+    //x = x*0.2+r1*10;
+    //z = z*0.2+r2*10;
+
+    const float CM = 1./128.;
+    const float DM = 1./32.;
+    const float KM = 1./10.;
+    //x*=2;
+    //y*=2; y = -y;
+    //z*=2;
+    const double C = 0.005;
+    const double CY = C;//0.01;
+
+    double noise_temp1, noise_temp2;
+    #define NOISE(rand, scale, x, y, z) \
+        LAB_SimplexNoise3D((rand)+(scale)*(scale)*(x)*C,(rand)+(scale)*(scale)*(y)*CY, (rand)+(scale)*(scale)*(z)*C)/(scale)
+
+
+    double a  = NOISE(67234, 0.9, x, y, z); a*=a;
+    double b  = NOISE(78955, 0.9, x, y, z); b*=b;
+    double c  = NOISE(46754, 1, x*0.8, y*2, z*0.7); c*=c;
+    //double c1 = NOISE(98670, 1, x*0.8, y*2, z*0.7); c1*=c1;
+    //double c2 = NOISE(76546, 1, x*0.7, y*1, z*0.8); c2*=c2;
+    //double c3 = NOISE(34289, 1, x*0.7, y*3, z*0.8); c3*=c3;
+
+    //double c  = NOISE(46754, 1.3, x, y, z); c*=c;
+    double c1 = NOISE(98670, 1.3, x, y, z); c1*=c1;
+    double c2 = NOISE(76546, 1.3, x, y, z); c2*=c2;
+    double c3 = NOISE(34289, 1.3, x, y, z); c3*=c3;
+
+    //a*= NOISE(67234, 1, x, y+1, z);
+    //a*=a;
+
+    double d  = NOISE(43525, 1, x, y, z); d*=d;
+    double e  = NOISE(76547, 1, x, y, z); e*=e;
+    double f  = NOISE(34643, 1, x, y, z); f*=f;
+
+    double blob_ones = fabs(y)*0.01;
+
+    //double h = LAB_MIN3(a+b+c, a+b*c+d, a+b-c+d);
+    //double h = LAB_MIN(a+b*c+d, a+b-c+d);
+    //double h = LAB_fSmoothMin(a+b*c+d, a+b-c*d, 0.5);
+
+    //double j =  LAB_MIN3(a+b+c1*c, a+b+c2*(1-c), a+b+c3);
+    //double j =  LAB_MIN3(a+b+c1*c, a+b*c+c2, a*c+b+c3);
+    //double j =  LAB_MIN3(a+b+c1, a+b+c2, a+b+c3);
+    double j =  LAB_fSmoothMax(a+b+c1, a+b+c2, 0.5);
+    double k = j-blob_ones*(e*f)+d;
+
+    //double h = LAB_fSmoothMin((a+b+c)*3, k, 0.25);
+    double h = LAB_MIN(j, k);
+
+    //double treshold = 1-1/(double)(fabs(y)*32*0.001+20)*20;
+    double treshold = 1-1/(double)(fabs(y)*32*0.001+20)*20;
+    return h < treshold*0.2;
+#elif 1
+    float x = xi, y = yi, z = zi;
+    //x*=0.5;
+    //y*=0.5;
+    //z*=0.5;
+
+    //float rot = LAB_SimplexNoise3D(x*0.01, y*0.01, z*0.01);
+    //float xx = x*rot+z*(1-rot);
+    //float zz = z*rot+x*(1-rot);
+    //x=xx; z=zz;
+
+    //float r1 = LAB_SimplexNoise2D(4123789+x*0.1, z*0.1);
+    //float r2 = LAB_SimplexNoise2D(8923543+x*0.1, z*0.1);
+    //x = x+r1*1;
+    //z = z+r2*1;
+    //x = x*0.2+r1*10;
+    //z = z*0.2+r2*10;
+
+    const float CM = 1./128.;
+    const float DM = 1./32.;
+    const float KM = 1./10.;
+    //x*=2;
+    //y*=2; y = -y;
+    //z*=2;
+    const double C = 0.005;
+    const double CY = C;//0.01;
+
+    double noise_temp1, noise_temp2;
+    #define NOISE(rand, scale, x, y, z) \
+        LAB_SimplexNoise3D((rand)+(scale)*(x)*C,(1234+(rand))+(scale)*(y)*CY, (235432+(rand))+(scale)*(z)*C)
+
+    #define NOISE2(rand, scale, x, y, z) ((NOISE(rand, scale, x, y, z) + NOISE(rand, (scale)*2, x, y, z)))
+
+    double val = 1;
+
+    for(int i = 0; i < 4; ++i)
+    {
+        double a = NOISE2(67234^(i<<5), 1, x, y, z); a*=a;
+        double b = NOISE2(78955^(i<<6), 1, x, y, z); b*=b;
+        double c = NOISE2(46754^(i<<7), 1, x, y, z); c*=c;
+
+        val = LAB_MIN(val, a+b+c);
+    }
+    val *= 0.01;
+
+    //a*= NOISE(67234, 1, x, y+1, z);
+    //a*=a;
+
+    double yy = LAB_MIN(fabs(y), 300);
+    yy *= (1./3.)*(2+NOISE(12312, 0.001, x, y, z));
+    //double yy = 100 - cos(y/300)*100;
+
+    double d  = NOISE(43525, 2, x, y, z); d*=d;
+    double e  = NOISE(76547, 2, x, y, z); e*=e;
+    double f  = NOISE(34643, 2, x, y, z); f*=f;
+
+    double blob_ones = 1-1/(yy*0.01+2)*2;
+
+    double j = val*3;
+    double k = 0.1-blob_ones*(e*f);//+d;
+
+    double h = LAB_MIN(j, k);
+    //double h = k;
+
+    double treshold = 1-1/(double)(yy*32*0.0001+20)*20;
+    return h < treshold*0.2;
+#endif
 }
 
 

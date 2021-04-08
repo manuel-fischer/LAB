@@ -9,6 +9,7 @@
 LAB_Chunk* LAB_CreateChunk(LAB_Block* fill_block)
 {
     LAB_Chunk* chunk;
+    LAB_ASSERT(LAB_READABLE(fill_block));
 
     chunk = LAB_Malloc(sizeof *chunk);
     if(LAB_UNLIKELY(chunk == NULL))
@@ -41,7 +42,11 @@ void LAB_DestroyChunk(LAB_Chunk* chunk)
     for(int face = 0; face < 6; ++face)
     {
         LAB_Chunk* neighbor = chunk->neighbors[face];
-        if(neighbor) neighbor->neighbors[face^1] = NULL;
+        if(neighbor)
+        {
+            LAB_ASSUME(neighbor->neighbors[face^1] == chunk);
+            neighbor->neighbors[face^1] = NULL;
+        }
     }
 
     LAB_Free(chunk);

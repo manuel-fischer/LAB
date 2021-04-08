@@ -118,6 +118,7 @@ int LAB_Input_OnEvent_Proc(void* user, LAB_Window* window, SDL_Event* event)
                     if(state[other_scancode]) view->az = 0;
                 } break;
 
+                #if 1
                 case SDLK_SPACE:
                 {
                     if(!input->space_pressed)
@@ -133,6 +134,7 @@ int LAB_Input_OnEvent_Proc(void* user, LAB_Window* window, SDL_Event* event)
                         input->prev_space_down = time;
                     }
                 } break;
+                #endif
             }
         } break;
         case SDL_KEYUP:
@@ -160,6 +162,7 @@ int LAB_Input_OnEvent_Proc(void* user, LAB_Window* window, SDL_Event* event)
                     view->y = LAB_FastFloorF2I(view->y);
                     view->z = LAB_FastFloorF2I(view->z);
                 } break;*/
+                #if 0
                 case SDLK_x:
                 {
                     input->flags ^= LAB_VIEWINPUT_DESTROY;
@@ -175,6 +178,7 @@ int LAB_Input_OnEvent_Proc(void* user, LAB_Window* window, SDL_Event* event)
                     /*input->flags ^= LAB_VIEWINPUT_NOCLIP;
                     view->vx = view->vy = view->vz = 0;*/
                 } break;
+                #endif
 
                 case SDLK_MINUS:
                 case SDLK_PLUS:
@@ -451,6 +455,13 @@ void LAB_Input_Tick(LAB_Input* input, uint32_t delta_ms)
         const Uint8* kbstate = SDL_GetKeyboardState(&kbstate_size);
         int mx, my;
         Uint32 mbstate = SDL_GetMouseState(&mx, &my);
+
+        if(kbstate[SDL_SCANCODE_C])
+            view->fov_factor = view->fov_factor*0.95 + 0.3*0.05;
+        else
+            view->fov_factor = view->fov_factor*0.95 + 1.0*0.05;
+
+
 
         float speed = input->speed * (kbstate[SDL_SCANCODE_LCTRL] ? 2.5 : 1);
         speed *= (float)delta_ms*(1.f/1000.f);

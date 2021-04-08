@@ -14,3 +14,8 @@
 const char* LAB_GetError(void);
 void LAB_ClearError(void);
 void LAB_SetError(const char* fmt, ...) __attribute__((format(printf, 1, 2)));
+
+
+// returns
+#define LAB_CHECK_ALLOC(ptr, on_error)
+#define LAB_ALLOC(lval_ptr, alloc_expr)

@@ -47,6 +47,8 @@ LAB_STATIC void LAB_Gen_Cave_RockVariety(LAB_GenOverworld* gen, LAB_Chunk* chunk
 LAB_HOT
 LAB_Chunk* LAB_GenOverworldProc(void* user, /*unused*/LAB_World* world_, int x, int y, int z)
 {
+    //if(x < 0) return LAB_CreateChunk(&LAB_BLOCK_AIR);
+
     LAB_GenOverworld* gen = user;
 
     LAB_Block* block = y < LAB_SURFACE_MAX_CY ? &LAB_BLOCK_STONE : &LAB_BLOCK_AIR;
@@ -219,6 +221,7 @@ LAB_STATIC void LAB_Gen_Cave(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int
         //LAB_Gen_Cave_Crystals(gen, chunk, x, y, z);
         LAB_Gen_Cave_RockVariety(gen, chunk, x, y, z);
     }
+    //LAB_Gen_Cave_RockVariety(gen, chunk, x, y, z);
 }
 
 
@@ -236,8 +239,9 @@ LAB_STATIC void LAB_Gen_Cave_RockVariety(LAB_GenOverworld* gen, LAB_Chunk* chunk
         int zi = zz|z<<4;
         if(chunk->blocks[xx|yy<<4|zz<<8] == &LAB_BLOCK_STONE)
         {
-            #define F (1.f/42.f)
-            double n = LAB_SimplexNoise3D(xi*F, yi*F+gen->seed+0x12345, zi*F);
+            #define F (1./42.)
+            double n = (1+LAB_SimplexNoise3DS(gen->seed+0x12345, (double)xi*F, (double)yi*F, (double)zi*F))*0.5;
+
             //if(n >= 0.375 && n <= 0.625)
             //if(n <= 0.25)
             if(n <= 0.17)

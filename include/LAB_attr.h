@@ -8,10 +8,14 @@
 
 #ifndef DOXYGEN
 
-#if !defined PROFILE && !defined __GNUC__
+#if defined PROFILE || !defined NDEBUG
+#define LAB_AVOID_INLINING
+#endif
+
+#if !defined LAB_AVOID_INLINING && !defined __GNUC__
 #  define LAB_STATIC static
 #  define LAB_INLINE static inline
-#elif !defined PROFILE && defined __GNUC__
+#elif !defined LAB_AVOID_INLINING && defined __GNUC__
 #  define LAB_STATIC static
 #  define LAB_INLINE static __attribute__((always_inline)) inline
 #else

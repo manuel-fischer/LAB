@@ -89,7 +89,11 @@ int main(int argc, char** argv)
     view.perf_info = &perf_info;
 
     view.x = view.z = 0.5;
+    #if GEN_FLAT
+    view.y = 2;
+    #else
     view.y = LAB_Gen_Surface_Shape_Func(&gen_overworld, 0, 0) + 3;
+    #endif
 
     CHECK_INIT(LAB_Input_Create(&input, &view));
     LAB_GL_CHECK();
