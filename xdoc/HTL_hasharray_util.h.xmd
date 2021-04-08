@@ -1,6 +1,6 @@
 Utility macros for hash arrays
 
-@def void HTL_HASHARRAY_EACH(type array_type, HashArray* arr, HashEntry*# e, {} ...code)
+@def void HTL_HASHARRAY_EACH(type array_type, array_type* arr, entry_type*# e, {} ...code)
 	Iterate through the hash array.
 	Receive pointers to the elements.
 	
@@ -9,7 +9,7 @@ Utility macros for hash arrays
 	@param e           entry pointer,           by name (lvalue)
 	@param code        iteration statement,     code block
 	
-@def void HTL_HASHARRAY_REMOVE(type array_type, HashArray* arr, HashEntry*# e, bool# cond, {} ...code)
+@def void HTL_HASHARRAY_REMOVE(type array_type, array_type* arr, entry_type*# e, bool# cond, {} ...code)
 	Iterate through the hash array and remove entries.
 	Receive pointers to the elements.
 	
@@ -26,7 +26,7 @@ Utility macros for hash arrays
 	
 	@todo there should be a way to break out of the loop directly
 	
-@def HTL_HASHARRAY_EACH_DEREF(type array_type, HashArray* arr, HashEntry# e, {} ...code)
+@def HTL_HASHARRAY_EACH_DEREF(type array_type, array_type* arr, entry_type# e, {} ...code)
 	Iterate through the hash array.
 	Receive value copy of the elements.
 	
@@ -35,7 +35,7 @@ Utility macros for hash arrays
 	@param e           entry value,             by name (lvalue)
 	@param code        iteration statement,     code block
 	
-@def HTL_HASHARRAY_REMOVE_DEREF(type array_type, HashArray* arr, HashEntry# e, bool# cond, {} ...code)
+@def HTL_HASHARRAY_REMOVE_DEREF(type array_type, array_type* arr, entry_type# e, bool# cond, {} ...code)
 	
 	Iterate through the hash array and remove entries.
 	Receive value copy of the elements.

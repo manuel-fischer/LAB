@@ -5,7 +5,7 @@
 **Synopsis**
 
 ```cpp
-HTL_HASHARRAY_REMOVE_DEREF(type array_type, HashArray* arr, HashEntry# e, bool# cond, {} ...code)
+HTL_HASHARRAY_REMOVE_DEREF(type array_type, array_type* arr, entry_type# e, bool# cond, {} ...code)
 ```
 
 
@@ -30,5 +30,4 @@ Otherwise the entry wouldn't be removed correctly.
 ## TODO
 
 there should be a way to break out of the loop directly
-
 

@@ -5,7 +5,7 @@
 **Synopsis**
 
 ```cpp
-HTL_HASHARRAY_EACH_DEREF(type array_type, HashArray* arr, HashEntry# e, {} ...code)
+HTL_HASHARRAY_EACH_DEREF(type array_type, array_type* arr, entry_type# e, {} ...code)
 ```
 
 Iterate through the hash array.

@@ -5,7 +5,7 @@
 **Synopsis**
 
 ```cpp
-void HTL_HASHARRAY_REMOVE(type array_type, HashArray* arr, HashEntry*# e, bool# cond, {} ...code)
+void HTL_HASHARRAY_REMOVE(type array_type, array_type* arr, entry_type*# e, bool# cond, {} ...code)
 ```
 
 Iterate through the hash array and remove entries.
