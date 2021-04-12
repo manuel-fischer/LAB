@@ -199,6 +199,9 @@
 		<Unit filename="include/LAB_aabb.h">
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
+		<Unit filename="include/LAB_arith.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="include/LAB_array.h" />
 		<Unit filename="include/LAB_asset_manager.h" />
 		<Unit filename="include/LAB_attr.h" />
@@ -260,6 +263,9 @@
 		<Unit filename="include/LAB_simplex_noise.h" />
 		<Unit filename="include/LAB_stdinc.h" />
 		<Unit filename="include/LAB_table.h" />
+		<Unit filename="include/LAB_texture_atlas.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="include/LAB_util.h" />
 		<Unit filename="include/LAB_vec.h">
 			<Option target="&lt;{~None~}&gt;" />
@@ -387,6 +393,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_simplex_noise.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_texture_atlas.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_util.c">

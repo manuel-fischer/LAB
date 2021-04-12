@@ -8,6 +8,7 @@
 #include "LAB_util.h"
 #include "LAB_attr.h"
 #include "LAB_check.h"
+#include "LAB_arith.h"
 
 #include "LAB_stdinc.h"
 
@@ -28,12 +29,12 @@ typedef uint32_t LAB_Color;
  *
  *  \see LAB_RGBX
  */
-#define LAB_RGB(r, g, b) ((uint32_t)(r) | (uint32_t)(g) << 8 | (uint32_t)(b) << 16 | 0xff000000u)
+#define LAB_RGB(r, g, b) LAB_CXADD4((uint32_t)(r), (uint32_t)(g) << 8, (uint32_t)(b) << 16, 0xff000000u)
 /**
  *  Create a color from red, green, blue and alpha channels, each in the range
  *  [0, 255].
  */
-#define LAB_RGBA(r, g, b, a) ((uint32_t)(r) | (uint32_t)(g) << 8 | (uint32_t)(b) << 16 | (uint32_t)(a) << 24)
+#define LAB_RGBA(r, g, b, a) LAB_CXADD4((uint32_t)(r), (uint32_t)(g) << 8, (uint32_t)(b) << 16, (uint32_t)(a) << 24)
 /**
  *  Create a color from red, green and blue channels
  *
@@ -95,7 +96,7 @@ LAB_INLINE LAB_Color LAB_AddColor(LAB_Color a, LAB_Color b)
     LAB_Color x0 = (s0   &0x00ff00ffu) | m0;
     LAB_Color x1 = (s1<<1&0xff00ff00u) | m1;
 
-    return x0|x1;
+    return LAB_XADD(x0, x1);
 }
 
 /**
@@ -107,6 +108,29 @@ LAB_INLINE LAB_Color LAB_SubColor(LAB_Color a, LAB_Color b)
     return ~LAB_AddColor(~a, b);
 }
 
+
+/**
+ *  fill channels where a < b with 0xff
+ */
+LAB_CONST
+LAB_INLINE LAB_Color LAB_CompMask(LAB_Color a, LAB_Color b)
+{
+    //                                                   wrong
+    //                                                     v
+//    LAB_Color ga_mask = ((LAB_XADD(a>>8&0x00ff00ffu, 0x00100000u)-(b>>8&0x00ff00ffu))    & 0x01000100u)*0xffu;
+//    LAB_Color rb_mask = ((LAB_XADD(a   &0x00ff00ffu, 0x00001000u)-(b   &0x00ff00ffu))>>8 & 0x00010001u)*0xffu;
+    /*LAB_Color ga_mask = ((((a>>8&0x00ff00ff)|0x00100000)-(b>>8&0x00ff00ff))    & 0x01000100)*0xff;
+    LAB_Color rb_mask = ((((a   &0x00ff00ff)|0x00001000)-(b   &0x00ff00ff))>>8 & 0x00010001)*0xff;*/
+    //LAB_Color ga_mask = ((((a>>8&0x00ff00ff)|0x00100000)-(b>>8&0x00ff00ff))    & 0x01000100)*0xff;
+    //LAB_Color rb_mask = ((((a   &0x00ff00ff)|0x00001000)-(b   &0x00ff00ff))>>8 & 0x00010001)*0xff;
+
+    //                        Borrow bit, such that a borrow does not bleed into a byte before
+    //                                                      v
+    LAB_Color ga_mask = ((LAB_XADD(a>>8&0x00ff00ffu, 0x00000200u)-(b>>8&0x00ff00ffu))    & 0x01000100u)*0xffu;
+    LAB_Color rb_mask = ((LAB_XADD(a   &0x00ff00ffu, 0x00000200u)-(b   &0x00ff00ffu))>>8 & 0x00010001u)*0xffu;
+
+    return LAB_XADD(rb_mask, ga_mask);
+}
 
 // branching, alpha gets 255
 LAB_DEPRECATED("use LAB_MaxColor instead")
@@ -128,10 +152,9 @@ LAB_INLINE LAB_Color LAB_MaxColorB(LAB_Color a, LAB_Color b)
 LAB_PURE
 LAB_INLINE LAB_Color LAB_MaxColor(LAB_Color a, LAB_Color b)
 {
-    LAB_Color ga_mask = ((((a>>8&0x00ff00ff)|0x00100000)-(b>>8&0x00ff00ff))    & 0x01000100)*0xff;
-    LAB_Color rb_mask = ((((a   &0x00ff00ff)|0x00001000)-(b   &0x00ff00ff))>>8 & 0x00010001)*0xff;
-
-    return a ^ ((a^b) & (rb_mask|ga_mask));
+    //return a ^ ((a^b) & LAB_CompMask(a, b));
+    LAB_Color mask = LAB_CompMask(a, b);
+    return LAB_XADD(a & ~mask, b & mask);
 }
 
 // branching, alpha gets 255
@@ -154,22 +177,9 @@ LAB_INLINE LAB_Color LAB_MinColorB(LAB_Color a, LAB_Color b)
 LAB_CONST
 LAB_INLINE LAB_Color LAB_MinColor(LAB_Color a, LAB_Color b)
 {
-    LAB_Color ga_mask = ((((a>>8&0x00ff00ff)|0x00100000)-(b>>8&0x00ff00ff))    & 0x01000100)*0xff;
-    LAB_Color rb_mask = ((((a   &0x00ff00ff)|0x00001000)-(b   &0x00ff00ff))>>8 & 0x00010001)*0xff;
-
-    return b ^ ((a^b) & (rb_mask|ga_mask));
-}
-
-/**
- *  fill channels where a < b with 0xff
- */
-LAB_CONST
-LAB_INLINE LAB_Color LAB_CompMask(LAB_Color a, LAB_Color b)
-{
-    LAB_Color ga_mask = ((((a>>8&0x00ff00ff)|0x00100000)-(b>>8&0x00ff00ff))    & 0x01000100)*0xff;
-    LAB_Color rb_mask = ((((a   &0x00ff00ff)|0x00001000)-(b   &0x00ff00ff))>>8 & 0x00010001)*0xff;
-
-    return rb_mask|ga_mask;
+    //return b ^ ((a^b) & LAB_CompMask(a, b));
+    LAB_Color mask = LAB_CompMask(a, b);
+    return LAB_XADD(a & mask, b & ~mask);
 }
 
 /**
@@ -230,19 +240,20 @@ LAB_INLINE LAB_Color LAB_MulColor_Fast(LAB_Color a, LAB_Color b)
 
     #if 0
     // 255*255 -> 254
-    return (p02 >>   8     & 0xffu    )
-         | (p13 >> (24- 8) & 0xffu<< 8)
-         | (p02 >> (40-16) & 0xffu<<16)
-         | (p13 >> (56-24) & 0xffu<<24);
+    return LAB_XADD4(p02 >>   8     & 0xffu    ,
+                     p13 >> (24- 8) & 0xffu<< 8,
+                     p02 >> (40-16) & 0xffu<<16,
+                     p13 >> (56-24) & 0xffu<<24)
+           + 0x01010101;
     #else
     // 255*255 -> 255
-    uint32_t r02 = (/*LO*/ (p02 & 0xffffffffu) & 0xffff)
-                 | (/*HI*/ (p02 >> 32)         & 0xffff) << 16;
+    uint32_t r02 = LAB_XADD( /*LO*/ (p02 & 0xffffffffu) & 0xffff,
+                            (/*HI*/ (p02 >> 32)         & 0xffff) << 16);
     r02 = (r02 + a02) >> 8;
-    uint32_t r13 = (/*LO*/ (p13 & 0xffffffffu) >> 16)
-                 | (/*HI*/ (p13 >> 32)         >> 16) << 16;
+    uint32_t r13 = LAB_XADD( /*LO*/ (p13 & 0xffffffffu) >> 16,
+                            (/*HI*/ (p13 >> 32)         >> 16) << 16);
     r13 = (r13 + (a13>>8));
-    return (r02 & 0x00ff00ffu) | (r13 & 0xff00ff00u);
+    return LAB_XADD(r02 & 0x00ff00ffu, r13 & 0xff00ff00u);
 
     #endif
 }
@@ -385,8 +396,8 @@ LAB_INLINE LAB_Color LAB_InterpolateColor2i(LAB_Color a, LAB_Color b, int m)
     //uint32_t x = (a&0x00ff00ff)-((((b&0x00ff00ff|0x00000100)-(a&0x00ff00ff))*m>>8)&0x00ff00ff);
     //uint32_t y = (a&0xff00ff00)-((((b&0xff00ff00|0x00010000)-(a&0xff00ff00))*m>>8)&0xff00ff00);
 
-    uint32_t x = ((a&0x00ff00ff)+(((((b&0x00ff00ff)|0x00000100)-(a&0x00ff00ff))*m)>>8))&0x00ff00ff;
-    uint32_t y = ((a&0xff00ff00)+(((((b&0xff00ff00)|0x00010000)-(a&0xff00ff00))>>8)*m))&0xff00ff00;
+    uint32_t x = ((a&0x00ff00ff)+(((LAB_XADD(b&0x00ff00ff, 0x00000100)-(a&0x00ff00ff))*m)>>8))&0x00ff00ff;
+    uint32_t y = ((a&0xff00ff00)+(((LAB_XADD(b&0xff00ff00, 0x00010000)-(a&0xff00ff00))>>8)*m))&0xff00ff00;
 
     //uint32_t x = (a&0xff)+(((b&0xff)-(a&0xff))*m>>8);
     //uint32_t x = (a&0x00ff00ff)-((((b&0x00ff00ff|0x00000100)-(a&0x00ff00ff))*m>>8)&0x00ff00ff);

@@ -1,0 +1,22 @@
+@def token HTL_CAT_U(token a, token b)
+	@briefx Concat two tokens(`a` and `b`) with an underscore
+
+@def object HTL_P(token name)
+	Get a parameter of the current parameter set.
+	The parameter set is specified by the current token in `HTL_PARAM`
+	
+	@param name  the name of the parameter
+
+@def token HTL_MEMBER(name)
+	Generate an identifier in the current namespace.
+	The current namespace is specified by the current value
+	of the parameter `NAME`
+	
+	@param name  the member name
+	
+@def HTL_DEF
+	This macro can specify function attributes declared in
+	template headers.
+	
+	This macro can be defined before including `HTL_pp.h`
+	to insert attributes. Usually this macro is empty.

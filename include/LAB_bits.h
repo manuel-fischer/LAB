@@ -90,6 +90,38 @@ LAB_INLINE uint32_t LAB_CeilPow2(uint32_t x)
 }
 
 
+LAB_CONST
+LAB_INLINE uint32_t LAB_CeilPow2z(size_t x)
+{
+    LAB_ASSUME(x != 0);
+    x--;
+    x |= x >> 1;
+    x |= x >> 2;
+    x |= x >> 4;
+    x |= x >> 8;
+    x |= x >> 16;
+    if(sizeof(x)*8 == 64) x |= x >> 32;
+    _Static_assert(sizeof(x)*8 <= 64, "");
+    x++;
+    return x;
+}
+
+LAB_CONST
+LAB_INLINE uint32_t LAB_Capacity(size_t x)
+{
+    LAB_ASSUME(x != 0);
+    x--;
+    x |= x >> 1;
+    x |= x >> 2;
+    x |= x >> 4;
+    x |= x >> 8;
+    x |= x >> 16;
+    if(sizeof(x)*8 == 64) x |= x >> 32;
+    _Static_assert(sizeof(x)*8 <= 64, "");
+    x++;
+    return x;
+}
+
 #else /* DOXYGEN SECTION */
 
 
@@ -146,6 +178,20 @@ int LAB_Sar(int x, int n);
  *
  *  UB if x is 0
  */
+
 uint32_t LAB_CeilPow2(uint32_t x);
+/**
+ *  Round integer to the next power of 2
+ *
+ *  UB if x is 0
+ */
+uint32_t LAB_CeilPow2z(size_t x
+
+/**
+ *  Round integer to the next power of 2
+ *
+ *  0 if x is 0
+ */
+uint32_t LAB_Capacity(size_t size);
 
 #endif

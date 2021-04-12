@@ -15,6 +15,13 @@ static ptrdiff_t mem_checksum = 0; // all pointers xored together
 
 LAB_STATIC void LAB_DbgMemPrint(const char* format, const char* file, int line, ...);
 
+void* LAB_RealMallocN(size_t count, size_t size)
+{
+    size_t size_bytes = count*size;
+    if(LAB_UNLIKELY(size_bytes/size < count)) return NULL; // Overflow
+    return LAB_RealMalloc(size_bytes);
+}
+
 void* LAB_RealReallocN(void* memory, size_t count, size_t size)
 {
     size_t size_bytes = count*size;
@@ -104,6 +111,21 @@ void  LAB_DbgFree(void* memory, const char* file, int line)
         mem_frees++;
 
     mem_checksum ^= (ptrdiff_t)memory;
+}
+
+void* LAB_DbgMallocN(size_t count, size_t size, const char* file, int line)
+{
+    void* new_memory = LAB_RealMallocN(count, size);
+    LAB_DbgMemPrint("mallocN(%u, %u) -> %p\n", file, line, (u)count, (u)size, new_memory);
+
+    if(new_memory != NULL)
+        mem_allocs++;
+    else if(size != 0 && count != 0)
+        mem_fails++;
+
+    mem_checksum ^= (ptrdiff_t)new_memory;
+
+    return new_memory;
 }
 
 void* LAB_DbgReallocN(void* memory, size_t count, size_t size, const char* file, int line)

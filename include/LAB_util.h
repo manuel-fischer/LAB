@@ -22,6 +22,9 @@ const char* LAB_Filename(const char* path);
 #define LAB_MAX(a, b) ((a)>(b) ? (a) : (b))
 #define LAB_MIN(a, b) ((a)<(b) ? (a) : (b))
 
+#define LAB_MAX_EQ(a, b) ((a)>(b) ? (a) : ((a)=(b)))
+#define LAB_MIN_EQ(a, b) ((a)<(b) ? (a) : ((a)=(b)))
+
 #define LAB_MIN3(a, b, c) (  (a)<(b) ? ( (a)<(c) ? (a) : (c) ) : ( (b)<(c) ? (b) : (c) )  )
 #define LAB_MAX3(a, b, c) (  (a)>(b) ? ( (a)>(c) ? (a) : (c) ) : ( (b)>(c) ? (b) : (c) )  )
 
