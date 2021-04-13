@@ -196,12 +196,8 @@
 		</Unit>
 		<Unit filename="include/HTL_queue.t.h" />
 		<Unit filename="include/LAB.h" />
-		<Unit filename="include/LAB_aabb.h">
-			<Option target="&lt;{~None~}&gt;" />
-		</Unit>
-		<Unit filename="include/LAB_arith.h">
-			<Option target="&lt;{~None~}&gt;" />
-		</Unit>
+		<Unit filename="include/LAB_aabb.h" />
+		<Unit filename="include/LAB_arith.h" />
 		<Unit filename="include/LAB_array.h" />
 		<Unit filename="include/LAB_asset_manager.h" />
 		<Unit filename="include/LAB_attr.h" />
@@ -244,6 +240,7 @@
 		<Unit filename="include/LAB_gui_text_box.h" />
 		<Unit filename="include/LAB_gui_world_selection.h" />
 		<Unit filename="include/LAB_i_inventory.h" />
+		<Unit filename="include/LAB_image.h" />
 		<Unit filename="include/LAB_input.h" />
 		<Unit filename="include/LAB_inventory.h" />
 		<Unit filename="include/LAB_light_node.h" />
@@ -263,20 +260,12 @@
 		<Unit filename="include/LAB_simplex_noise.h" />
 		<Unit filename="include/LAB_stdinc.h" />
 		<Unit filename="include/LAB_table.h" />
-		<Unit filename="include/LAB_texture_atlas.h">
-			<Option target="&lt;{~None~}&gt;" />
-		</Unit>
+		<Unit filename="include/LAB_texture_atlas.h" />
 		<Unit filename="include/LAB_util.h" />
-		<Unit filename="include/LAB_vec.h">
-			<Option target="&lt;{~None~}&gt;" />
-		</Unit>
-		<Unit filename="include/LAB_vec_algo.h">
-			<Option target="&lt;{~None~}&gt;" />
-		</Unit>
+		<Unit filename="include/LAB_vec.h" />
+		<Unit filename="include/LAB_vec_algo.h" />
 		<Unit filename="include/LAB_view.h" />
-		<Unit filename="include/LAB_view_chunk.h">
-			<Option target="&lt;{~None~}&gt;" />
-		</Unit>
+		<Unit filename="include/LAB_view_chunk.h" />
 		<Unit filename="include/LAB_view_mesh.h" />
 		<Unit filename="include/LAB_window.h" />
 		<Unit filename="include/LAB_world.h" />
@@ -363,6 +352,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_gui_world_selection.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_image.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_input.c">

@@ -55,7 +55,7 @@ void LAB_PrintStackTrace()
         static void* stack[128];
         unsigned short frames = CaptureStackBackTrace(0, 128, stack, NULL);
 
-        printf("%i\n", (long long)stack[0]-(long long)&LAB_PrintStackTrace);
+        //printf("%lli\n", (long long)stack[0]-(long long)&LAB_PrintStackTrace);
 
 
         fprintf(stderr, "Backtrace [%i]:\n", frames);

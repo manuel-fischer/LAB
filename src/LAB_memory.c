@@ -31,21 +31,31 @@ void* LAB_RealReallocN(void* memory, size_t count, size_t size)
 
 typedef unsigned u;
 
+//#define LAB_SHOW_DBG_MEM
 LAB_STATIC void LAB_DbgMemPrint(const char* format, const char* file, int line, ...)
 {
-    #if 0
+    #if !defined NDEBUG && defined LAB_SHOW_DBG_MEM
     fprintf(stderr, "%-16s|%3i:\t", LAB_Filename(file), line);
     va_list args;
     va_start(args, line);
     vfprintf(stderr, format, args);
     va_end(args);
+    fflush(stderr);
+    #endif
+}
+
+LAB_STATIC void LAB_DbgMemPrintResult(void* result)
+{
+    #if !defined NDEBUG && defined LAB_SHOW_DBG_MEM
+    fprintf(stderr, " -> %p\n", result);
     #endif
 }
 
 void* LAB_DbgMalloc(size_t size, const char* file, int line)
 {
+    LAB_DbgMemPrint("malloc(%u)", file, line, (u)size);
     void* new_memory = malloc(size);
-    LAB_DbgMemPrint("malloc(%u) -> %p\n", file, line, (u)size, new_memory);
+    LAB_DbgMemPrintResult(new_memory);
 
     if(new_memory != NULL)
         mem_allocs++;
@@ -58,8 +68,9 @@ void* LAB_DbgMalloc(size_t size, const char* file, int line)
 
 void* LAB_DbgRealloc(void* memory, size_t size, const char* file, int line)
 {
+    LAB_DbgMemPrint("realloc(%p, %u)", file, line, memory, (u)size);
     void* new_memory = realloc(memory, size);
-    LAB_DbgMemPrint("realloc(%p, %u) -> %p\n", file, line, memory, (u)size, new_memory);
+    LAB_DbgMemPrintResult(new_memory);
 
     if(memory == NULL)
     {
@@ -89,8 +100,9 @@ void* LAB_DbgRealloc(void* memory, size_t size, const char* file, int line)
 
 void* LAB_DbgCalloc(size_t count, size_t size, const char* file, int line)
 {
+    LAB_DbgMemPrint("calloc(%u, %u)", file, line, (u)count, (u)size);
     void* new_memory = calloc(count, size);
-    LAB_DbgMemPrint("calloc(%u, %u) -> %p\n", file, line, (u)count, (u)size, new_memory);
+    LAB_DbgMemPrintResult(new_memory);
 
     if(new_memory != NULL)
         mem_allocs++;
@@ -104,8 +116,8 @@ void* LAB_DbgCalloc(size_t count, size_t size, const char* file, int line)
 
 void  LAB_DbgFree(void* memory, const char* file, int line)
 {
-    free(memory);
     LAB_DbgMemPrint("free(%p)\n", file, line, memory);
+    free(memory);
 
     if(memory != NULL)
         mem_frees++;
@@ -115,8 +127,9 @@ void  LAB_DbgFree(void* memory, const char* file, int line)
 
 void* LAB_DbgMallocN(size_t count, size_t size, const char* file, int line)
 {
+    LAB_DbgMemPrint("mallocN(%u, %u)", file, line, (u)count, (u)size);
     void* new_memory = LAB_RealMallocN(count, size);
-    LAB_DbgMemPrint("mallocN(%u, %u) -> %p\n", file, line, (u)count, (u)size, new_memory);
+    LAB_DbgMemPrintResult(new_memory);
 
     if(new_memory != NULL)
         mem_allocs++;
@@ -130,8 +143,9 @@ void* LAB_DbgMallocN(size_t count, size_t size, const char* file, int line)
 
 void* LAB_DbgReallocN(void* memory, size_t count, size_t size, const char* file, int line)
 {
+    LAB_DbgMemPrint("reallocN(%p, %u, %u)", file, line, memory, (u)count, (u)size);
     void* new_memory = LAB_RealReallocN(memory, count, size);
-    LAB_DbgMemPrint("reallocN(%p, %u, %u) -> %p\n", file, line, memory, (u)count, (u)size, new_memory);
+    LAB_DbgMemPrintResult(new_memory);
 
     if(memory == NULL)
     {
@@ -163,8 +177,10 @@ void* LAB_DbgReallocN(void* memory, size_t count, size_t size, const char* file,
 
 char* LAB_DbgStrDup(const char* str, const char* file, int line)
 {
+    LAB_DbgMemPrint("strdup(%p", file, line, (void*) str);
+    fprintf(stderr, " = \"%s\")", str); fflush(stderr);
     char* new_string = LAB_RealStrDup(str);
-    LAB_DbgMemPrint("strdup(%s) -> %p\n", file, line, str, new_string);
+    LAB_DbgMemPrintResult(new_string);
 
     if(new_string != NULL)
         mem_allocs++;

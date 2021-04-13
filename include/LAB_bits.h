@@ -91,7 +91,7 @@ LAB_INLINE uint32_t LAB_CeilPow2(uint32_t x)
 
 
 LAB_CONST
-LAB_INLINE uint32_t LAB_CeilPow2z(size_t x)
+LAB_INLINE size_t LAB_CeilPow2z(size_t x)
 {
     LAB_ASSUME(x != 0);
     x--;
@@ -107,9 +107,8 @@ LAB_INLINE uint32_t LAB_CeilPow2z(size_t x)
 }
 
 LAB_CONST
-LAB_INLINE uint32_t LAB_Capacity(size_t x)
+LAB_INLINE size_t LAB_Capacity(size_t x)
 {
-    LAB_ASSUME(x != 0);
     x--;
     x |= x >> 1;
     x |= x >> 2;
@@ -185,13 +184,13 @@ uint32_t LAB_CeilPow2(uint32_t x);
  *
  *  UB if x is 0
  */
-uint32_t LAB_CeilPow2z(size_t x
+size_t LAB_CeilPow2z(size_t x);
 
 /**
  *  Round integer to the next power of 2
  *
  *  0 if x is 0
  */
-uint32_t LAB_Capacity(size_t size);
+size_t LAB_Capacity(size_t x);
 
 #endif

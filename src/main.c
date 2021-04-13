@@ -21,6 +21,19 @@
 
 #define GEN_FLAT 0
 
+#include "LAB_texture_atlas.h" // TODO remove from here
+
+LAB_INLINE bool LAB_DoTests()
+{
+#if 0
+    LAB_TestTextureAtlas();
+    return false;
+#else
+    return true;
+#endif
+}
+
+
 int main(int argc, char** argv)
 {
     #define CHECK_INIT(expr) if(expr); else { init_msg = #expr; goto INIT_ERROR; }
@@ -113,6 +126,9 @@ int main(int argc, char** argv)
 
     main_window.render       = &LAB_ViewRenderProc;
     main_window.render_user  = &view;
+
+
+    CHECK_INIT(LAB_DoTests());
 
 
     uint32_t time_ms = SDL_GetTicks();

@@ -771,7 +771,7 @@ void LAB_ViewRenderChunkGrids(LAB_View* view)
 
     int dist_sq = view->render_dist*view->render_dist + 3;
     LAB_ViewChunkEntry* e;
-    for(int i = 0; i < view->chunks.size; ++i)
+    for(size_t i = 0; i < view->chunks.size; ++i)
     {
         e = view->sorted_chunks[i].entry;
         if((e->x-px)*(e->x-px) + (e->y-py)*(e->y-py) + (e->z-pz)*(e->z-pz) <= dist_sq
@@ -790,9 +790,9 @@ void LAB_ViewRenderChunkGrids(LAB_View* view)
                 case 1:
                 {
                     bool has_mesh = false;
-                    for(int i = 0; i < LAB_RENDER_PASS_COUNT; ++i)
+                    for(int pass = 0; pass < LAB_RENDER_PASS_COUNT; ++pass)
                     {
-                        if(e->render_passes[i].size)
+                        if(e->render_passes[pass].size)
                         {
                             has_mesh = true;
                             break;
