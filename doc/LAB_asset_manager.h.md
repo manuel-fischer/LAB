@@ -1,4 +1,4 @@
-[&#8592; LAB.h](LAB.h.md) | [&#8593; table](table.md)
+[&#8592; LAB.h](LAB.h.md) | [&#8593; table](table.md) | [&#8594; LAB_debug.h](LAB_debug.h.md)
 ***
 
 # `LAB_asset_manager.h`

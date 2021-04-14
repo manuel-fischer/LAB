@@ -18,6 +18,8 @@
 #  endif
 #  define LAB_ASSUME_0(cond) (void)(0)
 #  define LAB_INIT_DBG(...)
+#  define LAB_ASSERT_OR_ABORT(cond) \
+    ((!(cond)) ? abort() : (void)0)
 #else
 #  ifdef __GNUC__
 #    define LAB_FUNCTION() __builtin_FUNCTION()
@@ -29,14 +31,19 @@
         LAB_AssumptionFailed(type, cond_str, __FILE__, __LINE__, LAB_FUNCTION()); \
     } while(0) */
 #  define LAB_ASSUME2(type, cond, cond_str) \
-    ((!(cond)) ? LAB_AssumptionFailed(type, cond_str, __FILE__, __LINE__, LAB_FUNCTION()) : (void)0)
+    ((!(cond)) ? LAB_AssumptionFailed(type, cond_str, __FILE__, __LINE__, LAB_FUNCTION(), 1) : (void)0)
 #  define LAB_ASSUME_0 LAB_ASSUME // no parameter aliasing -> keep text replacement behavior
 #  define LAB_INIT_DBG(...) __VA_ARGS__
+
+#  define LAB_ASSERT_OR_ABORT LAB_ASSERT
 #endif
 
+#  define LAB_ASSERT_OR_WARN(cond) \
+    ((!(cond)) ? LAB_AssumptionFailed("warned assertion", cond_str, __FILE__, __LINE__, LAB_FUNCTION(), 0) : (void)0)
+
 // TODO remove ASSUME
-#define LAB_ASSUME(cond) LAB_ASSUME2("assumption", cond, #cond)
 #define LAB_ASSERT(cond) LAB_ASSUME2("assertion", cond, #cond)
+#define LAB_ASSUME(cond) LAB_ASSUME2("assumption", cond, #cond)
 #define LAB_PRECONDITION(cond) LAB_ASSUME2("precondition", cond, #cond)
 #define LAB_POSTCONDITION(cond) LAB_ASSUME2("postcondition", cond, #cond)
 
@@ -66,7 +73,8 @@ void LAB_AssumptionFailed(const char* type,
                           const char* expr,
                           const char* file,
                           int line,
-                          const char* function);
+                          const char* function,
+                          int trap);
 
 
 

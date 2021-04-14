@@ -18,7 +18,8 @@ void LAB_AssumptionFailed(const char* type,
                           const char* expr,
                           const char* file,
                           int line,
-                          const char* function)
+                          const char* function,
+                          int trap)
 {
     fprintf(stderr, "Checking %s failed at %s|%i%s%s:\n    %s\n",
             type, file, line, function?" in ":"", function, expr);
@@ -27,10 +28,14 @@ void LAB_AssumptionFailed(const char* type,
     LAB_PrintStackTrace();
     #endif
 
-    #ifdef __GNUC__
-    __builtin_trap();
-    #endif
-    while(1);
+    if(trap)
+    {
+        #ifdef __GNUC__
+        __builtin_trap();
+        #else
+        while(1);
+        #endif
+    }
 }
 
 #ifndef NDEBUG

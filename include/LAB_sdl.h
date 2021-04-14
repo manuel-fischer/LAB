@@ -10,7 +10,7 @@ extern int LAB_sdl_debug_alloc_count;
 
 #define LAB_SDL_DEBUG_ALLOC(obj) do \
 { \
-    LAB_ASSUME/*TODO: WARN*/(*(obj)); \
+    /*LAB_ASSUME_OR_WARN(*(obj));*/ \
     if(*(obj)) LAB_sdl_debug_alloc_count++; \
 } while(0)
 #define LAB_SDL_DEBUG_FREE(obj) do \

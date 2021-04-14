@@ -213,6 +213,9 @@
 		<Unit filename="include/LAB_crammed_chunk_pos_set.h" />
 		<Unit filename="include/LAB_debug.h" />
 		<Unit filename="include/LAB_debug_options.h" />
+		<Unit filename="include/LAB_def.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="include/LAB_direction.h" />
 		<Unit filename="include/LAB_entity.h" />
 		<Unit filename="include/LAB_error.h" />
@@ -254,6 +257,9 @@
 		<Unit filename="include/LAB_perf_info.h" />
 		<Unit filename="include/LAB_pp.h" />
 		<Unit filename="include/LAB_random.h" />
+		<Unit filename="include/LAB_registry.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="include/LAB_render_item.h" />
 		<Unit filename="include/LAB_render_pass.h" />
 		<Unit filename="include/LAB_sdl.h" />
@@ -376,6 +382,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_random.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_registry.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_render_item.c">

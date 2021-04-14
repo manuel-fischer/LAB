@@ -1,0 +1,13 @@
+@def LAB_ASSERT
+	@disp LAB_ASSERT
+	@syn
+		void LAB_ASSERT(bool# cond)
+		void LAB_ASSUME(bool# cond)
+		void LAB_PRECONDITION(bool# cond)
+		void LAB_POSTCONDITION(bool# cond)
+	@briefx Assert a condition to be true.
+	If the condition is false, the program traps if NDEBUG is not defined, otherwise
+	the codepath with the false condition yields undefined behavior.
+	The undefined behavior allows the compiler to generate code that is optimal for
+	the codepath true condition
+	@param cond The condition to check
