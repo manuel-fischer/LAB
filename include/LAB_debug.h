@@ -9,6 +9,7 @@
 **/
 #include "LAB_opt.h"
 #ifdef NDEBUG
+#  define LAB_DBG_PRINTF(...) ((void)0)
 #  ifdef __GNUC__
      /* hint to compiler */
 //#    define LAB_ASSUME2(type, cond, cond_str) do { if (!(cond)) LAB_UNREACHABLE(); } while(0)
@@ -21,6 +22,8 @@
 #  define LAB_ASSERT_OR_ABORT(cond) \
     ((!(cond)) ? abort() : (void)0)
 #else
+#  include <stdio.h> // -> fprintf
+#  define LAB_DBG_PRINTF(...) fprintf(stderr, __VA_ARGS__)
 #  ifdef __GNUC__
 #    define LAB_FUNCTION() __builtin_FUNCTION()
 #  else

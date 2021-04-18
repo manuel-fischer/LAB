@@ -60,6 +60,24 @@ extern int LAB_gl_debug_alloc_count;
     function(count, array); \
 } while(0)
 
+#ifdef NDEBUG
+#define LAB_GL_REQUIRE(flag) ((void)0)
+#define LAB_GL_REQUIRE_NOT(flag) ((void)0)
+#else
+#include "LAB_debug.h"
+#define LAB_GL_REQUIRE(flag) do \
+{ \
+    GLboolean LAB_GL_REQUIRE_status; \
+    glGetBooleanv(flag, &LAB_GL_REQUIRE_status); \
+    LAB_ASSUME2("GL state check", LAB_GL_REQUIRE_status, #flag); \
+} while(0)
+#define LAB_GL_REQUIRE_NOT(flag) do \
+{ \
+    GLboolean LAB_GL_REQUIRE_status; \
+    glGetBooleanv(flag, &LAB_GL_REQUIRE_status); \
+    LAB_ASSUME2("GL state check", !LAB_GL_REQUIRE_status, "not " #flag); \
+} while(0)
+#endif
 
 /**
  *  Returns the OpenGL type index

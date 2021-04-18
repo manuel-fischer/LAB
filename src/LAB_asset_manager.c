@@ -9,17 +9,38 @@
 #include "LAB_memory.h"
 #include "LAB_debug.h"
 #include "LAB_image.h"
+
 #include <SDL2/SDL_image.h>
 
 SDL_Surface* LAB_block_terrain = NULL;
 unsigned     LAB_block_terrain_gl_id = 0;
 
-// alpha corrected mip maps
+// TODO remove this
+#include "LAB_texture_atlas.h"
+LAB_TexAtlas LAB_block_atlas;
+
 LAB_STATIC void LAB_GL_GenerateMipmap2D(size_t w, size_t h, LAB_Color* data, int num_mipmaps);
-LAB_STATIC void LAB_Fix0Alpha(size_t w, size_t h, LAB_Color* data);
 
 void LAB_InitAssets(void)
 {
+    static bool init = 0;
+    LAB_ASSERT(init == 0);
+    LAB_ASSERT_OR_ABORT(LAB_TexAtlas_Create(&LAB_block_atlas, 32));
+    LAB_Temp_RecreateTerrain(&LAB_block_atlas);
+
+    LAB_block_terrain = LAB_ImageData2SDL(LAB_block_atlas.w, LAB_block_atlas.h, LAB_block_atlas.data);
+
+    LAB_TexAtlas_MakeMipmap(&LAB_block_atlas);
+
+
+    glEnable(GL_TEXTURE_2D);
+    LAB_TexAtlas_Upload2GL(&LAB_block_atlas);
+    LAB_block_terrain_gl_id = LAB_block_atlas.gl_id;
+
+    LAB_TexAtlas_LoadTexMatrix(&LAB_block_atlas);
+
+
+    #if 0
     // TODO: move global state into its own structure
     if(LAB_block_terrain) return;
 
@@ -53,78 +74,18 @@ void LAB_InitAssets(void)
 
     LAB_block_terrain = img;
     LAB_GL_CHECK();
+    #endif
 }
 
 void LAB_QuitAssets(void)
 {
-    LAB_GL_FREE(glDeleteTextures, 1, &LAB_block_terrain_gl_id);
+    //LAB_GL_FREE(glDeleteTextures, 1, &LAB_block_terrain_gl_id);
     LAB_SDL_FREE(SDL_FreeSurface, &LAB_block_terrain);
 
-    LAB_block_terrain_gl_id = 0;
-    LAB_block_terrain = NULL;
+    /*LAB_block_terrain_gl_id = 0;
+    LAB_block_terrain = NULL;*/
+    LAB_TexAtlas_Destroy(&LAB_block_atlas);
 }
-
-
-
-
-LAB_STATIC void LAB_Fix0Alpha(size_t w, size_t h, LAB_Color* data)
-{
-    // Fix fully transparent pixels
-    for(size_t x = 0;         x < w; ++x)
-    for(size_t y = 0, yi = 0; y < h; ++y, yi+=w)
-    {
-        if(LAB_ALP(data[x+yi]) == 0)
-        {
-            LAB_Color b = data[(x^1) +  yi   ];
-            LAB_Color c = data[ x    + (yi^w)];
-            LAB_Color d = data[(x^1) + (yi^w)];
-
-            int sum_alp = LAB_ALP(b)+LAB_ALP(c)+LAB_ALP(d);
-            if(sum_alp != 0)
-            {
-                int sum_red =                              (int)LAB_RED(b)*LAB_ALP(b)
-                            + (int)LAB_RED(c)*LAB_ALP(c) + (int)LAB_RED(d)*LAB_ALP(d);
-                int sum_grn =                              (int)LAB_GRN(b)*LAB_ALP(b)
-                            + (int)LAB_GRN(c)*LAB_ALP(c) + (int)LAB_GRN(d)*LAB_ALP(d);
-                int sum_blu =                              (int)LAB_BLU(b)*LAB_ALP(b)
-                            + (int)LAB_BLU(c)*LAB_ALP(c) + (int)LAB_BLU(d)*LAB_ALP(d);
-                data[x+yi] = LAB_RGBA(sum_red/sum_alp, sum_grn/sum_alp, sum_blu/sum_alp, 0);
-            }
-        }
-    }
-}
-
-
-// w, h the size of the new texture
-LAB_STATIC void LAB_CalculateMipmap2D(size_t w, size_t h, LAB_Color* in_data, LAB_Color* out_data)
-{
-    for(size_t x = 0;         x < w; ++x)
-    for(size_t y = 0, yi = 0; y < h; ++y, yi+=w)
-    {
-        LAB_Color a = in_data[2*x   + 4*yi    ];
-        LAB_Color b = in_data[2*x+1 + 4*yi    ];
-        LAB_Color c = in_data[2*x   + 4*yi+2*w];
-        LAB_Color d = in_data[2*x+1 + 4*yi+2*w];
-
-        int sum_alp = (int)LAB_ALP(a)+LAB_ALP(b)+LAB_ALP(c)+LAB_ALP(d);
-        if(sum_alp == 0)
-        {
-            out_data[x+yi] = 0;
-        }
-        else
-        {
-            int sum_red = (int)LAB_RED(a)*LAB_ALP(a) + (int)LAB_RED(b)*LAB_ALP(b)
-                        + (int)LAB_RED(c)*LAB_ALP(c) + (int)LAB_RED(d)*LAB_ALP(d);
-            int sum_grn = (int)LAB_GRN(a)*LAB_ALP(a) + (int)LAB_GRN(b)*LAB_ALP(b)
-                        + (int)LAB_GRN(c)*LAB_ALP(c) + (int)LAB_GRN(d)*LAB_ALP(d);
-            int sum_blu = (int)LAB_BLU(a)*LAB_ALP(a) + (int)LAB_BLU(b)*LAB_ALP(b)
-                        + (int)LAB_BLU(c)*LAB_ALP(c) + (int)LAB_BLU(d)*LAB_ALP(d);
-            out_data[x+yi] = LAB_RGBA(sum_red/sum_alp, sum_grn/sum_alp, sum_blu/sum_alp, sum_alp/4);
-        }
-    }
-}
-
-LAB_STATIC void LAB_DebugSaveImage(size_t w, size_t h, LAB_Color* data, const char* fname_fmt, ...);
 
 LAB_STATIC void LAB_GL_GenerateMipmap2D(size_t w, size_t h, LAB_Color* data, int num_mipmaps)
 {
@@ -137,10 +98,10 @@ LAB_STATIC void LAB_GL_GenerateMipmap2D(size_t w, size_t h, LAB_Color* data, int
     for(int i = 1; i <= num_mipmaps; ++i)
     {
         w/=2; h/=2;
-        LAB_CalculateMipmap2D(w, h, data, new_data);
+        LAB_MakeMipmap2D(w, h, data, new_data);
         if(i != num_mipmaps) LAB_Fix0Alpha(w, h, new_data);
         glTexImage2D(GL_TEXTURE_2D, i, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, new_data);
-        LAB_DebugSaveImage(w, h, new_data, "dbg_terrain_%i.png", i);
+        LAB_ImageSave_Fmt(w, h, new_data, "dbg_terrain_%i.png", i);
         //data = new_data;
         if(new_data == tmp_buf)
             new_data = tmp_buf_2, data = tmp_buf;
@@ -155,21 +116,6 @@ LAB_STATIC void LAB_GL_GenerateMipmap2D(size_t w, size_t h, LAB_Color* data, int
 
 
 
-
-
-
-LAB_STATIC void LAB_DebugSaveImage(size_t w, size_t h, LAB_Color* data, const char* fname_fmt, ...)
-{
-    char fname_buf[300];
-    va_list lst;
-    va_start(lst, fname_fmt);
-    vsnprintf(fname_buf, sizeof(fname_buf), fname_fmt, lst);
-    va_end(lst);
-
-    printf("LAB_DebugSaveImage \"%s\"\n", fname_buf);
-
-    LAB_ImageSaveData(fname_buf, w, h, data);
-}
 
 
 

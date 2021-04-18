@@ -4,222 +4,7 @@
 #include "LAB_image.h"
 
 #include "LAB_sdl.h" // LAB_SDL_FREE -- TODO
-
-#include <stdio.h> // TODO remove
-
-#if 0
-///// LAB_TexClt /////
-
-bool LAB_TexClt_Create(LAB_TexClt* texclt, size_t cell_size)
-{
-    LAB_ARRAY_CREATE(texclt->texture_sizes);
-    texclt->cell_size = cell_size;
-    return true;
-}
-
-void LAB_TexClt_Destroy(LAB_TexClt* texclt)
-{
-    LAB_ARRAY_DESTROY(texclt->texture_sizes);
-}
-
-LAB_TexID LAB_TexClt_AddTexture(LAB_TexClt* texclt, size_t width, size_t height)
-{
-    if(!LAB_IsPow2(width) || width != height || width < texclt->cell_size)
-        return LAB_TEX_ID_INVALID;
-
-    size_t* tex_sizes;
-    LAB_ARRAY_APPEND(texclt->texture_sizes, 1, tex_sizes);
-    if(tex_sizes)
-    {
-        tex_sizes[0] = width;
-        return texclt->texture_sizes.size-1;
-    }
-    else
-    {
-        return LAB_TEX_ID_INVALID;
-    }
-}
-
-
-///// LAB_TexBld /////
-
-bool LAB_TexBld_Create(LAB_TexBld* texbld, LAB_TexClt* texclt)
-{
-    texbld->texclt = texclt;
-
-    size_t* arr = LAB_MallocN(texclt->texture_sizes.size, 4*sizeof(size_t));
-    if(!arr) return false;
-    texbld->tex_order = arr;
-    texbld->tex_order_inv = arr+texclt->texture_sizes.size;
-    texbld->tex_pos = (LAB_TexPos*)arr+texclt->texture_sizes.size*2;
-    return true;
-}
-
-void LAB_TexBld_Sort(LAB_TexBld* texbld)
-{
-    LAB_TexClt* texclt = texbld->texclt;
-    size_t  size = texclt->texture_sizes.size;
-    size_t* sizes = texclt->texture_sizes.data;
-
-    size_t max_cell_size = 0;
-    for(size_t i = 0; i < size; ++i)
-        LAB_MAX_EQ(max_cell_size, sizes[i]);
-
-    size_t next_index = 0;
-    for(size_t cell_size = max_cell_size; cell_size >= texclt->cell_size; cell_size >>= 1)
-    {
-        for(size_t i = 0; i < size; ++i)
-        {
-            if(sizes[i] == cell_size)
-            {
-                texbld->tex_order[next_index] = i;
-                ++next_index;
-            }
-        }
-    }
-    LAB_ASSUME(next_index == size);
-
-    // the fun part
-    // invert the bijective function
-    for(size_t i = 0; i < size; ++i)
-    {
-        texbld->tex_order_inv[texbld->tex_order[i]] = i;
-    }
-}
-
-bool LAB_TexBld_Arrange(LAB_TexBld* texbld)
-{
-    LAB_TexClt* texclt = texbld->texclt;
-    size_t  size = texclt->texture_sizes.size;
-    size_t* sizes = texclt->texture_sizes.data;
-    if(!size) return true;
-
-    size_t max_cell_size = sizes[texbld->tex_order[0]];
-    size_t max_cell_ratio = LAB_MAX(8, max_cell_size/texclt->cell_size);
-
-    size_t cell_cols = max_cell_ratio, cell_rows = max_cell_ratio;
-
-    size_t   occupied_cap = cell_cols*cell_rows/8;
-    uint8_t* occupied = LAB_Calloc(occupied_cap, 1);
-    if(!occupied) return false;
-
-    for(size_t i = 0; i < size; ++i)
-    {
-        size_t tex_size = sizes[texbld->tex_order[i]];
-        size_t tex_cell_ratio = tex_size/texclt->cell_size;
-
-        size_t x, y;
-        size_t yi;
-        while(true)
-        {
-            for(y = 0, yi = 0; y < cell_rows; ++y, yi += cell_cols)
-            {
-                uint8_t mask = 1u;
-                for(x = 0; x < cell_cols; ++x, mask = LAB_XADD(mask<<1, mask>>7))
-                {
-                    size_t idx = LAB_XADD(yi, x);
-                    // because of the order the textures are arranged, larger
-                    // textures are aligned at coordinates that are multiples
-                    // of their size, so only the left upper most cell needs
-                    // to be tested
-                    //if(occupied[idx/8] & 1<<(idx%8)) continue;
-                    if(occupied[idx/8] & mask) continue;
-
-                    goto found;
-                }
-            }
-            // not found
-            // double space
-
-            {
-                uint8_t* new_occupied = LAB_Realloc(occupied, occupied_cap<<1);
-                if(!new_occupied)
-                {
-                    LAB_Free(occupied);
-                    return false;
-                }
-                occupied = new_occupied;
-            }
-
-            if(cell_rows <= cell_cols)
-            {
-                // expand vertically
-                memset(occupied+occupied_cap, 0, occupied_cap);
-
-                occupied_cap <<= 1;
-                cell_rows <<= 1;
-            }
-            else
-            {
-                // expand horizontally
-
-                // for this go from the bottom rows up to the top
-                // and copy the rows
-                // fill new columns with zeros
-
-                // Move rows except the first one
-                for(size_t c_y = 0, c_yi = 0; c_y < cell_rows; ++c_y, c_yi += cell_cols)
-                {
-                    size_t idx_old =   c_yi;
-                    size_t idx_new = 2*c_yi;
-                    memcpy(occupied+idx_new/8, occupied+idx_old/8, cell_cols/8);
-                    memset(occupied+idx_new/8+cell_cols/8, 0, cell_cols/8);
-                }
-                // clear new rows in the first row
-                memset(occupied+cell_cols/8, 0, cell_cols/8);
-
-                occupied_cap <<= 1;
-                cell_cols <<= 1;
-            }
-        }
-
-        found:;
-        // set information
-        size_t index = texbld->tex_order[i];
-        texbld->tex_pos[index].x = x*texclt->cell_size;
-        texbld->tex_pos[index].y = y*texclt->cell_size;
-
-        // fill bits in occupied
-
-        if(tex_cell_ratio < 8)
-        {
-            uint8_t bit_mask = ((1u << tex_cell_ratio) - 1u) << (x%8);
-
-            for(size_t rc_y = 0, c_yi = yi; rc_y < tex_cell_ratio; ++rc_y, c_yi += cell_cols)
-            {
-                size_t idx = c_yi + x;
-                LAB_XADD_EQ(occupied[idx/8], bit_mask);
-            }
-        }
-        else
-        {
-            for(size_t rc_y = 0, c_yi = yi; rc_y < tex_cell_ratio; ++rc_y, c_yi += cell_cols)
-            for(size_t rc_x = 0; rc_x < tex_cell_ratio; rc_x += 8)
-            {
-                size_t idx = LAB_XADD(c_yi, rc_x + x);
-                LAB_ASSUME(occupied[idx/8] == 0);
-                occupied[idx/8] = 0xffu;
-            }
-        }
-    }
-
-    LAB_Free(occupied);
-
-    texbld->at_width = cell_cols * texclt->cell_size;
-    texbld->at_height = cell_rows * texclt->cell_size;
-
-    return true;
-}
-
-void LAB_TexBld_Destroy(LAB_TexBld* texbld)
-{
-    LAB_Free(texbld->tex_order);
-}
-#endif
-
-
-
-
+#include "LAB_gl.h"
 
 bool LAB_TexAlloc_Create(LAB_TexAlloc* alloc)
 {
@@ -503,15 +288,30 @@ bool LAB_TexAlloc_Add(LAB_TexAlloc* alloc, size_t side_cells, LAB_OUT size_t top
 
 /***** TexAtlas *****/
 
-bool LAB_TexAtlas_Create(LAB_TexAtlas* atlas)
+bool LAB_TexAtlas_Create(LAB_TexAtlas* atlas, size_t cell_size)
 {
-    atlas->width = atlas->height = 1;
-    atlas->data = LAB_MallocN(atlas->width*atlas->height, sizeof(LAB_Color));
+    LAB_ASSERT(LAB_IsPow2(cell_size));
+
+    // start with a single cell
+    atlas->w = atlas->h = cell_size;
+
+    size_t size = 0;
+    size_t layer_size = cell_size*cell_size;
+    for(; layer_size; layer_size /= 4)
+        size += layer_size;
+    atlas->capacity = size;
+    atlas->cell_size = cell_size;
+
+    atlas->data = LAB_MallocN(atlas->capacity, sizeof(LAB_Color));
+
+    atlas->gl_id = 0;
+
     return atlas->data != NULL;
 }
 
 void LAB_TexAtlas_Destroy(LAB_TexAtlas* atlas)
 {
+    if(atlas->gl_id) LAB_GL_FREE(glDeleteTextures, 1, &atlas->gl_id);
     LAB_Free(atlas->data);
 }
 
@@ -519,33 +319,35 @@ void LAB_TexAtlas_Destroy(LAB_TexAtlas* atlas)
 
 LAB_INLINE bool LAB_TexAtlas_DoubleWidth(LAB_TexAtlas* atlas)
 {
-    size_t old_cap = atlas->width*atlas->height;
+    size_t old_cap = atlas->capacity;
     LAB_Color* new_data = LAB_ReallocN(atlas->data, old_cap*2, sizeof(LAB_Color));
     if(!new_data) return false;
     atlas->data = new_data;
 
-    //size_t i_atl = (atlas->height-1)*atlas->width;
-    size_t i_atl = old_cap-atlas->width;
-    for(size_t row = atlas->height-1; row > 0; --row)
+    //size_t i_atl = (atlas->h-1)*atlas->w;
+    size_t i_atl = atlas->w*atlas->h-atlas->w;
+    for(size_t row = atlas->h-1; row > 0; --row)
     {
-        LAB_MemCpyColor(atlas->data+i_atl*2, atlas->data+i_atl, atlas->width);
-        LAB_MemSetColor(atlas->data+i_atl*2+atlas->width, LAB_RGBX(FF0000), atlas->width);
-        i_atl -= atlas->width;
+        LAB_MemCpyColor(atlas->data+i_atl*2, atlas->data+i_atl, atlas->w);
+        LAB_MemNoColor(atlas->data+i_atl*2+atlas->w, atlas->w);
+        i_atl -= atlas->w;
     }
-    LAB_MemSetColor(atlas->data+atlas->width, LAB_RGBX(FF0000), atlas->width);
+    LAB_MemNoColor(atlas->data+atlas->w, atlas->w);
 
-    atlas->width *= 2;
+    atlas->w *= 2;
+    atlas->capacity *= 2;
     return true;
 }
 
 LAB_INLINE bool LAB_TexAtlas_DoubleHeight(LAB_TexAtlas* atlas)
 {
-    size_t old_cap = atlas->width*atlas->height;
+    size_t old_cap = atlas->capacity;
     LAB_Color* new_data = LAB_ReallocN(atlas->data, old_cap*2, sizeof(LAB_Color));
     if(!new_data) return false;
     atlas->data = new_data;
-    LAB_MemSetColor(atlas->data + old_cap, LAB_RGBX(FF0000), old_cap);
-    atlas->height *= 2;
+    LAB_MemNoColor(atlas->data + atlas->w*atlas->h, old_cap);
+    atlas->h *= 2;
+    atlas->capacity *= 2;
     return true;
 }
 
@@ -553,22 +355,35 @@ LAB_INLINE bool LAB_TexAtlas_DoubleHeight(LAB_TexAtlas* atlas)
 void LAB_TexAtlas_Draw(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size, LAB_Color* data)
 {
     size_t i_src = 0;
-    size_t i_atl = x + y*atlas->width;
+    size_t i_atl = x + y*atlas->w;
 
     for(size_t row = 0; row < size; ++row)
     {
         LAB_MemCpyColor(atlas->data+i_atl, data+i_src, size);
         i_src += size;
-        i_atl += atlas->width;
+        i_atl += atlas->w;
+    }
+}
+
+void LAB_TexAtlas_DrawBlit(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size, LAB_Color* data, LAB_Color tint)
+{
+    size_t i_src = 0;
+    size_t i_atl = x + y*atlas->w;
+
+    for(size_t row = 0; row < size; ++row)
+    {
+        LAB_MemBltColor(atlas->data+i_atl, data+i_src, tint, size);
+        i_src += size;
+        i_atl += atlas->w;
     }
 }
 
 bool LAB_TexAtlas_DrawAlloc(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size, LAB_Color* data)
 {
-    while(x+size > atlas->width)
+    while(x+size > atlas->w)
         if(!LAB_TexAtlas_DoubleWidth(atlas)) return false;
 
-    while(y+size > atlas->height)
+    while(y+size > atlas->h)
         if(!LAB_TexAtlas_DoubleHeight(atlas)) return false;
 
     LAB_TexAtlas_Draw(atlas, x, y, size, data);
@@ -577,8 +392,88 @@ bool LAB_TexAtlas_DrawAlloc(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size
 }
 
 
+void LAB_TexAtlas_MakeMipmap(LAB_TexAtlas* atlas)
+{
+    size_t w = atlas->w, h = atlas->h;
+    LAB_Color* data = atlas->data;
 
+    size_t csz = atlas->cell_size/2;
+    for(; csz; csz /= 2)
+    {
+        if(csz) LAB_Fix0Alpha(w, h, data); // at prev layer including original!
 
+        LAB_MakeMipmap2D(w/2, h/2, data, data+w*h);
+
+        data = data+w*h;
+        w /= 2; h /= 2;
+    }
+}
+
+bool LAB_TexAtlas_Upload2GL(LAB_TexAtlas* atlas)
+{
+    LAB_GL_REQUIRE(GL_TEXTURE_2D);
+
+    if(!atlas->gl_id)
+    {
+        LAB_GL_ALLOC(glGenTextures, 1, &atlas->gl_id);
+
+        //if(!atlas->gl_id) return false;
+    }
+
+    glBindTexture(GL_TEXTURE_2D, atlas->gl_id);
+
+    if(atlas->cell_size > 1) // Mipmaps
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        const size_t num_mipmaps = LAB_Log2OfPow2(atlas->cell_size);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, num_mipmaps);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas->w, atlas->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, atlas->data);
+        LAB_ImageSave(atlas->w, atlas->h, atlas->data, "dbg_terrain_0.png");
+
+        // upload mipmaplevels
+        {
+            size_t w = atlas->w, h = atlas->h;
+            size_t layer_size = atlas->cell_size/2;
+            LAB_Color* data = atlas->data;
+
+            for(int i = 1; i <= num_mipmaps; ++i)
+            {
+                data += w*h;
+                w /= 2; h /= 2;
+
+                glTexImage2D(GL_TEXTURE_2D, i, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+                LAB_ImageSave_Fmt(w, h, data, "dbg_terrain_%i.png", i);
+            }
+        }
+
+    }
+    else
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas->w, atlas->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, atlas->data);
+    }
+
+    LAB_GL_CHECK();
+    return true;
+}
+
+void LAB_TexAtlas_LoadTexMatrix(LAB_TexAtlas* atlas)
+{
+    LAB_GL_REQUIRE(GL_TEXTURE_2D);
+
+    glMatrixMode(GL_TEXTURE);
+    glLoadIdentity();
+    const float cell_size_f = atlas->cell_size;
+    glScalef((float)cell_size_f / (float)atlas->w, (float)cell_size_f / (float)atlas->h, 1);
+
+    LAB_GL_CHECK();
+}
 
 
 
@@ -623,38 +518,129 @@ void LAB_TestTextureAtlas()
         "assets/blocks/taller_grass.png",
     };
 
-    printf("LAB_TestTextureAtlas\n");
+    LAB_DBG_PRINTF("LAB_TestTextureAtlas\n");
 
     LAB_TexAlloc alloc;
-    LAB_ASSERT(LAB_TexAlloc_Create(&alloc));
+    LAB_ASSERT_OR_ABORT(LAB_TexAlloc_Create(&alloc));
 
     LAB_TexAtlas atlas;
-    LAB_ASSERT(LAB_TexAtlas_Create(&atlas));
-
+    LAB_ASSERT_OR_ABORT(LAB_TexAtlas_Create(&atlas, 32));
 
     //for(size_t i = 0; textures[i]; ++i)
     for(size_t i = 0, k = 0; k < 1024; ++k, i=rand()%(sizeof(textures)/sizeof(*textures)-1))
     {
         SDL_Surface* surf = LAB_ImageLoad(textures[i]);
-        LAB_ASSERT(surf);
-        LAB_ASSERT(surf->w == surf->h);
-        LAB_ASSERT(LAB_IsPow2(surf->w));
+        LAB_ASSERT_OR_ABORT(surf);
+        LAB_ASSERT_OR_ABORT(surf->w == surf->h);
+        LAB_ASSERT_OR_ABORT(LAB_IsPow2(surf->w));
 
         //#define CELL_SIZE 32
         #define CELL_SIZE 1
 
         size_t pos[2];
-        LAB_ASSERT(LAB_TexAlloc_Add(&alloc, surf->w/CELL_SIZE, pos));
-        printf("%s at %i, %i\n", textures[i], pos[0], pos[1]);
+        LAB_ASSERT_OR_ABORT(LAB_TexAlloc_Add(&alloc, surf->w/CELL_SIZE, pos));
+        LAB_DBG_PRINTF("%s at %i, %i\n", textures[i], pos[0], pos[1]);
         //LAB_MemSetColor((LAB_Color*)surf->pixels, LAB_RGBX(0000ff), i);
-        LAB_ASSERT(LAB_TexAtlas_DrawAlloc(&atlas, pos[0]*CELL_SIZE, pos[1]*CELL_SIZE, surf->w, (LAB_Color*)surf->pixels));
+        LAB_ASSERT_OR_ABORT(LAB_TexAtlas_DrawAlloc(&atlas, pos[0]*CELL_SIZE, pos[1]*CELL_SIZE, surf->w, (LAB_Color*)surf->pixels));
 
         LAB_SDL_FREE(SDL_FreeSurface, &surf);
     }
 
-    LAB_ImageSaveData("dbg_TestTextureAtlas.png", atlas.width, atlas.height, atlas.data);
+    LAB_ImageSave(atlas.w, atlas.h, atlas.data, "dbg_TestTextureAtlas.png");
 
     LAB_TexAtlas_Destroy(&atlas);
     LAB_TexAlloc_Destroy(&alloc);
 
+}
+
+void LAB_Temp_RecreateTerrain(LAB_TexAtlas* atlas)
+{
+#if 1
+    struct { size_t x, y; LAB_Color tint; const char* name; } textures[] =
+    {
+        { 0, 0, 0, "stone"         },
+        { 1, 0, 0, "cobble"        },
+        //{ 1, 0, LAB_RGBAX(88dd55ff), "fallen_leaves"         },
+        { 2, 0, 0, "oak_log"       },
+        { 3, 0, 0, "planks"        },
+        { 4, 0, 0, "metal"         },
+        //{ 4, 0, LAB_RGBAX(509a8f80), "barrier_item"         },
+        { 5, 0, 0, "birch_log"     },
+        { 0, 1, 0, "smooth_stone"  },
+        { 1, 1, 0, "bricks"        },
+        { 2, 1, 0, "grass"         },
+        { 3, 1, 0, "sand"          },
+        { 4, 1, 0, "dirt"          },
+        { 0, 2, 0, "cold_light"    },
+        { 1, 2, 0, "warm_light"    },
+        { 2, 2, 0, "leaves"        },
+        { 3, 2, 0, "tall_grass"    },
+        //{ 4, 2, },
+        { 0, 3, 0, "torch"         },
+        { 1, 3, 0, "glass"         },
+        { 2, 3, 0, "crystal"       },
+        { 3, 3, 0, "taller_grass"  },
+        //{ 4, 3, },
+        //{ 5, 3, },
+        { 2, 4, 0, "fallen_leaves" },
+        { 5, 4, 0, "blank"         },
+        { 5, 4, LAB_RGBX(0f961e), "tulip_stem" },
+        { 5, 4, LAB_RGBX(ff4040), "tulip_bloom" },
+        { 6, 4, 0, "blank"            },
+        { 6, 4, LAB_RGBX(0f961e), "tulip_stem" },
+        { 6, 4, LAB_RGBX(ffff00), "tulip_bloom" },
+        { 0, 7, 0, "light_item"    },
+        { 1, 7, 0, "barrier_item"  },
+    };
+
+    for(size_t i = 0; i < sizeof(textures)/sizeof(textures[0]); ++i)
+    {
+        size_t cell_size = 32;
+        SDL_Surface* surf;
+        if(strcmp(textures[i].name, "blank") == 0)
+        {
+            LAB_SDL_ALLOC(SDL_CreateRGBSurfaceWithFormat, &surf, 0, cell_size, cell_size, 32, SDL_PIXELFORMAT_RGBA32);
+            LAB_ASSERT_OR_ABORT(surf);
+            LAB_MemSetColor((LAB_Color*)surf->pixels, LAB_RGBAX(00000000), cell_size*cell_size);
+        }
+        else
+        {
+            surf = LAB_ImageLoad_Fmt("assets/blocks/%s.png", textures[i].name);
+        }
+
+        if(textures[i].tint)
+        {
+
+        }
+
+        LAB_ASSERT_OR_ABORT(surf);
+        LAB_ASSERT_OR_ABORT(surf->w == surf->h);
+        LAB_ASSERT_OR_ABORT(LAB_IsPow2(surf->w));
+
+
+        size_t pos[2] = { textures[i].x, textures[i].y };
+        //LAB_ASSERT_OR_ABORT(LAB_TexAlloc_Add(&alloc, surf->w/cell_size, pos));
+        LAB_DBG_PRINTF("%s at %i, %i\n", textures[i].name, pos[0], pos[1]);
+        //LAB_MemSetColor((LAB_Color*)surf->pixels, LAB_RGBX(0000ff), i);
+
+        if(textures[i].tint)
+            LAB_TexAtlas_DrawBlit(atlas, pos[0]*cell_size, pos[1]*cell_size, surf->w, (LAB_Color*)surf->pixels, textures[i].tint);
+        else
+            LAB_ASSERT_OR_ABORT(LAB_TexAtlas_DrawAlloc(atlas, pos[0]*cell_size, pos[1]*cell_size, surf->w, (LAB_Color*)surf->pixels));
+
+
+        LAB_SDL_FREE(SDL_FreeSurface, &surf);
+    }
+
+#else
+    SDL_Surface* surf = LAB_ImageLoad("assets/terrain.png");
+    LAB_ASSERT_OR_ABORT(surf);
+    LAB_ASSERT_OR_ABORT(surf->w == surf->h);
+    LAB_ASSERT_OR_ABORT(LAB_IsPow2(surf->w));
+
+    //LAB_MemSetColor((LAB_Color*)surf->pixels, LAB_RGBX(0000ff), i);
+    LAB_ASSERT_OR_ABORT(LAB_TexAtlas_DrawAlloc(atlas, 0, 0, surf->w, (LAB_Color*)surf->pixels));
+
+    LAB_SDL_FREE(SDL_FreeSurface, &surf);
+#endif
 }

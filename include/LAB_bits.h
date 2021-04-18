@@ -64,6 +64,14 @@ LAB_INLINE int LAB_IsPow2(int v)
     return (v & (v - 1)) == 0;
 }
 
+LAB_CONST
+LAB_INLINE int LAB_Log2OfPow2(int v)
+{
+    LAB_ASSERT(LAB_IsPow2(v));
+    return LAB_Ctz(v);
+}
+
+
 #if (-1 >> 1) == -1
 #define LAB_Sar(x, n) ((x) >> (n))
 #else

@@ -260,6 +260,31 @@ LAB_INLINE LAB_Color LAB_MulColor_Fast(LAB_Color a, LAB_Color b)
 #endif
 
 
+LAB_CONST
+LAB_INLINE LAB_Color LAB_BlendColor(LAB_Color dst, LAB_Color src)
+{
+    // TODO: fast version
+    //LAB_Color rgb = LAB_MulColor_Fast(dst, LAB_255^alpha)
+    int alpha = LAB_ALP(src);
+
+    // res_alpha = src_alpha + (1 - src_alpha)*dst_alpha
+    // res_color = 1/res_alpha * (src_alpha*src_color + (1-src_alpha)*dst_alpha*dst_color)
+
+    int src_alp = LAB_ALP(src);
+    int dst_alp = LAB_ALP(dst);       //  vvvvv fast mul channel -- TODO
+    int r_alp = src_alp + (int)(255^src_alp)*dst_alp/255;
+    if(r_alp == 0) return dst;
+
+    int r_red = (src_alp*255*LAB_RED(src) + (255^src_alp)*dst_alp*LAB_RED(dst))/(255*r_alp);
+    int r_grn = (src_alp*255*LAB_GRN(src) + (255^src_alp)*dst_alp*LAB_GRN(dst))/(255*r_alp);
+    int r_blu = (src_alp*255*LAB_BLU(src) + (255^src_alp)*dst_alp*LAB_BLU(dst))/(255*r_alp);
+    //LAB_ASSERT(r_red <= 255);
+    //LAB_ASSERT(r_grn <= 255);
+    //LAB_ASSERT(r_blu <= 255);
+
+    return LAB_RGBA(r_red, r_grn, r_blu, r_alp);
+}
+
 
 LAB_CONST
 LAB_INLINE LAB_Color LAB_MixColor50(LAB_Color a, LAB_Color b)
