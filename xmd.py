@@ -30,35 +30,39 @@ class Entity:
     prev     : wref['Entity'] # or None
     next     : wref['Entity'] # or None
 
-EntityType = namedtuple("EntityType", "title inline_brief")
+EntityType = namedtuple("EntityType", "title header_format")
+
+HEADER_BRIEF     = 0
+HEADER_SIGNATURE = 1
+HEADER_TITLE     = 2
 
 X = EntityType
-ENTITY_WORDS = {# Title                  Has inline brief
-    "topic":    X("Topic(s)",            True), # TODO parse whole line as title
+ENTITY_WORDS = {# Title                  Header format
+    "topic":    X("Topic(s)",            HEADER_TITLE), # TODO parse whole line as title
 
-    "file":     X("File(s)",             True),
-    "module":   X("Module(s)",           True),
-    "namespace":X("Namespace(s)",        True),
+    "file":     X("File(s)",             HEADER_BRIEF),
+    "module":   X("Module(s)",           HEADER_BRIEF),
+    "namespace":X("Namespace(s)",        HEADER_BRIEF),
     
-    "fn":       X("Function(s)",         False),
-    "class":    X("Class(es)",           False),
-    "struct":   X("Structure(s)",        False),
-    "type":     X("Type(s)",             True),
-    "const":    X("Constant(s)",         True),
-    "var":      X("Variable(s)",         True),
-    "def":      X("Macro Definition(s)", False),
+    "fn":       X("Function(s)",         HEADER_SIGNATURE),
+    "class":    X("Class(es)",           HEADER_SIGNATURE),
+    "struct":   X("Structure(s)",        HEADER_SIGNATURE),
+    "type":     X("Type(s)",             HEADER_BRIEF),
+    "const":    X("Constant(s)",         HEADER_BRIEF),
+    "var":      X("Variable(s)",         HEADER_BRIEF),
+    "def":      X("Macro Definition(s)", HEADER_SIGNATURE),
     
-    "param":    X("Parameter(s)",        True),
-    "attr":     X("Attribute(s)",        True),
-    "retval":   X("Return Value(s)",     True),
-    #"example":  X("Example(s)",          False),
+    "param":    X("Parameter(s)",        HEADER_BRIEF),
+    "attr":     X("Attribute(s)",        HEADER_BRIEF),
+    "retval":   X("Return Value(s)",     HEADER_BRIEF),
+    #"example":  X("Example(s)",          HEADER_TITLE),
 
     # Entities that are not necessarily a physical part of source code
     # but more specific entities provided by the documented interface
-    "cmd":      X("Command(s)",          False),
-    "tag":      X("Tag(s)",              True),
-    "opt":      X("Option(s)",           True),
-    "elem":     X("Element(s)",          True),
+    "cmd":      X("Command(s)",          HEADER_BRIEF),
+    "tag":      X("Tag(s)",              HEADER_BRIEF),
+    "opt":      X("Option(s)",           HEADER_BRIEF),
+    "elem":     X("Element(s)",          HEADER_BRIEF),
 }
 del X
 
@@ -272,15 +276,23 @@ def parse_xmd(xmd_lines, e : Entity, line_no=1):
                     first, last, rest = parse_group(tokens, 1, "[]")
                     e_category = ll[text_slice(tokens, first, last)] if first!=last else ""
      
-                    if ENTITY_WORDS[tag].inline_brief:
-                        e_signature = e_display = tokens[rest].text
+                    head_fmt = ENTITY_WORDS[tag].header_format
+                    e_signature = None
+                    if head_fmt == HEADER_BRIEF:
+                        e_display = tokens[rest].text
+                        e_display = f"`{e_display}`"
                         e_brief = ll[text_slice(tokens, rest+1)]
-                    else:
+                    elif head_fmt == HEADER_SIGNATURE:
                         e_signature = ll[text_slice(tokens, rest)]
                         e_display = signature2display(e_signature)
+                        if e_signature == e_display: e_signature = None
+                        e_display = f"`{e_display}`"
                         e_brief = ""
-                    e_sections = {"syn": pack_code(e_signature)} if e_signature != e_display else {}
-                    e_display = f"`{e_display}`"
+                    elif head_fmt == HEADER_TITLE:
+                        e_display = ll[text_slice(tokens, rest)] 
+                        e_brief = ""
+
+                    e_sections = {"syn": pack_code(e_signature)} if e_signature is not None else {}
                         
                     sub_entity = parse_xmd(
                         block,

@@ -2,6 +2,8 @@
 ***
 
 # Table
+## Topic
+**[Template Headers/Template sources](topic-template-headers.md)**  
 ## Files
 **[`HTL_hasharray.t.h`](HTL_hasharray.t.h.md)**  
 **[`HTL_hasharray_util.h`](HTL_hasharray_util.h.md)**  
