@@ -539,7 +539,7 @@ void LAB_TestTextureAtlas()
 
         size_t pos[2];
         LAB_ASSERT_OR_ABORT(LAB_TexAlloc_Add(&alloc, surf->w/CELL_SIZE, pos));
-        LAB_DBG_PRINTF("%s at %i, %i\n", textures[i], pos[0], pos[1]);
+        LAB_DBG_PRINTF("%s at %zu, %zu\n", textures[i], pos[0], pos[1]);
         //LAB_MemSetColor((LAB_Color*)surf->pixels, LAB_RGBX(0000ff), i);
         LAB_ASSERT_OR_ABORT(LAB_TexAtlas_DrawAlloc(&atlas, pos[0]*CELL_SIZE, pos[1]*CELL_SIZE, surf->w, (LAB_Color*)surf->pixels));
 
@@ -620,7 +620,7 @@ void LAB_Temp_RecreateTerrain(LAB_TexAtlas* atlas)
 
         size_t pos[2] = { textures[i].x, textures[i].y };
         //LAB_ASSERT_OR_ABORT(LAB_TexAlloc_Add(&alloc, surf->w/cell_size, pos));
-        LAB_DBG_PRINTF("%s at %i, %i\n", textures[i].name, pos[0], pos[1]);
+        LAB_DBG_PRINTF("%s at %zu, %zu\n", textures[i].name, pos[0], pos[1]);
         //LAB_MemSetColor((LAB_Color*)surf->pixels, LAB_RGBX(0000ff), i);
 
         if(textures[i].tint)

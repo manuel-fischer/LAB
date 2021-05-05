@@ -5,10 +5,12 @@
 
 #pragma once
 
+#include <assert.h>
+
 /**
  *  Assume and check a given expression at compile time, otherwise quit compilation
  */
-#define LAB_STATIC_ASSUME(expr, msg) _Static_assert(expr, msg)
+#define LAB_STATIC_ASSUME(expr, msg) static_assert(expr, msg)
 
 /**
  *  Check if a type has a size that is a power of two

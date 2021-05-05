@@ -7,7 +7,7 @@
 
 typedef struct LAB_World LAB_World;
 
-enum LAB_ChunkUpdate
+enum LAB_ChunkUpdate_Enum
 {
     LAB_CHUNK_UPDATE_LIGHT = 1, // light changed, usually by neighboring chunk
     LAB_CHUNK_UPDATE_BLOCK_ = 2, // block changed, usually in combination with light

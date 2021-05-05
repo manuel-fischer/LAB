@@ -1,0 +1,146 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "cppbuild",
+            "label": "C/C++: gcc build for debug",
+            "command": "gcc",
+            "args": [
+                "-g",
+
+                // Output file
+                "-o", "bin\\Debug\\a.exe",
+
+                // Common compiler settings
+                "-std=c17",
+                "-D_POSIX_C_SOURCE=200101L",
+
+                // Warnings
+                "-Wall",
+                "-Weffc++",
+                "-Wextra",
+                "-pedantic",
+                "-Wfatal-errors",
+                "-pedantic-errors",
+                "-Winit-self",
+                "-Winline",
+                "-Wmissing-declarations",
+                "-Wmissing-include-dirs",
+                "-Wundef",
+                "-Wredundant-decls",
+                "-Wfloat-equal",
+                "-Wmain",
+                "-Wunreachable-code",
+                "-Wshadow",
+                "-Wcast-align",
+                "-Wswitch-enum",
+
+                // Source files
+                "src\\*.c",
+
+                // Include paths
+				"-I${workspaceFolder}\\include",
+				"-IC:\\Libs\\include",
+				"-LC:\\Libs\\lib",
+
+                // Link libraries
+                "-lmingw32",
+                "-luser32",
+                "-lgdi32",
+                "-lwinmm",
+                "-ldxguid",
+                "-lglew32",
+                "-lSDL2main",
+                "-lSDL2",
+                "-lSDL2_image",
+                "-lSDL2_ttf",
+                "-lopengl32",
+                "-mwindows",
+
+                "-limagehlp" //
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "type": "cppbuild",
+            "label": "C/C++: gcc build for release",
+            "command": "gcc",
+            "args": [
+                "-Ofast",
+                "-DNDEBUG",
+
+                // Output file
+                "-o", "bin\\Release\\a.exe",
+
+                // Common compiler settings
+                "-std=c17",
+                "-D_POSIX_C_SOURCE=200101L",
+
+                // Warnings
+                /*"-Wall",
+                "-Weffc++",
+                "-Wextra",
+                "-pedantic",
+                "-Wfatal-errors",
+                "-pedantic-errors",
+                "-Winit-self",
+                "-Winline",
+                "-Wmissing-declarations",
+                "-Wmissing-include-dirs",
+                "-Wundef",
+                "-Wredundant-decls",
+                "-Wfloat-equal",
+                "-Wmain",
+                "-Wunreachable-code",
+                "-Wshadow",
+                "-Wcast-align",
+                "-Wswitch-enum",
+
+                "-Wno-unused-parameter",*/
+
+                // Source files
+                "src\\*.c",
+
+                // Include paths
+				"-I${workspaceFolder}\\include",
+				"-IC:\\Libs\\include",
+				"-LC:\\Libs\\lib",
+
+                // Link libraries
+                "-lmingw32",
+                "-luser32",
+                "-lgdi32",
+                "-lwinmm",
+                "-ldxguid",
+                "-lglew32",
+                "-lSDL2main",
+                "-lSDL2",
+                "-lSDL2_image",
+                "-lSDL2_ttf",
+                "-lopengl32",
+                "-mwindows",
+
+                "-limagehlp" //
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}

@@ -39,42 +39,7 @@ void LAB_InitAssets(void)
 
     LAB_TexAtlas_LoadTexMatrix(&LAB_block_atlas);
 
-
-    #if 0
-    // TODO: move global state into its own structure
-    if(LAB_block_terrain) return;
-
-    SDL_Surface* img = LAB_ImageLoad("assets/terrain.png");
-    if(!img) return;
-
-    glEnable(GL_TEXTURE_2D);
-    LAB_GL_ALLOC(glGenTextures, 1, &LAB_block_terrain_gl_id);
-    glBindTexture(GL_TEXTURE_2D, LAB_block_terrain_gl_id);
-
-    #if LAB_MIPMAPS
-    // Mipmaps
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    const int num_mipmaps = 5;
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, num_mipmaps);
-
-    LAB_Fix0Alpha(img->w, img->h, (LAB_Color*)img->pixels);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img->w, img->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, img->pixels);
-    //glGenerateMipmap(GL_TEXTURE_2D);
-    LAB_GL_GenerateMipmap2D(img->w, img->h, img->pixels, num_mipmaps);
-    #else
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img->w, img->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, img->pixels);
-    #endif
-
-    glMatrixMode(GL_TEXTURE);
-    glScalef((float)LAB_TILE_SIZE / (float)img->w, (float)LAB_TILE_SIZE / (float)img->h, 1);
-
-    LAB_block_terrain = img;
     LAB_GL_CHECK();
-    #endif
 }
 
 void LAB_QuitAssets(void)

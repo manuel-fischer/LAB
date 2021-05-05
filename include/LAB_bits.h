@@ -7,6 +7,7 @@
 #include "LAB_opt.h"
 #include "LAB_attr.h"
 #include "LAB_debug.h"
+#include <assert.h>
 
 #ifndef DOXYGEN
 
@@ -109,7 +110,7 @@ LAB_INLINE size_t LAB_CeilPow2z(size_t x)
     x |= x >> 8;
     x |= x >> 16;
     if(sizeof(x)*8 == 64) x |= x >> 32;
-    _Static_assert(sizeof(x)*8 <= 64, "");
+    static_assert(sizeof(x)*8 <= 64, "");
     x++;
     return x;
 }
@@ -124,7 +125,7 @@ LAB_INLINE size_t LAB_Capacity(size_t x)
     x |= x >> 8;
     x |= x >> 16;
     if(sizeof(x)*8 == 64) x |= x >> 32;
-    _Static_assert(sizeof(x)*8 <= 64, "");
+    static_assert(sizeof(x)*8 <= 64, "");
     x++;
     return x;
 }

@@ -3,13 +3,14 @@
 #include "LAB_model.h"
 
 #include <stdint.h>
+#include <assert.h>
 
 typedef struct LAB_TriangleOrder
 {
     uint32_t v[3]; // for sorting: [0] is kept [1] gets the distance, [2] is used for buckets
 } LAB_TriangleOrder;
 
-_Static_assert(sizeof(uint32_t)==sizeof(float), "");
+static_assert(sizeof(uint32_t)==sizeof(float), "");
 
 #define LAB_TRIANGLE_DIST(tri)   ((tri).v[2])
 #define LAB_TRIANGLE_DIST_F(tri) (*(float*)&(tri).v[2])

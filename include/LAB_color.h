@@ -264,8 +264,8 @@ LAB_CONST
 LAB_INLINE LAB_Color LAB_BlendColor(LAB_Color dst, LAB_Color src)
 {
     // TODO: fast version
+    //int alpha = LAB_ALP(src);
     //LAB_Color rgb = LAB_MulColor_Fast(dst, LAB_255^alpha)
-    int alpha = LAB_ALP(src);
 
     // res_alpha = src_alpha + (1 - src_alpha)*dst_alpha
     // res_color = 1/res_alpha * (src_alpha*src_color + (1-src_alpha)*dst_alpha*dst_color)
