@@ -1,7 +1,8 @@
-[&#8592; LAB.h](LAB.h.md) | [&#8593; table](table.md) | [&#8594; LAB_debug.h](LAB_debug.h.md)
+[&#8592; `LAB.h`](LAB.h.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8593; Table](table.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8594; `LAB_debug.h`](LAB_debug.h.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB_asset_manager.h.xmd#L1)</small>
 ***
 
 # `LAB_asset_manager.h`
+<small>*File*</small>  
 
 Global asset management.
 

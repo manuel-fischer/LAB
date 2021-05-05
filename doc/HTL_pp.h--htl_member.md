@@ -1,7 +1,8 @@
-[&#8592; HTL_P](HTL_pp.h--htl_p.md) | [&#8593; HTL_pp.h](HTL_pp.h.md) | [&#8594; HTL_DEF](HTL_pp.h--htl_def.md)
+[&#8592; `HTL_P`](HTL_pp.h--htl_p.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8593; `HTL_pp.h`](HTL_pp.h.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8594; `HTL_DEF`](HTL_pp.h--htl_def.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/HTL_pp.h.xmd#L10)</small>
 ***
 
 # `HTL_MEMBER`
+<small>*Macro Definition*</small>  
 **Synopsis**
 
 ```cpp

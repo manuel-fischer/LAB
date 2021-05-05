@@ -1,7 +1,8 @@
-[&#8592; HTL_HASHARRAY_EACH](HTL_hasharray_util.h--htl_hasharray_each.md) | [&#8593; HTL_hasharray_util.h](HTL_hasharray_util.h.md) | [&#8594; HTL_HASHARRAY_EACH_DEREF](HTL_hasharray_util.h--htl_hasharray_each_deref.md)
+[&#8592; `HTL_HASHARRAY_EACH`](HTL_hasharray_util.h--htl_hasharray_each.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8593; `HTL_hasharray_util.h`](HTL_hasharray_util.h.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8594; `HTL_HASHARRAY_EACH_DEREF`](HTL_hasharray_util.h--htl_hasharray_each_deref.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/HTL_hasharray_util.h.xmd#L12)</small>
 ***
 
 # `HTL_HASHARRAY_REMOVE`
+<small>*Macro Definition*</small>  
 **Synopsis**
 
 ```cpp

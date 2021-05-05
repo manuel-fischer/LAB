@@ -1,7 +1,8 @@
-[&#8593; HTL_hasharray.t.h](HTL_hasharray.t.h.md)
+[&#8592; `FREE`](HTL_hasharray.t.h--free.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8593; `HTL_hasharray.t.h`](HTL_hasharray.t.h.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/HTL_hasharray.t.h.xmd#L41)</small>
 ***
 
 # `HashArray`
+<small>*Class*</small>  
 ## Attributes
 **[`capacity`](HTL_hasharray.t.h--hasharray--capacity.md)** &#8213; The capacity of the currently allocated table  
 **[`size`](HTL_hasharray.t.h--hasharray--size.md)** &#8213; The number of elements in the hash array  

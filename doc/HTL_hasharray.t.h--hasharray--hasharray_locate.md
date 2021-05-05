@@ -1,7 +1,8 @@
-[&#8592; HashArray_Discard](HTL_hasharray.t.h--hasharray--hasharray_discard.md) | [&#8593; HashArray](HTL_hasharray.t.h--hasharray.md) | [&#8594; HashArray_Get](HTL_hasharray.t.h--hasharray--hasharray_get.md)
+[&#8592; `HashArray_Discard`](HTL_hasharray.t.h--hasharray--hasharray_discard.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8593; `HashArray`](HTL_hasharray.t.h--hasharray.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8594; `HashArray_Get`](HTL_hasharray.t.h--hasharray--hasharray_get.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/HTL_hasharray.t.h.xmd#L78)</small>
 ***
 
 # `HashArray_Locate`
+<small>*Function* - **observers**</small>  
 **Synopsis**
 
 ```cpp

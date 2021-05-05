@@ -1,7 +1,8 @@
-[&#8593; LAB.h](LAB.h.md) | [&#8594; LAB_Quit](LAB.h--lab_quit.md)
+[&#8593; `LAB.h`](LAB.h.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8594; `LAB_Quit`](LAB.h--lab_quit.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB.h.xmd#L3)</small>
 ***
 
 # `LAB_Init`
+<small>*Function*</small>  
 **Synopsis**
 
 ```cpp

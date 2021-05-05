@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "gcc build and debug",
+            "name": "gcc: build and debug",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}\\bin\\Debug\\a.exe",
@@ -26,7 +26,7 @@
             "preLaunchTask": "C/C++: gcc build for debug"
         },
         {
-            "name": "gcc build and run",
+            "name": "gcc: build and run",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}\\bin\\Release\\a.exe",
@@ -47,7 +47,7 @@
             "preLaunchTask": "C/C++: gcc build for release"
         },
         {
-            "name": "gcc run",
+            "name": "gcc: run",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}\\bin\\Release\\a.exe",
@@ -65,6 +65,13 @@
                     "ignoreFailures": true
                 }
             ]
+        },
+        {
+            "name": "Python: create doc",
+            "type": "python",
+            "request": "launch",
+            "program": "xmd.py",
+            "console": "integratedTerminal"
         }
     ]
 }

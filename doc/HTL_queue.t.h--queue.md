@@ -1,7 +1,8 @@
-[&#8593; HTL_queue.t.h](HTL_queue.t.h.md)
+[&#8593; `HTL_queue.t.h`](HTL_queue.t.h.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/HTL_queue.t.h.xmd#L9)</small>
 ***
 
 # `Queue`
+<small>*Class*</small>  
 ## Attributes
 **[`queue`](HTL_queue.t.h--queue--queue.md)** &#8213; The buffer to store the contents of the queue  
 **[`first`](HTL_queue.t.h--queue--first.md)** &#8213; The first/next entry of the queue  

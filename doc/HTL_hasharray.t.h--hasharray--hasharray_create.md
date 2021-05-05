@@ -1,7 +1,8 @@
-[&#8593; HashArray](HTL_hasharray.t.h--hasharray.md) | [&#8594; HashArray_Destroy](HTL_hasharray.t.h--hasharray--hasharray_destroy.md)
+[&#8592; `cached_entry`](HTL_hasharray.t.h--hasharray--cached_entry.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8593; `HashArray`](HTL_hasharray.t.h--hasharray.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8594; `HashArray_Destroy`](HTL_hasharray.t.h--hasharray--hasharray_destroy.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/HTL_hasharray.t.h.xmd#L58)</small>
 ***
 
 # `HashArray_Create`
+<small>*Function* - **lifetime**</small>  
 **Synopsis**
 
 ```cpp

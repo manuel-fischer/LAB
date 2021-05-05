@@ -1,7 +1,8 @@
-[&#8593; table](table.md) | [&#8594; HTL_hasharray_util.h](HTL_hasharray_util.h.md)
+[&#8593; Table](table.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8594; `HTL_hasharray_util.h`](HTL_hasharray_util.h.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/HTL_hasharray.t.h.xmd#L1)</small>
 ***
 
 # `HTL_hasharray.t.h`
+<small>*File*</small>  
 
 Hasharray with linear forward probing
 

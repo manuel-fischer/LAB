@@ -1,7 +1,8 @@
-[&#8592; HTL_hasharray.t.h](HTL_hasharray.t.h.md) | [&#8593; table](table.md) | [&#8594; HTL_pp.h](HTL_pp.h.md)
+[&#8592; `HTL_hasharray.t.h`](HTL_hasharray.t.h.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8593; Table](table.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8594; `HTL_pp.h`](HTL_pp.h.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/HTL_hasharray_util.h.xmd#L1)</small>
 ***
 
 # `HTL_hasharray_util.h`
+<small>*File*</small>  
 
 Utility macros for hash arrays
 

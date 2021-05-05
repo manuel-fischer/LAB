@@ -1,7 +1,8 @@
-[&#8592; KEY_FUNC](HTL_hasharray.t.h--key_func.md) | [&#8593; HTL_hasharray.t.h](HTL_hasharray.t.h.md) | [&#8594; COMP_FUNC](HTL_hasharray.t.h--comp_func.md)
+[&#8592; `KEY_FUNC`](HTL_hasharray.t.h--key_func.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8593; `HTL_hasharray.t.h`](HTL_hasharray.t.h.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8594; `COMP_FUNC`](HTL_hasharray.t.h--comp_func.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/HTL_hasharray.t.h.xmd#L12)</small>
 ***
 
 # `HASH_FUNC`
+<small>*Parameter*</small>  
 **Synopsis**
 
 ```cpp

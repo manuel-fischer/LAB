@@ -1,7 +1,8 @@
-[&#8592; HashArray_Remove](HTL_hasharray.t.h--hasharray--hasharray_remove.md) | [&#8593; HashArray](HTL_hasharray.t.h--hasharray.md) | [&#8594; HashArray_Locate](HTL_hasharray.t.h--hasharray--hasharray_locate.md)
+[&#8592; `HashArray_Remove`](HTL_hasharray.t.h--hasharray--hasharray_remove.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8593; `HashArray`](HTL_hasharray.t.h--hasharray.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8594; `HashArray_Locate`](HTL_hasharray.t.h--hasharray--hasharray_locate.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/HTL_hasharray.t.h.xmd#L140)</small>
 ***
 
 # `HashArray_Discard`
+<small>*Function* - **modifiers**</small>  
 **Synopsis**
 
 ```cpp
