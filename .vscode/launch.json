@@ -26,6 +26,26 @@
             "preLaunchTask": "C/C++: gcc build for debug"
         },
         {
+            "name": "gcc: debug",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}\\bin\\Debug\\a.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for \"gdb\"",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
             "name": "gcc: build and run",
             "type": "cppdbg",
             "request": "launch",
