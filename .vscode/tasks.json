@@ -35,6 +35,8 @@
                 "-Wcast-align",
                 "-Wswitch-enum",
 
+                "-Wno-unused-parameter",
+
                 // Source files
                 "src\\*.c",
 
@@ -86,7 +88,7 @@
                 "-D_POSIX_C_SOURCE=200101L",
 
                 // Warnings
-                /*"-Wall",
+                "-Wall",
                 "-Weffc++",
                 "-Wextra",
                 "-pedantic",
@@ -105,7 +107,7 @@
                 "-Wcast-align",
                 "-Wswitch-enum",
 
-                "-Wno-unused-parameter",*/
+                "-Wno-unused-parameter",
 
                 // Source files
                 "src\\*.c",

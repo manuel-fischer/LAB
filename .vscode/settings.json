@@ -2,5 +2,15 @@
     "files.associations": {
         "*.h": "c",
         "*.c": "c"
-    }
+    },
+    "C_Cpp.default.defines": [
+        "__WINNT__",
+        "_POSIX_C_SOURCE=200101L"
+    ],
+    "C_Cpp.default.includePath": [
+        "${workspaceFolder}\\include",
+        "C:\\Libs\\include",
+        "C:\\Libs\\lib"
+    ],
+    "C_Cpp.default.compilerArgs": ["-Wno-unused-parameter"]
 }
