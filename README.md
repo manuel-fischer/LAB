@@ -27,8 +27,9 @@ from scratch. But you can create a clean design using OOP design patterns.
 You can think about it, as if the syntax in C is a little different. Instead
 of a `class` with nested functions, you use `structs` and global functions,
 where the first parameter is a pointer to the object (the struct). Even
-interfaces are possible in C, you either use function pointers or you declare
-a struct with function pointers that correspond to the interface methods.
+interfaces are possible in C, you either use function pointers directly or
+you declare a struct with function pointers that correspond to the interface
+methods.
 
 **Even if GitHub comes up with C++ or Objective C, the project is completely C.**
 GitHub might be fooled by the use of template-headers, which involves a special
@@ -37,6 +38,8 @@ The only thing that is not pure C is the use of GCCs attributes and builtins,
 which can even be used with Clang. When compiling with any other compiler,
 the attributes and builtins are disabled and replaced by a pure C alternative:
 either by nothing or by an (inline) implementation.
+
+**The Python script is just for the documentation**
 
 The python script [`xmd.py`](xmd.py) comes from one of my other repositories
 [XMD](https://github.com/manuel-fischer/XMD) and generates the markdown files

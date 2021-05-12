@@ -1,20 +1,37 @@
-# 1. Install Tools
-You must install a compiler like GCC or Clang. A compiler with C17 support is
-recommended.
+# Overview
+1. [Setup an IDE](#Setup-an-IDE)
+2. [Install libraries](#Install-libraries)
 
-For IXO you might need to install python3.
+# Setup an IDE
+Select your IDE
+1. [VSCode](#VSCode)
+2. [Code::Blocks](#CodeBlocks)
+3. If your IDE is not on this list, please add instructions here for beginners.
 
+## VSCode
+0. Install [VSCode](https://code.visualstudio.com/)
+1. Install the C/C++ extension
+2. Install Compiler
+
+   You must ensure that a compiler like GCC, MSVC or Clang has been installed.
+   A compiler with C17 support is recommended.
+
+## Code::Blocks
 If you use Windows you might find it useful to install
 [CodeBlocks](http://www.codeblocks.org/downloads/binaries) with MinGW. This
-automaticly installs GCC if you select a link with `mingw` included.
+automatically installs GCC if you select a link with `mingw` included.
 This means that you pay attention to select links for MinGW in further steps.
-Because this IDE is used in both of my projects IXO and LAB, it can be used to
-easily build the binaries.
+It can be used to easily build the binaries for LAB.
 
+# Install libraries
 Your compiler/IDE installation usually include the following
 
 1. C-Standard library
 2. OpenGL library
+
+The following Libraries need to be installed
+1. [SDL2, SDL2-ttf, SDL2-image](#SDL2-SDL2-ttf-SDL2-image)
+2. [Glew (Only windows)](#glew-Only-windows)
 
 If any of these libraries above is not distributed with your compiler/IDE you
 might need to install them manually.
@@ -23,7 +40,7 @@ The next two steps are mandatory, if your compiler/IDE does not provide the
 following libraries. If your IDE provides its own installation process of
 those libraries, you might prefer that instead.
 
-# 2. Install SDL2, SDL2-ttf, SDL2-image
+## 1. Install SDL2, SDL2-ttf, SDL2-image
 Select the **development library** for your specific target for all of the
 following libraries:
 
@@ -33,7 +50,8 @@ following libraries:
 
 For each of these archive files, do the following.
 
-You might open the file with a program like 7zip.
+You might open the file with a program like [7zip](https://www.7-zip.org/) on
+Windows or usually your default package manager on Linux.
 
 Navigate the archive file structure, until you reach a directory
 that contains an `include/` and `lib/` subdirectory. You might have to select
@@ -47,7 +65,7 @@ When using CodeBlocks, global variables like `$(sdl2)` can be set under
 into the prompt. Then enter the path(s) on the right, usually only the
 `base`-field is needed.
 
-# 3. Install glew (Only windows)
+## 2. Install glew (Only windows)
 (Independent of section 2.)
 
 Select **binary** (grey box)
@@ -62,20 +80,6 @@ Copy the files in the `include/` and `lib/` directory in your preferred
 You might need to copy `glew32.dll` from `bin/` (or a subdirectory of this)
 to either a system directory or the execution directory. You might have to
 select a subdirectory for your target machine.
-
-# 4. Install and build IXO
-(Independent of sections 2. and 3.)
-
-1. Clone [manuel-fischer/IXO](https://github.com/manuel-fischer/IXO) into
-   a temporary directory
-2. Run `python3 install.py` in that directory\
-   &#8594; This script determines the directory for c-header files and
-   library-files accessed by your compiler and moves all nessesary files to
-   those directories, these paths can be used to copy the other libraries by
-   hand.\
-   &#8594; on Windows admin rights might be required (when auto detecting path)
-3. The temporary directory containing the cloned repository can be deleted by
-   now
    
 # 5. Install and build LAB
 1. Clone [manuel-fischer/LAB](https://github.com/manuel-fischer/LAB)
