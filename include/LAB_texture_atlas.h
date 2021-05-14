@@ -66,4 +66,3 @@ void LAB_TexAtlas_LoadTexMatrix(LAB_TexAtlas* atlas);
 
 
 void LAB_TestTextureAtlas();
-void LAB_Temp_RecreateTerrain();

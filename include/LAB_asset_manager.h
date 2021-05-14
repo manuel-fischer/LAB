@@ -79,7 +79,7 @@ typedef struct LAB_AssetMgrEntry
 #define LAB_ASSET_MGR_TBL_ENTRY_TYPE       LAB_AssetMgrEntry
 #define LAB_ASSET_MGR_TBL_KEY_FUNC(e)      (&(e)->key)
 #define LAB_ASSET_MGR_TBL_HASH_FUNC(k)     ((k)->hash)
-#define LAB_ASSET_MGR_TBL_COMP_FUNC(k1,k2) ((k1)->hash == (k2)->hash && strcmp((k1)->str, (k2)->str) == 0)
+#define LAB_ASSET_MGR_TBL_COMP_FUNC(k1,k2) (((k1)->hash == (k2)->hash && strcmp((k1)->str, (k2)->str) == 0)?0:1)
 #define LAB_ASSET_MGR_TBL_EMPTY_FUNC(e)    ((e)->key.str == NULL)
 
 #define HTL_PARAM LAB_ASSET_MGR_TBL
@@ -130,7 +130,7 @@ typedef struct LAB_AssetMgr_Behavior
  */
 typedef struct LAB_AssetMgr
 {
-    LAB_AssetMgr_Behavior behavior;
+    const LAB_AssetMgr_Behavior* behavior;
     void* user;
 
     LAB_AssetMgrTbl table;
@@ -146,11 +146,11 @@ typedef struct LAB_AssetMgr
 bool LAB_AssetMgr_Create(LAB_AssetMgr* mgr, const LAB_AssetMgr_Behavior* behavior, void* user);
 void LAB_AssetMgr_Destroy(LAB_AssetMgr* mgr);
 
-void* LAB_AssetMgr_Load(LAB_AssetMgr* mgr, const char* resource_name);
+void* LAB_AssetMgr_GetByName(LAB_AssetMgr* mgr, const char* resource_name);
 
-#define LAB_AssetMgr_GetResource(mgr, index) LAB_PTR_OFFSET((mgr)->resource_vector, index, (mgr)->behavior.resource_size)
+#define LAB_AssetMgr_GetByIndex(mgr, index) LAB_PTR_OFFSET((mgr)->resource_vector, index, (mgr)->behavior->resource_size)
 
-#define LAB_AssetMgr_GetResource_Typed(mgr, index, type) LAB_CORRECT_IF( \
+#define LAB_AssetMgr_GetByIndex_Typed(mgr, index, type) LAB_CORRECT_IF( \
     (mgr)->ressource_size == sizeof(type), \
     (type*)LAB_PTR_OFFSET((mgr)->ressource_vector, index, sizeof(type)) \
 )

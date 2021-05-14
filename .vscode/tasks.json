@@ -57,7 +57,7 @@
                 "-lSDL2_image",
                 "-lSDL2_ttf",
                 "-lopengl32",
-                "-mwindows",
+                //"-mwindows",
 
                 "-limagehlp" //
             ],

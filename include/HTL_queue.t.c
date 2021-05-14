@@ -53,7 +53,7 @@ HTL_DEF HTL_P(TYPE)* HTL_MEMBER(Front)(HTL_P(NAME)* q)
 HTL_DEF HTL_P(TYPE)* HTL_MEMBER(Back)(HTL_P(NAME)* q)
 {
     //int index = (q->first+q->count) % q->capacity;
-    int index = q->first+q->count;
+    size_t index = q->first+q->count;
     if(index >= q->capacity) index -= q->capacity;
     return &q->queue[index];
 }

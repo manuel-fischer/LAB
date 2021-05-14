@@ -19,7 +19,8 @@ unsigned     LAB_block_terrain_gl_id = 0;
 #include "LAB_texture_atlas.h"
 LAB_TexAtlas LAB_block_atlas;
 
-LAB_STATIC void LAB_GL_GenerateMipmap2D(size_t w, size_t h, LAB_Color* data, int num_mipmaps);
+
+void LAB_Temp_RecreateTerrain(LAB_TexAtlas* atlas); // declared in assets.c
 
 void LAB_InitAssets(void)
 {
@@ -52,31 +53,6 @@ void LAB_QuitAssets(void)
     LAB_TexAtlas_Destroy(&LAB_block_atlas);
 }
 
-LAB_STATIC void LAB_GL_GenerateMipmap2D(size_t w, size_t h, LAB_Color* data, int num_mipmaps)
-{
-    //LAB_Color* tmp_buf = LAB_Malloc(w*h*sizeof*tmp_buf);
-    LAB_Color* tmp_buf = LAB_Malloc((w/2*h/2+w/4*w/4)*sizeof*tmp_buf);
-    LAB_Color* tmp_buf_2 = tmp_buf+(w/2*h/2);
-
-    LAB_Color* new_data = tmp_buf;
-
-    for(int i = 1; i <= num_mipmaps; ++i)
-    {
-        w/=2; h/=2;
-        LAB_MakeMipmap2D(w, h, data, new_data);
-        if(i != num_mipmaps) LAB_Fix0Alpha(w, h, new_data);
-        glTexImage2D(GL_TEXTURE_2D, i, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, new_data);
-        LAB_ImageSave_Fmt(w, h, new_data, "dbg_terrain_%i.png", i);
-        //data = new_data;
-        if(new_data == tmp_buf)
-            new_data = tmp_buf_2, data = tmp_buf;
-        else
-            data = tmp_buf_2, new_data = tmp_buf;
-    }
-
-    LAB_Free(tmp_buf);
-}
-
 
 
 
@@ -96,7 +72,7 @@ LAB_STATIC void LAB_GL_GenerateMipmap2D(size_t w, size_t h, LAB_Color* data, int
 
 bool LAB_AssetMgr_Create(LAB_AssetMgr* mgr, const LAB_AssetMgr_Behavior* behavior, void* user)
 {
-    memcpy(&mgr->behavior, behavior, sizeof *behavior);
+    mgr->behavior = behavior;
     mgr->user = user;
     LAB_AssetMgrTbl_Create(&mgr->table);
     mgr->resource_capacity = 0;
@@ -113,16 +89,16 @@ void LAB_AssetMgr_Destroy(LAB_AssetMgr* mgr)
         LAB_Free((void*)entry->key.str);
     });
 
-    if(mgr->behavior.destroy_resource)
+    if(mgr->behavior->destroy_resource)
         for(size_t i = 0; i < mgr->table.size; ++i)
         {
-            mgr->behavior.destroy_resource(mgr->user, LAB_AssetMgr_GetResource(mgr, i));
+            mgr->behavior->destroy_resource(mgr->user, LAB_AssetMgr_GetByIndex(mgr, i));
         }
 
     LAB_AssetMgrTbl_Destroy(&mgr->table);
 }
 
-void* LAB_AssetMgr_Load(LAB_AssetMgr* mgr, const char* resource_name)
+void* LAB_AssetMgr_GetByName(LAB_AssetMgr* mgr, const char* resource_name)
 {
     LAB_AssetMgrKey key;
     key.hash = LAB_StrHash(resource_name);
@@ -131,7 +107,7 @@ void* LAB_AssetMgr_Load(LAB_AssetMgr* mgr, const char* resource_name)
 
     if(entry == NULL) return NULL;
     if(LAB_AssetMgrTbl_IsEntry(&mgr->table,entry))
-        return LAB_AssetMgr_GetResource(mgr, entry->resource_index);
+        return LAB_AssetMgr_GetByIndex(mgr, entry->resource_index);
 
     const char* resource_name_dup = LAB_StrDup(resource_name);
     if(resource_name_dup == NULL)
@@ -145,8 +121,9 @@ void* LAB_AssetMgr_Load(LAB_AssetMgr* mgr, const char* resource_name)
         {
             size_t new_cap = mgr->resource_capacity;
             if(new_cap == 0) new_cap = 1;
+            else new_cap <<= 1;
 
-            void* new_data = LAB_ReallocN(mgr->resource_vector, new_cap, mgr->behavior.resource_size);
+            void* new_data = LAB_ReallocN(mgr->resource_vector, new_cap, mgr->behavior->resource_size);
             if(new_data == NULL)
                 goto fail;
 
@@ -154,14 +131,15 @@ void* LAB_AssetMgr_Load(LAB_AssetMgr* mgr, const char* resource_name)
             mgr->resource_vector = new_data;
         }
 
-        if(!mgr->behavior.load_resource(mgr->user, resource_name, LAB_AssetMgr_GetResource(mgr, index)))
+        if(!mgr->behavior->load_resource(mgr->user, resource_name, LAB_AssetMgr_GetByIndex(mgr, index)))
             goto fail;
 
         // SUCCESS
         entry->key.hash = key.hash;
         entry->key.str  = resource_name_dup;
+        entry->resource_index = index;
 
-        return LAB_AssetMgr_GetResource(mgr, index);
+        return LAB_AssetMgr_GetByIndex(mgr, index);
     }
 
 fail:

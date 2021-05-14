@@ -44,6 +44,17 @@ LAB_STATIC void LAB_DbgMemPrint(const char* format, const char* file, int line, 
     #endif
 }
 
+LAB_STATIC void LAB_DbgMemPrintf(const char* format, ...)
+{
+    #if !defined NDEBUG && defined LAB_SHOW_DBG_MEM
+    va_list args;
+    va_start(args, format);
+    vfprintf(stderr, format, args);
+    va_end(args);
+    fflush(stderr);
+    #endif
+}
+
 LAB_STATIC void LAB_DbgMemPrintResult(void* result)
 {
     #if !defined NDEBUG && defined LAB_SHOW_DBG_MEM
@@ -178,7 +189,7 @@ void* LAB_DbgReallocN(void* memory, size_t count, size_t size, const char* file,
 char* LAB_DbgStrDup(const char* str, const char* file, int line)
 {
     LAB_DbgMemPrint("strdup(%p", file, line, (void*) str);
-    fprintf(stderr, " = \"%s\")", str); fflush(stderr);
+    LAB_DbgMemPrintf(" = \"%s\")", str);
     char* new_string = LAB_RealStrDup(str);
     LAB_DbgMemPrintResult(new_string);
 
