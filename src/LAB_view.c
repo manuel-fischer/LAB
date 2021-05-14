@@ -57,6 +57,17 @@
 
 ///############################
 
+
+LAB_STATIC void LAB_View_Position_Proc(void* user, LAB_World* world, LAB_OUT double xyz[3]);
+const LAB_IView LAB_view_interface = 
+{
+    .chunkview    = &LAB_ViewChunkProc,
+    .chunkkeep    = &LAB_ViewChunkKeepProc,
+    .chunkunlink  = &LAB_ViewChunkUnlinkProc,
+    .position     = &LAB_View_Position_Proc,
+};
+
+
 LAB_STATIC bool LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_World* world, unsigned visibility);
 LAB_STATIC void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_IN LAB_Chunk* chunk_neighborhood[27], unsigned visibility);
 LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_IN LAB_Chunk* chunk_neighborhood[27], int x, int y, int z, unsigned visibility);
@@ -119,9 +130,9 @@ bool LAB_ConstructView(LAB_View* view, LAB_World* world)
     LAB_FpsGraph_Create(&view->fps_graph_view,        LAB_RGB(128, 128, 255));
     LAB_FpsGraph_Create(&view->fps_graph_view_render, LAB_RGB(255,  32, 128));*/
 
-    LAB_GuiManager_Create(&view->gui_mgr);
-
     LAB_ViewRenderInit(view);
+
+    LAB_GuiManager_Create(&view->gui_mgr);
 
     return 1;
 }
@@ -259,6 +270,15 @@ void LAB_ViewChunkUnlinkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int
 }
 
 
+void LAB_View_Position_Proc(void* user, LAB_World* world, double pos[3])
+{
+    LAB_View* view = (LAB_View*)user;
+
+    pos[0] = view->x;
+    pos[1] = view->y;
+    pos[2] = view->z;
+}
+
 
 /**
  *  Return 1 if the chunk was available
@@ -273,10 +293,12 @@ LAB_STATIC bool LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entr
     if(chunk_neighborhood[1+3+9] == NULL) return 0;
     //chunk_entry->exist = chunk_neighborhood[1+3+9] != NULL;
     chunk_entry->exist = 1;
-    if(LAB_View_IsLocalChunk(view, chunk_entry->x, chunk_entry->y, chunk_entry->z))
+#if 0
+    if(!LAB_View_IsLocalChunk(view, chunk_entry->x, chunk_entry->y, chunk_entry->z))
         for(int i = 0; i < 27; ++i)
             if(chunk_neighborhood[i] == NULL && (rand()&0x3) == 0) return 0;
             //if(chunk_neighborhood[i] == NULL) return 0;
+#endif
 
     chunk_entry->visible_faces = visibility;
     LAB_ViewBuildMeshNeighbored(view, chunk_entry, chunk_neighborhood, visibility);

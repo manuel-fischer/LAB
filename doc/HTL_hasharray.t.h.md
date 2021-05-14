@@ -4,7 +4,7 @@
 # `HTL_hasharray.t.h`
 <small>*File*</small>  
 
-Hasharray with linear forward probing
+Hasharray with linear forward probing.
 
 Template header (multiple inclusion)
 
@@ -17,12 +17,14 @@ Template header (multiple inclusion)
 **[`HASH_FUNC`](HTL_hasharray.t.h--hash_func.md)** &#8213; hash function, takes key, return `size_t`  
 **[`COMP_FUNC`](HTL_hasharray.t.h--comp_func.md)** &#8213; comparison function, takes key, return 0 if equal  
 **[`EMPTY_FUNC`](HTL_hasharray.t.h--empty_func.md)** &#8213; Function to check if entry is empty.  
-**[`CALLOC`](HTL_hasharray.t.h--calloc.md)**  
-**[`FREE`](HTL_hasharray.t.h--free.md)**  
-**`LOAD_NUM`** &#8213; load factor numerator   eg. 3 (lesser than load denominator)  
-**`LOAD_DEN`** &#8213; load factor denominator eg. 4  
-**`GROW_FACTOR`** &#8213; the grow factor, with which the array gets resized, eg. 2  
-**`INITIAL_CAPACITY`** &#8213; the initial capacity of the array, when the first element gets pushed  
-**`CACHE_LAST`** &#8213; 0 or 1, used in `#if-#else` to enable fast cached check (NOT multithreading compatible)  
+## Constants
+**`HTL_HASHARRAY_LOAD_NUM`** &#8213; load factor numerator, its 3 (lesser than load denominator)  
+**`HTL_HASHARRAY_LOAD_DEN`** &#8213; load factor denominator, its 4  
+**`HTL_HASHARRAY_GROW_FACTOR`** &#8213; the grow factor, with which the array gets resized, its 2  
+**`HTL_HASHARRAY_INITIAL_CAPACITY`** &#8213; the initial capacity of the array, when the first element gets pushed, its 16  
+**`HTL_HASHARRAY_CACHE_LAST`** &#8213; 0 or 1, used in `#if-#else` to enable fast cached check (NOT multithreading compatible), its 0  
 ## Class
 **[`HashArray`](HTL_hasharray.t.h--hasharray.md)**  
+## Macro Definitions
+**[`HTL_CALLOC`](HTL_hasharray.t.h--htl_calloc.md)** &#8213; Required to be defined  
+**[`HTL_FREE`](HTL_hasharray.t.h--htl_free.md)** &#8213; Required to be defined  

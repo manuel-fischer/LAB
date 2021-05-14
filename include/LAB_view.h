@@ -12,6 +12,40 @@
 #include <SDL2/SDL_ttf.h>
 
 #include "LAB_view_chunk.h"
+#include "LAB_htl_config.h"
+
+
+/*
+ * It might be better to use a sorted array and then use binary search on that,
+ * because already pointers to the chunk entries are stored in a sorted array to
+ * be used for sorted rendering.
+ *  This might allow to implement functions like FindNear, which starts searching
+ * at a given position
+ *
+ * TODO: sorted array datatype in HTL
+ *   - sorted by a key
+ *   - reordering by changing key func
+ *   - inserting multiple elements at once
+ *     - iteration backwards and copying elements from
+ *       the old back to the new back
+ *   - there should be an insertion without sorting, because
+ *     the array might be reordered by a completely different keyfunction
+ *     afterwards -> InsertAndReorder
+ * -> sorted by distance to the camera
+ *    - manhattan distance (city block distance) is suitable
+ *      - faster to compute than euclidian distance
+ *      - abs -- possibly branchful
+ *      - ordering of neighboring chunks is kept
+ *    - Chebyshev distance (max component distance) >>not<< suitable
+ *      - max, abs -- possibly branchful
+ *      - ordering of neighboring chunks not always kept
+ *        - chunks next to each other tangentially to the camera have
+ *          equal ordering
+ *
+ */
+
+
+
 
 /**
  *  Hooks
@@ -45,51 +79,8 @@ LAB_INLINE LAB_ChunkPos LAB_MakeChunkPos(int x, int y, int z)
 #define LAB_VIEW_CHUNK_TBL_KEY_FUNC(e)       (LAB_MakeChunkPos((*(e))->x, (*(e))->y, (*(e))->z))
 #define LAB_VIEW_CHUNK_TBL_HASH_FUNC(k)      LAB_ChunkPosHash(k)
 #define LAB_VIEW_CHUNK_TBL_COMP_FUNC(k1,k2)  LAB_ChunkPosComp(k1, k2)
-
 #define LAB_VIEW_CHUNK_TBL_EMPTY_FUNC(e)     (*(e) == NULL)
 
-#define LAB_VIEW_CHUNK_TBL_CALLOC            LAB_Calloc
-#define LAB_VIEW_CHUNK_TBL_FREE              LAB_Free
-
-/*
- * through profiling a load factor of 1/2 is better than this ratio:
- *
- *   #define LAB_VIEW_CHUNK_TBL_LOAD_NUM          3
- *   #define LAB_VIEW_CHUNK_TBL_LOAD_DEN          4
- *
- * It might be better to use a sorted array and then use binary search on that,
- * because already pointers to the chunk entries are stored in a sorted array to
- * be used for sorted rendering.
- *  This might allow to implement functions like FindNear, which starts searching
- * at a given position
- *
- * TODO: sorted array datatype in HTL
- *   - sorted by a key
- *   - reordering by changing key func
- *   - inserting multiple elements at once
- *     - iteration backwards and copying elements from
- *       the old back to the new back
- *   - there should be an insertion without sorting, because
- *     the array might be reordered by a completely different keyfunction
- *     afterwards -> InsertAndReorder
- * -> sorted by distance to the camera
- *    - manhattan distance (city block distance) is suitable
- *      - faster to compute than euclidian distance
- *      - abs -- possibly branchful
- *      - ordering of neighboring chunks is kept
- *    - Chebyshev distance (max component distance) >>not<< suitable
- *      - max, abs -- possibly branchful
- *      - ordering of neighboring chunks not always kept
- *        - chunks next to each other tangentially to the camera have
- *          equal ordering
- *
-*/
-#define LAB_VIEW_CHUNK_TBL_LOAD_NUM          3
-#define LAB_VIEW_CHUNK_TBL_LOAD_DEN          4
-#define LAB_VIEW_CHUNK_TBL_GROW_FACTOR       2
-#define LAB_VIEW_CHUNK_TBL_INITIAL_CAPACITY  16
-
-#define LAB_VIEW_CHUNK_TBL_CACHE_LAST        1
 
 #define HTL_PARAM LAB_VIEW_CHUNK_TBL
 #include "HTL_hasharray.t.h"
@@ -175,6 +166,7 @@ typedef struct LAB_View
 
 } LAB_View;
 
+const LAB_IView LAB_view_interface;
 
 /**
  *  Create view, with given world

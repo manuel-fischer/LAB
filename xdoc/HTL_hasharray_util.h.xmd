@@ -1,4 +1,4 @@
-Utility macros for hash arrays
+@briefx Utility macros for hash arrays
 
 @def void HTL_HASHARRAY_EACH(type array_type, array_type* arr, entry_type*# e, {} ...code)
 	Iterate through the hash array.

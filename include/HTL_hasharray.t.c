@@ -1,5 +1,7 @@
-#ifdef HTL_PARAM
-//#include "HTL_hasharray.t.h"
+#ifndef HTL_PARAM
+#error HTL_PARAM should be defined
+#endif
+
 #include <string.h>
 
 HTL_DEF bool HTL_MEMBER(Create)(HTL_P(NAME)* hasharray)
@@ -10,13 +12,13 @@ HTL_DEF bool HTL_MEMBER(Create)(HTL_P(NAME)* hasharray)
 
 HTL_DEF void HTL_MEMBER(Destroy)(HTL_P(NAME)* hasharray)
 {
-    HTL_P(FREE)(hasharray->table);
+    HTL_FREE(hasharray->table);
 }
 
 
 HTL_DEF HTL_P(ENTRY_TYPE)* HTL_MEMBER(Locate)(HTL_P(NAME)* hasharray, HTL_P(KEY_TYPE) key)
 {
-#if HTL_P(CACHE_LAST)
+#if HTL_HASHARRAY_CACHE_LAST
     if(hasharray->cached_entry && HTL_P(COMP_FUNC)(key, HTL_P(KEY_FUNC)(hasharray->cached_entry))==0)
         return hasharray->cached_entry;
 #endif
@@ -39,7 +41,7 @@ HTL_DEF HTL_P(ENTRY_TYPE)* HTL_MEMBER(Locate)(HTL_P(NAME)* hasharray, HTL_P(KEY_
     }
 
 ENTRY_FOUND:
-#if HTL_P(CACHE_LAST)
+#if HTL_HASHARRAY_CACHE_LAST
     hasharray->cached_entry = entry;
 #endif
 EMPTY_ENTRY_FOUND:
@@ -49,7 +51,7 @@ EMPTY_ENTRY_FOUND:
 
 HTL_DEF HTL_P(ENTRY_TYPE)* HTL_MEMBER(PutAlloc)(HTL_P(NAME)* hasharray, HTL_P(KEY_TYPE) key)
 {
-    if(hasharray->size * HTL_P(LOAD_DEN) >= hasharray->capacity * HTL_P(LOAD_NUM))
+    if(hasharray->size * HTL_HASHARRAY_LOAD_DEN >= hasharray->capacity * HTL_HASHARRAY_LOAD_NUM)
     {
         if(hasharray->capacity != 0)
         {
@@ -60,10 +62,10 @@ HTL_DEF HTL_P(ENTRY_TYPE)* HTL_MEMBER(PutAlloc)(HTL_P(NAME)* hasharray, HTL_P(KE
         size_t old_capacity, new_capacity;
         HTL_P(ENTRY_TYPE)* old_table;
         HTL_P(ENTRY_TYPE)* new_table;
-        new_capacity = (hasharray->capacity == 0) ? HTL_P(INITIAL_CAPACITY) : hasharray->capacity * HTL_P(GROW_FACTOR);
+        new_capacity = (hasharray->capacity == 0) ? HTL_HASHARRAY_INITIAL_CAPACITY : hasharray->capacity * HTL_HASHARRAY_GROW_FACTOR;
         printf("A " HTL_STR(HTL_P(NAME)) " was resized to a capacity of %zu, with current size %zu\n",
                new_capacity, hasharray->size);
-        new_table = HTL_P(CALLOC)(new_capacity, (sizeof *new_table));
+        new_table = HTL_CALLOC(new_capacity, (sizeof *new_table));
         if(new_table == NULL) return NULL;
 
         old_table = hasharray->table;
@@ -73,7 +75,7 @@ HTL_DEF HTL_P(ENTRY_TYPE)* HTL_MEMBER(PutAlloc)(HTL_P(NAME)* hasharray, HTL_P(KE
         hasharray->capacity = new_capacity;
         //hasharray->size = hasharray->size;
 
-#if HTL_P(CACHE_LAST)
+#if HTL_HASHARRAY_CACHE_LAST
         hasharray->cached_entry = NULL;
 #endif
 
@@ -85,7 +87,7 @@ HTL_DEF HTL_P(ENTRY_TYPE)* HTL_MEMBER(PutAlloc)(HTL_P(NAME)* hasharray, HTL_P(KE
                 *e = old_table[i]; // memcpy
             }
         }
-        HTL_P(FREE)(old_table);
+        HTL_FREE(old_table);
     }
 
     HTL_P(ENTRY_TYPE)* entry = HTL_MEMBER(Locate)(hasharray, key);
@@ -130,7 +132,7 @@ HTL_DEF void HTL_MEMBER(RemoveEntry)(HTL_P(NAME)* hasharray, HTL_P(ENTRY_TYPE)* 
         empty_pos = i;
     }
     memset(&hasharray->table[empty_pos], 0, sizeof *entry);
-#if HTL_P(CACHE_LAST)
+#if HTL_HASHARRAY_CACHE_LAST
     hasharray->cached_entry = NULL;
 #endif
 }
@@ -152,5 +154,3 @@ HTL_DEF void HTL_MEMBER(Discard)(HTL_P(NAME)* hasharray, HTL_P(ENTRY_TYPE)* entr
 {
     --hasharray->size;
 }
-
-#endif // HTL_PARAM

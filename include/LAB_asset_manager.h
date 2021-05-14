@@ -7,6 +7,7 @@
 #include <SDL2/SDL_surface.h>
 #include <string.h>
 #include "LAB_util.h"
+#include "LAB_htl_config.h"
 
 /** \def LAB_TILE_SIZE
  *
@@ -79,19 +80,7 @@ typedef struct LAB_AssetMgrEntry
 #define LAB_ASSET_MGR_TBL_KEY_FUNC(e)      (&(e)->key)
 #define LAB_ASSET_MGR_TBL_HASH_FUNC(k)     ((k)->hash)
 #define LAB_ASSET_MGR_TBL_COMP_FUNC(k1,k2) ((k1)->hash == (k2)->hash && strcmp((k1)->str, (k2)->str) == 0)
-
 #define LAB_ASSET_MGR_TBL_EMPTY_FUNC(e)    ((e)->key.str == NULL)
-
-#define LAB_ASSET_MGR_TBL_CALLOC           LAB_Calloc
-#define LAB_ASSET_MGR_TBL_FREE             LAB_Free
-
-#define LAB_ASSET_MGR_TBL_LOAD_NUM         3
-#define LAB_ASSET_MGR_TBL_LOAD_DEN         4
-#define LAB_ASSET_MGR_TBL_GROW_FACTOR      2
-#define LAB_ASSET_MGR_TBL_INITIAL_CAPACITY 16
-
-#define LAB_ASSET_MGR_TBL_CACHE_LAST       1
-
 
 #define HTL_PARAM LAB_ASSET_MGR_TBL
 #include "HTL_hasharray.t.h"

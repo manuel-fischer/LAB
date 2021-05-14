@@ -12,6 +12,5 @@ Template header (multiple inclusion)
 ## Parameters
 **`NAME`** &#8213; name of the generated type, prefix of all functions  
 **`TYPE`** &#8213; content type  
-**`CAPACITY`** &#8213; maximum amount of elements  
 ## Class
 **[`Queue`](HTL_queue.t.h--queue.md)**  

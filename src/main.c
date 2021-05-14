@@ -48,11 +48,10 @@ int main(int argc, char** argv)
     static LAB_View       view        = {0};
     static LAB_Input      input       = {0};
 
-    #if GEN_FLAT
-    static LAB_GenFlat    gen_flat    = {0};
-    #else
-    static LAB_GenOverworld gen_overworld = {0};
-    #endif
+    static union {
+        LAB_GenFlat flat;
+        LAB_GenOverworld overworld;
+    } gen = {0};
 
     CHECK_INIT(LAB_Init());
     init = 1;
@@ -68,17 +67,17 @@ int main(int argc, char** argv)
 
     CHECK_INIT(LAB_ConstructWorld(&the_world));
     #if GEN_FLAT
-    gen_flat.block = &LAB_BLOCK_STONE;
+    gen.flat.block = &LAB_BLOCK_STONE;
     the_world.chunkgen      = &LAB_GenFlatProc;
-    the_world.chunkgen_user = &gen_flat;
+    the_world.chunkgen_user = &gen.flat;
     #else
     //gen_overworld.seed = 0x13579bdf;
     //gen_overworld.seed = 2347818473829147;
     //gen_overworld.seed = 58925789342573489;
     //gen_overworld.seed = 78434678123467586;
-    gen_overworld.seed = 7823489034819884932;
+    gen.overworld.seed = 7823489034819884932;
     the_world.chunkgen      = &LAB_GenOverworldProc;
-    the_world.chunkgen_user = &gen_overworld;
+    the_world.chunkgen_user = &gen.overworld;
     #endif
     the_world.max_gen = 0;
     the_world.max_update = 0;
@@ -99,27 +98,24 @@ int main(int argc, char** argv)
     view.load_amount = 7;
     view.empty_load_amount = 5;
     //view.load_amount = 100; // DBG
+    
+    view.load_amount = 20;
+    view.empty_load_amount = 20;
+    
     view.perf_info = &perf_info;
 
     view.x = view.z = 0.5;
     #if GEN_FLAT
     view.y = 2;
     #else
-    view.y = LAB_Gen_Surface_Shape_Func(&gen_overworld, 0, 0) + 3;
+    view.y = LAB_Gen_Surface_Shape_Func(&gen.overworld, 0, 0) + 3;
     #endif
 
     CHECK_INIT(LAB_Input_Create(&input, &view));
     LAB_GL_CHECK();
 
-    the_world.chunkview      = &LAB_ViewChunkProc;
-    the_world.chunkview_user = &view;
-
-    the_world.chunkkeep      = &LAB_ViewChunkKeepProc;
-    the_world.chunkkeep_user = &view;
-
-    the_world.chunkunlink      = &LAB_ViewChunkUnlinkProc;
-    the_world.chunkunlink_user = &view;
-
+    the_world.view = &LAB_view_interface;
+    the_world.view_user = &view;
 
     main_window.onevent      = &LAB_Input_OnEvent_Proc;
     main_window.onevent_user = &input;
@@ -149,31 +145,6 @@ int main(int argc, char** argv)
         ///*if(itr%20 == 0)*/ printf("%i fps          \r", 1000/delta_ms);
         time_ms = time2_ms;
 
-        #if 0
-        LAB_ViewInputTick(&view_input, delta_ms);
-        /*if(itr%10==0)*/ LAB_WorldTick(&the_world, delta_ms);
-        LAB_ViewTick(&view, delta_ms);
-        #else
-        /*    uint64_t t0 = LAB_NanoSeconds();
-        LAB_ViewInputTick(&view_input, delta_ms);
-            uint64_t t1 = LAB_NanoSeconds();
-        LAB_WorldTick(&the_world, delta_ms);
-            uint64_t t2 = LAB_NanoSeconds();
-        LAB_ViewTick(&view, delta_ms);
-            uint64_t t3 = LAB_NanoSeconds();
-
-        uint64_t d_01, d_12, d_23;
-        d_01 = t1-t0;
-        d_12 = t2-t1;
-        d_23 = t3-t2;*/
-
-        /*if(itr%16==0)
-        {
-            printf("ViewInput %i\nWorld %i\nView %i\n\n", (int)d_01, (int)d_12, (int)d_23);
-        }
-        //printf("%i\r", the_world.chunks.size);*/
-
-
         LAB_PerfInfo_Tick(&perf_info);
 
         LAB_PerfInfo_Next(&perf_info, LAB_TG_INPUT);
@@ -189,10 +160,6 @@ int main(int argc, char** argv)
 
 
         LAB_FpsGraph_SetSample(&perf_info.fps_graphs[LAB_TG_WHOLE], delta_ms);
-        /*LAB_FpsGraph_AddSample(&perf_info.fps_graphs[LAB_TG_INPUT], (float)d_01/1000000.f);
-        LAB_FpsGraph_AddSample(&perf_info.fps_graphs[LAB_TG_WORLD], (float)d_12/1000000.f);
-        LAB_FpsGraph_AddSample(&perf_info.fps_graphs[LAB_TG_VIEW],  (float)d_23/1000000.f);*/
-        #endif
     }
 
 

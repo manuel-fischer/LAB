@@ -1,4 +1,4 @@
-[&#8593; `HTL_queue.t.h`](HTL_queue.t.h.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/HTL_queue.t.h.xmd#L9)</small>
+[&#8593; `HTL_queue.t.h`](HTL_queue.t.h.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/HTL_queue.t.h.xmd#L8)</small>
 ***
 
 # `Queue`
@@ -9,8 +9,8 @@
 **[`count`](HTL_queue.t.h--queue--count.md)** &#8213; The number of active entries in the queue  
 ## Functions
 <small>**lifetime**</small>  
-**[`Queue_Construct`](HTL_queue.t.h--queue--queue_construct.md)**  
-**[`Queue_Destruct`](HTL_queue.t.h--queue--queue_destruct.md)**  
+**[`Queue_Create`](HTL_queue.t.h--queue--queue_create.md)**  
+**[`Queue_Destroy`](HTL_queue.t.h--queue--queue_destroy.md)**  
 <small>**modifiers**</small>  
 **[`Queue_PushBack`](HTL_queue.t.h--queue--queue_pushback.md)**  
 **[`Queue_PopFront`](HTL_queue.t.h--queue--queue_popfront.md)**  

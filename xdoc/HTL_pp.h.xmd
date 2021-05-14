@@ -1,3 +1,5 @@
+@brief Preprocessor macros used for implementing template headers
+
 @def token HTL_CAT_U(token a, token b)
 	@briefx Concat two tokens(`a` and `b`) with an underscore
 

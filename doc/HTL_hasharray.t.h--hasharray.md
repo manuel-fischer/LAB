@@ -1,4 +1,4 @@
-[&#8592; `FREE`](HTL_hasharray.t.h--free.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8593; `HTL_hasharray.t.h`](HTL_hasharray.t.h.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/HTL_hasharray.t.h.xmd#L41)</small>
+[&#8592; `EMPTY_FUNC`](HTL_hasharray.t.h--empty_func.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8593; `HTL_hasharray.t.h`](HTL_hasharray.t.h.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8594; `HTL_CALLOC`](HTL_hasharray.t.h--htl_calloc.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/HTL_hasharray.t.h.xmd#L41)</small>
 ***
 
 # `HashArray`

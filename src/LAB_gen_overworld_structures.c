@@ -40,6 +40,7 @@ const LAB_StructureLayer overworld_layers[] =
     {0xfbc90356,    256,    64, 192,     -80,  33,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_BIRCH_FOREST,      &LAB_BLOCK_FALLEN_LEAVES            },
     {0x93475493,     32,     1,   5,     -80,  80,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_DirtPatch,   LAB_GEN_TAG_FOREST,            NULL            },
     {0x13579bdf,    256,     3,   5,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_FOREST,            &oak_tree       },
+    {0x13579bdf,      8,     1,   1,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_PLAINS,            &oak_tree       },
     {0x85484857,    128,     0,   2,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_FOREST,            &birch_tree     },
     {0x85484857,    256,     3,   6,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_BIRCH_FOREST,      &birch_tree     },
     {0x85484857,    256,     2,   4,     -80,  30,      2,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_LargeTree,   LAB_GEN_TAG_TAIGA,             NULL     },

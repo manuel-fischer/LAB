@@ -1,4 +1,4 @@
-Hasharray with linear forward probing
+Hasharray with linear forward probing.
 
 Template header (multiple inclusion)
 
@@ -24,19 +24,19 @@ Template header (multiple inclusion)
 	All bytes of the entry set to 0 should be an representation of an empty entry
     the function could check if a part of the entry is 0
 
-@param CALLOC
+@def HTL_CALLOC
+	@briefx Required to be defined
 	@syn void* CALLOC(size_t num, size_t size)
 	
-@param FREE
+@def HTL_FREE
+	@briefx Required to be defined
 	@syn void FREE(void* mem)
 
-@param LOAD_NUM          load factor numerator   eg. 3 (lesser than load denominator)
-@param LOAD_DEN          load factor denominator eg. 4
-@param GROW_FACTOR       the grow factor, with which the array gets resized, eg. 2
-@param INITIAL_CAPACITY  the initial capacity of the array, when the first element gets pushed
-
-@param CACHE_LAST        0 or 1, used in `#if-#else` to enable fast cached check (NOT multithreading compatible)
-
+@const HTL_HASHARRAY_LOAD_NUM          load factor numerator, its 3 (lesser than load denominator)
+@const HTL_HASHARRAY_LOAD_DEN          load factor denominator, its 4
+@const HTL_HASHARRAY_GROW_FACTOR       the grow factor, with which the array gets resized, its 2
+@const HTL_HASHARRAY_INITIAL_CAPACITY  the initial capacity of the array, when the first element gets pushed, its 16
+@const HTL_HASHARRAY_CACHE_LAST        0 or 1, used in `#if-#else` to enable fast cached check (NOT multithreading compatible), its 0
 
 @class HashArray
 	@attr capacity

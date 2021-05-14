@@ -8,6 +8,7 @@
 #include "LAB_check.h"
 #include "LAB_opt.h"
 #include "LAB_perf_info.h"
+#include "LAB_htl_config.h"
 
 
 typedef struct LAB_ChunkPos
@@ -52,28 +53,6 @@ LAB_INLINE int LAB_ChunkPosComp(LAB_ChunkPos a, LAB_ChunkPos b)
 
 
 
-#if 0
-/*#define LAB_CHUNK_MAP_NAME                 LAB_ChunkMap
-#define LAB_CHUNK_MAP_KEY_TYPE             LAB_ChunkPos
-#define LAB_CHUNK_MAP_VALUE_TYPE           LAB_Chunk*
-#define LAB_CHUNK_MAP_HASH_FUNC            LAB_ChunkPosHash
-#define LAB_CHUNK_MAP_COMP_FUNC            LAB_ChunkPosComp
-#define LAB_CHUNK_MAP_CALLOC               LAB_Calloc
-#define LAB_CHUNK_MAP_FREE                 LAB_Free
-#define LAB_CHUNK_MAP_LOAD_NUM             3
-#define LAB_CHUNK_MAP_LOAD_DEN             4
-#define LAB_CHUNK_MAP_GROW_FACTOR          2
-#define LAB_CHUNK_MAP_INITIAL_CAPACITY     16
-#define LAB_CHUNK_MAP_NULL_REPR            (entry->value == NULL)
-
-#define HTL_PARAM LAB_CHUNK_MAP
-#include "HTL_hashmap.t.h"
-#undef HTL_PARAM*/
-
-
-#else
-
-
 typedef struct LAB_World_ChunkEntry
 {
     LAB_ChunkPos pos;
@@ -86,65 +65,38 @@ typedef struct LAB_World_ChunkEntry
 #define LAB_CHUNK_TBL_KEY_FUNC(e)      ((e)->pos)
 #define LAB_CHUNK_TBL_HASH_FUNC(k)     LAB_ChunkPosHash(k)
 #define LAB_CHUNK_TBL_COMP_FUNC(k1,k2) LAB_ChunkPosComp(k1, k2)
-
 #define LAB_CHUNK_TBL_EMPTY_FUNC(e)    ((e)->chunk == NULL)
-
-#define LAB_CHUNK_TBL_CALLOC           LAB_Calloc
-#define LAB_CHUNK_TBL_FREE             LAB_Free
-
-#define LAB_CHUNK_TBL_LOAD_NUM         3
-#define LAB_CHUNK_TBL_LOAD_DEN         4
-#define LAB_CHUNK_TBL_GROW_FACTOR      2
-#define LAB_CHUNK_TBL_INITIAL_CAPACITY 16
-
-#define LAB_CHUNK_TBL_CACHE_LAST       1
-
 
 #define HTL_PARAM LAB_CHUNK_TBL
 #include "HTL_hasharray.t.h"
 #undef HTL_PARAM
-#endif
+
+
 
 
 #define LAB_CHUNKPOS_QUEUE_NAME     LAB_ChunkPosQueue
 #define LAB_CHUNKPOS_QUEUE_TYPE     LAB_ChunkPos
-#define LAB_CHUNKPOS_QUEUE_CAPACITY LAB_MAX_LOAD_CHUNK
 
 #define HTL_PARAM LAB_CHUNKPOS_QUEUE
 #include "HTL_queue.t.h"
 #undef HTL_PARAM
 
-/*
-#define LAB_CHUNKPOS2_QUEUE_NAME     LAB_ChunkPos2Queue
-#define LAB_CHUNKPOS2_QUEUE_TYPE     LAB_ChunkPos
-#define LAB_CHUNKPOS2_QUEUE_CAPACITY 128
-
-#define HTL_PARAM LAB_CHUNKPOS2_QUEUE
-#include "HTL_queue.t.h"
-#undef HTL_PARAM
-*/
-
-
-/*typedef struct LAB_LightUpdate
-{
-    int x, y, z;
-} LAB_LightUpdate;
-
-#define LAB_LIGHT_UPDATE_QUEUE_NAME LAB_LightUpdateQueue
-#define LAB_LIGHT_UPDATE_QUEUE_TYPE LAB_LightUpdate
-#define LAB_LIGHT_UPDATE_QUEUE_CAPACITY (16*16*16*4)
-
-#define HTL_PARAM LAB_LIGHT_UPDATE_QUEUE
-#include "HTL_queue.t.h"
-#undef HTL_PARAM*/
 
 
 typedef struct LAB_World LAB_World;
 
-typedef void(LAB_ChunkViewer)(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update);
-typedef bool(LAB_ChunkKeeper)(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z);
-typedef void(LAB_ChunkUnlinker)(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z);
+typedef void(LAB_IView_ChunkViewer)(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update);
+typedef bool(LAB_IView_ChunkKeeper)(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z);
+typedef void(LAB_IView_ChunkUnlinker)(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z);
+typedef void(LAB_IView_Position)(void* user, LAB_World* world, LAB_OUT double xyz[3]);
 
+typedef struct LAB_IView
+{
+    LAB_IView_ChunkViewer* chunkview;
+    LAB_IView_ChunkKeeper* chunkkeep;
+    LAB_IView_ChunkUnlinker* chunkunlink;
+    LAB_IView_Position* position;
+} LAB_IView;
 
 /*typedef struct LAB_ChunkEntry
 {
@@ -158,14 +110,8 @@ typedef struct LAB_World
     void*               chunkgen_user;
 
 
-    LAB_ChunkViewer* chunkview;
-    void*            chunkview_user;
-
-    LAB_ChunkKeeper* chunkkeep;
-    void*            chunkkeep_user;
-
-    LAB_ChunkUnlinker* chunkunlink;
-    void*              chunkunlink_user;
+    const LAB_IView* view;
+    void*            view_user;
 
     LAB_ChunkTBL chunks;
 

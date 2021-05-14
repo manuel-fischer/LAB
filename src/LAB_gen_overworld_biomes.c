@@ -33,7 +33,7 @@ const LAB_Gen_Biome LAB_biome_plains =
 {
     .tags           = LAB_GEN_TAG_BUSHES | LAB_GEN_TAG_GRASS | LAB_GEN_TAG_FLOWERS
                     | LAB_GEN_TAG_RUINS
-                    | LAB_GEN_TAG_CAVE | LAB_GEN_TAG_MOUNTAINS,
+                    | LAB_GEN_TAG_CAVE | LAB_GEN_TAG_MOUNTAINS | LAB_GEN_TAG_PLAINS,
     .surface_block  = &LAB_BLOCK_GRASS, //_PLAINS,
     .ground_block   = &LAB_BLOCK_DIRT,
 };

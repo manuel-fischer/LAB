@@ -4,7 +4,6 @@ Template header (multiple inclusion)
 
 @param NAME       name of the generated type, prefix of all functions
 @param TYPE       content type
-@param CAPACITY   maximum amount of elements
 
 @class Queue
 	@attr queue
@@ -17,11 +16,13 @@ Template header (multiple inclusion)
 		@syn size_t count
 		@briefx The number of active entries in the queue
 		
-	@fn[lifetime] bool Queue_Construct(Queue* q)
+	@fn[lifetime] bool Queue_Create(Queue* q, size_t capacity)
 		Construct an empty queue at the referenced location.
 
 		The function never fails, because no memory allocations
 		are done, thus always 1 is returned
+
+		@param capacity maximum amount of elements
 		
 		@note Alternatively the bytes could be set to 0
 		
@@ -32,7 +33,7 @@ Template header (multiple inclusion)
 		@post the queue is valid to be used with the other functions
 
 
-	@fn[lifetime] void Queue_Destruct(Queue* q);
+	@fn[lifetime] void Queue_Destroy(Queue* q);
 		Destruct a queue at the referenced location.
 		Nothing happens, the function exists only for formal reasons.
 		
