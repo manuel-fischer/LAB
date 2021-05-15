@@ -285,6 +285,14 @@ LAB_INLINE LAB_Color LAB_BlendColor(LAB_Color dst, LAB_Color src)
     return LAB_RGBA(r_red, r_grn, r_blu, r_alp);
 }
 
+// used for tinting images
+LAB_CONST
+LAB_INLINE LAB_Color LAB_LerpColor(LAB_Color a, LAB_Color b, LAB_Color t)
+{
+    // TODO faster
+    // add color really needed?
+    return LAB_AddColor(LAB_MulColor_Fast(a, ~t), LAB_MulColor_Fast(b, t));
+}
 
 LAB_CONST
 LAB_INLINE LAB_Color LAB_MixColor50(LAB_Color a, LAB_Color b)

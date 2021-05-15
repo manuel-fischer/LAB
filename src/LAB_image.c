@@ -26,6 +26,13 @@ void LAB_MemBltColor(LAB_Color* dst, LAB_Color const* src, LAB_Color tint, size_
         dst[i] = LAB_BlendColor(dst[i], LAB_MulColor_Fast(src[i], tint));
 }
 
+void LAB_MemBltColor2(LAB_Color* dst, LAB_Color const* src, LAB_Color black_tint, LAB_Color white_tint, size_t size)
+{
+    black_tint &= ~LAB_ALP_MASK; // TODO?
+    for(size_t i = 0; i < size; ++i)
+        dst[i] = LAB_BlendColor(dst[i], LAB_LerpColor(black_tint, white_tint, src[i]));
+}
+
 void LAB_MemNoColor(LAB_Color* dst, size_t size)
 {
     LAB_MemSetColor(dst, LAB_RGBX(ff0000), size);

@@ -365,14 +365,14 @@ void LAB_TexAtlas_Draw(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size, LAB
     }
 }
 
-void LAB_TexAtlas_DrawBlit(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size, LAB_Color* data, LAB_Color tint)
+void LAB_TexAtlas_DrawBlit(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size, LAB_Color* data, LAB_Color black_tint, LAB_Color white_tint)
 {
     size_t i_src = 0;
     size_t i_atl = x + y*atlas->w;
 
     for(size_t row = 0; row < size; ++row)
     {
-        LAB_MemBltColor(atlas->data+i_atl, data+i_src, tint, size);
+        LAB_MemBltColor2(atlas->data+i_atl, data+i_src, black_tint, white_tint, size);
         i_src += size;
         i_atl += atlas->w;
     }

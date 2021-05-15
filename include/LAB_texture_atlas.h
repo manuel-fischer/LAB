@@ -59,7 +59,7 @@ bool LAB_TexAtlas_Create(LAB_TexAtlas* atlas, size_t cell_size);
 void LAB_TexAtlas_Destroy(LAB_TexAtlas* atlas);
 void LAB_TexAtlas_Draw(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size, LAB_Color* data);
 bool LAB_TexAtlas_DrawAlloc(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size, LAB_Color* data);
-void LAB_TexAtlas_DrawBlit(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size, LAB_Color* data, LAB_Color tint);
+void LAB_TexAtlas_DrawBlit(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size, LAB_Color* data, LAB_Color black_tint, LAB_Color white_tint);
 void LAB_TexAtlas_MakeMipmap(LAB_TexAtlas* atlas);
 bool LAB_TexAtlas_Upload2GL(LAB_TexAtlas* atlas);
 void LAB_TexAtlas_LoadTexMatrix(LAB_TexAtlas* atlas);

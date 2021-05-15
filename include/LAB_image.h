@@ -7,6 +7,7 @@
 void LAB_MemSetColor(LAB_Color* dst, LAB_Color color, size_t size);
 void LAB_MemCpyColor(LAB_Color* dst, LAB_Color const* src, size_t size);
 void LAB_MemBltColor(LAB_Color* dst, LAB_Color const* src, LAB_Color tint, size_t size);
+void LAB_MemBltColor2(LAB_Color* dst, LAB_Color const* src, LAB_Color black_tint, LAB_Color white_tint, size_t size);
 void LAB_MemNoColor(LAB_Color* dst, size_t size);
 
 // working with the correct format: 32 Bit RGBA
