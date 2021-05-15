@@ -93,7 +93,12 @@ void LAB_Temp_RecreateTerrain(LAB_TexAtlas* atlas)
         { 2, 2, 0, "leaves"        },
         { 3, 2, 0, "tall_grass"    },
         //{ 4, 2, },
-        { 0, 3, 0, "torch"         },
+        { 0, 3, 0, "blank"         },
+        //{ 0, 3, LAB_RGB(220, 197, 162), "torch_stick" },
+        { 0, 3, LAB_RGB(120, 97, 80), "torch_stick" },
+        { 0, 3, LAB_RGBX(ffffff),       "torch_flame" },
+
+
         { 1, 3, 0, "glass"         },
         { 2, 3, 0, "crystal"       },
         { 3, 3, 0, "taller_grass"  },

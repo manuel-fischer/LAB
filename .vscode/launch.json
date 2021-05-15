@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "gcc: build and debug",
+            "name": "win.gcc: build and debug",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}\\bin\\Debug\\a.exe",
@@ -26,7 +26,7 @@
             "preLaunchTask": "C/C++: gcc build for debug"
         },
         {
-            "name": "gcc: debug",
+            "name": "win.gcc: debug",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}\\bin\\Debug\\a.exe",
@@ -46,7 +46,7 @@
             ]
         },
         {
-            "name": "gcc: build and run",
+            "name": "win.gcc: build and run",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}\\bin\\Release\\a.exe",
@@ -67,7 +67,7 @@
             "preLaunchTask": "C/C++: gcc build for release"
         },
         {
-            "name": "gcc: run",
+            "name": "win.gcc: run",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}\\bin\\Release\\a.exe",

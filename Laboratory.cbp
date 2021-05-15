@@ -175,12 +175,14 @@
 			<Add option="--verbose" />
 		</Linker>
 		<Unit filename="TODO.md" />
+		<Unit filename="include/HTL_dyn_array.t.h" />
 		<Unit filename="include/HTL_hasharray.t.c">
 			<Option compilerVar="CC" />
 			<Option compile="0" />
 			<Option link="0" />
 		</Unit>
 		<Unit filename="include/HTL_hasharray.t.h" />
+		<Unit filename="include/HTL_hasharray_config.h" />
 		<Unit filename="include/HTL_hasharray_util.h" />
 		<Unit filename="include/HTL_hashmap.t.c">
 			<Option compilerVar="CPP" />
@@ -200,6 +202,7 @@
 		<Unit filename="include/LAB_arith.h" />
 		<Unit filename="include/LAB_array.h" />
 		<Unit filename="include/LAB_asset_manager.h" />
+		<Unit filename="include/LAB_assets.h" />
 		<Unit filename="include/LAB_attr.h" />
 		<Unit filename="include/LAB_bits.h" />
 		<Unit filename="include/LAB_block.h" />
@@ -213,9 +216,7 @@
 		<Unit filename="include/LAB_crammed_chunk_pos_set.h" />
 		<Unit filename="include/LAB_debug.h" />
 		<Unit filename="include/LAB_debug_options.h" />
-		<Unit filename="include/LAB_def.h">
-			<Option target="&lt;{~None~}&gt;" />
-		</Unit>
+		<Unit filename="include/LAB_def.h" />
 		<Unit filename="include/LAB_direction.h" />
 		<Unit filename="include/LAB_entity.h" />
 		<Unit filename="include/LAB_error.h" />
@@ -242,6 +243,7 @@
 		<Unit filename="include/LAB_gui_menu.h" />
 		<Unit filename="include/LAB_gui_text_box.h" />
 		<Unit filename="include/LAB_gui_world_selection.h" />
+		<Unit filename="include/LAB_htl_config.h" />
 		<Unit filename="include/LAB_i_inventory.h" />
 		<Unit filename="include/LAB_image.h" />
 		<Unit filename="include/LAB_input.h" />
@@ -252,14 +254,13 @@
 		<Unit filename="include/LAB_memory.h" />
 		<Unit filename="include/LAB_model.h" />
 		<Unit filename="include/LAB_model_order.h" />
+		<Unit filename="include/LAB_obj.h" />
 		<Unit filename="include/LAB_opt.h" />
 		<Unit filename="include/LAB_perf.h" />
 		<Unit filename="include/LAB_perf_info.h" />
 		<Unit filename="include/LAB_pp.h" />
 		<Unit filename="include/LAB_random.h" />
-		<Unit filename="include/LAB_registry.h">
-			<Option target="&lt;{~None~}&gt;" />
-		</Unit>
+		<Unit filename="include/LAB_registry.h" />
 		<Unit filename="include/LAB_render_item.h" />
 		<Unit filename="include/LAB_render_pass.h" />
 		<Unit filename="include/LAB_sdl.h" />
@@ -280,6 +281,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_asset_manager.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/LAB_assets.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/LAB_block.c">

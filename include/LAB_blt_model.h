@@ -62,14 +62,30 @@
 #define LAB_MK_QUAD_1UV(x0, y0, z0, \
                         x1, y1, z1, \
                         x2, y2, z2, \
-                        x3, y3, z3,  u0, v0, \
+                        x3, y3, z3, \
+                        u, v, \
                         color, cull, light, vis) \
-    LAB_MK_QUAD(x0, y0, z0,  (u0)+0, (v0)+0,            \
-                x1, y1, z1,  (u0)+1, (v0)+0,            \
-                x2, y2, z2,  (u0)+0, (v0)+1,            \
-                x3, y3, z3,  (u0)+1, (v0)+1,            \
-                color,                                  \
-                cull, light, vis),
+    LAB_MK_QUAD(x0, y0, z0,  (u)+0, (v)+0,       \
+                x1, y1, z1,  (u)+1, (v)+0,       \
+                x2, y2, z2,  (u)+0, (v)+1,       \
+                x3, y3, z3,  (u)+1, (v)+1,       \
+                color,                           \
+                cull, light, vis)
+                
+#define LAB_MK_QUAD_UV(x0, y0, z0, \
+                       x1, y1, z1, \
+                       x2, y2, z2, \
+                       x3, y3, z3, \
+                       u, v, \
+                       ul, vt, \
+                       ur, vb, \
+                       color, cull, light, vis)  \
+    LAB_MK_QUAD(x0, y0, z0,  (u)+(ul), (v)+(vt), \
+                x1, y1, z1,  (u)+(ur), (v)+(vt), \
+                x2, y2, z2,  (u)+(ul), (v)+(vb), \
+                x3, y3, z3,  (u)+(ur), (v)+(vb), \
+                color,                           \
+                cull, light, vis)
 
 
 
@@ -214,33 +230,37 @@ LAB_Model name = {                                            \
                                         ...) \
 LAB_Triangle name##_data[] = {                             \
     /** NORTH-WEST **/                                     \
-    LAB_MK_QUAD(0.9, 1, 0.1,  (wu)+0, (wv)+0,              \
-                0.1, 1, 0.9,  (wu)+1, (wv)+0,              \
-                0.9, 0, 0.1,  (wu)+0, (wv)+1,              \
-                0.1, 0, 0.9,  (wu)+1, (wv)+1,              \
-                LAB_MUL_COLOR(wc, LAB_SHADE_C),            \
-                LAB_DIR_ALL, 0, LAB_DIR_N|LAB_DIR_W),      \
+    LAB_MK_QUAD_1UV(0.9, 1, 0.1,                           \
+                    0.1, 1, 0.9,                           \
+                    0.9, 0, 0.1,                           \
+                    0.1, 0, 0.9,                           \
+                    wu, wv,                                \
+                    LAB_MUL_COLOR(wc, LAB_SHADE_C),        \
+                    LAB_DIR_ALL, 0, LAB_DIR_N|LAB_DIR_W),  \
     /** SOUTH-EAST **/                                     \
-    LAB_MK_QUAD(0.1, 1, 0.9,  (eu)+0, (ev)+0,              \
-                0.9, 1, 0.1,  (eu)+1, (ev)+0,              \
-                0.1, 0, 0.9,  (eu)+0, (ev)+1,              \
-                0.9, 0, 0.1,  (eu)+1, (ev)+1,              \
-                LAB_MUL_COLOR(ec, LAB_SHADE_C),            \
-                LAB_DIR_ALL, 0, LAB_DIR_S|LAB_DIR_E),      \
+    LAB_MK_QUAD_1UV(0.1, 1, 0.9,                           \
+                    0.9, 1, 0.1,                           \
+                    0.1, 0, 0.9,                           \
+                    0.9, 0, 0.1,                           \
+                    eu, ev,                                \
+                    LAB_MUL_COLOR(ec, LAB_SHADE_C),        \
+                    LAB_DIR_ALL, 0, LAB_DIR_S|LAB_DIR_E),  \
     /** NORTH-EAST **/                                     \
-    LAB_MK_QUAD(0.9, 1, 0.9,  (nu)+0, (nv)+0,              \
-                0.1, 1, 0.1,  (nu)+1, (nv)+0,              \
-                0.9, 0, 0.9,  (nu)+0, (nv)+1,              \
-                0.1, 0, 0.1,  (nu)+1, (nv)+1,              \
-                LAB_MUL_COLOR(nc, LAB_SHADE_C),            \
-                LAB_DIR_ALL, 0, LAB_DIR_N|LAB_DIR_E),      \
+    LAB_MK_QUAD_1UV(0.9, 1, 0.9,                           \
+                    0.1, 1, 0.1,                           \
+                    0.9, 0, 0.9,                           \
+                    0.1, 0, 0.1,                           \
+                    nu, nv,                                \
+                    LAB_MUL_COLOR(nc, LAB_SHADE_C),        \
+                    LAB_DIR_ALL, 0, LAB_DIR_N|LAB_DIR_E),  \
     /** SOUTH-WEST **/                                     \
-    LAB_MK_QUAD(0.1, 1, 0.1,  (su)+0, (sv)+0,              \
-                0.9, 1, 0.9,  (su)+1, (sv)+0,              \
-                0.1, 0, 0.1,  (su)+0, (sv)+1,              \
-                0.9, 0, 0.9,  (su)+1, (sv)+1,              \
-                LAB_MUL_COLOR(sc, LAB_SHADE_C),            \
-                LAB_DIR_ALL, 0, LAB_DIR_S|LAB_DIR_W)       \
+    LAB_MK_QUAD_1UV(0.1, 1, 0.1,                           \
+                    0.9, 1, 0.9,                           \
+                    0.1, 0, 0.1,                           \
+                    0.9, 0, 0.9,                           \
+                    su, sv,                                \
+                    LAB_MUL_COLOR(sc, LAB_SHADE_C),        \
+                    LAB_DIR_ALL, 0, LAB_DIR_S|LAB_DIR_W)   \
 };                                                         \
 LAB_Model name = {                                         \
     .size = sizeof(name##_data) / sizeof(LAB_Triangle),    \

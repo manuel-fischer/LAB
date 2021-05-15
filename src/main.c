@@ -99,8 +99,8 @@ int main(int argc, char** argv)
     view.empty_load_amount = 5;
     //view.load_amount = 100; // DBG
     
-    view.load_amount = 20;
-    view.empty_load_amount = 20;
+    /*view.load_amount = 20;
+    view.empty_load_amount = 20;*/
     
     view.perf_info = &perf_info;
 
