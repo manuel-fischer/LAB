@@ -27,28 +27,64 @@ typedef struct LAB_Gen_Overworld_Tree_Params
 static const LAB_Gen_Overworld_Tree_Params oak_tree   = { &LAB_BLOCK_WOOD, &LAB_BLOCK_LEAVES };
 static const LAB_Gen_Overworld_Tree_Params birch_tree = { &LAB_BLOCK_BIRCH_WOOD, &LAB_BLOCK_BIRCH_LEAVES };
 
+typedef struct LAB_Gen_Overworld_Tower_Params
+{
+    LAB_Block* corner,* wall,* floor,* ceiling;
+} LAB_Gen_Overworld_Tower_Params;
 
+static const LAB_Gen_Overworld_Tower_Params stone_tower = {
+    .corner = &LAB_BLOCK_STONE_SMOOTH,
+    .wall    = &LAB_BLOCK_STONE_BRICKS,
+    .floor   = &LAB_BLOCK_STONE_COBBLE,
+    .ceiling = &LAB_BLOCK_WOOD_PLANKS_DARK,
+};
+static const LAB_Gen_Overworld_Tower_Params basalt_tower = {
+    .corner  = &LAB_BLOCK_BASALT_SMOOTH,
+    .wall    = &LAB_BLOCK_BASALT_BRICKS,
+    .floor   = &LAB_BLOCK_BASALT_COBBLE,
+    .ceiling = &LAB_BLOCK_WOOD_PLANKS,
+};
+static const LAB_Gen_Overworld_Tower_Params marble_tower = {
+    .corner  = &LAB_BLOCK_MARBLE_SMOOTH,
+    .wall    = &LAB_BLOCK_MARBLE_BRICKS,
+    .floor   = &LAB_BLOCK_MARBLE_COBBLE,
+    .ceiling = &LAB_BLOCK_WOOD_PLANKS_DARK,
+};
+static const LAB_Gen_Overworld_Tower_Params desert_tower = {
+    .corner  = &LAB_BLOCK_SANDSTONE_SMOOTH,
+    .wall    = &LAB_BLOCK_SANDSTONE_BRICKS,
+    .floor   = &LAB_BLOCK_SANDSTONE_COBBLE,
+    .ceiling = &LAB_BLOCK_WOOD_PLANKS_DARK,
+};
+
+
+#define F(percent) (int)((percent)*(float)(LAB_MAX_PROBABILITY))
 const LAB_StructureLayer overworld_layers[] =
-{ //    salt   probability   count      height range  radius         place                           func                        tags                      param
-  //                        <?   >?       <?   >?
-    {0x91827364,    256,     0,   1,      20, 200,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Rock,        LAB_GEN_TAG_MOUNTAINS,         NULL            },
-    {0x32547698,    256,     0,   4,     -80,  60,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Bush,        LAB_GEN_TAG_BUSHES,            NULL            },
-    {0x56789abc,    256,     3,  35,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_GRASS,             &LAB_BLOCK_TALLGRASS            },
-    {0xd8f8e945,    256,     3,  35,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_GRASS,             &LAB_BLOCK_TALLERGRASS            },
-    {0xfd874567,    128,     1,  10,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_FLOWERS,           &LAB_BLOCK_RED_TULIP            },
-    {0xfbc90356,    128,     1,  10,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_FLOWERS,           &LAB_BLOCK_YELLOW_TULIP            },
-    {0xfbc90356,    256,    64, 192,     -80,  33,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_BIRCH_FOREST,      &LAB_BLOCK_FALLEN_LEAVES            },
-    {0x93475493,     32,     1,   5,     -80,  80,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_DirtPatch,   LAB_GEN_TAG_FOREST,            NULL            },
-    {0x13579bdf,    256,     3,   5,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_FOREST,            &oak_tree       },
-    {0x13579bdf,      8,     1,   1,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_PLAINS,            &oak_tree       },
-    {0x85484857,    128,     0,   2,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_FOREST,            &birch_tree     },
-    {0x85484857,    256,     3,   6,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_BIRCH_FOREST,      &birch_tree     },
-    {0x85484857,    256,     2,   4,     -80,  30,      2,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_LargeTree,   LAB_GEN_TAG_TAIGA,             NULL     },
-    {0xfdb97531,      2,     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_RUINS,             NULL            },
+{ //       salt    probability   count      height range  radius         place                           func                        tags                      param
+  //                            <?   >?       <?   >?
+    {0x91827364,  F(1.    ),     0,   1,      20, 200,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Rock,        LAB_GEN_TAG_MOUNTAINS,         NULL            },
+    {0x32547698,  F(1.    ),     0,   4,     -80,  60,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Bush,        LAB_GEN_TAG_BUSHES,            NULL            },
+    {0x56789abc,  F(1.    ),     3,  35,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_GRASS,             &LAB_BLOCK_TALLGRASS            },
+    {0xd8f8e945,  F(1.    ),     3,  35,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_GRASS,             &LAB_BLOCK_TALLERGRASS            },
+    {0xfd874567,  F(1  /2.),     1,  10,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_FLOWERS,           &LAB_BLOCK_RED_TULIP            },
+    {0xfbc90356,  F(1  /2.),     1,  10,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_FLOWERS,           &LAB_BLOCK_YELLOW_TULIP            },
+    {0xfbc90356,  F(1.    ),    64, 192,     -80,  33,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_BIRCH_FOREST,      &LAB_BLOCK_FALLEN_LEAVES            },
+    {0x93475493,  F(1  /8.),     1,   5,     -80,  80,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_DirtPatch,   LAB_GEN_TAG_FOREST,            NULL            },
+    {0x13579bdf,  F(1.    ),     3,   5,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_FOREST,            &oak_tree       },
+    {0x13579bdf,  F(1 /32.),     1,   1,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_PLAINS,            &oak_tree       },
+    {0x85484857,  F(1  /2.),     0,   2,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_FOREST,            &birch_tree     },
+    {0x85484857,  F(1.    ),     3,   6,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_BIRCH_FOREST,      &birch_tree     },
+    {0x85484857,  F(1.    ),     2,   4,     -80,  30,      2,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_LargeTree,   LAB_GEN_TAG_TAIGA,             NULL     },
+//    {0xfdb97531,  F(1/128.),     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_RUINS,             NULL            },
+    {0xfdb97531,  F(1/256.),     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_RUINS,             &stone_tower             },
+    //{0x783f45df,  F(1/512.),     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_RUINS,             &basalt_tower            },
+    {0x7845fdf3,  F(1/512.),     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_RUINS,             &marble_tower            },
+    {0x783f45df,  F(1/ 64.),     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_DESERT,            &desert_tower            },
 
-    {0x21436587,    256,     0,   5, INT_MIN, -50,      1,    LAB_Gen_PlaceOnCaveCeiling,    LAB_Gen_Cave_CeilingCrystal,   LAB_GEN_TAG_CAVE,              NULL            },
+    {0x21436587,  F(    1.),        0,   5, INT_MIN, -50,      1,    LAB_Gen_PlaceOnCaveCeiling,    LAB_Gen_Cave_CeilingCrystal,   LAB_GEN_TAG_CAVE,              NULL            },
 };
 const size_t overworld_layers_count = sizeof(overworld_layers)/sizeof(overworld_layers[0]);
+#undef F
 
 
 
@@ -186,32 +222,7 @@ LAB_STATIC void LAB_Gen_Overworld_Tower(LAB_Placer* p, LAB_Random* rnd, const vo
 
     // TODO: UB: floor is a library function name and
     //           could possibly be defined as a macro
-    LAB_Block* corner,* wall,* floor,* ceiling;
-    switch((R>>2)&3)
-    {
-        case 0:
-        case 1:
-            corner  = &LAB_BLOCK_STONE_SMOOTH;
-            wall    = &LAB_BLOCK_STONE_BRICKS;
-            floor   = &LAB_BLOCK_STONE_COBBLE;
-            ceiling = &LAB_BLOCK_WOOD_PLANKS_DARK;
-        break;
-
-        case 2:
-            corner  = &LAB_BLOCK_BASALT_SMOOTH;
-            wall    = &LAB_BLOCK_BASALT_BRICKS;
-            floor   = &LAB_BLOCK_BASALT_COBBLE;
-            ceiling = &LAB_BLOCK_WOOD_PLANKS;
-        break;
-
-        case 3:
-            corner  = &LAB_BLOCK_MARBLE_SMOOTH;
-            wall    = &LAB_BLOCK_MARBLE_BRICKS;
-            floor   = &LAB_BLOCK_MARBLE_COBBLE;
-            ceiling = &LAB_BLOCK_WOOD_PLANKS_DARK;
-        break;
-        default: LAB_UNREACHABLE();
-    }
+    const LAB_Gen_Overworld_Tower_Params* LAB_RESTRICT tower = param;
 
     for(int z = -r; z <= r; ++z)
     for(int y = -4; y <  h+3; ++y)
@@ -222,7 +233,7 @@ LAB_STATIC void LAB_Gen_Overworld_Tower(LAB_Placer* p, LAB_Random* rnd, const vo
         //LAB_Block* b = &LAB_BLOCK_AIR;
 
         if((x==-r||x==r || z==-r||z==r) && (x==z||x==-z))
-            LAB_Placer_SetBlock(p, x, y, z, corner);
+            LAB_Placer_SetBlock(p, x, y, z, tower->corner);
 
 
         else if(y<h)
@@ -232,19 +243,19 @@ LAB_STATIC void LAB_Gen_Overworld_Tower(LAB_Placer* p, LAB_Random* rnd, const vo
                 if(y>=0&&(x==0||z==0)&&(y==0||(y&3)==1))
                     (void)0;//LAB_Placer_SetBlock(p, x, y, z, &LAB_BLOCK_AIR);
                 else
-                    LAB_Placer_SetBlock(p, x, y, z, wall);
+                    LAB_Placer_SetBlock(p, x, y, z, tower->wall);
             }
             else if(y<0)
-                LAB_Placer_SetBlock(p, x, y, z, floor);
+                LAB_Placer_SetBlock(p, x, y, z, tower->floor);
 
             else if((y&3)==3)
-                LAB_Placer_SetBlock(p, x, y, z, ceiling);
+                LAB_Placer_SetBlock(p, x, y, z, tower->ceiling);
 
             else
                 (void)0;//LAB_Placer_SetBlock(p, x, y, z, &LAB_BLOCK_AIR);
         }
         else if(y < h+2&&(x==-r||x==r || z==-r||z==r)&&(y==h||((x^z)&1)==0))
-            LAB_Placer_SetBlock(p, x, y, z, corner);
+            LAB_Placer_SetBlock(p, x, y, z, tower->corner);
     }
 }
 

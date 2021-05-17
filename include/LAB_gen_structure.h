@@ -3,10 +3,12 @@
 #include "LAB_gen.h"
 #include "LAB_random.h"
 
+#define LAB_MAX_PROBABILITY (1<<16)
+
 typedef struct LAB_StructureLayer
 {
     int salt;
-    int probability; // in range [0, 256],
+    int probability; // in range [0, 2**16],
     int min_count, max_count;
     int min_height, max_height; // both inclusive
     int max_chunk_radius; // maximum size in chunks

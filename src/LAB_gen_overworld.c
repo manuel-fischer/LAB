@@ -114,7 +114,7 @@ LAB_STATIC void LAB_Gen_PopulateLayer_Func(LAB_GenOverworld* gen, LAB_Placer* p,
 
     // place plant groups
     uint64_t r = LAB_NextRandom(&rnd);
-    if((int)(r&0xff) < lyr->probability)
+    if((int)(r&(LAB_MAX_PROBABILITY-1)) < lyr->probability)
     {
         count = lyr->min_count+((r>>8)%(lyr->max_count-lyr->min_count+1));
         for(int i = 0; i < count; ++i)
