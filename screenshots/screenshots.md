@@ -1,6 +1,9 @@
 # Screenshots
 More recent screenshots are at the top, so if you want to see the developement stages from early on, you can start at the bottom and scroll up.
 
+## Spruce forest
+![](025.png)
+
 ## Birch forest
 ![](024.png)
 ![](023.png)

@@ -2,9 +2,10 @@ LAB main include file
 
 @fn int LAB_Init(void)
 	@briefx Init LAB
-	@return 0 on error
+	@return 0 on error, 1 otherwise
 	@sidefx Initializes global resources
 	
 @fn void LAB_Quit(void)
 	@brief Quit LAB
+	@pre LAB_Init was called successfully
 	@sidefx Frees global resources
