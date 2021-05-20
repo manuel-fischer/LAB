@@ -53,7 +53,7 @@ LAB_DEF_BLOCK_GROUP_STONE(LAPIZ,     LAB_RGB(30, 80, 200));
 LAB_DEF_BLOCK_GROUP_STONE(SANDSTONE, LAB_RGB(255, 230, 150)); //.tint = LAB_RGB(236, 223, 179),
 
 LAB_DEF_BLOCK_CUBE(SAND,
-    /*texture*/     3, 1, LAB_RGB(255, 230, 130), 
+    /*texture*/     3, 1, LAB_RGBX(ffffff), //LAB_RGB(255, 230, 130), 
     /*dia*/         0,
     /*render_pass*/ LAB_RENDER_PASS_SOLID,
     /*flags*/       LAB_BLOCK_SOLID

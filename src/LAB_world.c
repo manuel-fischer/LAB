@@ -678,6 +678,7 @@ void LAB_WorldTick(LAB_World* world, uint32_t delta_ms)
                     LAB_DestroyChunk(chunk);
                     LAB_ChunkTBL_RemoveEntry(&world->chunks, &world->chunks.table[i]);
                     --i; // repeat index
+                    if(LAB_NanoSeconds() - nanos > 6000*1000) break; // 6 ms
                 }
             }
         }
