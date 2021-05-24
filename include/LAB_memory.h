@@ -1,6 +1,7 @@
 #pragma once
 #include "LAB_stdinc.h"
 #include "LAB_opt.h"
+#include "LAB_util.h" // -> LAB_MultOverflow
 
 #ifndef NDEBUG
 #define LAB_DEBUG_ALLOC
@@ -14,13 +15,13 @@
 #define LAB_Free(memory)          free(memory)
 // overflow safe version of LAB_Realloc
 #define LAB_MallocN(count, size) ( \
-    (LAB_UNLIKELY(((size_t)(count)*(size_t)(size))/(size_t)(size) < (size_t)(count))) \
+    (LAB_UNLIKELY(LAB_MultOverflow(count, size))) \
         ? NULL \
         : LAB_Malloc((size_t)(count)*(size_t)(size)) \
 )
 
 #define LAB_ReallocN(memory, count, size) ( \
-    (LAB_UNLIKELY(((size_t)(count)*(size_t)(size))/(size_t)(size) < (size_t)(count))) \
+    (LAB_UNLIKELY(LAB_MultOverflow(count, size))) \
         ? NULL \
         : LAB_Realloc(memory, (size_t)(count)*(size_t)(size)) \
 )

@@ -28,11 +28,35 @@ HTL_DEF bool HTL_MEMBER(IsFull)(HTL_P(NAME)* q)
     return q->count == q->capacity;
 }
 
-HTL_DEF HTL_P(TYPE)* HTL_MEMBER(PushBack)(HTL_P(NAME)* q)
+HTL_DEF HTL_P(TYPE)* HTL_MEMBER(Push)(HTL_P(NAME)* q, HTL_P(PRIO_TYPE) prio)
 {
-    if(q->count == q->capacity) return NULL;
-    q->count++;
-    return HTL_MEMBER(Back)(q);
+    // if the queue is full, the element with the highest probabilty
+    // is replaced, all positions get invalidated
+
+
+    // shift elements to the right and find insertion position    
+    size_t i = q->first+q->count;
+    if(i >= q->capacity) i -= q->capacity;
+
+    size_t r = q->count;
+    for(; r > 0; --r)
+    {
+        size_t i_prev = (i > 0) ? i-1 : q->capacity-1;
+
+        if(!HTL_P(PRIO_HIGHER_THAN)(prio, HTL_P(PRIO)(&q->queue[i_prev])))
+            break;
+            
+        if(r != q->capacity)
+            q->queue[i] = q->queue[i_prev];
+            
+        i = i_prev;
+    }
+    if(r == q->capacity)
+        return NULL;
+
+    if(q->count != q->capacity) ++q->count;
+
+    return &q->queue[i];
 }
 
 HTL_DEF void HTL_MEMBER(PopFront)(HTL_P(NAME)* q)
@@ -46,28 +70,6 @@ HTL_DEF void HTL_MEMBER(PopFront)(HTL_P(NAME)* q)
 HTL_DEF HTL_P(TYPE)* HTL_MEMBER(Front)(HTL_P(NAME)* q)
 {
     return &q->queue[q->first];
-}
-
-HTL_DEF HTL_P(TYPE)* HTL_MEMBER(Back)(HTL_P(NAME)* q)
-{
-    //int index = (q->first+q->count) % q->capacity;
-    size_t index = q->first+q->count;
-    if(index >= q->capacity) index -= q->capacity;
-    return &q->queue[index];
-}
-
-
-HTL_DEF HTL_P(TYPE)* HTL_MEMBER(Find)(HTL_P(NAME)* q, int (*comp1)(void* ctx, HTL_P(TYPE)* content), void* ctx)
-{
-    size_t j = q->first;
-    for(size_t i = 0; i < q->count; ++i)
-    {
-        HTL_P(TYPE)* elem = &q->queue[j];
-        if((*comp1)(elem, ctx) == 0) return elem;
-        j++;
-        if(j == q->capacity) j = 0;
-    }
-    return NULL;
 }
 
 #endif // HTL_PARAM

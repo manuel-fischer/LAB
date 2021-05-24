@@ -71,11 +71,11 @@ int main(int argc, char** argv)
     the_world.chunkgen      = &LAB_GenFlatProc;
     the_world.chunkgen_user = &gen.flat;
     #else
-    //gen_overworld.seed = 0x13579bdf;
-    //gen_overworld.seed = 2347818473829147;
-    //gen_overworld.seed = 58925789342573489;
-    //gen_overworld.seed = 78434678123467586;
-    gen.overworld.seed = 7823489034819884932;
+    //gen.overworld.seed = 0x13579bdf;
+    //gen.overworld.seed = 2347818473829147;
+    gen.overworld.seed = 58925789342573489;
+    //gen.overworld.seed = 78434678123467586;
+    //gen.overworld.seed = 7823489034819884932;
     the_world.chunkgen      = &LAB_GenOverworldProc;
     the_world.chunkgen_user = &gen.overworld;
     #endif
@@ -100,7 +100,8 @@ int main(int argc, char** argv)
     //view.load_amount = 100; // DBG
     
     /*view.load_amount = 20;
-    view.empty_load_amount = 20;*/
+    view.empty_load_amount = 100;*/
+    view.load_amount = 100;
     
     view.perf_info = &perf_info;
 

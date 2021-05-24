@@ -14,6 +14,7 @@ LAB_STATIC void LAB_Gen_Overworld_Rock(LAB_Placer* p, LAB_Random* rnd, const voi
 LAB_STATIC void LAB_Gen_Overworld_Tree(LAB_Placer* p, LAB_Random* rnd, const void* param);
 LAB_STATIC void LAB_Gen_Overworld_LargeTree(LAB_Placer* p, LAB_Random* rnd, const void* param);
 LAB_STATIC void LAB_Gen_Overworld_Tower(LAB_Placer* p, LAB_Random* rnd, const void* param);
+LAB_STATIC void LAB_Gen_Overworld_House(LAB_Placer* p, LAB_Random* rnd, const void* param);
 
 LAB_STATIC void LAB_Gen_Cave_CeilingCrystal(LAB_Placer* p, LAB_Random* rnd, const void* param);
 
@@ -27,30 +28,33 @@ typedef struct LAB_Gen_Overworld_Tree_Params
 static const LAB_Gen_Overworld_Tree_Params oak_tree   = { &LAB_BLOCK_WOOD, &LAB_BLOCK_LEAVES };
 static const LAB_Gen_Overworld_Tree_Params birch_tree = { &LAB_BLOCK_BIRCH_WOOD, &LAB_BLOCK_BIRCH_LEAVES };
 
-typedef struct LAB_Gen_Overworld_Tower_Params
+
+// TODO: UB: floor is a library function name and
+//           could possibly be defined as a macro
+typedef struct LAB_Gen_BuildingPalette
 {
     LAB_Block* corner,* wall,* floor,* ceiling;
-} LAB_Gen_Overworld_Tower_Params;
+} LAB_Gen_BuildingPalette;
 
-static const LAB_Gen_Overworld_Tower_Params stone_tower = {
+static const LAB_Gen_BuildingPalette stone_palette = {
     .corner = &LAB_BLOCK_STONE_SMOOTH,
     .wall    = &LAB_BLOCK_STONE_BRICKS,
     .floor   = &LAB_BLOCK_STONE_COBBLE,
     .ceiling = &LAB_BLOCK_WOOD_PLANKS_DARK,
 };
-static const LAB_Gen_Overworld_Tower_Params basalt_tower = {
+static const LAB_Gen_BuildingPalette basalt_palette = {
     .corner  = &LAB_BLOCK_BASALT_SMOOTH,
     .wall    = &LAB_BLOCK_BASALT_BRICKS,
     .floor   = &LAB_BLOCK_BASALT_COBBLE,
     .ceiling = &LAB_BLOCK_WOOD_PLANKS,
 };
-static const LAB_Gen_Overworld_Tower_Params marble_tower = {
+static const LAB_Gen_BuildingPalette marble_palette = {
     .corner  = &LAB_BLOCK_MARBLE_SMOOTH,
     .wall    = &LAB_BLOCK_MARBLE_BRICKS,
     .floor   = &LAB_BLOCK_MARBLE_COBBLE,
     .ceiling = &LAB_BLOCK_WOOD_PLANKS_DARK,
 };
-static const LAB_Gen_Overworld_Tower_Params desert_tower = {
+static const LAB_Gen_BuildingPalette desert_palette = {
     .corner  = &LAB_BLOCK_SANDSTONE_SMOOTH,
     .wall    = &LAB_BLOCK_SANDSTONE_BRICKS,
     .floor   = &LAB_BLOCK_SANDSTONE_COBBLE,
@@ -76,10 +80,11 @@ const LAB_StructureLayer overworld_layers[] =
     {0x85484857,  F(1.    ),     3,   6,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_BIRCH_FOREST,      &birch_tree     },
     {0x85484857,  F(1.    ),     4,   5,     -80,  30,      2,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_LargeTree,   LAB_GEN_TAG_TAIGA,             NULL     },
 //    {0xfdb97531,  F(1/128.),     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_RUINS,             NULL            },
-    {0xfdb97531,  F(1/256.),     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_RUINS,             &stone_tower             },
+    {0xfdb97531,  F(1/256.),     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_RUINS,             &stone_palette             },
     //{0x783f45df,  F(1/512.),     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_RUINS,             &basalt_tower            },
-    {0x7845fdf3,  F(1/512.),     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_RUINS,             &marble_tower            },
-    {0x783f45df,  F(1/ 64.),     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_DESERT,            &desert_tower            },
+    {0x7845fdf3,  F(1/512.),     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_RUINS,             &marble_palette            },
+    {0xf89df80f,  F(1/128.),     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_House,       LAB_GEN_TAG_RUINS,             &marble_palette            },
+    {0x783f45df,  F(1/ 64.),     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_DESERT,            &desert_palette            },
 
     {0x21436587,  F(    1.),        0,   5, INT_MIN, -50,      1,    LAB_Gen_PlaceOnCaveCeiling,    LAB_Gen_Cave_CeilingCrystal,   LAB_GEN_TAG_CAVE,              NULL            },
 };
@@ -209,7 +214,9 @@ LAB_STATIC void LAB_Gen_Overworld_LargeTree(LAB_Placer* p, LAB_Random* rnd, cons
 
 LAB_STATIC void LAB_Gen_Overworld_Tower(LAB_Placer* p, LAB_Random* rnd, const void* param)
 {
-    // tree height
+    const LAB_Gen_BuildingPalette* LAB_RESTRICT palette = param;
+    
+    // house dimensions
     uint64_t R = LAB_NextRandom(rnd);
     int h = 8+4*(R    & 1);
     int r = 2+(R>>1 & 1);
@@ -220,10 +227,6 @@ LAB_STATIC void LAB_Gen_Overworld_Tower(LAB_Placer* p, LAB_Random* rnd, const vo
     int dx = R2       & 0xffff;
     int dz = R2 >> 16 & 0xffff;
 
-    // TODO: UB: floor is a library function name and
-    //           could possibly be defined as a macro
-    const LAB_Gen_Overworld_Tower_Params* LAB_RESTRICT tower = param;
-
     for(int z = -r; z <= r; ++z)
     for(int y = -4; y <  h+3; ++y)
     for(int x = -r; x <= r; ++x)
@@ -233,7 +236,7 @@ LAB_STATIC void LAB_Gen_Overworld_Tower(LAB_Placer* p, LAB_Random* rnd, const vo
         //LAB_Block* b = &LAB_BLOCK_AIR;
 
         if((x==-r||x==r || z==-r||z==r) && (x==z||x==-z))
-            LAB_Placer_SetBlock(p, x, y, z, tower->corner);
+            LAB_Placer_SetBlock(p, x, y, z, palette->corner);
 
 
         else if(y<h)
@@ -243,19 +246,91 @@ LAB_STATIC void LAB_Gen_Overworld_Tower(LAB_Placer* p, LAB_Random* rnd, const vo
                 if(y>=0&&(x==0||z==0)&&(y==0||(y&3)==1))
                     (void)0;//LAB_Placer_SetBlock(p, x, y, z, &LAB_BLOCK_AIR);
                 else
-                    LAB_Placer_SetBlock(p, x, y, z, tower->wall);
+                    LAB_Placer_SetBlock(p, x, y, z, palette->wall);
             }
             else if(y<0)
-                LAB_Placer_SetBlock(p, x, y, z, tower->floor);
+                LAB_Placer_SetBlock(p, x, y, z, palette->floor);
 
             else if((y&3)==3)
-                LAB_Placer_SetBlock(p, x, y, z, tower->ceiling);
+                LAB_Placer_SetBlock(p, x, y, z, palette->ceiling);
 
             else
                 (void)0;//LAB_Placer_SetBlock(p, x, y, z, &LAB_BLOCK_AIR);
         }
         else if(y < h+2&&(x==-r||x==r || z==-r||z==r)&&(y==h||((x^z)&1)==0))
-            LAB_Placer_SetBlock(p, x, y, z, tower->corner);
+            LAB_Placer_SetBlock(p, x, y, z, palette->corner);
+    }
+}
+
+
+LAB_STATIC void LAB_Gen_Overworld_House(LAB_Placer* p, LAB_Random* rnd, const void* param)
+{
+    const LAB_Gen_BuildingPalette* LAB_RESTRICT palette = param;
+
+    // house dimensions
+    uint64_t R = LAB_NextRandom(rnd);
+    int lx = (R   &3)+2;
+    int lz = (R>>3&3)+2;
+    int h  = 4; //((R>>6&3)<<1)+3;
+    int r  = LAB_MIN(lx, lz);
+
+    int door = (R >> 9) & 3;
+    int shape = (R >> 12) & 1;
+
+    // noise offset
+    uint64_t R2 = LAB_NextRandom(rnd);
+    int dx = R2       & 0xffff;
+    int dz = R2 >> 16 & 0xffff;
+
+    const int slope_shf = 0;
+    for(int z = -lz-1; z <= lz+1; ++z)
+    for(int y = -4;    y < h+((r+2)<<slope_shf); ++y)
+    for(int x = -lx-1; x <= lx+1; ++x)
+    {
+        //if(y > (LAB_SimplexNoise2D((x+dx)*0.1, (z+dz)*0.1)*(0.5 + 0.2) + (0.5 - 0.3))*((h+r+2) - -4  +  2)) continue;
+
+        //LAB_Block* b = &LAB_BLOCK_AIR;
+
+        int x_wall = LAB_MIN(lx-x, lx+x);
+        int z_wall = LAB_MIN(lz-z, lz+z);
+
+        int f = (y-h-1)>>slope_shf;
+        int d = shape ? LAB_MIN(x_wall-f,  z_wall-f)
+                      : lx==r ? x_wall-f : z_wall-f;
+
+        if(d == 0)
+        {
+            LAB_Placer_SetBlock(p, x, y, z, &LAB_BLOCK_CLAY_BRICKS);
+        }
+        else if(d > 0 && x_wall >= 0 && z_wall >= 0)
+        {
+            if(x_wall==0 || z_wall==0)
+            {
+                if(x_wall==0 && z_wall==0)
+                    LAB_Placer_SetBlock(p, x, y, z, palette->corner);
+                else if(y>=0&&(x==0||z==0))
+                {
+                    int k = (door&1) ? x : z;
+                    if(door&2) k = -k;
+
+                    if(k > 0 && y < 2)
+                        LAB_Placer_SetBlock(p, x, y, z, &LAB_BLOCK_AIR);
+                    else if((y&3)==1)
+                        LAB_Placer_SetBlock(p, x, y, z, &LAB_BLOCK_GLASS);
+                    else
+                        LAB_Placer_SetBlock(p, x, y, z, palette->wall);
+                }
+                else
+                    LAB_Placer_SetBlock(p, x, y, z, palette->wall);
+            }
+            else
+            {
+                if(y >= 0)
+                    LAB_Placer_SetBlock(p, x, y, z, &LAB_BLOCK_AIR);
+                else
+                    LAB_Placer_SetBlock(p, x, y, z, palette->floor);
+            }
+        }
     }
 }
 

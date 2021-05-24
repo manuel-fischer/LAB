@@ -1,7 +1,4 @@
-#ifndef HTL_PARAM
-#error HTL_PARAM should be defined
-#endif
-
+#ifdef HTL_PARAM
 #include <string.h>
 
 HTL_DEF bool HTL_MEMBER(Create)(HTL_P(NAME)* hasharray)
@@ -154,3 +151,4 @@ HTL_DEF void HTL_MEMBER(Discard)(HTL_P(NAME)* hasharray, HTL_P(ENTRY_TYPE)* entr
 {
     --hasharray->size;
 }
+#endif // HTL_PARAM

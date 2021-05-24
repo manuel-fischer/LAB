@@ -6,6 +6,7 @@
 
 #include <stdint.h> // uint64_t
 #include <stddef.h> // size_t
+#include <stdbool.h> // bool
 #include "LAB_opt.h"
 #include "LAB_attr.h"
 
@@ -65,6 +66,19 @@ float LAB_fSmoothMin(float a, float b, float k)
         {__VA_ARGS__} \
     } \
 } while(0)
+
+
+LAB_PURE LAB_ALWAYS_INLINE LAB_INLINE
+bool LAB_MultOverflow(size_t a, size_t b)
+{
+#ifdef __GNUC__
+    size_t unused_result;
+    return __builtin_mul_overflow(a, b, &unused_result);
+#else
+    return (a*b)/b < a;
+#endif
+}
+
 
 typedef uint64_t LAB_Nanos;
 

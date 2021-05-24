@@ -687,7 +687,7 @@ LAB_STATIC int LAB_ViewUpdateChunks(LAB_View* view)
            && (e->visible/* || !(rand() & 0x3f)*/))
             rest_update -= LAB_ViewUpdateChunk(view, e);
 
-        if(LAB_NanoSeconds() - nanos > 4000*1000) break; // 3.5 ms
+        if(LAB_NanoSeconds() - nanos > 3500*1000) break; // 3.5 ms
         if(!rest_update) break;
 
     }//);
@@ -1538,7 +1538,8 @@ void LAB_ViewRender(LAB_View* view)
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glDisable(GL_FOG);
 
-    LAB_View_RenderBlockSelection(view);
+    if(view->flags & LAB_VIEW_SHOW_HUD)
+        LAB_View_RenderBlockSelection(view);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -2202,6 +2203,8 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
     LAB_Block* block = LAB_GetBlock(view->world, (int)floorf(view->x), (int)floorf(view->y), (int)floorf(view->z), LAB_CHUNK_EXISTING);
     bool is_xray = !!(block->flags & LAB_BLOCK_OPAQUE);
 
+    uint64_t begin_nanos = LAB_NanoSeconds();
+
     for(int i = 0; i < sorted_size; ++i)
     {
         LAB_ViewChunkEntry* c = view->sorted_chunks[i].entry;
@@ -2218,9 +2221,10 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
                     chunk->view_user = c;
                     c->world_chunk = chunk;
                 }
+                else continue;
             }
             if(!load_amount) return;
-
+            if(LAB_NanoSeconds() - begin_nanos > 2500*1000) return; // 2.5 ms
 
             int faces = LAB_OUTWARDS_FACES(c->x, c->y, c->z, px, py, pz);
             if(!is_xray) faces &= c->seethrough_faces;
@@ -2249,6 +2253,7 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
                 {
                     chunk->view_user = entry;
                     entry->world_chunk = chunk;
+                    /*
                     if(empty_load_amount)
                     {
                         int is_empty = 1;
@@ -2266,6 +2271,7 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
                             empty_load_amount--;
                         }
                     }
+                    */
                 }
                 if(!load_amount) return;
             });
