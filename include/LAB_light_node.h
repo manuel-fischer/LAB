@@ -27,8 +27,8 @@
  *  | 1/16| 1/8 | 1/16|
  *  +-----+-----+-----+
  *
- *  The values in the matrix correspond to an angle of the light field of 90° (2*45°), it results in a multinomial distribution,
- *  TODO: is this the widest possible angle, or is an angle of 180° (2*90°) possible
+ *  The values in the matrix correspond to an angle of the light field of 90ï¿½ (2*45ï¿½), it results in a multinomial distribution,
+ *  TODO: is this the widest possible angle, or is an angle of 180ï¿½ (2*90ï¿½) possible
  *  If the angle of the light field is narrower, more light is concentrated on the center cell.
  *
  *  There are 4 parameters that describe the field of light, two for each axis (one for each direction) perpendicular
@@ -36,22 +36,24 @@
  *  These values describe how much light propagates to the outer column/row, a value of 0 means that no light propagates to
  *  that outer column,
  *
- *  TODO: test light first with a fixed angle parameter of 2*45°
+ *  TODO: test light first with a fixed angle parameter of 2*45ï¿½
  *
  *  The light for rendering is calculated from all 6 light color values
  */
- #define LAB_DIRECTIONAL_LIGHT 0
+ #define LAB_DIRECTIONAL_LIGHT 1
 #if LAB_DIRECTIONAL_LIGHT == 0
 typedef LAB_Color LAB_LightNode;
 #else
 typedef struct LAB_LightNode
 {
-    // the corresponding face points to the light source
-    LAB_Color faces[6];
+    // A light value is stored for each corner of the cube
+    // That light value can only propegate towards the directions
+    // which it faces
+    LAB_Color quadrants[8];
 } LAB_LightNode;
 #endif
 
- #if 0
+#if 0
 /** V1
                 x x o o o x x .
                 x x o o o x x .

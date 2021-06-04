@@ -5,8 +5,9 @@
 // disjunctive addition, UB if at any position both bits are set
 //#define LAB_XADD(a, b) LAB_CORRECT_IF((a&b) == 0, (a)+(b))
 //#define LAB_XADD(a, b) LAB_CORRECT_IF(((a)|(b)) == (a)+(b), (a)+(b))
-#define LAB_XADD(a, b) LAB_CORRECT_IF(!((a)&(b)),(a)+(b))
-//#define LAB_XADD(a, b) ((a)+(b))
+
+//#define LAB_XADD(a, b) LAB_CORRECT_IF(!((a)&(b)),(a)+(b))
+#define LAB_XADD(a, b) ((a)+(b))
 #define LAB_XADD3(a, b, c) LAB_XADD(LAB_XADD(a, b), c)
 #define LAB_XADD4(a, b, c, d) LAB_XADD(LAB_XADD(a, b), LAB_XADD(c, d))
 

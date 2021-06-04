@@ -186,7 +186,7 @@ void LAB_WorldTick(LAB_World* world, uint32_t delta_ms);
 
 LAB_INLINE LAB_Chunk* LAB_GetNeighborhoodRef(LAB_Chunk*const neighborhood[27], int x, int y, int z, int* /*out*/ index);
 LAB_INLINE LAB_Block* LAB_GetNeighborhoodBlock(LAB_Chunk*const neighborhood[27], int x, int y, int z);
-LAB_INLINE LAB_Color LAB_GetNeighborhoodLight(LAB_Chunk*const neighborhood[27], int x, int y, int z, int face, LAB_Color default_color);
+//LAB_INLINE LAB_Color LAB_GetNeighborhoodLight(LAB_Chunk*const neighborhood[27], int x, int y, int z, int face, LAB_Color default_color);
 LAB_INLINE uint32_t LAB_World_PeekFlags3x3(LAB_Chunk* chunk, int x, int y, int z, unsigned flag);
 
 
@@ -232,8 +232,8 @@ LAB_Block* LAB_GetNeighborhoodBlock(LAB_Chunk*const neighborhood[27], int x, int
     return chunk->blocks[block_index];
 }
 
-LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
-LAB_Color LAB_GetNeighborhoodLight(LAB_Chunk*const neighborhood[27], int x, int y, int z, int face, LAB_Color default_color)
+/*LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
+LAB_Color LAB_GetNeighborhoodLight(LAB_Chunk*const neighborhood[27], int x, int y, int z, int quadrant, LAB_Color default_color)
 {
     int block_index;
     LAB_Chunk* chunk;
@@ -244,9 +244,9 @@ LAB_Color LAB_GetNeighborhoodLight(LAB_Chunk*const neighborhood[27], int x, int 
 #if LAB_DIRECTIONAL_LIGHT == 0
     return chunk->light[block_index];
 #else
-    return chunk->light[block_index].faces[face];
+    return chunk->light[block_index].quadrants[face];
 #endif
-}
+}*/
 
 LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
 LAB_Color LAB_GetVisualNeighborhoodLight(LAB_Chunk*const neighborhood[27], int x, int y, int z, int face, LAB_Color default_color)
@@ -254,6 +254,8 @@ LAB_Color LAB_GetVisualNeighborhoodLight(LAB_Chunk*const neighborhood[27], int x
 #if LAB_DIRECTIONAL_LIGHT == 0
     return LAB_GetNeighborhoodLight(neighborhood, x, y, z, face, default_color);
 #else
+#if 0
+/*
     int block_index;
     LAB_Chunk* chunk;
     chunk = LAB_GetNeighborhoodRef(neighborhood, x, y, z, &block_index);
@@ -285,6 +287,33 @@ LAB_Color LAB_GetVisualNeighborhoodLight(LAB_Chunk*const neighborhood[27], int x
     }
 
     return c;
+#endif
+
+    int block_index;
+    LAB_Chunk* chunk;
+    chunk = LAB_GetNeighborhoodRef(neighborhood, x, y, z, &block_index);
+    if(chunk == NULL) return default_color;
+
+
+    LAB_Color c = 0;
+    LAB_Color max = 0;
+
+    int mask =        1  << (face>>1);
+    int bit  = !(face&1) << (face>>1);
+    LAB_UNROLL(8)
+    for(int i = 0; i < 8; ++i)
+    {
+        LAB_Color cf = chunk->light[block_index].quadrants[i];
+        if((i & mask) != bit)
+        {
+            cf = LAB_MixColor50(cf, 0);
+        }
+        max = LAB_MaxColor(max, cf);
+        //c = LAB_AddColor(c, cf >> 2 & 0x3f3f3f3f);
+        c = LAB_AddColor(c, cf >> 1 & 0x7f7f7f7f);
+    }
+
+    return max;// LAB_MinColor(c, max);
 #endif
 }
 

@@ -93,6 +93,18 @@
 
 #define LAB_EMPTY_TU LAB_UNUSED static char empty_tu = 0
 
+
+
+
+// value evaluated multiple times
+#define LAB_PULL_CONST(type, name, max, value) \
+    LAB_UNROLL(max) \
+    for(type name = 0; name < max; ++name) \
+    if(name == (value))
+
+
+
+
 #else /* DOXYGEN SECTION */
 
 /**

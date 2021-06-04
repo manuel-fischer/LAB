@@ -14,7 +14,19 @@
 //#define LAB_DARK_LIGHT(dia) (dia)
                     //nlum = nlum - (nlum>>2 & 0x3f3f3f);
 #define LAB_LIGHT_FALL_OFF(lum) ((lum) - ((lum)>>3 & 0x1f1f1f)-((lum)>>4 & 0x0f0f0f))
+//#define LAB_LIGHT_FALL_OFF(lum) ((lum) - ((lum)>>3 & 0x0f0f0f))
 //#define LAB_LIGHT_FALL_OFF(lum) (LAB_SubColor((lum), LAB_RGBA(16, 18, 20, 0)))
+
+
+
+
+
+/****************************************************************************/
+#if LAB_DIRECTIONAL_LIGHT == 0 /*********************************************/
+/****************************************************************************/
+
+
+
 
 
 // heuristic lighting algorithm
@@ -208,19 +220,13 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, 
             int y = qy+LAB_OY(face);
             int z = qz+LAB_OZ(face);
             #if 0
-            if(x==-16||x==31) goto next_face;
-            if(y==-16||y==31) goto next_face;
-            if(z==-16||z==31) goto next_face;
+            if(x==-16||x==31) goto needs_relight;
+            if(y==-16||y==31) goto needs_relight;
+            if(z==-16||z==31) goto needs_relight;
             #else
             // only one check:
             switch(face)
             {
-                /*case 0: if(x==-16) { faces_changed |=  1; goto next_face; } else break;
-                case 1: if(x== 31) { faces_changed |=  2; goto next_face; } else break;
-                case 2: if(y==-16) { faces_changed |=  4; goto next_face; } else break;
-                case 3: if(y== 31) { faces_changed |=  8; goto next_face; } else break;
-                case 4: if(z==-16) { faces_changed |= 16; goto next_face; } else break;
-                case 5: if(z== 31) { faces_changed |= 32; goto next_face; } else break;*/
                 case 0: if(x==-16) { goto needs_relight; } else break;
                 case 1: if(x== 31) { goto needs_relight; } else break;
                 case 2: if(y==-16) { goto needs_relight; } else break;
@@ -286,3 +292,138 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, 
 
     return faces_changed;
 }
+
+
+
+
+
+
+/****************************************************************************/
+#else /* LAB_DIRECTIONAL_LIGHT == 1 *****************************************/
+/****************************************************************************/
+
+
+
+
+
+
+
+
+/*LAB_INLINE LAB_ALWAYS_INLINE
+int LAB_TickLight_GetLight(LAB_Chunk*const chunks[27], int quadrant, bool init, int x, int y, int z, LAB_Color default_color)
+{
+    int block_index;
+    LAB_Chunk* cnk;
+    cnk = LAB_GetNeighborhoodRef(chunks, x, y, z, &block_index);
+    if(!cnk) return default_color;
+
+    LAB_Color col = cnk->blocks[block_index]->lum;
+    if(!init) col = LAB_MaxColor(col, cnk->blocks);
+    return col;
+}*/
+
+// return faces that changed
+void LAB_TickLight_ProcessQuadrant(LAB_Chunk*const chunks[27], int quadrant, bool init, LAB_Color default_color, LAB_Color default_color_above)
+{
+    LAB_Chunk* ctr_cnk = chunks[1+3+9];
+    LAB_ASSERT(ctr_cnk);
+    LAB_PULL_CONST(int, c_init, 2, init)
+    {
+        int faces_changed = 0;
+
+        int dd[3];
+        int i0[3];
+
+        LAB_UNROLL(3)
+        for(int i = 0, q = quadrant; i < 3; ++i, q >>= 1)
+        {
+            if(q & 1) { dd[i] = 1; i0[i] = 0; } else { dd[i] = -1; i0[i] = 15; }
+        }
+
+        for(int zi = 0, z = i0[2]; zi < 16; ++zi, z += dd[2])
+        for(int yi = 0, y = i0[1]; yi < 16; ++yi, y += dd[1])
+        for(int xi = 0, x = i0[0]; xi < 16; ++xi, x += dd[0])
+        {
+            int block_index = LAB_XADD3(x, y<<4, z<<8);
+
+            LAB_Block* b = ctr_cnk->blocks[block_index];
+            LAB_Color c = b->lum;
+            c = LAB_MaxColor(c, LAB_DARK_LIGHT(b->dia));
+            LAB_UNROLL(3)
+            for(int i = 0; i < 3; ++i)
+            {
+                int xyz[3] = {x, y, z};
+                xyz[i] -= dd[i];
+
+                bool is_down = i==1 && !(quadrant&2);
+
+                int block_index2;
+                LAB_Chunk* cnk;
+                cnk = LAB_GetNeighborhoodRef(chunks, xyz[0], xyz[1], xyz[2], &block_index2);
+                LAB_Color cf;
+                if(cnk)
+                {
+                    cf = cnk->light[block_index2].quadrants[quadrant];
+                    /*cf = LAB_MulColor_Fast(cf, cnk->blocks[block_index2]->dia);
+                    cf = LAB_MaxColor(cf, cnk->blocks[block_index2]->lum);*/
+                }
+                else
+                    cf = is_down ? default_color_above : default_color;
+
+                cf = LAB_MulColor_Fast(cf, b->dia);
+                if(!is_down || (cf&LAB_COL_MASK) != LAB_COL_MASK)
+                    cf = LAB_LIGHT_FALL_OFF(cf);
+                c = LAB_MaxColor(c, cf);
+                //c = LAB_AddColor(c, cf);
+                //c = LAB_AddColor(c, LAB_MulColor(cf, LAB_RGBX(555555)));
+            }
+
+            if(init || ctr_cnk->light[block_index].quadrants[quadrant] != c)
+            {
+                ctr_cnk->light[block_index].quadrants[quadrant] = c;
+                ctr_cnk->relit_blocks |= LAB_CCPS_Pos(x&15, y&15, z&15);
+
+                
+                LAB_UNROLL(3)
+                for(int i = 0; i < 3; ++i)
+                {
+                    int xyz[3] = {x, y, z};
+                    xyz[i] += dd[i];
+                    LAB_Chunk* cnk;
+                    int block_index_ignored;
+                    cnk = LAB_GetNeighborhoodRef(chunks, xyz[0], xyz[1], xyz[2], &block_index_ignored);
+                    if(cnk && cnk != ctr_cnk)
+                        cnk->dirty |= LAB_CHUNK_UPDATE_LIGHT;
+                }
+            }
+        }
+    }
+}
+
+
+// return faces that changed
+// TODO return bitset of all 27 chunks if they're changed
+LAB_HOT                                                // TODO: |--------------------| not used
+int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, int cz)
+{
+
+    //static int i = 0;
+    //printf("LAB_TickLight %i @ %i %i %i\n", i++, cx, cy, cz);
+    LAB_Chunk* ctr_cnk = chunks[1+3+9];
+    if(!ctr_cnk) return 0;
+
+    LAB_Color default_color_above = cy <  -2 ? LAB_RGB(16, 16, 16) : LAB_RGB(255, 255, 255);
+    LAB_Color default_color = cy <  0 ? LAB_RGB(16, 16, 16) : LAB_RGB(255, 255, 255);
+
+    ctr_cnk->relit_blocks = 0;
+
+    for(int i = 0; i < 8; ++i)
+        LAB_TickLight_ProcessQuadrant(chunks, i, !ctr_cnk->light_generated, default_color, default_color_above);
+    
+    ctr_cnk->light_generated = true;
+
+    return 0;
+}
+
+
+#endif
