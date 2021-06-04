@@ -14,6 +14,8 @@
 const char* LAB_GetError(void);
 void LAB_ClearError(void);
 void LAB_SetError(const char* fmt, ...) __attribute__((format(printf, 1, 2)));
+void LAB_AppendError(const char* fmt, ...) __attribute__((format(printf, 1, 2)));
+void LAB_AddErrorContext(const char* filename, int line, const char* expression);
 
 
 // returns

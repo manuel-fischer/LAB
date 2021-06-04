@@ -13,5 +13,8 @@
         "C:\\Libs\\include",
         "C:\\Libs\\lib"
     ],
-    "C_Cpp.default.compilerArgs": ["-Wno-unused-parameter"]
+    "C_Cpp.default.compilerArgs": [
+        "-Wno-unused-parameter",
+        "-fmacro-prefix-map=${workspaceFolder}=."
+    ]
 }

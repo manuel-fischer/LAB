@@ -8,6 +8,9 @@
             "args": [
                 "-g",
 
+                // short debug output of filenames
+                "-fmacro-prefix-map=${workspaceFolder}=.",
+
                 // Output file
                 "-o", "bin\\Debug\\a.exe",
 
@@ -77,6 +80,9 @@
             "label": "C/C++: gcc build for release",
             "command": "gcc",
             "args": [
+                // short debug output of filenames
+                "-fmacro-prefix-map=${workspaceFolder}=.",
+
                 "-Ofast",
                 "-DNDEBUG",
 
