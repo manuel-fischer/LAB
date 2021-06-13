@@ -323,7 +323,8 @@ int LAB_TickLight_GetLight(LAB_Chunk*const chunks[27], int quadrant, bool init, 
 }*/
 
 // return faces that changed
-void LAB_TickLight_ProcessQuadrant(LAB_Chunk*const chunks[27], int quadrant, bool init, LAB_Color default_color, LAB_Color default_color_above)
+LAB_HOT
+void LAB_TickLight_ProcessQuadrant(LAB_Chunk*const chunks[27], int quadrant, bool init, LAB_Color default_color)
 {
     LAB_Chunk* ctr_cnk = chunks[1+3+9];
     LAB_ASSERT(ctr_cnk);
@@ -368,7 +369,7 @@ void LAB_TickLight_ProcessQuadrant(LAB_Chunk*const chunks[27], int quadrant, boo
                     cf = LAB_MaxColor(cf, cnk->blocks[block_index2]->lum);*/
                 }
                 else
-                    cf = is_down ? default_color_above : default_color;
+                    cf = default_color;
 
                 cf = LAB_MulColor_Fast(cf, b->dia);
                 if(!is_down || (cf&LAB_COL_MASK) != LAB_COL_MASK)
@@ -418,7 +419,10 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, 
     ctr_cnk->relit_blocks = 0;
 
     for(int i = 0; i < 8; ++i)
-        LAB_TickLight_ProcessQuadrant(chunks, i, !ctr_cnk->light_generated, default_color, default_color_above);
+    {
+        LAB_Color default_c = i & 2 ? default_color : default_color_above;
+        LAB_TickLight_ProcessQuadrant(chunks, i, !ctr_cnk->light_generated, default_c);
+    }
     
     ctr_cnk->light_generated = true;
 

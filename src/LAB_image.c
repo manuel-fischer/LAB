@@ -75,9 +75,11 @@ SDL_Surface* LAB_ImageLoad_Fmt(const char* fname_fmt, ...)
 SDL_Surface* LAB_ImageData2SDL(size_t w, size_t h, LAB_Color* data)
 {
     SDL_Surface* surf;
-    LAB_SDL_ALLOC(SDL_CreateRGBSurfaceWithFormat, &surf, 0, w, h, 32, SDL_PIXELFORMAT_RGBA32);
-    if(!surf) return false;
-    memcpy(surf->pixels, data, w*h*sizeof*data);
+    LAB_SDL_ALLOC(SDL_CreateRGBSurfaceFrom, &surf, data, w, h, 32, 4*w,
+                                            LAB_RED_MASK,
+                                            LAB_GRN_MASK,
+                                            LAB_BLU_MASK,
+                                            LAB_ALP_MASK);
     return surf;
 }
 
@@ -99,7 +101,6 @@ void LAB_ImageSave_Fmt(size_t w, size_t h, LAB_Color* data, const char* fname_fm
     va_start(lst, fname_fmt);
     vsnprintf(fname_buf, sizeof(fname_buf), fname_fmt, lst);
     va_end(lst);
-
 
     LAB_ImageSave(w, h, data, fname_buf);
 }
