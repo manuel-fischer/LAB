@@ -94,4 +94,5 @@ $(LAB_RELEASE_EXEC): $(wildcard src/*.*) $(wildcard include/*.*)
 
 
 clean:
-	$(RM) lab.exe
+	$(RM) $(LAB_DEBUG_EXEC)
+	$(RM) $(LAB_RELEASE_EXEC)
