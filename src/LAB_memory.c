@@ -32,15 +32,31 @@ void* LAB_RealReallocN(void* memory, size_t count, size_t size)
 typedef unsigned u;
 
 //#define LAB_SHOW_DBG_MEM
+#if !defined NDEBUG && defined LAB_SHOW_DBG_MEM
+LAB_STATIC FILE* LAB_getMemLogFile()
+{
+#if 1
+    return stderr;
+#else
+    static FILE* memlog = NULL;
+    if(memlog == NULL) {
+        memlog = fopen("mem.log", "w");
+    }
+    return memlog;
+#endif
+}
+#define LAB_memlog (LAB_getMemLogFile())
+#endif
+
 LAB_STATIC void LAB_DbgMemPrint(const char* format, const char* file, int line, ...)
 {
     #if !defined NDEBUG && defined LAB_SHOW_DBG_MEM
-    fprintf(stderr, "%-16s|%3i:\t", LAB_Filename(file), line);
+    fprintf(LAB_memlog, "[%s:%i]  ", LAB_Filename(file), line);
     va_list args;
     va_start(args, line);
-    vfprintf(stderr, format, args);
+    vfprintf(LAB_memlog, format, args);
     va_end(args);
-    fflush(stderr);
+    fflush(LAB_memlog);
     #endif
 }
 
@@ -49,16 +65,16 @@ LAB_STATIC void LAB_DbgMemPrintf(const char* format, ...)
     #if !defined NDEBUG && defined LAB_SHOW_DBG_MEM
     va_list args;
     va_start(args, format);
-    vfprintf(stderr, format, args);
+    vfprintf(LAB_memlog, format, args);
     va_end(args);
-    fflush(stderr);
+    fflush(LAB_memlog);
     #endif
 }
 
 LAB_STATIC void LAB_DbgMemPrintResult(void* result)
 {
     #if !defined NDEBUG && defined LAB_SHOW_DBG_MEM
-    fprintf(stderr, " -> %p\n", result);
+    fprintf(LAB_memlog, " -> %p\n", result);
     #endif
 }
 
@@ -211,13 +227,19 @@ void LAB_DbgMemShow(void)
                     "frees:%6u\n"
                     "fails:%6u\n"
                     "alives:%5u\n"
-                    "check: %p\n",
+                    "check:  %p\n",
             (u)mem_allocs,
             (u)mem_relocs,
             (u)mem_frees,
             (u)mem_fails,
             (u)(mem_allocs-mem_frees),
             (void*)mem_checksum);
+
+/*#if !defined NDEBUG && defined LAB_SHOW_DBG_MEM
+    FILE** memlog = LAB_getMemLogFile();
+    fclose(*memlog);
+    *memlog = NULL;
+#endif*/
 }
 #else
 LAB_EMPTY_TU;

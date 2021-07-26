@@ -149,6 +149,32 @@
                 "kind": "build",
                 "isDefault": true
             }
+        },
+        {
+            "type": "cppbuild",
+            "label": "C/C++: mingw32-make debug",
+            "command": "mingw32-make",
+            "args": ["debug_exec"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "type": "cppbuild",
+            "label": "C/C++: mingw32-make release",
+            "command": "mingw32-make",
+            "args": ["release_exec"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         }
     ]
 }

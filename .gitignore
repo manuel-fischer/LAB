@@ -73,3 +73,6 @@ dbg_*
 doxygen/*
 *.bmarks
 !doxygen/doxyfile
+
+# Log output
+*.log

@@ -96,6 +96,7 @@ void LAB_AssetMgr_Destroy(LAB_AssetMgr* mgr)
         }
 
     LAB_AssetMgrTbl_Destroy(&mgr->table);
+    LAB_Free(mgr->resource_vector);
 }
 
 void* LAB_AssetMgr_GetByName(LAB_AssetMgr* mgr, const char* resource_name)

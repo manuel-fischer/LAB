@@ -87,6 +87,48 @@
             ]
         },
         {
+            "name": "win.gcc: make and debug",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}\\lab-debug.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for \"gdb\"",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "C/C++: mingw32-make debug"
+        },
+        {
+            "name": "win.gcc: make and release",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}\\lab.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for \"gdb\"",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "C/C++: mingw32-make release"
+        },
+        {
             "name": "Python: create doc",
             "type": "python",
             "request": "launch",

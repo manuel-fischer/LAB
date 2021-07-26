@@ -289,6 +289,7 @@ LAB_Color LAB_GetVisualNeighborhoodLight(LAB_Chunk*const neighborhood[27], int x
     return c;
 #endif
 
+#if 1
     int block_index;
     LAB_Chunk* chunk;
     chunk = LAB_GetNeighborhoodRef(neighborhood, x, y, z, &block_index);
@@ -309,11 +310,32 @@ LAB_Color LAB_GetVisualNeighborhoodLight(LAB_Chunk*const neighborhood[27], int x
             cf = LAB_MixColor50(cf, 0);
         }
         max = LAB_MaxColor(max, cf);
-        //c = LAB_AddColor(c, cf >> 2 & 0x3f3f3f3f);
-        c = LAB_AddColor(c, cf >> 1 & 0x7f7f7f7f);
+        c = LAB_AddColor(c, cf >> 2 & 0x3f3f3f3f);
+        //c = LAB_AddColor(c, cf >> 1 & 0x7f7f7f7f);
     }
 
-    return max;// LAB_MinColor(c, max);
+    return max; //c;// LAB_MinColor(c, max);
+#else
+    int block_index;
+    LAB_Chunk* chunk;
+    chunk = LAB_GetNeighborhoodRef(neighborhood, x, y, z, &block_index);
+    if(chunk == NULL) return default_color;
+
+    int a =        1  <<  (face>>1);
+    int d = !(face&1) <<  (face>>1);
+    int u =        1  << ((face>>1) == 0);
+    int v = 7-u-a; //7 ^ u ^ ax;
+
+    const LAB_Color* q = chunk->light[block_index].quadrants;
+
+    LAB_Color c0 = LAB_MaxColor(q[d     ], q[d +u  ]);
+    LAB_Color c1 = LAB_MaxColor(q[d +u  ], q[d +u+v]);
+    LAB_Color c2 = LAB_MaxColor(q[d +u+v], q[d   +v]);
+    LAB_Color c3 = LAB_MaxColor(q[d   +v], q[d     ]);
+
+    return LAB_MixColor4x25(c0, c1, c2, c3);
+
+#endif
 #endif
 }
 
