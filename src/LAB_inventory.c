@@ -1,6 +1,7 @@
 #include "LAB_inventory.h"
 
 #include "LAB_block.h"
+#include "LAB_blocks.h" // -> LAB_blocks, LAB_block_count
 
 LAB_STATIC size_t     (LAB_CheatInventory_GetSize)(void*);
 LAB_STATIC LAB_Block* (LAB_CheatInventory_GetSlot)(void*, size_t index);

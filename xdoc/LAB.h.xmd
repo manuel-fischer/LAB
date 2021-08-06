@@ -1,8 +1,8 @@
 LAB main include file
 
-@fn int LAB_Init(void)
+@fn bool LAB_Init(void)
 	@briefx Init LAB
-	@return 0 on error, 1 otherwise
+	@return false on error, true otherwise
 	@sidefx Initializes global resources
 	
 @fn void LAB_Quit(void)

@@ -1,4 +1,5 @@
 #include "LAB_chunk_pseudo.h"
+#include "LAB_builtin_blocks.h"
 
 #define DUP_16(...) __VA_ARGS__, __VA_ARGS__, __VA_ARGS__, __VA_ARGS__, \
                     __VA_ARGS__, __VA_ARGS__, __VA_ARGS__, __VA_ARGS__, \

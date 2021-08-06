@@ -7,6 +7,6 @@
 #include "LAB_input.h"
 
 
-int LAB_Init(void);
+bool LAB_Init(void);
 
 void LAB_Quit(void);

@@ -8,6 +8,10 @@
 ```cpp
 void LAB_Quit(void)
 ```
+## Preconditions
+
+LAB_Init was called successfully
+
 ## Side Effects
 
 Frees global resources

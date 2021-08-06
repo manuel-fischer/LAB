@@ -24,6 +24,8 @@
 #include "LAB_ext.h"
 #include "LAB_util.h"
 
+#include "LAB_blocks.h" // for inventory
+
 LAB_STATIC int  LAB_Input_Interact(LAB_Input* input, int button);
 LAB_STATIC void LAB_Input_GrabMouse(LAB_Input* input, LAB_Window* window, bool grab);
 LAB_STATIC bool LAB_Input_IsMaskedEvent(LAB_View* view, SDL_Event* event);

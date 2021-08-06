@@ -6,14 +6,14 @@
 **Synopsis**
 
 ```cpp
-int LAB_Init(void)
+bool LAB_Init(void)
 ```
 
 Init LAB
 
 ## Return Value
 
-0 on error
+false on error, true otherwise
 
 ## Side Effects
 

@@ -10,6 +10,7 @@
 #include "LAB_perf_info.h"
 #include "LAB_htl_config.h"
 
+#include "LAB_builtin_blocks.h"
 
 typedef struct LAB_ChunkPos
 {

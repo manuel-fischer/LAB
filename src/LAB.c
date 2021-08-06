@@ -6,8 +6,12 @@
 #include "LAB_error.h"
 #include "LAB_obj.h"
 
+#include "LAB_blocks.h"
+#include "LAB_builtin_blocks.h"
+
+
 // MAIN
-int LAB_Init(void)
+static int LAB_InitSDL(void)
 {
     uint32_t sdl_subsystems = 0u;
 
@@ -24,14 +28,37 @@ int LAB_Init(void)
     LAB_OBJ_SDL(TTF_Init() == 0,
                 TTF_Quit(),
 
-        return 1;
+        return true;
     );););
-    return 0;
+    return false;
 }
 
-void LAB_Quit(void)
+static void LAB_QuitSDL(void)
 {
     TTF_Quit();
     IMG_Quit();
     SDL_Quit();
+}
+
+
+bool LAB_Init()
+{
+    LAB_OBJ(LAB_InitSDL(),
+            LAB_QuitSDL(),
+    
+    LAB_OBJ(LAB_Blocks_Init(),
+            LAB_Blocks_Quit(),
+
+    LAB_OBJ(LAB_BuiltinBlocks_Init(),
+            (void)0,
+
+        return true;
+    );););
+    return false;
+}
+
+void LAB_Quit()
+{
+    LAB_Blocks_Quit();
+    LAB_QuitSDL();
 }
