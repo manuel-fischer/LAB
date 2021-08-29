@@ -39,7 +39,7 @@ bool LAB_Input_Create(LAB_Input* input, LAB_View* view)
     input->speed = 3.0f;
     input->view = view;
     input->brushsize = 3;
-    input->selected_block = &LAB_BLOCK_STONE_COBBLE;
+    input->selected_block = &LAB_BLOCK_STONE.cobble;
     return 1;
 }
 
@@ -185,12 +185,12 @@ int LAB_Input_OnEvent_Proc(void* user, LAB_Window* window, SDL_Event* event)
                 case SDLK_MINUS:
                 case SDLK_PLUS:
                 {
-                    if(key == SDLK_MINUS) view->render_dist--;
-                    if(key == SDLK_PLUS) view->render_dist++;
-                    if(view->render_dist == 0) view->render_dist = 1;
-                    if(view->render_dist > 64) view->render_dist = 64;
-                    view->preload_dist = LAB_PRELOAD_CHUNK(view->render_dist);
-                    view->keep_dist = LAB_KEEP_CHUNK(view->render_dist);
+                    if(key == SDLK_MINUS) view->cfg.render_dist--;
+                    if(key == SDLK_PLUS) view->cfg.render_dist++;
+                    if(view->cfg.render_dist == 0) view->cfg.render_dist = 1;
+                    if(view->cfg.render_dist > 64) view->cfg.render_dist = 64;
+                    view->cfg.preload_dist = LAB_PRELOAD_CHUNK(view->cfg.render_dist);
+                    view->cfg.keep_dist = LAB_KEEP_CHUNK(view->cfg.render_dist);
                 } break;
 
                 case SDLK_n:
@@ -238,12 +238,12 @@ int LAB_Input_OnEvent_Proc(void* user, LAB_Window* window, SDL_Event* event)
 
                 case SDLK_F1:
                 {
-                    view->flags ^= LAB_VIEW_SHOW_HUD;
+                    view->cfg.flags ^= LAB_VIEW_SHOW_HUD;
                 } break;
 
                 case SDLK_F9:
                 {
-                    view->flags ^= LAB_VIEW_SHOW_CHUNK_GRID;
+                    view->cfg.flags ^= LAB_VIEW_SHOW_CHUNK_GRID;
                 } break;
 
                 case SDLK_F2:
@@ -270,27 +270,27 @@ int LAB_Input_OnEvent_Proc(void* user, LAB_Window* window, SDL_Event* event)
 
                 case SDLK_F3:
                 {
-                    view->flags ^= LAB_VIEW_SHOW_FPS_GRAPH;
+                    view->cfg.flags ^= LAB_VIEW_SHOW_FPS_GRAPH;
 
                 } break;
 
                 case SDLK_F4:
                 {
-                    view->flags ^= LAB_VIEW_USE_VBO;
-                    printf("VBO turned %s\n", "off\0on"+4*!!(view->flags & LAB_VIEW_USE_VBO));
+                    view->cfg.flags ^= LAB_VIEW_USE_VBO;
+                    printf("VBO turned %s\n", "off\0on"+4*!!(view->cfg.flags & LAB_VIEW_USE_VBO));
                     LAB_ViewInvalidateEverything(view, /*free_buffers*/1);
 
                 } break;
 
                 case SDLK_F6:
                 {
-                    view->flags ^= LAB_VIEW_BRIGHTER;
+                    view->cfg.flags ^= LAB_VIEW_BRIGHTER;
                     LAB_ViewInvalidateEverything(view, /*free_buffers*/0);
 
                 } break;
                 case SDLK_F7:
                 {
-                    view->flags ^= LAB_VIEW_FLAT_SHADE;
+                    view->cfg.flags ^= LAB_VIEW_FLAT_SHADE;
                     LAB_ViewInvalidateEverything(view, /*free_buffers*/0);
 
                 } break;

@@ -55,16 +55,18 @@ void LAB_GuiInventoryList_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SD
         int tx = cself->selected_slot == i ? 1 : 0;
         LAB_RenderRect(surf, s, s*cx, s*cy, s*LAB_SLOT_SIZE, s*LAB_SLOT_SIZE, tx, 2);
         LAB_Block* b = cself->inventory->get_slot(cself->inventory_user, i);
-        SDL_Surface* bsurf = LAB_RenderBlock2D(b);
+        SDL_Surface* bsurf = b->item_texture;
 
-        SDL_Rect dst_rect;
-        dst_rect.x = s*(cx+LAB_SLOT_BORDER);
-        dst_rect.y = s*(cy+LAB_SLOT_BORDER);
-        dst_rect.w = dst_rect.h = s*LAB_ITEM_SIZE;
+        if(bsurf)
+        {
+            SDL_Rect dst_rect;
+            dst_rect.x = s*(cx+LAB_SLOT_BORDER);
+            dst_rect.y = s*(cy+LAB_SLOT_BORDER);
+            dst_rect.w = dst_rect.h = s*LAB_ITEM_SIZE;
 
-        //SDL_BlitSurface(bsurf, NULL, surf, &dst_rect);
-        SDL_BlitScaled(bsurf, NULL, surf, &dst_rect);
-        LAB_SDL_FREE(SDL_FreeSurface, &bsurf);
+            //SDL_BlitSurface(bsurf, NULL, surf, &dst_rect);
+            SDL_BlitScaled(bsurf, NULL, surf, &dst_rect);
+        }
         ++i;
     }
 }

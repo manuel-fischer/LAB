@@ -22,6 +22,7 @@
 #define GEN_FLAT 0
 
 #include "LAB_texture_atlas.h" // TODO remove from here
+#include "LAB_render_item.h"
 
 LAB_INLINE bool LAB_DoTests()
 {
@@ -33,6 +34,85 @@ LAB_INLINE bool LAB_DoTests()
 #endif
 }
 
+void LAB_Temp_RecreateTerrain(LAB_TexAtlas* atlas); // TODO remove
+static bool load_assets(LAB_TexAtlas* atlas, LAB_ModelSet* models, LAB_ItemTexSet* items)
+{
+    static LAB_Assets     assets = {0};
+    LAB_Assets_Create(&assets, atlas, models, items);
+    
+    LAB_BuiltinBlocks_Init(&assets);
+    
+    LAB_TexAtlas_MakeMipmap(atlas);
+
+    glEnable(GL_TEXTURE_2D);
+    LAB_TexAtlas_Upload2GL(atlas);
+    LAB_TexAtlas_LoadTexMatrix(atlas);
+
+    LAB_Assets_Destroy(&assets);
+
+    return true;
+}
+
+
+///// CLIENT /////
+#include "LAB_obj.h"
+
+static struct
+{
+    LAB_Window window;
+    LAB_View   view;
+    LAB_Input  input;
+
+    LAB_TexAtlas atlas;
+    LAB_ModelSet models;
+    LAB_ItemTexSet items;
+} LAB_client;
+
+
+#define LAB_Client_Create() LAB_Client_Obj(false)
+#define LAB_Client_Destroy() ((void)LAB_Client_Obj(true))
+static bool LAB_Client_Obj(bool destroy)
+{
+    uint32_t sdl_window_flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL;
+
+    if(destroy) goto lbl_destroy;
+
+    LAB_OBJ(LAB_GuiInit(),
+            LAB_GuiQuit(),
+        
+    LAB_OBJ(LAB_Window_Create(&LAB_client.window, 1024, 576, sdl_window_flags),
+            LAB_Window_Destroy(&LAB_client.window),
+
+
+    LAB_OBJ(LAB_ConstructView(&LAB_client.view, NULL, &LAB_client.atlas),
+            LAB_DestructView(&LAB_client.view),
+
+    LAB_OBJ(LAB_Input_Create(&LAB_client.input, &LAB_client.view),
+            LAB_Input_Destroy(&LAB_client.input),
+
+
+    LAB_OBJ(LAB_TexAtlas_Create(&LAB_client.atlas, 32),
+            LAB_TexAtlas_Destroy(&LAB_client.atlas),
+
+    LAB_OBJ(LAB_ModelSet_Create(&LAB_client.models),
+            LAB_ModelSet_Destroy(&LAB_client.models),
+
+    LAB_OBJ(LAB_ItemTexSet_Create(&LAB_client.items),
+            LAB_ItemTexSet_Destroy(&LAB_client.items),
+            
+
+    LAB_OBJ(load_assets(&LAB_client.atlas, &LAB_client.models, &LAB_client.items),
+            (void)0,
+
+    {
+        return true;
+        lbl_destroy:;
+    }););););););););
+    return false;
+}
+
+
+
 
 int main(int argc, char** argv)
 {
@@ -42,27 +122,40 @@ int main(int argc, char** argv)
     int return_value;
 
     int init = 0;
-    static LAB_Window     main_window = {0};
     static LAB_PerfInfo   perf_info   = {0};
     static LAB_World      the_world   = {0};
-    static LAB_View       view        = {0};
-    static LAB_Input      input       = {0};
+
+
+    LAB_ViewConfig vw_cfg = {
+        .flags = LAB_VIEW_SHOW_HUD | LAB_VIEW_USE_VBO,
+
+        .preload_dist = LAB_PRELOAD_CHUNK(5),
+        .render_dist = 5,
+        .keep_dist = LAB_KEEP_CHUNK(5),
+        
+        // Limits
+        .max_update = 100,
+        .max_unload = 20,
+
+        .load_amount = 100,
+        .empty_load_amount = 5,
+    };
+
 
     static union {
         LAB_GenFlat flat;
         LAB_GenOverworld overworld;
     } gen = {0};
-
+    
     CHECK_INIT(LAB_Init());
     init = 1;
 
-    CHECK_INIT(LAB_GuiInit());
+    CHECK_INIT(LAB_Client_Create());
+    LAB_ObjCopy(&LAB_client.view.cfg, &vw_cfg);
 
-
-    uint32_t sdl_window_flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL;
-    CHECK_INIT(LAB_ConstructWindow(&main_window, 1024, 576, sdl_window_flags));
     CHECK_INIT(LAB_PerfInfo_Create(&perf_info));
     //SDL_SetWindowFullscreen(main_window->window, SDL_WINDOW_FULLSCREEN);
+
 
 
     CHECK_INIT(LAB_ConstructWorld(&the_world));
@@ -82,47 +175,30 @@ int main(int argc, char** argv)
     the_world.max_gen = 0;
     the_world.max_update = 0;
     the_world.perf_info = &perf_info;
+    LAB_client.view.perf_info = &perf_info;
 
-    CHECK_INIT(LAB_ConstructView(&view, &the_world));
     LAB_GL_CHECK();
-    view.render_dist = 5;
-    view.preload_dist = LAB_PRELOAD_CHUNK(view.render_dist);
-    view.keep_dist = LAB_KEEP_CHUNK(view.render_dist);
-    view.flags = LAB_VIEW_SHOW_HUD | LAB_VIEW_USE_VBO;
-    //view.max_update = 10;//160;
-    view.max_update = 100;
-    view.max_unload = 20;
-    //view.load_amount = 3;
-    //view.load_amount = 10;
-    //view.load_amount = 1;
-    view.load_amount = 7;
-    view.empty_load_amount = 5;
-    //view.load_amount = 100; // DBG
-    
-    /*view.load_amount = 20;
-    view.empty_load_amount = 100;*/
-    view.load_amount = 100;
-    
-    view.perf_info = &perf_info;
 
-    view.x = view.z = 0.5;
+
+    LAB_client.view.x = LAB_client.view.z = 0.5;
     #if GEN_FLAT
-    view.y = 2;
+    LAB_client.view.y = 2;
     #else
-    view.y = LAB_Gen_Surface_Shape_Func(&gen.overworld, 0, 0) + 3;
+    LAB_client.view.y = LAB_Gen_Surface_Shape_Func(&gen.overworld, 0, 0) + 3;
     #endif
 
-    CHECK_INIT(LAB_Input_Create(&input, &view));
-    LAB_GL_CHECK();
 
+    // Link callbacks
     the_world.view = &LAB_view_interface;
-    the_world.view_user = &view;
+    the_world.view_user = &LAB_client.view;
 
-    main_window.onevent      = &LAB_Input_OnEvent_Proc;
-    main_window.onevent_user = &input;
+    LAB_View_SetWorld(&LAB_client.view, &the_world);
 
-    main_window.render       = &LAB_ViewRenderProc;
-    main_window.render_user  = &view;
+    LAB_client.window.onevent      = &LAB_Input_OnEvent_Proc;
+    LAB_client.window.onevent_user = &LAB_client.input;
+
+    LAB_client.window.render       = &LAB_ViewRenderProc;
+    LAB_client.window.render_user  = &LAB_client.view;
 
 
     CHECK_INIT(LAB_DoTests());
@@ -131,7 +207,7 @@ int main(int argc, char** argv)
     uint32_t time_ms = SDL_GetTicks();
 
     int itr = 0;
-    while(LAB_WindowLoop(&main_window))
+    while(LAB_WindowLoop(&LAB_client.window))
     {
         const char* labErr;
         while((labErr = LAB_GetError())[0] != '\0')
@@ -149,13 +225,13 @@ int main(int argc, char** argv)
         LAB_PerfInfo_Tick(&perf_info);
 
         LAB_PerfInfo_Next(&perf_info, LAB_TG_INPUT);
-        LAB_Input_Tick(&input, delta_ms);
+        LAB_Input_Tick(&LAB_client.input, delta_ms);
 
         LAB_PerfInfo_Next(&perf_info, LAB_TG_WORLD);
         LAB_WorldTick(&the_world, delta_ms);
 
         LAB_PerfInfo_Next(&perf_info, LAB_TG_VIEW);
-        LAB_ViewTick(&view, delta_ms);
+        LAB_ViewTick(&LAB_client.view, delta_ms);
 
         LAB_PerfInfo_Next(&perf_info, LAB_TG_NONE);
 
@@ -168,15 +244,11 @@ int main(int argc, char** argv)
     //goto EXIT;
 
 EXIT:
-    // Null destructable
-    LAB_Input_Destroy(&input);
-    LAB_DestructView(&view);
+    LAB_View_SetWorld(&LAB_client.view, NULL);
+
     LAB_DestructWorld(&the_world);
     LAB_PerfInfo_Destroy(&perf_info);
-    LAB_DestructWindow(&main_window);
-
-    LAB_QuitAssets();
-    LAB_GuiQuit();
+    LAB_Client_Destroy();
 
     if(init) LAB_Quit();
 

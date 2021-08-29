@@ -51,16 +51,19 @@ typedef struct LAB_Chunk
     void* view_user; // managed by the view, non owning pointer, set to NULL when
 } LAB_Chunk;
 
-typedef LAB_Chunk* (LAB_ChunkGenerator)(void* user, LAB_World* world, int x, int y, int z);
+typedef LAB_Chunk* (LAB_ChunkGenerator)(void* user, LAB_Chunk* chunk, int x, int y, int z);
 
 /**
  *  Create chunk filled with fill_block,
  *  Neighbors are all NULL
  *  Return NULL on failure
  */
-LAB_Chunk* LAB_CreateChunk(LAB_Block* fill_block);
+LAB_Chunk* LAB_CreateChunk(void);
 
 /**
  *  Unlink neighbors and free chunk
  */
 void LAB_DestroyChunk(LAB_Chunk* chunk);
+
+
+void LAB_FillChunk(LAB_Chunk* chunk, LAB_Block* fill_block);

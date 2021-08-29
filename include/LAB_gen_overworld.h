@@ -16,4 +16,4 @@ typedef struct LAB_GenOverworld
     uint64_t seed;
 } LAB_GenOverworld;
 
-LAB_Chunk* LAB_GenOverworldProc(void* user, LAB_World* world, int x, int y, int z);
+LAB_Chunk* LAB_GenOverworldProc(void* user, LAB_Chunk* chunk, int x, int y, int z);

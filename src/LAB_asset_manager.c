@@ -12,62 +12,10 @@
 
 #include <SDL2/SDL_image.h>
 
-SDL_Surface* LAB_block_terrain = NULL;
-unsigned     LAB_block_terrain_gl_id = 0;
-
-// TODO remove this
-#include "LAB_texture_atlas.h"
-LAB_TexAtlas LAB_block_atlas;
-
-
-void LAB_Temp_RecreateTerrain(LAB_TexAtlas* atlas); // declared in assets.c
-
-void LAB_InitAssets(void)
-{
-    static bool init = 0;
-    LAB_ASSERT(init == 0);
-    LAB_ASSERT_OR_ABORT(LAB_TexAtlas_Create(&LAB_block_atlas, 32));
-    LAB_Temp_RecreateTerrain(&LAB_block_atlas);
-
-    LAB_block_terrain = LAB_ImageData2SDL(LAB_block_atlas.w, LAB_block_atlas.h, LAB_block_atlas.data);
-
-    LAB_TexAtlas_MakeMipmap(&LAB_block_atlas);
-
-
-    glEnable(GL_TEXTURE_2D);
-    LAB_TexAtlas_Upload2GL(&LAB_block_atlas);
-    LAB_block_terrain_gl_id = LAB_block_atlas.gl_id;
-
-    LAB_TexAtlas_LoadTexMatrix(&LAB_block_atlas);
-
-    LAB_GL_CHECK();
-}
-
-void LAB_QuitAssets(void)
-{
-    //LAB_GL_FREE(glDeleteTextures, 1, &LAB_block_terrain_gl_id);
-    LAB_SDL_FREE(SDL_FreeSurface, &LAB_block_terrain);
-
-    /*LAB_block_terrain_gl_id = 0;
-    LAB_block_terrain = NULL;*/
-    LAB_TexAtlas_Destroy(&LAB_block_atlas);
-}
-
-
-
-
-
-
-
-
-
-
-
 
 #define HTL_PARAM LAB_ASSET_MGR_TBL
 #include "HTL_hasharray.t.c"
 #undef HTL_PARAM
-
 
 
 bool LAB_AssetMgr_Create(LAB_AssetMgr* mgr, const LAB_AssetMgr_Behavior* behavior, void* user)

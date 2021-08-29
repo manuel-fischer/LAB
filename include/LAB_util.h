@@ -9,6 +9,7 @@
 #include <stdbool.h> // bool
 #include "LAB_opt.h"
 #include "LAB_attr.h"
+#include "LAB_debug.h"
 
 
 /**
@@ -87,3 +88,18 @@ LAB_Nanos LAB_NanoSeconds();
 
 LAB_PURE
 size_t LAB_StrHash(const char* str);
+
+
+
+#define LAB_ObjCopy(dstp, srcp) LAB_CORRECT_IF( \
+    sizeof(*(dstp)) == sizeof(*(srcp)), \
+    memcpy(dstp, srcp, sizeof(*(dstp))))
+
+
+#define LAB_ObjClear(dstp) (memset(dstp, 0, sizeof(*(dstp))), true)
+
+
+#include <math.h>
+
+#define LAB_EPSILON (1e-5)
+#define LAB_APPROX_EQ(a, b) (fabs((a) - (b)) < LAB_EPSILON)

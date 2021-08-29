@@ -48,10 +48,11 @@ typedef struct LAB_Block
     LAB_Color lum;
     LAB_Color dia; // diaphanety/transparency color of the block, the incoming light gets multiplied with this color,
                    // should be #ffffff for completely transparent blocks.
-    LAB_Color item_tint;
-    uint8_t item_tx, item_ty; // Offset of the texture tile for the item, might be removed
+    LAB_Color item_tint; // TODO remove
+    uint8_t item_tx, item_ty; // Offset of the texture tile for the item, TODO remove
 
     LAB_Model const* model;
+    SDL_Surface* item_texture;
     float bounds[2][3];
 } LAB_Block;
 

@@ -6,16 +6,15 @@
 #include "LAB_stdinc.h"
 #include "LAB_opt.h"
 
-LAB_Chunk* LAB_CreateChunk(LAB_Block* fill_block)
+LAB_Chunk* LAB_CreateChunk(void)
 {
     LAB_Chunk* chunk;
-    LAB_ASSERT(LAB_READABLE(fill_block));
 
     chunk = LAB_Malloc(sizeof *chunk);
     if(LAB_UNLIKELY(chunk == NULL))
         return (LAB_SetError("CreateChunk failed to allocate"), NULL);
 
-    for(int i = 0; i < LAB_CHUNK_LENGTH; ++i) chunk->blocks[i] = fill_block;
+    //for(int i = 0; i < LAB_CHUNK_LENGTH; ++i) chunk->blocks[i] = fill_block;
     //memset(chunk->light, 0, sizeof chunk->light);
 
     chunk->dirty = 1;
@@ -50,4 +49,11 @@ void LAB_DestroyChunk(LAB_Chunk* chunk)
     }
 
     LAB_Free(chunk);
+}
+
+
+void LAB_FillChunk(LAB_Chunk* chunk, LAB_Block* fill_block)
+{
+    LAB_ASSERT(LAB_READABLE(fill_block));
+    for(int i = 0; i < LAB_CHUNK_LENGTH; ++i) chunk->blocks[i] = fill_block;
 }

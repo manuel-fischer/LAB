@@ -111,10 +111,8 @@ LAB_STATIC LAB_Triangle* LAB_ViewMeshAlloc(LAB_View_Mesh* mesh, size_t add_size,
 
 LAB_STATIC void LAB_ViewRenderInit(LAB_View* view);
 
-bool LAB_ConstructView(LAB_View* view, LAB_World* world)
+bool LAB_ConstructView(LAB_View* view, LAB_World* world, LAB_TexAtlas* atlas)
 {
-    LAB_InitAssets();
-
     memset(view, 0, sizeof *view);
     view->world = world;
 
@@ -130,6 +128,7 @@ bool LAB_ConstructView(LAB_View* view, LAB_World* world)
     LAB_FpsGraph_Create(&view->fps_graph_view,        LAB_RGB(128, 128, 255));
     LAB_FpsGraph_Create(&view->fps_graph_view_render, LAB_RGB(255,  32, 128));*/
 
+    view->atlas = atlas;
     LAB_ViewRenderInit(view);
 
     LAB_GuiManager_Create(&view->gui_mgr);
@@ -149,6 +148,25 @@ void LAB_DestructView(LAB_View* view)
     LAB_FpsGraph_Destroy(&view->fps_graph_input);
     LAB_FpsGraph_Destroy(&view->fps_graph);*/
 
+    /*LAB_ViewChunkEntry* e;
+    HTL_HASHARRAY_EACH_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
+    {
+        // unlinking not nessesary
+        // but when the world gets destroyed all links to the world should be removed
+        LAB_ViewUnlinkChunk(view, e);
+        //LAB_ViewDestructFreeChunk(view, e);
+    });*/
+    LAB_ASSERT(view->world == NULL);
+
+    LAB_View_ChunkTBL_Destroy(&view->chunks);
+
+    LAB_ViewCoordInfo_Destroy(&view->info);
+}
+
+
+void LAB_View_SetWorld(LAB_View* view, LAB_World* world)
+{
+    
     LAB_ViewChunkEntry* e;
     HTL_HASHARRAY_EACH_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
     {
@@ -157,11 +175,11 @@ void LAB_DestructView(LAB_View* view)
         LAB_ViewUnlinkChunk(view, e);
         //LAB_ViewDestructFreeChunk(view, e);
     });
+    LAB_View_ChunkTBL_Clear(&view->chunks);
 
-    LAB_View_ChunkTBL_Destroy(&view->chunks);
-
-    LAB_ViewCoordInfo_Destroy(&view->info);
+    view->world = world;
 }
+
 
 void LAB_View_Clear(LAB_View* view)
 {
@@ -170,8 +188,9 @@ void LAB_View_Clear(LAB_View* view)
     {
         LAB_ViewUnlinkChunk(view, e);
     });
-    LAB_View_ChunkTBL_Destroy(&view->chunks);
-    memset(&view->chunks, 0, sizeof view->chunks);
+    LAB_View_ChunkTBL_Clear(&view->chunks);
+    /*LAB_View_ChunkTBL_Destroy(&view->chunks);
+    memset(&view->chunks, 0, sizeof view->chunks);*/
 
     LAB_Free(view->sorted_chunks);
     view->sorted_chunks = 0;
@@ -257,7 +276,7 @@ bool LAB_ViewChunkKeepProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x
     int dy = y-py;
     int dz = z-pz;
     unsigned int dist = dx*dx+dy*dy+dz*dz;
-    return dist <= view->keep_dist*view->keep_dist+3;
+    return dist <= view->cfg.keep_dist*view->cfg.keep_dist+3;
 }
 
 void LAB_ViewChunkUnlinkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z)
@@ -427,7 +446,7 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
     // before mixing
     //#define MAP_LIGHT_0(x) LAB_ColorHI4(x)
     #define MAP_LIGHT_0(x) (x)
-    #define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor_Fast(LAB_MulColor_Fast(~(x), ~(x)), LAB_MulColor_Fast(~(x), ~(x))):(x))
+    #define MAP_LIGHT(x) (view->cfg.flags&LAB_VIEW_BRIGHTER?~LAB_MulColor_Fast(LAB_MulColor_Fast(~(x), ~(x)), LAB_MulColor_Fast(~(x), ~(x))):(x))
     //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor_Fast(~(x), ~(x)):(x))
     //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor_Fast(~(x), ~(x)):LAB_MulColor_Fast((x), (x)))
     //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor_Fast(~(x), ~(x)):LAB_AddColor(LAB_MulColor_Fast((x), (x)), LAB_MulColor_Fast((x), (x))))
@@ -445,7 +464,7 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
         int count = LAB_PutModelAt(tri, model, x, y, z, faces, visibility);
         mesh->size -= model->size-count;
     }
-    else if((view->flags&LAB_VIEW_FLAT_SHADE)||(block->flags&LAB_BLOCK_FLAT_SHADE))
+    else if((view->cfg.flags&LAB_VIEW_FLAT_SHADE)||(block->flags&LAB_BLOCK_FLAT_SHADE))
     {
         LAB_Color light_sides[7];
 
@@ -665,7 +684,7 @@ LAB_STATIC bool LAB_ViewUpdateChunk(LAB_View* view, LAB_ViewChunkEntry* e)
 
 LAB_STATIC int LAB_ViewUpdateChunks(LAB_View* view)
 {
-    unsigned rest_update = view->max_update;
+    unsigned rest_update = view->cfg.max_update;
     uint64_t nanos = LAB_NanoSeconds();
 
     int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
@@ -673,7 +692,7 @@ LAB_STATIC int LAB_ViewUpdateChunks(LAB_View* view)
     int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
 
 
-    int dist_sq = view->render_dist*view->render_dist + 3;
+    int dist_sq = view->cfg.render_dist*view->cfg.render_dist + 3;
     LAB_ViewChunkEntry* e;
     for(size_t i = 0; i < view->chunks.size; ++i)
     {
@@ -691,7 +710,7 @@ LAB_STATIC int LAB_ViewUpdateChunks(LAB_View* view)
         if(!rest_update) break;
 
     }//);
-    return view->max_update - rest_update;
+    return view->cfg.max_update - rest_update;
 }
 // TODO use glMultiDrawElements
 LAB_STATIC bool LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_RenderPass pass)
@@ -708,7 +727,7 @@ LAB_STATIC bool LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_en
         return 0;
 
 
-    if(view->flags & LAB_VIEW_USE_VBO)
+    if(view->cfg.flags & LAB_VIEW_USE_VBO)
     {
         if(!mesh->vbo) return 0;
         glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
@@ -721,7 +740,7 @@ LAB_STATIC bool LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_en
 
     LAB_Triangle* mesh_data;
 
-    mesh_data = view->flags & LAB_VIEW_USE_VBO ? 0 /* Origin of vbo is at 0 */ : mesh->data;
+    mesh_data = view->cfg.flags & LAB_VIEW_USE_VBO ? 0 /* Origin of vbo is at 0 */ : mesh->data;
 
     glVertexPointer(3, LAB_GL_TYPEOF(mesh_data->v[0].x), sizeof *mesh_data->v, &mesh_data->v[0].x);
     glColorPointer(4, GL_UNSIGNED_BYTE, sizeof *mesh_data->v, &mesh_data->v[0].color);
@@ -755,7 +774,7 @@ void LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass)
     int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
     int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
 
-    int dist_sq = view->render_dist*view->render_dist + 3;
+    int dist_sq = view->cfg.render_dist*view->cfg.render_dist + 3;
     LAB_ViewChunkEntry* e;
     int start = backwards ? (int)view->chunks.size-1 : 0;
     int stop  = backwards ? -1 : (int)view->chunks.size;
@@ -770,7 +789,7 @@ void LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass)
         }
     }
 
-    if(view->flags & LAB_VIEW_USE_VBO)
+    if(view->cfg.flags & LAB_VIEW_USE_VBO)
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 #if 0
@@ -791,7 +810,7 @@ void LAB_ViewRenderChunkGrids(LAB_View* view)
     int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
     int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
 
-    int dist_sq = view->render_dist*view->render_dist + 3;
+    int dist_sq = view->cfg.render_dist*view->cfg.render_dist + 3;
     LAB_ViewChunkEntry* e;
     for(size_t i = 0; i < view->chunks.size; ++i)
     {
@@ -852,7 +871,7 @@ void LAB_ViewRenderChunkGrids(LAB_View* view)
 
 LAB_STATIC void LAB_View_UploadChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 {
-    LAB_ASSUME(view->flags & LAB_VIEW_USE_VBO);
+    LAB_ASSUME(view->cfg.flags & LAB_VIEW_USE_VBO);
 
     if(!chunk_entry->upload_vbo)
         return;
@@ -881,7 +900,7 @@ LAB_STATIC void LAB_View_UploadChunks(LAB_View* view)
     int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
     int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
 
-    int dist_sq = view->render_dist*view->render_dist + 3;
+    int dist_sq = view->cfg.render_dist*view->cfg.render_dist + 3;
     LAB_ViewChunkEntry* e;
     HTL_HASHARRAY_EACH_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
     {
@@ -1372,7 +1391,7 @@ void LAB_ViewRender(LAB_View* view)
     glFogfv(GL_FOG_COLOR, sky_color);
     #if 1
     glFogi(GL_FOG_MODE, GL_LINEAR);
-    float d = LAB_MAX(view->render_dist*16, 48);
+    float d = LAB_MAX(view->cfg.render_dist*16, 48);
     glFogf(GL_FOG_START, d-32);
     //glFogf(GL_FOG_START, (d-16)*0.8);
     glFogf(GL_FOG_START, (d-16)*0.7);
@@ -1399,7 +1418,7 @@ void LAB_ViewRender(LAB_View* view)
     float ratio = view->h?(float)view->w/(float)view->h:1;
     float nearp = 0.075f;
     float fov = view->fov_factor;
-    float far = view->render_dist*16+32;
+    float far = view->cfg.render_dist*16+32;
     glFrustum(-fov*nearp*ratio, fov*nearp*ratio, -fov*nearp, fov*nearp, nearp, far);
 
     // Setup world matrix
@@ -1438,7 +1457,7 @@ void LAB_ViewRender(LAB_View* view)
     glMatrixMode(GL_MODELVIEW);
 
 
-    if(view->flags&LAB_VIEW_SHOW_CHUNK_GRID)
+    if(view->cfg.flags&LAB_VIEW_SHOW_CHUNK_GRID)
     {
         glEnable(GL_DEPTH_TEST);
         glColor3f(1, 1, 1);
@@ -1467,7 +1486,7 @@ void LAB_ViewRender(LAB_View* view)
     glDepthFunc(GL_LEQUAL);
 
     glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, LAB_block_terrain_gl_id);
+    glBindTexture(GL_TEXTURE_2D, view->atlas->gl_id);
 
     /*if(view->flags&)
     {
@@ -1493,7 +1512,7 @@ void LAB_ViewRender(LAB_View* view)
 
 
     LAB_Nanos upload_start = LAB_NanoSeconds();
-    if(view->flags & LAB_VIEW_USE_VBO)
+    if(view->cfg.flags & LAB_VIEW_USE_VBO)
     {
         LAB_View_UploadChunks(view);
     }
@@ -1538,7 +1557,7 @@ void LAB_ViewRender(LAB_View* view)
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glDisable(GL_FOG);
 
-    if(view->flags & LAB_VIEW_SHOW_HUD)
+    if(view->cfg.flags & LAB_VIEW_SHOW_HUD)
         LAB_View_RenderBlockSelection(view);
 
     glMatrixMode(GL_PROJECTION);
@@ -1547,7 +1566,7 @@ void LAB_ViewRender(LAB_View* view)
     glMatrixMode(GL_MODELVIEW);
 
     // Render Crosshair
-    if(view->flags & LAB_VIEW_SHOW_HUD)
+    if(view->cfg.flags & LAB_VIEW_SHOW_HUD)
         LAB_ViewRenderHud(view);
 
     // Gui rendering settings
@@ -1556,7 +1575,7 @@ void LAB_ViewRender(LAB_View* view)
     glColor4f(1,1,1,1);
     LAB_GuiManager_Render(&view->gui_mgr, view->w, view->h);
 
-    if(view->flags & LAB_VIEW_SHOW_FPS_GRAPH)
+    if(view->cfg.flags & LAB_VIEW_SHOW_FPS_GRAPH)
     {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -1581,9 +1600,9 @@ void LAB_ViewRemoveDistantChunks(LAB_View* view)
     int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
     int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
 
-    int dist_sq = view->keep_dist*view->keep_dist + 3;
+    int dist_sq = view->cfg.keep_dist*view->cfg.keep_dist + 3;
 
-    unsigned rest_unload = view->max_unload;
+    unsigned rest_unload = view->cfg.max_unload;
 
     LAB_ViewChunkEntry* e;
     HTL_HASHARRAY_REMOVE_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
@@ -2196,8 +2215,8 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
         }
     }
 
-    int load_amount = view->load_amount; // should be configurable
-    int empty_load_amount = view->empty_load_amount;
+    int load_amount = view->cfg.load_amount; // should be configurable
+    int empty_load_amount = view->cfg.empty_load_amount;
 
 
     LAB_Block* block = LAB_GetBlock(view->world, (int)floorf(view->x), (int)floorf(view->y), (int)floorf(view->z), LAB_CHUNK_EXISTING);

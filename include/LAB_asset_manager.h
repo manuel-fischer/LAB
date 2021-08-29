@@ -24,40 +24,6 @@
  */
 #define LAB_MIPMAPS 1
 
-/**
- *  Texture atlas
- *
- *  \see LAB_block_terrain_gl_id
- */
-LAB_DEPRECATED("replaced by LAB_AssetMgr")
-extern SDL_Surface* LAB_block_terrain;
-
-/**
- *  Reference to the OpenGL object of the texture atlas
- *
- *  \see LAB_block_terrain
- */
-LAB_DEPRECATED("replaced by LAB_AssetMgr")
-extern unsigned     LAB_block_terrain_gl_id;
-
-/**
- *  Init assets
- *
- *  \todo what if it fails?
- */
-LAB_DEPRECATED("replaced by LAB_AssetMgr")
-void LAB_InitAssets(void);
-/**
- *  Free assets
- *
- *  \pre \ref LAB_InitAssets was called
- */
-LAB_DEPRECATED("replaced by LAB_AssetMgr")
-void LAB_QuitAssets(void);
-
-
-
-
 
 
 

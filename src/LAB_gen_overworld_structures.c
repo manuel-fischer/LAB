@@ -37,27 +37,27 @@ typedef struct LAB_Gen_BuildingPalette
 } LAB_Gen_BuildingPalette;
 
 static const LAB_Gen_BuildingPalette stone_palette = {
-    .corner = &LAB_BLOCK_STONE_SMOOTH,
-    .wall    = &LAB_BLOCK_STONE_BRICKS,
-    .floor   = &LAB_BLOCK_STONE_COBBLE,
+    .corner  = &LAB_BLOCK_STONE.smooth,
+    .wall    = &LAB_BLOCK_STONE.bricks,
+    .floor   = &LAB_BLOCK_STONE.cobble,
     .ceiling = &LAB_BLOCK_WOOD_PLANKS_DARK,
 };
 static const LAB_Gen_BuildingPalette basalt_palette = {
-    .corner  = &LAB_BLOCK_BASALT_SMOOTH,
-    .wall    = &LAB_BLOCK_BASALT_BRICKS,
-    .floor   = &LAB_BLOCK_BASALT_COBBLE,
+    .corner  = &LAB_BLOCK_BASALT.smooth,
+    .wall    = &LAB_BLOCK_BASALT.bricks,
+    .floor   = &LAB_BLOCK_BASALT.cobble,
     .ceiling = &LAB_BLOCK_WOOD_PLANKS,
 };
 static const LAB_Gen_BuildingPalette marble_palette = {
-    .corner  = &LAB_BLOCK_MARBLE_SMOOTH,
-    .wall    = &LAB_BLOCK_MARBLE_BRICKS,
-    .floor   = &LAB_BLOCK_MARBLE_COBBLE,
+    .corner  = &LAB_BLOCK_MARBLE.smooth,
+    .wall    = &LAB_BLOCK_MARBLE.bricks,
+    .floor   = &LAB_BLOCK_MARBLE.cobble,
     .ceiling = &LAB_BLOCK_WOOD_PLANKS_DARK,
 };
 static const LAB_Gen_BuildingPalette desert_palette = {
-    .corner  = &LAB_BLOCK_SANDSTONE_SMOOTH,
-    .wall    = &LAB_BLOCK_SANDSTONE_BRICKS,
-    .floor   = &LAB_BLOCK_SANDSTONE_COBBLE,
+    .corner  = &LAB_BLOCK_SANDSTONE.smooth,
+    .wall    = &LAB_BLOCK_SANDSTONE.bricks,
+    .floor   = &LAB_BLOCK_SANDSTONE.cobble,
     .ceiling = &LAB_BLOCK_WOOD_PLANKS_DARK,
 };
 
@@ -144,7 +144,7 @@ LAB_STATIC void LAB_Gen_Overworld_Rock(LAB_Placer* p, LAB_Random* rnd, const voi
     for(int x =-r; x <= 1; ++x)
     {
         if(z*(z+1)+y*(y+1)+x*(x+1)+(LAB_NextRandom(rnd)&1)+1 < r*r)
-            LAB_Placer_SetBlockIfBlock(p, x, y, z, &LAB_BLOCK_STONE_COBBLE, &LAB_BLOCK_AIR);
+            LAB_Placer_SetBlockIfBlock(p, x, y, z, &LAB_BLOCK_STONE.cobble, &LAB_BLOCK_AIR);
     }
 }
 
@@ -300,7 +300,7 @@ LAB_STATIC void LAB_Gen_Overworld_House(LAB_Placer* p, LAB_Random* rnd, const vo
 
         if(d == 0)
         {
-            LAB_Placer_SetBlock(p, x, y, z, &LAB_BLOCK_CLAY_BRICKS);
+            LAB_Placer_SetBlock(p, x, y, z, &LAB_BLOCK_CLAY.bricks);
         }
         else if(d > 0 && x_wall >= 0 && z_wall >= 0)
         {
@@ -361,7 +361,7 @@ LAB_STATIC void LAB_Gen_Cave_CeilingCrystal(LAB_Placer* p, LAB_Random* rnd, cons
 
 
 
-    LAB_Block*const LIGHTS[4] = {
+    static LAB_Block* const LIGHTS[4] = {
         &LAB_BLOCK_BLUE_CRYSTAL,
         &LAB_BLOCK_YELLOW_CRYSTAL,
         &LAB_BLOCK_GREEN_CRYSTAL,
@@ -408,13 +408,13 @@ LAB_STATIC void LAB_Gen_Cave_CeilingCrystal(LAB_Placer* p, LAB_Random* rnd, cons
         {
             dx = LAB_NextRandomRange(rnd, 0, 5+1)-LAB_NextRandomRange(rnd, 0, 5+1);
             dz = LAB_NextRandomRange(rnd, 0, 5+1)-LAB_NextRandomRange(rnd, 0, 5+1);
-            h = LAB_NextRandomRange(rnd, 2, 16);
+            h = LAB_NextRandomRange(rnd, 2, 9);//16);
         }
         else
         {
             dx = /*((i&1)*2-1)*/ + LAB_NextRandomRange(rnd, -5, 5+1);
             dz = /*((i&2)  -1)*/ + LAB_NextRandomRange(rnd, -5, 5+1);
-            h = LAB_NextRandomRange(rnd, 2, 10+6);
+            h = LAB_NextRandomRange(rnd, 2, 9);//10+6);
         }
 
         int r = LAB_MAX(abs(dx), abs(dz))*h;

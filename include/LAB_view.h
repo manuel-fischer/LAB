@@ -11,6 +11,8 @@
 #include "LAB_perf_info.h"
 #include <SDL2/SDL_ttf.h>
 
+#include "LAB_texture_atlas.h"
+
 #include "LAB_view_chunk.h"
 #include "LAB_htl_config.h"
 
@@ -109,6 +111,25 @@ typedef struct LAB_ViewSortedChunkEntry
     float distance;
 } LAB_ViewSortedChunkEntry;
 
+
+typedef struct LAB_ViewConfig
+{
+    uint32_t flags;
+    uint32_t preload_dist,
+             render_dist,
+             keep_dist;
+    // TODO: query enable/disable setting
+
+    // Limits
+    uint32_t max_update;
+
+    uint32_t max_unload;
+
+    uint32_t load_amount;
+    uint32_t empty_load_amount;
+} LAB_ViewConfig;
+
+
 typedef struct LAB_View
 {
     // TODO move to entity class
@@ -134,19 +155,7 @@ typedef struct LAB_View
 
     LAB_World* world;
 
-    uint32_t flags;
-    uint32_t preload_dist,
-             render_dist,
-             keep_dist;
-    // TODO: query enable/disable setting
-
-    // Limits
-    uint32_t max_update;
-
-    uint32_t max_unload;
-
-    uint32_t load_amount;
-    uint32_t empty_load_amount;
+    LAB_ViewConfig cfg;
 
     LAB_ViewCoordInfo info;
     int w, h; // window size
@@ -161,6 +170,8 @@ typedef struct LAB_View
     LAB_GuiManager gui_mgr;
 
 
+    LAB_TexAtlas* atlas;
+
 
     GLdouble projection_mat[16], modelview_mat[16], modlproj_mat[16];
 
@@ -171,13 +182,15 @@ const LAB_IView LAB_view_interface;
 /**
  *  Create view, with given world
  */
-bool LAB_ConstructView(LAB_View* view, LAB_World* world);
+bool LAB_ConstructView(LAB_View* view, LAB_World* world, LAB_TexAtlas* atlas);
 
 /**
  *  Destruct view
  *  The view can be filled with 0 bytes
  */
 void LAB_DestructView(LAB_View* view);
+void LAB_View_SetWorld(LAB_View* view, LAB_World* world);
+
 void LAB_View_Clear(LAB_View* view);
 
 

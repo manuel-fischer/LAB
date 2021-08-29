@@ -42,7 +42,7 @@ const LAB_Gen_Biome LAB_biome_desert =
 {
     .tags           = LAB_GEN_TAG_CAVE | LAB_GEN_TAG_MOUNTAINS | LAB_GEN_TAG_DESERT,
     .surface_block  = &LAB_BLOCK_SAND,
-    .ground_block   = &LAB_BLOCK_SANDSTONE,
+    .ground_block   = &LAB_BLOCK_SANDSTONE.raw,
 };
 
 

@@ -57,7 +57,7 @@ void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y
                 else if(yi <= sheight)
                     continue; // keep stone
 
-                if(river && b != &LAB_BLOCK_AIR) b = &LAB_BLOCK_LAPIZ;
+                if(river && b != &LAB_BLOCK_AIR) b = &LAB_BLOCK_LAPIZ.raw;
 
                 chunk->blocks[LAB_CHUNK_OFFSET(xx, yy, zz)] = (LAB_Block* /*TODO make this all const*/)b;
             }

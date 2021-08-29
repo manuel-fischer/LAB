@@ -21,7 +21,7 @@ void LAB_AssumptionFailed(const char* type,
                           const char* function,
                           int trap)
 {
-    fprintf(stderr, "Checking %s failed at %s|%i%s%s:\n    %s\n",
+    fprintf(stderr, "Checking %s failed at %s:%i%s%s:\n    %s\n",
             type, file, line, function?" in ":"", function, expr);
     //raise(SIGILL); // alt: SIGINT SIGBREAK SIGTRAP
     #if !defined NDEBUG && defined __WINNT__ && !defined __GNUC__

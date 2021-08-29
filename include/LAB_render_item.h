@@ -2,7 +2,19 @@
 
 #include <SDL2/SDL_video.h>
 #include "LAB_block.h"
+#include "LAB_texture_atlas.h"
+#include "LAB_stdinc.h"
+#include "LAB_util.h"
 
 #define LAB_ITEM_SIZE 32
 
-SDL_Surface* LAB_RenderBlock2D(LAB_Block* block);
+typedef struct LAB_ItemTexSet
+{
+    size_t size, capacity;
+    SDL_Surface** surfaces;
+} LAB_ItemTexSet;
+
+#define LAB_ItemTexSet_Create(s) LAB_ObjClear(s)
+void LAB_ItemTexSet_Destroy(LAB_ItemTexSet* s);
+
+SDL_Surface* LAB_ItemTexSet_Render(LAB_ItemTexSet* s, LAB_TexAtlas* atlas, const size_t tex[2][2], LAB_Color tint);

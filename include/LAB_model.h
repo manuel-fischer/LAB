@@ -121,10 +121,21 @@ LAB_Triangle;               //    96 Bytes
 
 typedef struct LAB_Model
 {
-    size_t size;
+    size_t size, capacity;
     LAB_Triangle* data;
     LAB_RenderPass render_pass;
 } LAB_Model;
+
+
+
+
+
+#define LAB_Model_Create(model) (LAB_ObjClear(model), true)
+void LAB_Model_Destroy(LAB_Model* model);
+LAB_Triangle* LAB_Model_Extend(LAB_Model* model, size_t num_tris);
+
+
+
 
 
 

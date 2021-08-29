@@ -5,7 +5,7 @@
 // ... -- on success
 #define LAB_OBJ(init, defer, ...) do \
 { \
-    if(init) \
+    if((init)) \
     { \
         { __VA_ARGS__ } \
         { defer; } \
@@ -19,7 +19,7 @@
 // Error source: SDL_GetError
 #define LAB_OBJ_SDL(init, defer, ...) do \
 { \
-    if(init) \
+    if((init)) \
     { \
         { __VA_ARGS__ } \
         { defer; } \

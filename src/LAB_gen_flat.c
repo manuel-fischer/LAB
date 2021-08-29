@@ -1,11 +1,11 @@
 #include "LAB_gen_flat.h"
 
-LAB_Chunk* LAB_GenFlatProc(void* user, LAB_World* world, int x, int y, int z)
+LAB_Chunk* LAB_GenFlatProc(void* user, LAB_Chunk* chunk, int x, int y, int z)
 {
     LAB_GenFlat* gen_flat = user;
 
     LAB_Block* block = y < 0 ? gen_flat->block : &LAB_BLOCK_AIR;
-    LAB_Chunk* chunk = LAB_CreateChunk(block);
+    LAB_FillChunk(chunk, block);
     if(!chunk) return NULL;
 
     #if 0

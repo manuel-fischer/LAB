@@ -28,7 +28,7 @@ static int LAB_InitSDL(void)
     LAB_OBJ_SDL(TTF_Init() == 0,
                 TTF_Quit(),
 
-        return true;
+        return SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH) == 0;
     );););
     return false;
 }
@@ -48,12 +48,9 @@ bool LAB_Init()
     
     LAB_OBJ(LAB_Blocks_Init(),
             LAB_Blocks_Quit(),
-
-    LAB_OBJ(LAB_BuiltinBlocks_Init(),
-            (void)0,
-
+            
         return true;
-    );););
+    ););
     return false;
 }
 

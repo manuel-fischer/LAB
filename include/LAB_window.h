@@ -28,12 +28,12 @@ typedef struct LAB_Window
  *  Pass sdl_flags to SDL_CreateWindowAndRenderer
  *  return 0 on error
  */
-int  LAB_ConstructWindow(LAB_Window* window, int w, int h, uint32_t sdl_flags);
+int  LAB_Window_Create(LAB_Window* window, int w, int h, uint32_t sdl_flags);
 
 /**
  *  Destruct window and its SDL resources
  */
-void LAB_DestructWindow(LAB_Window* window);
+void LAB_Window_Destroy(LAB_Window* window);
 
 
 /**

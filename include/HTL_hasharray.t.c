@@ -151,4 +151,13 @@ HTL_DEF void HTL_MEMBER(Discard)(HTL_P(NAME)* hasharray, HTL_P(ENTRY_TYPE)* entr
 {
     --hasharray->size;
 }
+
+
+HTL_DEF void HTL_MEMBER(Clear)(HTL_P(NAME)* hasharray)
+{
+    if(hasharray->table)
+        memset(hasharray->table, 0, hasharray->capacity * sizeof *hasharray->table);
+
+    hasharray->size = 0;
+}
 #endif // HTL_PARAM

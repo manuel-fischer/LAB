@@ -14,7 +14,9 @@
 //#define LAB_DARK_LIGHT(dia) (dia)
                     //nlum = nlum - (nlum>>2 & 0x3f3f3f);
 #define LAB_LIGHT_FALL_OFF(lum) ((lum) - ((lum)>>3 & 0x1f1f1f)-((lum)>>4 & 0x0f0f0f))
-//#define LAB_LIGHT_FALL_OFF(lum) ((lum) - ((lum)>>3 & 0x0f0f0f))
+//#define LAB_LIGHT_FALL_OFF(lum) ((lum) - ((lum)>>3 & 0x1f1f1f))
+//#define LAB_LIGHT_FALL_OFF(lum) ((lum) - ((lum)>>3 & 0x1f1f1f))
+//#define LAB_LIGHT_FALL_OFF(lum) ((lum) - ((lum)>>3 & 0x1f1f1f) - ((lum)>>5 & 0x070707))
 //#define LAB_LIGHT_FALL_OFF(lum) (LAB_SubColor((lum), LAB_RGBA(16, 18, 20, 0)))
 
 

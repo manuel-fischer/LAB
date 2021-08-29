@@ -9,7 +9,7 @@
 #include "LAB_util.h" // nanos
 
 
-int LAB_ConstructWindow(LAB_Window* window, int w, int h, uint32_t sdl_flags)
+int LAB_Window_Create(LAB_Window* window, int w, int h, uint32_t sdl_flags)
 {
     memset(window, 0, sizeof *window);
 
@@ -63,12 +63,12 @@ int LAB_ConstructWindow(LAB_Window* window, int w, int h, uint32_t sdl_flags)
     return 1;
 
 INIT_ERROR:
-    LAB_DestructWindow(window);
+    LAB_Window_Destroy(window);
     return 0;
 }
 
 
-void LAB_DestructWindow(LAB_Window* window)
+void LAB_Window_Destroy(LAB_Window* window)
 {
     if(window->glcontext != NULL) SDL_GL_DeleteContext(window->glcontext);
 

@@ -6,4 +6,4 @@ typedef struct LAB_GenFlat
     LAB_Block* block;
 } LAB_GenFlat;
 
-LAB_Chunk* LAB_GenFlatProc(void* user, LAB_World* world, int x, int y, int z);
+LAB_Chunk* LAB_GenFlatProc(void* user, LAB_Chunk* chunk, int x, int y, int z);

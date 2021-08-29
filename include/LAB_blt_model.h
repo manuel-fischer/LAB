@@ -13,7 +13,7 @@
 //#define LAB_SHADE_C LAB_RGBX(D0D0D0) // cross
 #define LAB_SHADE_C LAB_RGBX(FFFFFF) // cross
 
-#define LAB_NO_SHADE LAB_RGBX(FFFFFF) // north south
+#define LAB_NO_SHADE LAB_RGBX(FFFFFF)
 
 
 #define LAB_MK_TRI(x0, y0, z0,  u0, v0, \

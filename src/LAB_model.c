@@ -1,6 +1,38 @@
 #include "LAB_model.h"
 #include "LAB_bits.h"
 
+#include "LAB_memory.h"
+
+
+
+void LAB_Model_Destroy(LAB_Model* m)
+{
+    LAB_Free(m->data);
+}
+
+LAB_Triangle* LAB_Model_Extend(LAB_Model* m, size_t num_tris)
+{
+    if(m->size + num_tris > m->capacity)
+    {
+        size_t new_cap = 1;
+        while(m->size + num_tris > new_cap) new_cap <<= 1;
+        LAB_Triangle* n_data = LAB_ReallocN(m->data, new_cap, sizeof(*n_data));
+        if(n_data == NULL) return NULL;
+        m->data = n_data;
+        m->capacity = new_cap;
+    }
+    size_t off = m->size;
+    m->size += num_tris;
+    return &m->data[off];
+}
+
+
+
+
+
+
+
+
 LAB_STATIC int LAB_FaceSetToLightIndex(int face)
 {
     //return face ? LAB_Ctz(face) : 6;

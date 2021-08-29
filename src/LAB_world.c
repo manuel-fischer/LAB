@@ -76,7 +76,7 @@ LAB_STATIC LAB_Chunk* LAB_GenerateNotifyChunk(LAB_World* world, int x, int y, in
         return entry->chunk;
     }
 
-    chunk = (*world->chunkgen)(world->chunkgen_user, world, x, y, z);
+    chunk = LAB_CreateChunk();
     if(LAB_UNLIKELY(chunk == NULL))
     {
         // Because the inserted entry was not changed
@@ -84,6 +84,8 @@ LAB_STATIC LAB_Chunk* LAB_GenerateNotifyChunk(LAB_World* world, int x, int y, in
         LAB_ChunkTBL_Discard(&world->chunks, entry);
         return NULL;
     }
+    LAB_Chunk* chunk2 = (*world->chunkgen)(world->chunkgen_user, chunk, x, y, z);
+    LAB_ASSERT(chunk == chunk2);
 
     // Slot gets occupied, because >chunk< is nonzero
     entry->pos = pos;

@@ -352,6 +352,17 @@ LAB_INLINE bool LAB_TexAtlas_DoubleHeight(LAB_TexAtlas* atlas)
 }
 
 
+void LAB_TexAtlas_Clear(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size, LAB_Color clear)
+{
+    size_t i_atl = x + y*atlas->w;
+
+    for(size_t row = 0; row < size; ++row)
+    {
+        LAB_MemSetColor(atlas->data+i_atl, clear, size);
+        i_atl += atlas->w;
+    }
+}
+
 void LAB_TexAtlas_Draw(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size, LAB_Color* data)
 {
     size_t i_src = 0;
@@ -376,6 +387,19 @@ void LAB_TexAtlas_DrawBlit(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size,
         i_src += size;
         i_atl += atlas->w;
     }
+}
+
+bool LAB_TexAtlas_ClearAlloc(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size, LAB_Color clear)
+{
+    while(x+size > atlas->w)
+        if(!LAB_TexAtlas_DoubleWidth(atlas)) return false;
+
+    while(y+size > atlas->h)
+        if(!LAB_TexAtlas_DoubleHeight(atlas)) return false;
+
+    LAB_TexAtlas_Clear(atlas, x, y, size, clear);
+
+    return true;
 }
 
 bool LAB_TexAtlas_DrawAlloc(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size, LAB_Color* data)
