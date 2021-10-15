@@ -2,7 +2,9 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "type": "cppbuild",
+            // cppbuild forces to select a c/c++ file, here we should compile
+            // from any file, so it is disabled
+            //"type": "cppbuild",
             "label": "C/C++: gcc build for debug",
             "command": "gcc",
             "args": [
@@ -67,16 +69,14 @@
             "options": {
                 "cwd": "${workspaceFolder}"
             },
-            "problemMatcher": [
-                "$gcc"
-            ],
+            "problemMatcher": ["$gcc"],
             "group": {
                 "kind": "build",
                 "isDefault": true
             }
         },
         {
-            "type": "cppbuild",
+            //"type": "cppbuild",
             "label": "C/C++: gcc build for release",
             "command": "gcc",
             "args": [
@@ -142,35 +142,35 @@
             "options": {
                 "cwd": "${workspaceFolder}"
             },
-            "problemMatcher": [
-                "$gcc"
-            ],
+            "problemMatcher": ["$gcc"],
             "group": {
                 "kind": "build",
                 "isDefault": true
             }
         },
         {
-            "type": "cppbuild",
+            //"type": "cppbuild",
             "label": "C/C++: mingw32-make debug",
             "command": "mingw32-make",
             "args": ["debug_exec"],
             "options": {
                 "cwd": "${workspaceFolder}"
             },
+            "problemMatcher": ["$gcc"],
             "group": {
                 "kind": "build",
                 "isDefault": true
             }
         },
         {
-            "type": "cppbuild",
+            //"type": "cppbuild",
             "label": "C/C++: mingw32-make release",
             "command": "mingw32-make",
             "args": ["release_exec"],
             "options": {
                 "cwd": "${workspaceFolder}"
             },
+            "problemMatcher": ["$gcc"],
             "group": {
                 "kind": "build",
                 "isDefault": true

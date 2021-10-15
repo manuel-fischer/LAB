@@ -17,5 +17,5 @@
         "-Wno-unused-parameter",
         "-fmacro-prefix-map=${workspaceFolder}=."
     ],
-    "terminal.integrated.defaultProfile.windows": "Command Prompt"
+    "terminal.integrated.defaultProfile.windows": "PowerShell"
 }
