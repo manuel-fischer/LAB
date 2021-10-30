@@ -1,0 +1,52 @@
+{
+	"program": "lab.exe",
+	"c-flags": [
+		"-std=c17",
+		"-D_POSIX_C_SOURCE=200101L",
+
+		"-Ofast",
+		"-g",
+
+		"-IC:\\Libs\\include",
+
+		
+		"-Wall",
+		"-Wextra",
+		"-pedantic",
+		"-Wfatal-errors",
+		"-pedantic-errors",
+		"-Winit-self",
+		"-Winline",
+		"-Wno-missing-declarations",
+		"-Wmissing-include-dirs",
+		"-Wundef",
+		"-Wredundant-decls",
+		"-Wfloat-equal",
+		"-Wmain",
+		"-Wunreachable-code",
+		"-Wshadow",
+		"-Wcast-align",
+		"-Wswitch-enum",
+
+		"-Wno-unused-parameter"
+	],
+	"linker-flags": [
+		"-g",
+
+		"-LC:\\Libs\\lib",
+
+		"-lmingw32",
+		"-luser32",
+		"-lgdi32",
+		"-lwinmm",
+		"-ldxguid",
+		"-lglew32",
+		"-lSDL2main",
+		"-lSDL2",
+		"-lSDL2_image",
+		"-lSDL2_ttf",
+		"-lopengl32",
+
+		"-limagehlp"
+	]
+}

@@ -76,3 +76,6 @@ doxygen/*
 
 # Log output
 *.log
+
+# CBake files
+.cbake-dependencies.txt
