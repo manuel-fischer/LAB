@@ -325,14 +325,14 @@ int LAB_TickLight_GetLight(LAB_Chunk*const chunks[27], int quadrant, bool init, 
 }*/
 
 // return faces that changed
-LAB_HOT
+LAB_STATIC LAB_HOT
 void LAB_TickLight_ProcessQuadrant(LAB_Chunk*const chunks[27], int quadrant, bool init, LAB_Color default_color)
 {
     LAB_Chunk* ctr_cnk = chunks[1+3+9];
     LAB_ASSERT(ctr_cnk);
     LAB_PULL_CONST(int, c_init, 2, init)
     {
-        int faces_changed = 0;
+        //int faces_changed = 0;
 
         int dd[3];
         int i0[3];
@@ -407,13 +407,13 @@ void LAB_TickLight_ProcessQuadrant(LAB_Chunk*const chunks[27], int quadrant, boo
 // return faces that changed
 // TODO return bitset of all 27 chunks if they're changed
 LAB_HOT                                                // TODO: |--------------------| not used
-int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, int cz)
+void LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, int cz)
 {
 
     //static int i = 0;
     //printf("LAB_TickLight %i @ %i %i %i\n", i++, cx, cy, cz);
     LAB_Chunk* ctr_cnk = chunks[1+3+9];
-    if(!ctr_cnk) return 0;
+    if(!ctr_cnk) return;
 
     LAB_Color default_color_above = cy <  -2 ? LAB_RGB(16, 16, 16) : LAB_RGB(255, 255, 255);
     LAB_Color default_color = cy <  0 ? LAB_RGB(16, 16, 16) : LAB_RGB(255, 255, 255);
@@ -427,8 +427,6 @@ int LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, 
     }
     
     ctr_cnk->light_generated = true;
-
-    return 0;
 }
 
 

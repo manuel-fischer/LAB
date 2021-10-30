@@ -313,16 +313,16 @@ bool LAB_Gen_Cave_Carve_Func(LAB_GenOverworld* gen, int xi, int yi, int zi)
     //x = x*0.2+r1*10;
     //z = z*0.2+r2*10;
 
-    const float CM = 1./128.;
-    const float DM = 1./32.;
-    const float KM = 1./10.;
+    //const float CM = 1./128.;
+    //const float DM = 1./32.;
+    //const float KM = 1./10.;
     //x*=2;
     //y*=2; y = -y;
     //z*=2;
     const double C = 0.005;
     const double CY = C;//0.01;
 
-    double noise_temp1, noise_temp2;
+    //double noise_temp1, noise_temp2;
     #define NOISE(rand, scale, x, y, z) \
         LAB_SimplexNoise3D((rand)+(scale)*(x)*C,(1234+(rand))+(scale)*(y)*CY, (235432+(rand))+(scale)*(z)*C)
 

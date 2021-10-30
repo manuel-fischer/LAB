@@ -32,13 +32,13 @@ static SDL_Surface* LAB_RenderBlockItem(LAB_TexAtlas* atlas, const size_t tex[2]
     LAB_Color* dst = surf->pixels;
     size_t  stride = atlas->w;
     LAB_Color* src = atlas->data + (stride*tex[0][1] + tex[0][0])*atlas->cell_size;
-    for(int y = 0; y < atlas->cell_size; ++y, dst+=atlas->cell_size, src+=stride)
+    for(size_t y = 0; y < atlas->cell_size; ++y, dst+=atlas->cell_size, src+=stride)
     {
         LAB_MemCpyColor(dst, src, atlas->cell_size);
     }
 
     LAB_Color block_color = tint;
-    for(int i = 0; i < LAB_ITEM_SIZE*LAB_ITEM_SIZE; ++i)
+    for(size_t i = 0; i < LAB_ITEM_SIZE*LAB_ITEM_SIZE; ++i)
     {
         LAB_Color* c = &((LAB_Color*)surf->pixels)[i];
         *c = LAB_MulColor_Fast(*c, block_color);

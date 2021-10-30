@@ -10,6 +10,38 @@
 
 
 LAB_STATIC
+void LAB_Builtin_WriteVertex(LAB_Vertex* vert, const float v[5], LAB_Color c, uint64_t flags);
+
+#define LAB_TRIANGLE_SIZE 1
+LAB_STATIC
+void LAB_Builtin_WriteTriangle(LAB_Triangle tri[LAB_TRIANGLE_SIZE],
+                               const float v0[5], const float v1[5], const float v2[5], 
+                               LAB_Color c,
+                               uint64_t cull, uint64_t light, uint64_t vis);
+
+
+#define LAB_QUAD_SIZE (2*LAB_TRIANGLE_SIZE)
+void LAB_Builtin_WriteQuad(LAB_Triangle tri[LAB_QUAD_SIZE],
+                           const float v[4][5],
+                           LAB_Color c,
+                           uint64_t cull, uint64_t light, uint64_t vis);
+
+
+#define LAB_CUBE_SIZE (6*LAB_QUAD_SIZE)
+void LAB_Builtin_WriteCube(LAB_Triangle tri[LAB_CUBE_SIZE],
+                           const float aabb[2][3], const float tex[6][2][2],
+                           const LAB_Color cs[6], LAB_Color c);
+
+
+#define LAB_CROSS_SIZE (4*LAB_QUAD_SIZE)
+void LAB_Builtin_WriteCross(LAB_Triangle tri[LAB_CROSS_SIZE],
+                            const float aabb[2][3], const float tex[2][2],
+                            LAB_Color c);
+
+
+
+
+LAB_STATIC
 void LAB_Builtin_WriteVertex(LAB_Vertex* vert, const float v[5], LAB_Color c, uint64_t flags)
 {
     *vert = (LAB_Vertex){ 
@@ -20,7 +52,6 @@ void LAB_Builtin_WriteVertex(LAB_Vertex* vert, const float v[5], LAB_Color c, ui
     };
 }
 
-#define LAB_TRIANGLE_SIZE 1
 LAB_STATIC
 void LAB_Builtin_WriteTriangle(LAB_Triangle tri[LAB_TRIANGLE_SIZE],
                                const float v0[5], const float v1[5], const float v2[5], 
@@ -32,7 +63,6 @@ void LAB_Builtin_WriteTriangle(LAB_Triangle tri[LAB_TRIANGLE_SIZE],
     LAB_Builtin_WriteVertex(&tri->v[2], v2, c, vis);
 }
 
-#define LAB_QUAD_SIZE (2*LAB_TRIANGLE_SIZE)
 void LAB_Builtin_WriteQuad(LAB_Triangle tri[LAB_QUAD_SIZE],
                            const float v[4][5],
                            LAB_Color c,
@@ -92,7 +122,6 @@ static const uint8_t LAB_cube_vertices[6][4][3] = {
       { 1, 0, 1 } },
 };
 
-#define LAB_CUBE_SIZE (6*LAB_QUAD_SIZE)
 void LAB_Builtin_WriteCube(LAB_Triangle tri[LAB_CUBE_SIZE],
                            const float aabb[2][3], const float tex[6][2][2],
                            const LAB_Color cs[6], LAB_Color c)
@@ -102,10 +131,10 @@ void LAB_Builtin_WriteCube(LAB_Triangle tri[LAB_CUBE_SIZE],
         const uint8_t (*f)[3] = LAB_cube_vertices[face];
         const float (*t)[2] = tex[face];
         const float v[4][5] = {
-            aabb[f[0][0]][0], aabb[f[0][1]][1], aabb[f[0][2]][2], t[0][0], t[0][1],
-            aabb[f[1][0]][0], aabb[f[1][1]][1], aabb[f[1][2]][2], t[1][0], t[0][1],
-            aabb[f[2][0]][0], aabb[f[2][1]][1], aabb[f[2][2]][2], t[0][0], t[1][1],
-            aabb[f[3][0]][0], aabb[f[3][1]][1], aabb[f[3][2]][2], t[1][0], t[1][1],
+            { aabb[f[0][0]][0], aabb[f[0][1]][1], aabb[f[0][2]][2], t[0][0], t[0][1] },
+            { aabb[f[1][0]][0], aabb[f[1][1]][1], aabb[f[1][2]][2], t[1][0], t[0][1] },
+            { aabb[f[2][0]][0], aabb[f[2][1]][1], aabb[f[2][2]][2], t[0][0], t[1][1] },
+            { aabb[f[3][0]][0], aabb[f[3][1]][1], aabb[f[3][2]][2], t[1][0], t[1][1] },
         };
         int face_s = 1 << face;
         int vis = LAB_APPROX_EQ(aabb[face&1][face>>1], (float)(face&1)) ? face_s : LAB_DIR_ALL;
@@ -183,8 +212,7 @@ static const uint8_t LAB_cross_vertices[4][4][3] = {
       { 1, 0, 1 } },
 };
 
-#define LAB_CROSS_SIZE (4*LAB_QUAD_SIZE)
-bool LAB_Builtin_WriteCross(LAB_Triangle tri[LAB_CROSS_SIZE],
+void LAB_Builtin_WriteCross(LAB_Triangle tri[LAB_CROSS_SIZE],
                             const float aabb[2][3], const float tex[2][2],
                             LAB_Color c)
 {
@@ -192,10 +220,10 @@ bool LAB_Builtin_WriteCross(LAB_Triangle tri[LAB_CROSS_SIZE],
     {
         const uint8_t (*f)[3] = LAB_cross_vertices[i];
         const float v[4][5] = {
-            aabb[f[0][0]][0], aabb[f[0][1]][1], aabb[f[0][2]][2], tex[0][0], tex[0][1],
-            aabb[f[1][0]][0], aabb[f[1][1]][1], aabb[f[1][2]][2], tex[1][0], tex[0][1],
-            aabb[f[2][0]][0], aabb[f[2][1]][1], aabb[f[2][2]][2], tex[0][0], tex[1][1],
-            aabb[f[3][0]][0], aabb[f[3][1]][1], aabb[f[3][2]][2], tex[1][0], tex[1][1],
+            { aabb[f[0][0]][0], aabb[f[0][1]][1], aabb[f[0][2]][2], tex[0][0], tex[0][1] },
+            { aabb[f[1][0]][0], aabb[f[1][1]][1], aabb[f[1][2]][2], tex[1][0], tex[0][1] },
+            { aabb[f[2][0]][0], aabb[f[2][1]][1], aabb[f[2][2]][2], tex[0][0], tex[1][1] },
+            { aabb[f[3][0]][0], aabb[f[3][1]][1], aabb[f[3][2]][2], tex[1][0], tex[1][1] },
         };
         int face_vis = LAB_cross_visibility[i];
         LAB_Builtin_WriteQuad(LAB_TRI_ADDR(tri,LAB_QUAD_SIZE,i), v, c, LAB_DIR_ALL, 0, face_vis);

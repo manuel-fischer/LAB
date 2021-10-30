@@ -26,7 +26,7 @@ bool LAB_ModelSet_Create(LAB_ModelSet* s)
 }
 
 LAB_INLINE
-bool LAB_ModelSet_Destroy(LAB_ModelSet* s)
+void LAB_ModelSet_Destroy(LAB_ModelSet* s)
 {
     struct LAB_ModelNode* p,* next;
     p = s->head;

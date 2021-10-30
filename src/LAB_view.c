@@ -76,10 +76,10 @@ LAB_STATIC bool LAB_ViewUpdateChunk(LAB_View* view, LAB_ViewChunkEntry* e);
 LAB_STATIC void LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass);
 LAB_STATIC bool LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_RenderPass pass);
 
-LAB_STATIC bool LAB_View_HasChunkEntryVisibleNeighbors(LAB_View* view, LAB_ViewChunkEntry* e);
+//LAB_STATIC bool LAB_View_HasChunkEntryVisibleNeighbors(LAB_View* view, LAB_ViewChunkEntry* e);
 LAB_STATIC bool LAB_View_IsLocalChunk(LAB_View* view, int cx, int cy, int cz);
 LAB_STATIC unsigned LAB_View_ChunkVisibility(LAB_View* view, int cx, int cy, int cz);         // inclusive for same coordinates
-LAB_STATIC unsigned LAB_View_ChunkNeighborVisibility(LAB_View* view, int cx, int cy, int cz); // exclusive for same coordinates
+//LAB_STATIC unsigned LAB_View_ChunkNeighborVisibility(LAB_View* view, int cx, int cy, int cz); // exclusive for same coordinates
 LAB_STATIC void LAB_View_UpdateChunkSeethrough(LAB_View* view, LAB_ViewChunkEntry* e); // exclusive for same coordinates
 #if LAB_VIEW_ENABLE_QUERY
 #if !LAB_VIEW_QUERY_IMMEDIATELY
@@ -412,7 +412,7 @@ LAB_STATIC void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* 
 }
 
 
-LAB_HOT LAB_ALWAYS_INLINE
+LAB_HOT
 LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_Chunk* cnk3x3x3[27], int x, int y, int z, unsigned visibility)
 {
 
@@ -804,7 +804,7 @@ void LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass)
 
 
 
-void LAB_ViewRenderChunkGrids(LAB_View* view)
+LAB_STATIC void LAB_ViewRenderChunkGrids(LAB_View* view)
 {
     int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
     int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
@@ -1821,7 +1821,7 @@ void LAB_ViewTick(LAB_View* view, uint32_t delta_ms)
     return 0;
 }*/
 
-
+/*
 LAB_STATIC bool LAB_View_HasChunkEntryVisibleNeighbors(LAB_View* view, LAB_ViewChunkEntry* entry)
 {
     int faces = LAB_View_ChunkNeighborVisibility(view, entry->x, entry->y, entry->z);
@@ -1834,6 +1834,8 @@ LAB_STATIC bool LAB_View_HasChunkEntryVisibleNeighbors(LAB_View* view, LAB_ViewC
     });
     return 0;
 }
+*/
+
 LAB_STATIC bool LAB_View_IsLocalChunk(LAB_View* view, int cx, int cy, int cz)
 {
     int   vxi, vyi, vzi;
@@ -1981,7 +1983,7 @@ LAB_STATIC unsigned LAB_View_ChunkVisibility(LAB_View* view, int cx, int cy, int
     return faces;
 }
 
-LAB_STATIC unsigned LAB_View_ChunkNeighborVisibility(LAB_View* view, int cx, int cy, int cz)
+/*LAB_STATIC unsigned LAB_View_ChunkNeighborVisibility(LAB_View* view, int cx, int cy, int cz)
 {
     int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
     int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
@@ -1995,7 +1997,7 @@ LAB_STATIC unsigned LAB_View_ChunkNeighborVisibility(LAB_View* view, int cx, int
     if(cz<pz) faces |= LAB_DIR_SOUTH;
     if(cz>pz) faces |= LAB_DIR_NORTH;
     return faces;
-}
+}*/
 
 LAB_STATIC void LAB_View_UpdateChunkSeethrough(LAB_View* view, LAB_ViewChunkEntry* e)
 {
@@ -2216,7 +2218,7 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
     }
 
     int load_amount = view->cfg.load_amount; // should be configurable
-    int empty_load_amount = view->cfg.empty_load_amount;
+    //int empty_load_amount = view->cfg.empty_load_amount;
 
 
     LAB_Block* block = LAB_GetBlock(view->world, (int)floorf(view->x), (int)floorf(view->y), (int)floorf(view->z), LAB_CHUNK_EXISTING);

@@ -39,6 +39,7 @@
 #define LAB_PURE          __attribute__((pure))
 #define LAB_CONST         __attribute__((const))
 
+// C23: maybe_unused
 #define LAB_UNUSED        __attribute__((unused))
 
 //#define LAB_UNROLL(n) _Pragma("GCC unroll " #n)

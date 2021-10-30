@@ -42,6 +42,7 @@
 #define LAB_RealRealloc realloc
 
 
+void* LAB_RealMallocN(size_t count, size_t size);
 void* LAB_RealReallocN(void* memory, size_t count, size_t size);
 
 

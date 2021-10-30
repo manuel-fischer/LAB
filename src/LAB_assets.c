@@ -21,7 +21,7 @@ static const LAB_AssetMgr_Behavior LAB_TextureAsset_behavior =
 static bool LAB_TextureAsset_load_resource(void* user, const char* resource_name, void* resource)
 {
     const size_t cell_size = 32; // << TODO
-    LAB_DBG_PRINTF("Load texture asset: \"%s\"\n", resource_name);
+    //LAB_DBG_PRINTF("Load texture asset: \"%s\"\n", resource_name);
 
     SDL_Surface** surf = (SDL_Surface**)resource;
     // TODO: security checks for ../ etc !!!
@@ -117,7 +117,7 @@ bool LAB_Assets_NewComposedTexture(LAB_Assets* assets, size_t tex[2][2],
             surf = LAB_Assets_LoadTexture(assets, composite[i].resource_name);
 
             LAB_Assets_ValidateTexture(surf, cell_size);
-            LAB_ASSERT_OR_ABORT(tex_size*cell_size == surf->w);
+            LAB_ASSERT_OR_ABORT(tex_size*cell_size == (size_t)surf->w);
         }
 
         LAB_TexAtlas_DrawBlit(
@@ -165,7 +165,7 @@ bool LAB_Assets_NewTintedTexture(LAB_Assets* assets, size_t tex[2][2],
 
 LAB_Model* LAB_Assets_NewModel(LAB_Assets* assets)
 {
-    LAB_ModelSet_NewModel(assets->models);
+    return LAB_ModelSet_NewModel(assets->models);
 }
 
 
@@ -173,7 +173,7 @@ LAB_Model* LAB_Assets_NewModel(LAB_Assets* assets)
 
 #include "LAB_texture_atlas.h"
 
-
+#if 0
 void LAB_Temp_RecreateTerrain(LAB_TexAtlas* atlas)
 {
     return;
@@ -253,3 +253,4 @@ void LAB_Temp_RecreateTerrain(LAB_TexAtlas* atlas)
 
     LAB_Assets_Destroy(&assets);
 }
+#endif

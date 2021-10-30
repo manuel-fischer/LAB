@@ -96,7 +96,12 @@ size_t LAB_StrHash(const char* str);
     memcpy(dstp, srcp, sizeof(*(dstp))))
 
 
-#define LAB_ObjClear(dstp) (memset(dstp, 0, sizeof(*(dstp))), true)
+
+/*LAB_PURE*/ LAB_ALWAYS_INLINE LAB_UNUSED LAB_INLINE 
+bool LAB_MakeTrue(void) { return true; }
+
+
+#define LAB_ObjClear(dstp) (memset(dstp, 0, sizeof(*(dstp))), LAB_MakeTrue())
 
 
 #include <math.h>

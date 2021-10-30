@@ -76,6 +76,7 @@ bool LAB_MaterialGroupStone_Init(LAB_Assets* assets, LAB_MaterialGroupStone* mat
         {0}
     };
     LAB_Assets_NewComposedTexture(assets, mat->textures[5], c);*/
+    return true; // TODO
 }
 
 
@@ -152,4 +153,5 @@ bool LAB_BlockLight_Init_(LAB_Assets* assets, LAB_Block* b,
         .bounds = LAB_AABB_FULL_CUBE,
     };
     LAB_RegisterBlock(b);
+    return true; // TODO
 }

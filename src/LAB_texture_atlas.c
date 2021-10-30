@@ -55,7 +55,7 @@ LAB_STATIC size_t LAB_TexAlloc_NewNode_Alloc(LAB_TexAlloc* alloc)
 }
 
 // creates and clears node, sets states[] to empty
-LAB_INLINE size_t LAB_TexAlloc_NewNode(LAB_TexAlloc* alloc, size_t parent)
+LAB_STATIC size_t LAB_TexAlloc_NewNode(LAB_TexAlloc* alloc, size_t parent)
 {
     size_t node = LAB_TexAlloc_NewNode_Alloc(alloc);
     #define NODE (alloc->nodes.data[node])
@@ -461,10 +461,10 @@ bool LAB_TexAtlas_Upload2GL(LAB_TexAtlas* atlas)
         // upload mipmaplevels
         {
             size_t w = atlas->w, h = atlas->h;
-            size_t layer_size = atlas->cell_size/2;
+            //size_t layer_size = atlas->cell_size/2;
             LAB_Color* data = atlas->data;
 
-            for(int i = 1; i <= num_mipmaps; ++i)
+            for(size_t i = 1; i <= num_mipmaps; ++i)
             {
                 data += w*h;
                 w /= 2; h /= 2;

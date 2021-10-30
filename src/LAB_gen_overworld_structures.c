@@ -42,12 +42,12 @@ static const LAB_Gen_BuildingPalette stone_palette = {
     .floor   = &LAB_BLOCK_STONE.cobble,
     .ceiling = &LAB_BLOCK_WOOD_PLANKS_DARK,
 };
-static const LAB_Gen_BuildingPalette basalt_palette = {
+/*static const LAB_Gen_BuildingPalette basalt_palette = {
     .corner  = &LAB_BLOCK_BASALT.smooth,
     .wall    = &LAB_BLOCK_BASALT.bricks,
     .floor   = &LAB_BLOCK_BASALT.cobble,
     .ceiling = &LAB_BLOCK_WOOD_PLANKS,
-};
+};*/
 static const LAB_Gen_BuildingPalette marble_palette = {
     .corner  = &LAB_BLOCK_MARBLE.smooth,
     .wall    = &LAB_BLOCK_MARBLE.bricks,
@@ -278,9 +278,9 @@ LAB_STATIC void LAB_Gen_Overworld_House(LAB_Placer* p, LAB_Random* rnd, const vo
     int shape = (R >> 12) & 1;
 
     // noise offset
-    uint64_t R2 = LAB_NextRandom(rnd);
-    int dx = R2       & 0xffff;
-    int dz = R2 >> 16 & 0xffff;
+    //uint64_t R2 = LAB_NextRandom(rnd);
+    //int dx = R2       & 0xffff;
+    //int dz = R2 >> 16 & 0xffff;
 
     const int slope_shf = 0;
     for(int z = -lz-1; z <= lz+1; ++z)

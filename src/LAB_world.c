@@ -248,9 +248,8 @@ void LAB_UpdateChunk(LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LA
         //for(int i = 0; i < 27; ++i) if(chunks[i] == NULL) return;
         LAB_CCPS dirty_blocks = chunk->dirty_blocks;
 
-        int faces = LAB_TickLight(world, chunks, x, y, z);
 
-        int reupdate = faces&128;
+        LAB_TickLight(world, chunks, x, y, z);
 
 
         int bits = LAB_CCPS_Neighborhood(dirty_blocks|chunk->relit_blocks);
@@ -557,24 +556,28 @@ typedef struct LAB_UpdatePQ_Entry { int table_index; int distance; } LAB_UpdateP
 #include "HTL_prio_queue.t.c"
 #undef HTL_PARAM
 
+#if 0
 // TODO
+LAB_STATIC
 void LAB_UpdatePQ_Print(LAB_UpdatePQ* q)
 {
-    for(int i = 0; i < q->count; ++i)
+    for(size_t i = 0; i < q->count; ++i)
     {
         printf("%d ", q->queue[(i+q->first)%q->capacity].distance);
     }
     printf("                                  \r");
 }
 
+LAB_STATIC
 void LAB_ChunkPosQueue_Print(LAB_ChunkPosQueue* q)
 {
-    for(int i = 0; i < LAB_MIN(40, q->count); ++i)
+    for(size_t i = 0; i < LAB_MIN(40, q->count); ++i)
     {
         LAB_ChunkPos p = q->queue[(i+q->first)%q->capacity];
         printf("%d ", p.x*p.x + p.y*p.y + p.z*p.z);
     }
 }
+#endif
 
 LAB_STATIC void LAB_World_UpdateChunks(LAB_World* world, uint32_t delta_ms, uint64_t nanos)
 {
@@ -653,7 +656,7 @@ LAB_STATIC void LAB_World_UpdateChunks(LAB_World* world, uint32_t delta_ms, uint
     queue_capacity = 30;
     LAB_UpdatePQ q;
     bool success = LAB_UpdatePQ_Create(&q, queue_capacity);
-    if(!success) /* TODO */;
+    if(!success) { /* TODO */ }
 
     for(size_t i = 0; i < world->chunks.capacity; ++i)
     {
@@ -666,9 +669,9 @@ LAB_STATIC void LAB_World_UpdateChunks(LAB_World* world, uint32_t delta_ms, uint
                          + (pz-e->pos.z)*(pz-e->pos.z);
 
             // shift elements to the right and find insertion position
-            LAB_UpdatePQ_Entry* e = LAB_UpdatePQ_Push(&q, distance);
+            LAB_UpdatePQ_Entry* qe = LAB_UpdatePQ_Push(&q, distance);
             //if(e) *e = (LAB_UpdatePQ_Entry){ .table_index = i, .distance = distance };
-            if(e) { e->table_index = i; e->distance = distance; }
+            if(qe) { qe->table_index = i; qe->distance = distance; }
         }
     }
 

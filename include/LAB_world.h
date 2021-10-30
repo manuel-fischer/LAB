@@ -256,7 +256,6 @@ LAB_Color LAB_GetVisualNeighborhoodLight(LAB_Chunk*const neighborhood[27], int x
     return LAB_GetNeighborhoodLight(neighborhood, x, y, z, face, default_color);
 #else
 #if 0
-/*
     int block_index;
     LAB_Chunk* chunk;
     chunk = LAB_GetNeighborhoodRef(neighborhood, x, y, z, &block_index);

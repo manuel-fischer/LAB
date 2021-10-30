@@ -46,7 +46,7 @@ void LAB_MemNoColor(LAB_Color* dst, size_t size)
 SDL_Surface* LAB_ImageLoad(const char* filename)
 {
     SDL_Surface* img;
-    LAB_DBG_PRINTF("Loading image %s\n", filename);
+    //LAB_DBG_PRINTF("Loading image %s\n", filename);
     LAB_SDL_ALLOC(IMG_Load, &img, filename);
     if(LAB_UNLIKELY(img == NULL)) return NULL;
 

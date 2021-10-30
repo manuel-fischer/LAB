@@ -16,6 +16,7 @@
                                     __VA_ARGS__, __VA_ARGS__, __VA_ARGS__, __VA_ARGS__, \
                                     __VA_ARGS__, __VA_ARGS__, __VA_ARGS__, __VA_ARGS__)
 
+#if 0
 const LAB_Chunk LAB_empty_chunk_dark = {
     .blocks = { DUP_16x16x16(&LAB_BLOCK_OUTSIDE) },
     .light  = { DUP_16x16x16(LAB_RGB(15, 15, 15)) },
@@ -28,3 +29,4 @@ const LAB_Chunk LAB_empty_chunk_lit = {
     .dirty = 0, .modified = 0, .light_generated = 0, .pseudo = 1,
     .age = 0
 };
+#endif

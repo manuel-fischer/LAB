@@ -24,7 +24,7 @@ bool LAB_WorldServer_Create(LAB_WorldServer* srv,
             LAB_Free(srv->workers),
     {
         srv->worker_count = worker_count;
-        int i;
+        size_t i;
         for(i = 0; i < worker_count; ++i)
         {
             SDL_Thread* t;
@@ -36,12 +36,12 @@ bool LAB_WorldServer_Create(LAB_WorldServer* srv,
         if(i == worker_count)
             return true;
 
-        for(int j = 0; j < i; ++j)
+        for(size_t j = 0; j < i; ++j)
         {
             LAB_ChunkQueue_Push(&srv->q, NULL, LAB_CQ_TERMINATE);
         }
 
-        for(int j = 0; j < i; ++j)
+        for(size_t j = 0; j < i; ++j)
         {
             int return_value;
             SDL_WaitThread(srv->workers[j], &return_value);
@@ -56,12 +56,12 @@ bool LAB_WorldServer_Create(LAB_WorldServer* srv,
  */
 void LAB_WorldServer_Destroy(LAB_WorldServer* srv)
 {
-    for(int j = 0; j < srv->worker_count; ++j)
+    for(size_t j = 0; j < srv->worker_count; ++j)
     {
         LAB_ChunkQueue_Push(&srv->q, NULL, LAB_CQ_TERMINATE);
     }
 
-    for(int j = 0; j < srv->worker_count; ++j)
+    for(size_t j = 0; j < srv->worker_count; ++j)
     {
         int return_value;
         SDL_WaitThread(srv->workers[j], &return_value);

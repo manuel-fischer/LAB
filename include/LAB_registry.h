@@ -16,6 +16,6 @@ typedef struct LAB_Registry
 } LAB_Registry;
 
 bool LAB_Registry_Create(LAB_Registry* registry);
-bool LAB_Registry_Destroy(LAB_Registry* registry);
+void LAB_Registry_Destroy(LAB_Registry* registry);
 
 bool LAB_Registry_LoadTexture(LAB_Registry* registry, const char* id, LAB_OUT LAB_Texture* texture);

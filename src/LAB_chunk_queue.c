@@ -38,7 +38,7 @@ bool LAB_ChunkQueue_TryPush(LAB_ChunkQueue* q, LAB_Chunk* cnk, int action)
 
     if(inserted)
     {
-        int index = q->head+q->count;
+        size_t index = q->head+q->count;
         if(index > q->capacity) index -= q->capacity;
 
         q->entries[index].cnk    = cnk;

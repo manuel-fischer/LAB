@@ -46,9 +46,12 @@ void LAB_PrintStackTrace()
 
     // TODO: Multithreading
     {
+        BOOL success;
+
+
         // capture backtrace
         HANDLE process = GetCurrentProcess();
-        BOOL success = SymInitialize(process, NULL, TRUE);
+        success = SymInitialize(process, NULL, TRUE);
         if(!success)
         {
             fprintf(stderr, "Cannot print stacktrace\n");
@@ -81,7 +84,7 @@ void LAB_PrintStackTrace()
 
             DWORD64 displacement = 0;
 
-            BOOL success = SymFromAddr(process, (DWORD64)(stack[i]), &displacement, psymbol);
+            success = SymFromAddr(process, (DWORD64)(stack[i]), &displacement, psymbol);
             //BOOL success = SymGetSymFromAddr64(process, (DWORD64)(stack[i]), &displacement, psymbol);
             if(!success)
             {
@@ -89,12 +92,12 @@ void LAB_PrintStackTrace()
                 FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
                                NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                                buf, (sizeof(buf) / sizeof(wchar_t)), NULL);
-                fprintf(stderr, "    [%2i] %p : ??\n", i, stack[i]);
+                fprintf(stderr, "    [%2i] %p : ??\n", i, (void*)stack[i]);
                 fprintf(stderr, "        %ls\n",buf);
             }
             //else
             {
-                fprintf(stderr, "    [%2i] %p,%p+%x : %s\n", i, stack[i], psymbol->Address, displacement, psymbol->Name);
+                fprintf(stderr, "    [%2i] %p,%p+%llx : %s\n", i, stack[i], (void*)psymbol->Address, displacement, psymbol->Name);
             }
         }
         SymCleanup(process);
