@@ -218,8 +218,8 @@ def compile_object_file(fn, settings):
     cmd = f"{comp} -c -o {ofn} -Iinclude/ src/{fn} {flags}"
 
     print(cmd)
-    # TODO if compilation fails, remove it from the file_times, to invalidate
-    if os.system(cmd): exit(1)
+    success = os.system(cmd) == 0
+    return success
 
 def compile_executable(sources, settings):
 
@@ -239,7 +239,8 @@ def compile_executable(sources, settings):
     cmd = f"{comp} -o {ofn} {' '.join(object_files)} {flags}"
 
     print(cmd)
-    if os.system(cmd): exit(1)
+    success = os.system(cmd) == 0
+    return success
 
 
 def load_settings():
@@ -265,20 +266,29 @@ def process_files(settings):
     file_times, file_includes = read_dep_file()
     n_file_times, n_file_includes, recompile = discover(file_times, file_includes, sources)
     
-    # 2. compile    
+    # 2. compile
+    success = True
     for fn in recompile:
-        compile_object_file(fn, settings)
+        if not compile_object_file(fn, settings):
+            success = False
+            # remove it from the list to invalidate
+            del n_file_times[fn]
+            del n_file_includes[fn]
 
 
-    if recompile:
-        compile_executable(sources, settings)
-    else:
-        print("CBake: Nothing needs to be done")
+    if success and recompile:
+        success = compile_executable(sources, settings)
+    elif success:
+            print("CBake: Nothing needs to be done")
+            
+    if not success:
+        print("CBake: Compilation failed")
 
     # 3. update dependency
     if n_file_times != file_times or n_file_includes != file_includes:
         write_dep_file(n_file_times, n_file_includes)
 
+    return success
 
 
 def cbake(root):
@@ -299,13 +309,16 @@ if __name__ == "__main__":
     from sys import argv
     settings = load_settings()
     if len(argv) == 1:
-        process_files(settings)
+        success = process_files(settings)
+        exit(0 if success else 1)
     elif argv[1] == "clear":
         remove(program_filename(settings["program"]))
         # TODO delete object files
         remove(CBAKE_DEP_FILE)
     elif argv[1] == "test":
-        process_files(settings)
-        os.system(program_filename(settings["program"]))
+        success = process_files(settings)
+        if success: success = os.system(program_filename(settings["program"])) == 0
+        exit(0 if success else 1)
+        
         
     
