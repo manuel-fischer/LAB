@@ -39,8 +39,15 @@ which can even be used with Clang. When compiling with any other compiler,
 the attributes and builtins are disabled and replaced by a pure C alternative:
 either by nothing or by an (inline) implementation.
 
-**The Python script is just for the documentation**
+**`xmd.py` Python script for the documentation**
 
 The python script [`xmd.py`](xmd.py) comes from one of my other repositories
 [XMD](https://github.com/manuel-fischer/XMD) and generates the markdown files
 of the [documentation](doc/table.md)
+
+**`cbake.py` Build script**
+
+The [`cbake.py`](cbake.py) script comes from another repository
+[CBake](https://github.com/manuel-fischer/CBake). It is used instead of
+Make or CMake to build the executable. All the configuration is written in
+[`bakefile.json`](bakefile.json)
