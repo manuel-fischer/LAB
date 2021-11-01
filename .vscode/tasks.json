@@ -189,7 +189,7 @@
                 "kind": "build",
                 "isDefault": true
             }
-        }
+        },
         {
             //"type": "cppbuild",
             "label": "CBake",
