@@ -1,5 +1,6 @@
 import os
 import sys
+import struct
 
 # TODO relative inclusion of header files in include/ from src/ not supported by vscode
 
@@ -10,6 +11,9 @@ except:
 from dataclasses import dataclass
 
 CBAKE_DEP_FILE = ".cbake-dependencies.txt"
+CBAKE_DEP_FILE_DBG = ".cbake-dependencies-dbg.txt"
+
+cbake_dep_file = CBAKE_DEP_FILE
 
 def pjoin(*paths):
 
@@ -41,6 +45,19 @@ CXX = "g++"
 
 FILE_NOT_FOUND = object()
 FILE_AMBIGUOUS = object()
+
+# used by the special syntax:
+#  `@!WIN&64: -opt`, this enables `-opt` only if the current platform
+#  is not Windows and the current platform is a 64 bit system
+flags = {
+    "WIN": os.name == 'nt',
+    str(struct.calcsize("P") * 8): True # Pointer bit width: 32 for 32-bit; 64 for 64-bit eg x64
+}
+
+
+# prefix to all output files
+out_prefix = ""
+
 
 # filename -> effective_path | FILE_NOT_FOUND | FILE_AMBIGUOUS
 # None if the file is cannot be found
@@ -87,16 +104,38 @@ def dbg(locals_dict):
         eprint(f"{k+':':20} {v}")
 
 
+def conditional_element(s: str) -> str:
+    if s.startswith('@'):
+        s = s[1:]
+
+        flag_end = s.find(':')
+        flag_list = s[:flag_end].split('&')
+
+        for flag in flag_list:
+            flag = flag.strip()
+            negated = flag.startswith('!')
+            if negated: flag = flag[1:].strip()
+
+            result = flag in flags and flags[flag]
+            if negated: result = not result
+            if not result:
+                return ""
+        
+        return s[flag_end+1:]
+    else:
+        return s
+    
+
 def str_list(str_or_list) -> str:
     if type(str_or_list) == str: return str_or_list
-    else: return " ".join(str_or_list)
+    else: return " ".join(map(conditional_element, str_or_list))
 
 
 def read_dep_file():
     file_times = {}
     file_includes = {}
     try:
-        with open(CBAKE_DEP_FILE) as f:
+        with open(cbake_dep_file) as f:
             for l in f.readlines():
                 l = l.strip()
 
@@ -119,7 +158,7 @@ def read_dep_file():
 def write_dep_file(file_times, file_includes):
     
     files = sorted(file_times.keys())
-    with open(CBAKE_DEP_FILE, "w") as f:
+    with open(cbake_dep_file, "w") as f:
         for fn in files:
             s_time = str(file_times[fn])
             s_includes = " ".join(f"{fname}@{ln}" for fname, ln in file_includes[fn])
@@ -317,7 +356,7 @@ def compile_object_file(fn, settings):
         flags = str_list(settings.get("cxx-flags", ""))
         comp  = CXX
         
-    ofn = f"obj/{fnn}.o"
+    ofn = f"obj/{out_prefix + fnn}.o"
     
     os.makedirs(os.path.split(ofn)[0], exist_ok=True)
 
@@ -339,7 +378,7 @@ def compile_executable(sources, settings):
     for fn in sources:
         fnn, ext = os.path.splitext(fn)
         if ext == ".cpp": has_cxx = True
-        object_files.append(f"obj/{fnn}.o")
+        object_files.append(f"obj/{out_prefix + fnn}.o")
         
     flags = str_list(settings.get("linker-flags", ""))
 
@@ -347,7 +386,7 @@ def compile_executable(sources, settings):
     else:       comp = CC
 
     ofn = settings.get("program", "a.out")
-    cmd = f"{comp} -o {ofn} {' '.join(object_files)} {flags}"
+    cmd = f"{comp} -o {out_prefix + ofn} {' '.join(object_files)} {flags}"
 
     eprint(cmd)
     success = os.system(cmd) == 0
@@ -362,7 +401,7 @@ def load_settings():
 def program_filename(name):
     n, ext = os.path.splitext(name)
     if ext == ".exe": return name
-    if os.name == 'nt': # Windows
+    if flags["WIN"]: # Windows
         return name + ".exe"
     return name
 
@@ -426,16 +465,39 @@ def remove(filename):
 if __name__ == "__main__":
     from sys import argv
     settings = load_settings()
+
+    if "help" in argv:
+        print("cbake.py help | [debug] [test] | clear")
+        print()
+        print("   help     shows this help")
+        print("   debug    enables debugging target")
+        print("            program filename prefixed with dbg-")
+        print("            sets DEBUG flag to true")
+        print("   test     run the program after compilation")
+        print("   clear    delete executable and dependency cache")
+        exit(2)
+    
+
+    if "debug" in argv:
+        flags["DEBUG"] = True
+        argv.remove("debug")
+
+        out_prefix = "dbg-"
+        cbake_dep_file = CBAKE_DEP_FILE_DBG
+    
+    
     if len(argv) == 1:
         success = process_files(settings)
         exit(0 if success else 1)
     elif argv[1] == "clear":
         remove(program_filename(settings["program"]))
+        remove(program_filename("dbg-" + settings["program"]))
         # TODO delete object files
         remove(CBAKE_DEP_FILE)
+        remove(CBAKE_DEP_FILE_DBG)
     elif argv[1] == "test":
         success = process_files(settings)
-        if success: success = os.system(program_filename(settings["program"])) == 0
+        if success: success = os.system(out_prefix + program_filename(settings["program"])) == 0
         exit(0 if success else 1)
         
         

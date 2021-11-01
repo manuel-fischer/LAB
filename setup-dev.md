@@ -1,12 +1,14 @@
 # Overview
 1. [Setup an IDE](#Setup-an-IDE)
 2. [Install libraries](#Install-libraries)
+2. [Build and Test LAB](#Build-and-Test-LAB)
 
 # Setup an IDE
 Select your IDE
-1. [VSCode](#VSCode)
+1. [VSCode](#VSCode) (Recommended)
 2. [Code::Blocks](#CodeBlocks)
-3. If your IDE is not on this list, please add instructions here for beginners.
+3. Skip to [Build and Test LAB](#Build-and-Test-LAB)
+4. If your IDE is not on this list, please add instructions here for beginners.
 
 ## VSCode
 0. Install [VSCode](https://code.visualstudio.com/)
@@ -17,11 +19,19 @@ Select your IDE
    A compiler with C17 support is recommended.
 
 ## Code::Blocks
+
+<u>Note:</u> Currently building with Code::Blocks is not actively supported. Instead run `python ./cbake.py` in the terminal manually.
+
 If you use Windows you might find it useful to install
 [CodeBlocks](http://www.codeblocks.org/downloads/binaries) with MinGW. This
 automatically installs GCC if you select a link with `mingw` included.
 This means that you pay attention to select links for MinGW in further steps.
 It can be used to easily build the binaries for LAB.
+
+# Clone LAB
+The next step is to clone the repository before continuing with installing the libraries.
+
+Clone [manuel-fischer/LAB](https://github.com/manuel-fischer/LAB)
 
 # Install libraries
 Your compiler/IDE installation usually include the following
@@ -57,8 +67,7 @@ Navigate the archive file structure, until you reach a directory
 that contains an `include/` and `lib/` subdirectory. You might have to select
 a subdirectory for your target machine.
 
-Copy the files in the `include/` and `lib/` directory in your preferred
-`include/` and `lib/` directories that are used by your compiler.
+Copy the `include/` and `lib/` directories into the `libs/` directory.
 
 When using CodeBlocks, global variables like `$(sdl2)` can be set under
 `Settings>Global variables`. To add the entry click on `new` and enter `sdl2`
@@ -74,15 +83,17 @@ Select **binary** (grey box)
 Navigate the archive file structure, until you reach a directory
 that contains an `include/` and `lib/` subdirectory.
 
-Copy the files in the `include/` and `lib/` directory in your preferred
-`include/` and `lib/` directories that are used by your compiler.
+Copy the `include/` and `lib/` directories into the `libs/` directory.
 
-You might need to copy `glew32.dll` from `bin/` (or a subdirectory of this)
+You might need to copy `glew32.dll` from `bin/Release/x64` or `bin/Release/Win32`
 to either a system directory or the execution directory. You might have to
-select a subdirectory for your target machine.
-   
-# 5. Install and build LAB
-1. Clone [manuel-fischer/LAB](https://github.com/manuel-fischer/LAB)
-2. Use CodeBlocks to build and run LAB: open `Laboratory.cbp` with 
-   CodeBlocks
-3. In CodeBlocks press [F9] to build and run
+select the subdirectory corresponding to your machine.
+
+
+# Build and Test LAB
+0. Ensure that a recent version of Python 3 is installed.
+1. Run `python cbake.py` to build, or `python cbake.py test` to run
+   - This corresponds to the VSCode Launch Option *"CBake Test"*.
+2. For debugging run `python cbake.py debug && gdb dbg-lab.exe`
+   - This corresponds to the VSCode Launch Option *"CBake Test Debug"*.
+

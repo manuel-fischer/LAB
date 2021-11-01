@@ -4,10 +4,12 @@
 		"-std=c17",
 		"-D_POSIX_C_SOURCE=200101L",
 
-		"-Ofast",
-		"-g",
+		"@!DEBUG: -Ofast",
+		"@!DEBUG: -DNDEBUG",
+		"@DEBUG: -O2",
+		"@DEBUG: -g",
 
-		"-IC:\\Libs\\include",
+		"-Ilibs/include",
 
 		
 		"-Wall",
@@ -33,14 +35,15 @@
 	"linker-flags": [
 		"-g",
 
-		"-LC:\\Libs\\lib",
+		"-Llibs/lib",
 
-		"-lmingw32",
-		"-luser32",
-		"-lgdi32",
-		"-lwinmm",
-		"-ldxguid",
-		"-lglew32",
+		"@WIN: -lmingw32",
+		"@WIN: -luser32",
+		"@WIN: -lgdi32",
+		"@WIN: -lwinmm",
+		"@WIN: -ldxguid",
+		"@WIN&32: -lRelease/Win32/glew32",
+		"@WIN&64: -lRelease/x64/glew32",
 		"-lSDL2main",
 		"-lSDL2",
 		"-lSDL2_image",

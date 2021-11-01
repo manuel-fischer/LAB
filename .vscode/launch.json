@@ -129,6 +129,27 @@
             "preLaunchTask": "C/C++: mingw32-make release"
         },*/
         {
+            "name": "CBake Test Debug",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}\\dbg-lab.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for \"gdb\"",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "CBake Debug"
+        },
+        {
             "name": "CBake Test",
             "type": "cppdbg",
             "request": "launch",

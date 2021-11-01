@@ -178,6 +178,20 @@
         },*/
         {
             //"type": "cppbuild",
+            "label": "CBake Debug",
+            "command": "python",
+            "args": ["cbake.py", "debug"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": ["$gcc"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+        {
+            //"type": "cppbuild",
             "label": "CBake",
             "command": "python",
             "args": ["cbake.py"],

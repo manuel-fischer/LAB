@@ -1,3 +1,5 @@
+# Use python ./cbake.py instead
+
 
 ifeq ($(OS),Windows_NT)
 UNAME := Windows
