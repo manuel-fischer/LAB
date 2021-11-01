@@ -20,11 +20,11 @@
 
 
 #define HTL_PARAM LAB_CHUNK_TBL
-#include "HTL_hasharray.t.c"
+#include "HTL/hasharray.t.c"
 #undef HTL_PARAM
 
 #define HTL_PARAM LAB_CHUNKPOS_QUEUE
-#include "HTL_queue.t.c"
+#include "HTL/queue.t.c"
 #undef HTL_PARAM
 
 
@@ -552,8 +552,8 @@ typedef struct LAB_UpdatePQ_Entry { int table_index; int distance; } LAB_UpdateP
 #define LAB_UPDATE_PQ_PRIO_HIGHER_THAN(a, b) ((a) < (b))
 
 #define HTL_PARAM LAB_UPDATE_PQ
-#include "HTL_prio_queue.t.h"
-#include "HTL_prio_queue.t.c"
+#include "HTL/prio_queue.t.h"
+#include "HTL/prio_queue.t.c"
 #undef HTL_PARAM
 
 #if 0

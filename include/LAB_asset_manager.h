@@ -49,7 +49,7 @@ typedef struct LAB_AssetMgrEntry
 #define LAB_ASSET_MGR_TBL_EMPTY_FUNC(e)    ((e)->key.str == NULL)
 
 #define HTL_PARAM LAB_ASSET_MGR_TBL
-#include "HTL_hasharray.t.h"
+#include "HTL/hasharray.t.h"
 #undef HTL_PARAM
 
 

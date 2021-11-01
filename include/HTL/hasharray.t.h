@@ -1,9 +1,9 @@
-#include "HTL_hasharray_config.h"
-#include "HTL_pp.h"
+#include "HTL/hasharray_config.h"
+#include "HTL/pp.h"
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "HTL_hasharray_util.h"
+#include "HTL/hasharray_util.h"
 
 // Implementation Constants
 #define HTL_HASHARRAY_LOAD_NUM          3

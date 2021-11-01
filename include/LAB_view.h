@@ -85,7 +85,7 @@ LAB_INLINE LAB_ChunkPos LAB_MakeChunkPos(int x, int y, int z)
 
 
 #define HTL_PARAM LAB_VIEW_CHUNK_TBL
-#include "HTL_hasharray.t.h"
+#include "HTL/hasharray.t.h"
 #undef HTL_PARAM
 
 

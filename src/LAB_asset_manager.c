@@ -14,7 +14,7 @@
 
 
 #define HTL_PARAM LAB_ASSET_MGR_TBL
-#include "HTL_hasharray.t.c"
+#include "HTL/hasharray.t.c"
 #undef HTL_PARAM
 
 

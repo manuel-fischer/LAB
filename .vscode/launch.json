@@ -4,7 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-        {
+        /*{
             "name": "win.gcc: build and debug",
             "type": "cppdbg",
             "request": "launch",
@@ -127,7 +127,7 @@
                 }
             ],
             "preLaunchTask": "C/C++: mingw32-make release"
-        },
+        },*/
         {
             "name": "CBake Test",
             "type": "cppdbg",

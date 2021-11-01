@@ -35,7 +35,7 @@
 #include "LAB_inventory.h"
 
 #define HTL_PARAM LAB_VIEW_CHUNK_TBL
-#include "HTL_hasharray.t.c"
+#include "HTL/hasharray.t.c"
 #undef HTL_PARAM
 
 #if 1
