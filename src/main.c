@@ -15,7 +15,7 @@
 #include "LAB_gl.h"
 #include "LAB_sdl.h"
 
-#include "LAB_gui.h"
+#include "LAB/gui.h"
 
 #include "LAB_perf_info.h"
 
@@ -126,11 +126,11 @@ int main(int argc, char** argv)
     static LAB_World      the_world   = {0};
 
 
-    LAB_ViewConfig vw_cfg = {
+    LAB_ViewConfig view_cfg = {
         .flags = LAB_VIEW_SHOW_HUD | LAB_VIEW_USE_VBO,
 
         .preload_dist = LAB_PRELOAD_CHUNK(5),
-        .render_dist = 5,
+        .render_dist = 12, //5,
         .keep_dist = LAB_KEEP_CHUNK(5),
         
         // Limits
@@ -139,6 +139,11 @@ int main(int argc, char** argv)
 
         .load_amount = 100,
         .empty_load_amount = 5,
+    };
+
+    LAB_WorldConfig world_cfg = {
+        .max_gen = 0,
+        .max_update = 0,
     };
 
 
@@ -151,7 +156,7 @@ int main(int argc, char** argv)
     init = 1;
 
     CHECK_INIT(LAB_Client_Create());
-    LAB_ObjCopy(&LAB_client.view.cfg, &vw_cfg);
+    LAB_ObjCopy(&LAB_client.view.cfg, &view_cfg);
 
     CHECK_INIT(LAB_PerfInfo_Create(&perf_info));
     //SDL_SetWindowFullscreen(main_window->window, SDL_WINDOW_FULLSCREEN);
@@ -172,8 +177,7 @@ int main(int argc, char** argv)
     the_world.chunkgen      = &LAB_GenOverworldProc;
     the_world.chunkgen_user = &gen.overworld;
     #endif
-    the_world.max_gen = 0;
-    the_world.max_update = 0;
+    LAB_ObjCopy(&the_world.cfg, &world_cfg);
     the_world.perf_info = &perf_info;
     LAB_client.view.perf_info = &perf_info;
 

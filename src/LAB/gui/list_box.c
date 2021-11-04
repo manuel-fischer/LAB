@@ -1,4 +1,4 @@
-#include "LAB_gui_list_box.h"
+#include "LAB/gui/list_box.h"
 #include "LAB_memory.h"
 #include "LAB_sdl.h"
 

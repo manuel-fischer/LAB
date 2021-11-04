@@ -2,8 +2,8 @@
 
 #include "LAB_attr.h"
 
-#include "LAB_gui.h"
-#include "LAB_gui_manager.h"
+#include "LAB/gui.h"
+#include "LAB/gui/manager.h"
 #include "LAB_stdinc.h"
 
 #include <SDL2/SDL_events.h>

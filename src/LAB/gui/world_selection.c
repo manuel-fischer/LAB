@@ -1,4 +1,4 @@
-#include "LAB_gui_world_selection.h"
+#include "LAB/gui/world_selection.h"
 
 #include "LAB_memory.h"
 #include <limits.h>

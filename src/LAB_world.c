@@ -652,7 +652,7 @@ LAB_STATIC void LAB_World_UpdateChunks(LAB_World* world, uint32_t delta_ms, uint
 
 
 
-    size_t queue_capacity = world->max_update ? world->max_update : 256;
+    size_t queue_capacity = world->cfg.max_update ? world->cfg.max_update : 256;
     queue_capacity = 30;
     LAB_UpdatePQ q;
     bool success = LAB_UpdatePQ_Create(&q, queue_capacity);
@@ -702,7 +702,7 @@ void LAB_WorldTick(LAB_World* world, uint32_t delta_ms)
     LAB_World_UpdateChunks(world, delta_ms, nanos);
 
     // generate chunks
-    size_t rest_gen = world->max_gen;
+    size_t rest_gen = world->cfg.max_gen;
     // TODO
     //LAB_ChunkPosQueue_Print(&world->gen_queue);
     //printf("         \r");

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "LAB_gui_component.h"
+#include "LAB/gui/component.h"
 #include <SDL2/SDL_surface.h>
 
 typedef struct LAB_GuiButton

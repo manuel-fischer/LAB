@@ -28,10 +28,10 @@
 #include "LAB_util.h"
 #include "LAB_attr.h"
 
-#include "LAB_gui.h"
-#include "LAB_gui_component.h"
-#include "LAB_gui_menu.h"
-#include "LAB_gui_inventory.h"
+#include "LAB/gui.h"
+#include "LAB/gui/component.h"
+#include "LAB/gui/menu.h"
+#include "LAB/gui/inventory.h"
 #include "LAB_inventory.h"
 
 #define HTL_PARAM LAB_VIEW_CHUNK_TBL

@@ -1,4 +1,4 @@
-#include "LAB_gui.h"
+#include "LAB/gui.h"
 
 #include <SDL2/SDL_image.h>
 #include "LAB_sdl.h"

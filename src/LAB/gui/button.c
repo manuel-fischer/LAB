@@ -1,6 +1,6 @@
-#include "LAB_gui_button.h"
+#include "LAB/gui/button.h"
 
-#include "LAB_gui.h"
+#include "LAB/gui.h"
 #include "LAB_sdl.h"
 
 void LAB_GuiButton_Create(LAB_GuiButton* button,

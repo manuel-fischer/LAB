@@ -1,4 +1,4 @@
-#include "LAB_gui_inventory.h"
+#include "LAB/gui/inventory.h"
 
 #define LAB_INVENTORY_COLUMNS 10
 

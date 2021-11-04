@@ -2,7 +2,7 @@
 #include "LAB_stdinc.h"
 #include "LAB_opt.h"
 #include "LAB_fps_graph.h"
-#include "LAB_gui_manager.h"
+#include "LAB/gui/manager.h"
 #include "LAB_model.h" // LAB_Triangle
 #include "LAB_model_order.h" // LAB_TriangleOrder
 #include "LAB_world.h"

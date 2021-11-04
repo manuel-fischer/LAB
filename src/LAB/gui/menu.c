@@ -1,7 +1,7 @@
-#include "LAB_gui_menu.h"
+#include "LAB/gui/menu.h"
 
 #include "LAB_world.h"
-#include "LAB_gui_world_selection.h"
+#include "LAB/gui/world_selection.h"
 #include "LAB_memory.h"
 
 LAB_STATIC void LAB_GuiMenu_Resume(void* user, LAB_GuiManager* mgr);

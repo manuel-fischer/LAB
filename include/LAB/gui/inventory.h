@@ -1,9 +1,9 @@
 #pragma once
 
-#include "LAB_gui_container.h"
-#include "LAB_gui_label.h"
-#include "LAB_gui_button.h"
-#include "LAB_gui_inventory_list.h"
+#include "LAB/gui/container.h"
+#include "LAB/gui/label.h"
+#include "LAB/gui/button.h"
+#include "LAB/gui/inventory_list.h"
 
 #include "LAB_i_inventory.h"
 

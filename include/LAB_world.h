@@ -105,11 +105,17 @@ typedef struct LAB_IView
     LAB_Chunk* chunk;
 } LAB_ChunkEntry;*/
 
+
+typedef struct LAB_WorldConfig
+{
+    size_t max_gen,
+           max_update;
+} LAB_WorldConfig;
+
 typedef struct LAB_World
 {
     LAB_ChunkGenerator* chunkgen;
     void*               chunkgen_user;
-
 
     const LAB_IView* view;
     void*            view_user;
@@ -119,8 +125,7 @@ typedef struct LAB_World
     LAB_ChunkPosQueue gen_queue;
     //LAB_ChunkPos2Queue update_queue;
 
-    size_t max_gen,
-           max_update;
+    LAB_WorldConfig cfg;
 
     //LAB_LightUpdateQueue light_queue;
 

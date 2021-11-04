@@ -1,6 +1,6 @@
 #pragma once
 
-#include "LAB_gui_component.h"
+#include "LAB/gui/component.h"
 #include "LAB_i_inventory.h"
 #include "LAB_render_item.h"
 

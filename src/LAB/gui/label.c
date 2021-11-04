@@ -1,6 +1,6 @@
-#include "LAB_gui_label.h"
+#include "LAB/gui/label.h"
 
-#include "LAB_gui.h"
+#include "LAB/gui.h"
 #include "LAB_sdl.h"
 
 void LAB_GuiLabel_Create(LAB_GuiLabel* label,

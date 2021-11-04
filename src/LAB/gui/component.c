@@ -1,4 +1,4 @@
-#include "LAB_gui_component.h"
+#include "LAB/gui/component.h"
 #include "LAB_debug.h"
 
 bool LAB_GetMouseCoordPtr(SDL_Event* event, int** x, int** y)

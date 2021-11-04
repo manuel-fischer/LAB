@@ -469,12 +469,12 @@ if __name__ == "__main__":
     if "help" in argv:
         print("cbake.py help | [debug] [test] | clear")
         print()
-        print("   help     shows this help")
-        print("   debug    enables debugging target")
-        print("            program filename prefixed with dbg-")
-        print("            sets DEBUG flag to true")
-        print("   test     run the program after compilation")
-        print("   clear    delete executable and dependency cache")
+        print("   help     Shows this help")
+        print("   debug    Enables the debugging target")
+        print("            The program filename is prefixed with 'dbg-'")
+        print("            It sets the DEBUG flag to true")
+        print("   test     Run the program after compilation")
+        print("   clear    Delete the executable and the dependency cache")
         exit(2)
     
 
@@ -484,20 +484,21 @@ if __name__ == "__main__":
 
         out_prefix = "dbg-"
         cbake_dep_file = CBAKE_DEP_FILE_DBG
-    
+
+    program = settings.get("program", "a.out")
     
     if len(argv) == 1:
         success = process_files(settings)
         exit(0 if success else 1)
     elif argv[1] == "clear":
-        remove(program_filename(settings["program"]))
-        remove(program_filename("dbg-" + settings["program"]))
+        remove(program_filename(program))
+        remove(program_filename("dbg-" + program))
         # TODO delete object files
         remove(CBAKE_DEP_FILE)
         remove(CBAKE_DEP_FILE_DBG)
     elif argv[1] == "test":
         success = process_files(settings)
-        if success: success = os.system(out_prefix + program_filename(settings["program"])) == 0
+        if success: success = os.system(out_prefix + program) == 0
         exit(0 if success else 1)
         
         

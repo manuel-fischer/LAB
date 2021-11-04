@@ -1,5 +1,5 @@
-#include "LAB_gui_manager.h"
-#include "LAB_gui_component.h"
+#include "LAB/gui/manager.h"
+#include "LAB/gui/component.h"
 #include "LAB_memory.h"
 #include "LAB_gl.h"
 #include "LAB_debug.h"

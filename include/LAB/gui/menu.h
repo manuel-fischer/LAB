@@ -1,8 +1,8 @@
 #pragma once
 
-#include "LAB_gui_container.h"
-#include "LAB_gui_label.h"
-#include "LAB_gui_button.h"
+#include "LAB/gui/container.h"
+#include "LAB/gui/label.h"
+#include "LAB/gui/button.h"
 
 typedef struct LAB_World LAB_World; // Forward
 

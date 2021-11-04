@@ -1,10 +1,10 @@
 #pragma once
 
-#include "LAB_gui_container.h"
-#include "LAB_gui_label.h"
-#include "LAB_gui_button.h"
-#include "LAB_gui_list_box.h"
-#include "LAB_gui_text_box.h"
+#include "LAB/gui/container.h"
+#include "LAB/gui/label.h"
+#include "LAB/gui/button.h"
+#include "LAB/gui/list_box.h"
+#include "LAB/gui/text_box.h"
 
 typedef struct LAB_World LAB_World; // Forward
 
