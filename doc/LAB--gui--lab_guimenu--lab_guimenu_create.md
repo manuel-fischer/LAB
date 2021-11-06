@@ -1,4 +1,4 @@
-[&#8593; `LAB_GuiMenu`](LAB--gui--lab_guimenu.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB\gui.xmd#L300)</small>
+[&#8593; `LAB_GuiMenu`](LAB--gui--lab_guimenu.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB/gui.xmd#L300)</small>
 ***
 
 # `LAB_GuiMenu_Create`

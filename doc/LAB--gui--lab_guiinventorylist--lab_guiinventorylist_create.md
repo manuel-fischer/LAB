@@ -1,4 +1,4 @@
-[&#8592; `LAB_GuiInventoryList_Create`](LAB--gui--lab_guiinventorylist--lab_guiinventorylist_create.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8593; `LAB_GuiInventoryList`](LAB--gui--lab_guiinventorylist.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB\gui.xmd#L167)</small>
+[&#8592; `LAB_GuiInventoryList_Create`](LAB--gui--lab_guiinventorylist--lab_guiinventorylist_create.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8593; `LAB_GuiInventoryList`](LAB--gui--lab_guiinventorylist.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB/gui.xmd#L167)</small>
 ***
 
 # `LAB_GuiInventoryList_Create`

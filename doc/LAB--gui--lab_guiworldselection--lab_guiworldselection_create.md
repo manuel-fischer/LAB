@@ -1,4 +1,4 @@
-[&#8593; `LAB_GuiWorldSelection`](LAB--gui--lab_guiworldselection.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB\gui.xmd#L358)</small>
+[&#8593; `LAB_GuiWorldSelection`](LAB--gui--lab_guiworldselection.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB/gui.xmd#L358)</small>
 ***
 
 # `LAB_GuiWorldSelection_Create`

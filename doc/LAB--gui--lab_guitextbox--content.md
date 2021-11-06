@@ -1,4 +1,4 @@
-[&#8593; `LAB_GuiTextBox`](LAB--gui--lab_guitextbox.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8594; `LAB_GuiTextBox_Create`](LAB--gui--lab_guitextbox--lab_guitextbox_create.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB\gui.xmd#L308)</small>
+[&#8593; `LAB_GuiTextBox`](LAB--gui--lab_guitextbox.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8594; `LAB_GuiTextBox_Create`](LAB--gui--lab_guitextbox--lab_guitextbox_create.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB/gui.xmd#L308)</small>
 ***
 
 # `content`

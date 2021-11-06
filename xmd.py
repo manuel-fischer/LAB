@@ -406,7 +406,9 @@ def generate_browse_link(direction, file_entity):
     if file_entity is None: return ""
     assert type(file_entity) == Entity
     return f"[{DIRECTION_STR[direction]} {file_entity.display}]({file_entity.location})"
-    
+
+def strpath(p):
+    return p.replace(os.sep, "/")
 
 def generate_browse(parent, file_entity):
     md = str_join_nonempty(f"{LARGE_SPACE}{SPLIT_LINE}{LARGE_SPACE}", [
@@ -416,9 +418,9 @@ def generate_browse(parent, file_entity):
     ])
     if file_entity.xmd_location:
         if file_entity.xmd_location[1] is None:
-            xmd_loc = f"../xdoc/{file_entity.xmd_location[0]}"
+            xmd_loc = f"../xdoc/{strpath(file_entity.xmd_location[0])}"
         else:
-            xmd_loc = f"../xdoc/{file_entity.xmd_location[0]}#L{file_entity.xmd_location[1]}"
+            xmd_loc = f"../xdoc/{strpath(file_entity.xmd_location[0])}#L{file_entity.xmd_location[1]}"
         md = str_join_nonempty(f"{LARGE_SPACE*2}{SPLIT_LINE*2}{LARGE_SPACE*2}", [
             md,
             f"<small>[\\* xdoc]({xmd_loc})</small>"

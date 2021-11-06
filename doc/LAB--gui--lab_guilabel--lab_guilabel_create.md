@@ -1,4 +1,4 @@
-[&#8592; `title`](LAB--gui--lab_guilabel--title.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8593; `LAB_GuiLabel`](LAB--gui--lab_guilabel.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB\gui.xmd#L200)</small>
+[&#8592; `title`](LAB--gui--lab_guilabel--title.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8593; `LAB_GuiLabel`](LAB--gui--lab_guilabel.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB/gui.xmd#L200)</small>
 ***
 
 # `LAB_GuiLabel_Create`

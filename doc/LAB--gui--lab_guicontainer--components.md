@@ -1,4 +1,4 @@
-[&#8593; `LAB_GuiContainer`](LAB--gui--lab_guicontainer.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB\gui.xmd#L127)</small>
+[&#8593; `LAB_GuiContainer`](LAB--gui--lab_guicontainer.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB/gui.xmd#L127)</small>
 ***
 
 # `components`

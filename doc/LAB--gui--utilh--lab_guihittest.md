@@ -1,4 +1,4 @@
-[&#8592; `LAB_GetMouseCoordPtr`](LAB--gui--utilh--lab_getmousecoordptr.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8593; `util.h`](LAB--gui--utilh.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB\gui.xmd#L346)</small>
+[&#8592; `LAB_GetMouseCoordPtr`](LAB--gui--utilh--lab_getmousecoordptr.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8593; `util.h`](LAB--gui--utilh.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB/gui.xmd#L346)</small>
 ***
 
 # `LAB_GuiHitTest`

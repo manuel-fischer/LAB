@@ -1,4 +1,4 @@
-[&#8593; `render`](LAB--gui--lab_guicomponent--render.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB\gui.xmd#L100)</small>
+[&#8593; `render`](LAB--gui--lab_guicomponent--render.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB/gui.xmd#L100)</small>
 ***
 
 # `x,y`
