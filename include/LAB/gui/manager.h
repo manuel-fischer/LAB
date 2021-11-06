@@ -10,9 +10,7 @@ typedef struct LAB_GuiManager
     unsigned gl_id;
     SDL_Surface* surf;
     bool rerender;
-    // gui metrics scale factor
     unsigned scale;
-    // zoom, finally rendered surface scale factor
     unsigned zoom;
     //bool component_focused; // TODO: focus/unfocus event should be yielded once
 
@@ -25,7 +23,6 @@ bool LAB_GuiManager_Create(LAB_GuiManager* manager);
 void LAB_GuiManager_Destroy(LAB_GuiManager* manager);
 
 void LAB_GuiManager_ShowDialog(LAB_GuiManager* manager, LAB_GuiComponent* component);
-void LAB_GuiManager_Dismiss_(LAB_GuiManager* manager);
 void LAB_GuiManager_Dismiss(LAB_GuiManager* manager);
 void LAB_GuiManager_Tick(LAB_GuiManager* manager);
 

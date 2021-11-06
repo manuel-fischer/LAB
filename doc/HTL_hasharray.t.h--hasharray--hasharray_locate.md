@@ -2,7 +2,7 @@
 ***
 
 # `HashArray_Locate`
-<small>*Function* - **observers**</small>  
+<small>*Function* &nbsp; - &nbsp; **observers**</small>  
 **Synopsis**
 
 ```cpp

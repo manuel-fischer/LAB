@@ -2,7 +2,7 @@
 ***
 
 # `Queue_Destroy`
-<small>*Function* - **lifetime**</small>  
+<small>*Function* &nbsp; - &nbsp; **lifetime**</small>  
 **Synopsis**
 
 ```cpp

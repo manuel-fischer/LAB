@@ -12,7 +12,7 @@ typedef struct LAB_GuiListBox
     const char* const* elements;
     SDL_Surface** text_surfs;
 
-    size_t selected_element; // every index above element_count means no element is selected
+    size_t selected_element;
 
     void (*on_selection)(void* user, size_t element);
     void*  on_selection_user;

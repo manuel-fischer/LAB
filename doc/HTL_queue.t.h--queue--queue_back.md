@@ -2,7 +2,7 @@
 ***
 
 # `Queue_Back`
-<small>*Function* - **observers**</small>  
+<small>*Function* &nbsp; - &nbsp; **observers**</small>  
 **Synopsis**
 
 ```cpp

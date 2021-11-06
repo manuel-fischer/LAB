@@ -467,38 +467,61 @@ if __name__ == "__main__":
     settings = load_settings()
 
     if "help" in argv:
-        print("cbake.py help | [debug] [test] | clear")
+        print("cbake.py help | [clean build] [debug] [test] | [clean]")
+        print("         (1)  |              (2)             |   (3)")
         print()
-        print("   help     Shows this help")
-        print("   debug    Enables the debugging target")
-        print("            The program filename is prefixed with 'dbg-'")
-        print("            It sets the DEBUG flag to true")
-        print("   test     Run the program after compilation")
-        print("   clear    Delete the executable and the dependency cache")
+        print("The order of the arguments can be altered")
+        print()
+        print("   help         Shows this help")
+        print("   clean/clear  Delete the executable and the dependency cache")
+        print("   debug        Enables the debugging target")
+        print("                The program filename is prefixed with 'dbg-'")
+        print("                It sets the DEBUG flag to true")
+        print("   build        Build, default, only required when used")
+        print("                in combination with clean/clear")
+        print("   test         Run the program after compilation")
         exit(2)
     
+    cmd_flags = argv[1:]
+    def pop_cmd_flag(name):
+        global cmd_flags
+        if name in cmd_flags:
+            cmd_flags.remove(name)
+            return True
+        return False
+    f_debug = pop_cmd_flag("debug")
+    f_clean = pop_cmd_flag("clean") or pop_cmd_flag("clear")
+    f_build = pop_cmd_flag("build")
+    f_test  = pop_cmd_flag("test")
 
-    if "debug" in argv:
+    if cmd_flags:
+        print(f"CBake: Warning: Ignored arguments:", file = stderr)
+        print(f"    {' '.join(flags)}", file = stderr)
+
+
+    if f_clean and not f_build:
+        if f_debug or f_build or f_test:
+            print("CBake: use build in combination with clean", file = stderr)
+
+
+    if f_debug:
         flags["DEBUG"] = True
-        argv.remove("debug")
 
         out_prefix = "dbg-"
         cbake_dep_file = CBAKE_DEP_FILE_DBG
 
     program = settings.get("program", "a.out")
     
-    if len(argv) == 1:
-        success = process_files(settings)
-        exit(0 if success else 1)
-    elif argv[1] == "clear":
+    if f_clean:
         remove(program_filename(program))
         remove(program_filename("dbg-" + program))
         # TODO delete object files
         remove(CBAKE_DEP_FILE)
         remove(CBAKE_DEP_FILE_DBG)
-    elif argv[1] == "test":
+
+    if not f_clean or f_build:
         success = process_files(settings)
-        if success: success = os.system(out_prefix + program) == 0
+        if f_test and success: success = os.system(out_prefix + program) == 0
         exit(0 if success else 1)
         
         

@@ -4,6 +4,8 @@
 # Table
 ## Topic
 **[Template Headers/Template sources](topic-template-headers.md)**  
+## Directory
+**[`LAB`](LAB.md)**  
 ## Files
 **[`HTL_hasharray.t.h`](HTL_hasharray.t.h.md)**  
 **[`HTL_hasharray_util.h`](HTL_hasharray_util.h.md)** &#8213; Utility macros for hash arrays  

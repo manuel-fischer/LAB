@@ -2,7 +2,7 @@
 ***
 
 # `HashArray_Get`
-<small>*Function* - **observers**</small>  
+<small>*Function* &nbsp; - &nbsp; **observers**</small>  
 **Synopsis**
 
 ```cpp

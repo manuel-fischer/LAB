@@ -2,7 +2,7 @@
 ***
 
 # `HashArray_Create`
-<small>*Function* - **lifetime**</small>  
+<small>*Function* &nbsp; - &nbsp; **lifetime**</small>  
 **Synopsis**
 
 ```cpp

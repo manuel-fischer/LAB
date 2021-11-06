@@ -3,12 +3,17 @@ from dataclasses import dataclass
 import string
 import os
 import sys
+import shutil
 from weakref import ref as wref
+from typing import TypeVar
+import json
 
-def deref(w : wref['T']) -> 'T':
+T = TypeVar('T')
+def deref(w : wref[T]) -> T:
     return w() if w is not None else None
 
 LANG = "cpp"
+SRC_PATH = "include"
 #Entity = namedtuple("Entity", """
 #    type
 #    category
@@ -26,7 +31,9 @@ class Entity:
     sections : list[str]
     childs   : list['Entity']
     location : str
-    src_location : (str, int)
+    xmd_location : tuple[str, int]
+    src_location : tuple[str, int]
+    config   : set[str]
     prev     : wref['Entity'] # or None
     next     : wref['Entity'] # or None
 
@@ -36,11 +43,16 @@ HEADER_BRIEF     = 0
 HEADER_SIGNATURE = 1
 HEADER_TITLE     = 2
 
+# TODO correct link generation with nested directories
+#SEP = "/"  # nested directory structure
+SEP = "--" # flat directory structure
+
 X = EntityType
 ENTITY_WORDS = {# Title                  Header format
     "topic":    X("Topic(s)",            HEADER_TITLE), # TODO parse whole line as title
 
     "file":     X("File(s)",             HEADER_BRIEF),
+    "directory":X("Director(ies)y",      HEADER_BRIEF),
     "module":   X("Module(s)",           HEADER_BRIEF),
     "namespace":X("Namespace(s)",        HEADER_BRIEF),
     
@@ -66,6 +78,24 @@ ENTITY_WORDS = {# Title                  Header format
 }
 del X
 
+
+SPECIAL_SECTIONS = {
+    "syn":          "**Synopsis**\n", # if @syn(n), then multiple overloads could be written
+                                      # if the syntax of a declaration is clear, the entity
+                                      # itself can be introduced with the syn
+    "default":      "# Default Value\n",
+    "return":       "# Return Value\n",
+    "sidefx":       "# Side Effects\n",
+    "pre":          "# Preconditions\n",
+    "post":         "# Postconditions\n",
+    "todo":         "# TODO\n",
+    "see":          "# See also\n",
+    "note":         "**Note**  \n",
+    "description":  "",
+    "example":      "# Example\n",
+}
+
+
 SECTION_ORDER = """
     syn
     description
@@ -79,6 +109,7 @@ SECTION_ORDER = """
     elem
     
     topic
+    directory
     file
     module
     namespace
@@ -108,23 +139,6 @@ SECTION_ORDER = """
 """.split()
 
 
-SPECIAL_SECTIONS = {
-    "syn":          "**Synopsis**\n", # if @syn(n), then multiple overloads could be written
-                                      # if the syntax of a declaration is clear, the entity
-                                      # itself can be introduced with the syn
-    "default":      "# Default Value\n",
-    "return":       "# Return Value\n",
-    "sidefx":       "# Side Effects\n",
-    "pre":          "# Preconditions\n",
-    "post":         "# Postconditions\n",
-    "todo":         "# TODO\n",
-    "see":          "# See also\n",
-    "note":         "**Note**  \n",
-    "description":  "",
-    "example":      "# Example\n",
-}
-
-
 COMMANDS = {}
 def command(name):
     def command2(func):
@@ -143,6 +157,29 @@ def cmd_briefx(e : Entity, content : str):
 @command("disp")
 def cmd_disp(e : Entity, content : str):
     e.display = content.strip()
+
+@command("config")
+def cmd_config(e : Entity, content : str):
+    for arg in content.split():
+        if arg[0] == "!":
+            e.config.remove(arg[1:])
+        else:
+            e.config.add(arg)
+
+@command("locate")
+def cmd_locate(e : Entity, content : str):
+    if content == "auto":
+        ... # TODO auto detect file and line
+    else:
+         # TODO check syntax
+        sp = content.split()
+        if len(sp) == 1:
+            file = sp[0]
+            line = None
+        elif len(sp) >= 2:
+            file = sp[0]
+            line = int(sp[1])
+        e.src_location = (file, line)
 
 INDENT_WIDTH = 4
 
@@ -191,12 +228,20 @@ def to_md_anchor(txt):
 def to_md_filename_part(name):
     return to_md_anchor(name)
 
+
+def make_loc(path):
+    return path.replace("/",  SEP) \
+               .replace("\\", SEP)
+
+
 def correct_grammar(string, amount):
+    l = string.rfind("(")
+    if l == -1: return string
+    r = string.rfind(")")
     if amount == 1:
-        return string[:string.rfind("(")]
+        return string[:l] + string[r+1:]
     else:
-        return string.replace("(","") \
-                     .replace(")","")
+        return string[:l] + string[l+1:r]
 
 
 def signature2display(signature):
@@ -252,7 +297,7 @@ def parse_group(tokens, start=0, group="[]"):
 def pack_code(code):
     return f"```{LANG}\n{code}\n```"
 
-def parse_xmd(xmd_lines, e : Entity, line_no=1):
+def parse_xmd(xmd_lines, e : Entity, line_no=1) -> Entity:
     if "description" not in e.sections: e.sections["description"] = ""
 
     try:
@@ -304,7 +349,9 @@ def parse_xmd(xmd_lines, e : Entity, line_no=1):
                             sections = e_sections,
                             childs = [],
                             location = e_location, # TODO
-                            src_location = (e.src_location[0], line_no),
+                            xmd_location = (e.xmd_location[0], line_no),
+                            src_location = e.src_location,
+                            config = set(),
                             prev = None,
                             next = None,
                         ),
@@ -367,15 +414,19 @@ def generate_browse(parent, file_entity):
         generate_browse_link("up", parent),
         generate_browse_link("right", deref(file_entity.next))
     ])
-    if file_entity.src_location:
+    if file_entity.xmd_location:
+        if file_entity.xmd_location[1] is None:
+            xmd_loc = f"../xdoc/{file_entity.xmd_location[0]}"
+        else:
+            xmd_loc = f"../xdoc/{file_entity.xmd_location[0]}#L{file_entity.xmd_location[1]}"
         md = str_join_nonempty(f"{LARGE_SPACE*2}{SPLIT_LINE*2}{LARGE_SPACE*2}", [
             md,
-            f"<small>[\\* xdoc](../xdoc/{file_entity.src_location[0]}#L{file_entity.src_location[1]})</small>"
+            f"<small>[\\* xdoc]({xmd_loc})</small>"
         ])
     return md + "\n"
 
 
-def realize_filestructure(xmd_entity : Entity, filename : str, depth=999, section_depth=1):
+def realize_filestructure(xmd_entity : Entity, filename : str, depth : int = 999, section_depth : int = 1):
     assert filename
     if not xmd_entity.location:
         xmd_entity.location = filename
@@ -391,7 +442,7 @@ def realize_filestructure(xmd_entity : Entity, filename : str, depth=999, sectio
 
             s_childs_exist = list(filter(entity_has_subfile, s_childs))
 
-            s_files = [f"{file_prefix}--{to_md_filename_part(c.display)}.md" for c in s_childs_exist]
+            s_files = [f"{file_prefix}{SEP}{to_md_filename_part(c.display)}.md" for c in s_childs_exist]
 
             for i, c in enumerate(s_childs_exist):
                 if prev is not None:
@@ -406,7 +457,7 @@ def realize_filestructure(xmd_entity : Entity, filename : str, depth=999, sectio
 
 
 
-def xmd2md(xmd_entity, parent_entity, depth=999, section_depth=1):
+def xmd2md(xmd_entity : Entity, parent_entity : Entity, depth : int = 999, section_depth : int = 1):
     filename = xmd_entity.location
     #file_prefix = os.path.splitext(filename)[0]
     assert filename
@@ -416,18 +467,32 @@ def xmd2md(xmd_entity, parent_entity, depth=999, section_depth=1):
     md += generate_browse(parent_entity, xmd_entity)
     md += "***\n\n"
     md += section_depth*"#" + f" {xmd_entity.display}\n"
-    if xmd_entity.category or xmd_entity.type in ENTITY_WORDS:
+    if xmd_entity.category or xmd_entity.type in ENTITY_WORDS or xmd_entity.src_location:
         md += "<small>"
         if xmd_entity.type in ENTITY_WORDS:
             md += f"*{correct_grammar(ENTITY_WORDS[xmd_entity.type].title, 1)}*"
-        if xmd_entity.category and xmd_entity.type:
-            md += " - "
+        if xmd_entity.type and xmd_entity.category:
+            md += " &nbsp; - &nbsp; "
         if xmd_entity.category:
             md += f"**{xmd_entity.category}**"
+
+        if (xmd_entity.type or xmd_entity.category) and xmd_entity.src_location:
+            md += " &nbsp; - &nbsp; "
+        if xmd_entity.src_location:
+            file, line = xmd_entity.src_location
+            if SRC_PATH:
+                src_link = f"{SRC_PATH}/{file}"
+            else:
+                src_link = file
+            if line is not None:
+                src_link = f"{src_link}#L{line}"
+            #md += f" &nbsp;&nbsp;&nbsp;&gt; "
+            md += f"[\"{file}\"](../{src_link})"
         md += "</small>  \n"
         
     for sect in SECTION_ORDER:
         if sect in ENTITY_WORDS:
+            s_childs : list[Entity]
             s_childs = [c for c in xmd_entity.childs if c.type == sect]
             s_childs = sorted(s_childs, key=lambda c: c.category or "")
 
@@ -440,32 +505,65 @@ def xmd2md(xmd_entity, parent_entity, depth=999, section_depth=1):
             md += section_depth*"#" + "# " + section_title + "\n"
             
             cur_category = ""
-            i = 0
             for c in s_childs:
                 if c.category != cur_category:
                     md += f"<small>**{c.category}**</small>  \n"
                     cur_category = c.category
 
-                link = f"{c.display}"
 
-                if entity_has_subfile(c):
-                    if depth <= 0:
-                        link = f"[{link}](#{to_md_anchor(c.display)})"
-                    else:
-                        assert c.location
-                        link = f"[{link}]({c.location})"
-                    i+=1
-                    
-                md += f"**{link}**" # linebreak
+                def make_link(c):
+                    link = f"{c.display}"
+
+                    if entity_has_subfile(c):
+                        if depth <= 0:
+                            link = f"[{link}](#{to_md_anchor(c.display)})"
+                        else:
+                            assert c.location
+                            link = f"[{link}]({c.location})"
+                        
+                    return f"**{link}**"
+
+                md += make_link(c)
+                
                 if c.brief:
                     md += f" {LONG_LINE} {c.brief}"
+
+                #md += "  \n" # two spaces -- linebreak
+
+                # Add inline childs
+                #for cc in c.childs:
+                #    if "inline" in cc.config:
+                #        md += f"&nbsp;&nbsp;&nbsp; {link_brief(cc)}"
+                #        md += "  \n" # two spaces -- linebreak
+
+                has_inline_childs = False
+                has_more = False
+                # Add inline childs
+                for cc in c.childs:
+                    if "inline" in cc.config:
+                        if not has_inline_childs:
+                            #md += f"&nbsp;&nbsp;&nbsp; <small>&gt;"
+                            md += f"&nbsp; &gt;&nbsp; <small>"
+                            has_inline_childs = True
+                        else:
+                            md += " &bull; "
+                        md += make_link(cc)
+                    else:
+                        has_more = True
+
+                if has_inline_childs:
+                    if has_more:
+                        md += " ..."
+                    md += "</small>"
+                    #md += "  \n" # two spaces -- linebreak
                 md += "  \n" # two spaces -- linebreak
+
                 
-            for i, c in enumerate(s_childs_exist):
-                if depth <= 0:
+            for c in s_childs_exist:
+                if depth <= 0: # and "inline" not in c.config:
                     subfiles += xmd2md(c, parent_entity = xmd_entity, depth=-1, section_depth=section_depth+2)
                 else:
-                    subfiles += xmd2md(c, parent_entity = xmd_entity, depth=depth-1, section_depth=1)
+                    subfiles += xmd2md(c, parent_entity = xmd_entity, depth=max(-1, depth-1), section_depth=1)
                 
         else:
             sect_md = xmd_entity.sections.get(sect, "")
@@ -506,14 +604,10 @@ def write_file(fname, s):
     with open(fname, "wt") as f:
         f.write(s)
 
-def delete_file(fname):
-    print(f"Deleting {fname}")
-    os.remove(fname)
-
 def parse_xmd_file(cwd, ifile):
     xmd_ifile = os.path.join(cwd,"xdoc",ifile)
     xmd_src = read_file(xmd_ifile)
-    ofile = os.path.splitext(ifile)[0]+".md"
+    ofile = make_loc(os.path.splitext(ifile)[0]+".md")
     return parse_xmd(
         xmd_src.split("\n"),
         Entity(
@@ -524,7 +618,9 @@ def parse_xmd_file(cwd, ifile):
             sections = {},
             childs = [],
             location = ofile,
-            src_location = (ifile, 1),
+            xmd_location = (ifile, 1),
+            src_location = None,
+            config = set(),
             prev = None,
             next = None,
         )
@@ -539,33 +635,103 @@ def generate_md_files(cwd, root, entity):
 
     for fn, display, md in file_contents:
         write_file(os.path.join(cwd,"doc",fn), md)
+
+
+def load_node(cwd, p, is_root=False):
+    print(f"Entering {p}{os.sep}")
+    file_entities = []
+    #ifiles = sorted(os.listdir(os.path.join(cwd, "xdoc", p)))
+    #... [parse_xmd_file(cwd, ifile) for ifile in ifiles]
+    P = os.path.join(cwd, "xdoc", p)
+    ifiles = sorted(os.listdir(P))
+    for f in ifiles:
+        fn, ext = os.path.splitext(f)
         
+        if os.path.isdir(os.path.join(P, f)): # load as directory
+            print(f"Directory {f}")
+            file_entities.append(load_node(cwd, os.path.join(p, f)))
+        elif os.path.exists(os.path.join(P, fn)):
+            print(f"Ignore {f}")
+            pass # already handled in previous case
+        elif ext != ".xmd":
+            print(f"Ignore {f}")
+            # Other files without .xmd extension
+        else:
+            print(f"File {f}")
+            file_entities.append(parse_xmd_file(cwd, os.path.join(p, f)))
+            
+
+    if p == "": # root
+        root = Entity(
+            type = "table",
+            category = "",
+            brief = "",
+            display = "Table",
+            sections = {},
+            childs = [],
+            location = "table.md",
+            xmd_location = None,
+            src_location = None,
+            config = set(),
+            prev = None,
+            next = None
+        )
+    elif os.path.exists(os.path.join(cwd, "xdoc", p+".xmd")):
+        root = parse_xmd_file(cwd, p+".xmd")
+    else:
+        root = Entity(
+            type = "directory",
+            category = "",
+            brief = "",
+            display = f"`{p}`",
+            sections = {},
+            childs = [],
+            location = make_loc(p+".md"),
+            xmd_location = (p, None),
+            src_location = None,
+            config = set(),
+            prev = None,
+            next = None
+        )
+
+    root.childs += file_entities
+
+    #print(root)
+
+    return root
+    #return file_entities[0] if file_entities else root
+
 
 def process_doc(cwd):
+    try:
+        with open(os.path.join(cwd,"xdoc","config.json")) as f:
+            config = json.loads(f.read())
+
+    except FileNotFoundError:
+        config = {}
+    
+    global LANG, SRC_PATH
+    if "lang" in config: LANG = config["lang"]
+    if "src-path" in config: SRC_PATH = config["src-path"]
+
     table_ofile = os.path.join(cwd,"doc","table.md")
     ifiles = sorted(os.listdir(os.path.join(cwd, "xdoc")))
-    ofiles = [os.path.splitext(f)[0]+".md" for f in ifiles]
 
-    if os.path.isdir(os.path.join(cwd, "doc")):
-        for f in os.listdir(os.path.join(cwd, "doc")):
-            delete_file(os.path.join(cwd, "doc", f))
+    print(f"Cleaning doc{os.sep} directory")
+    try:
+        shutil.rmtree(os.path.join(cwd, "doc"))
+    except FileNotFoundError: pass
+    #if os.path.isdir(os.path.join(cwd, "doc")):
+    #    for f in os.listdir(os.path.join(cwd, "doc")):
+    #        delete_file(os.path.join(cwd, "doc", f))
 
-    file_entities = [parse_xmd_file(cwd, ifile) for ifile in ifiles]
+    #file_entities = [parse_xmd_file(cwd, ifile) for ifile in ifiles]
 
-    root = Entity(
-        type = "table",
-        category = "",
-        brief = "",
-        display = "Table",
-        sections = {},
-        childs = file_entities, 
-        location = "table.md",
-        src_location = None,
-        prev = None,
-        next = None
-    )
+    root = load_node(cwd, "", is_root=True)
     realize_filestructure(root, "table.md")
     generate_md_files(cwd, None, root)
+
+    write_file("doc/.gitattributes", "* -diff")
 
 if __name__ == "__main__":
     cwd = sys.argv[1] if len(sys.argv) == 2 else "."

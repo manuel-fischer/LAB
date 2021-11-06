@@ -2,7 +2,7 @@
 ***
 
 # `HashArray_PutAlloc`
-<small>*Function* - **modifiers**</small>  
+<small>*Function* &nbsp; - &nbsp; **modifiers**</small>  
 **Synopsis**
 
 ```cpp

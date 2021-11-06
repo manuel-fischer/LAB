@@ -6,17 +6,17 @@
 // TODO: move global state into struct
 static SDL_Surface* gui = NULL;
 
-Uint32 LAB_GuiEvent_base;
+Uint32 LAB_GuiEvent_base = 0;
 
 bool LAB_GuiInit(void)
 {
     LAB_SDL_ALLOC(IMG_Load, &gui, "assets/gui.png");
-    if(!gui) return 0;
+    if(!gui) return false;
 
     LAB_GuiEvent_base = SDL_RegisterEvents(LAB_GUI_EVENT_COUNT);
-    if(LAB_GuiEvent_base == (Uint32)-1) return 0;
+    if(LAB_GuiEvent_base == (Uint32)-1) return false;
 
-    return 1;
+    return true;
 }
 
 void LAB_GuiQuit(void)

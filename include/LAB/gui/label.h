@@ -10,7 +10,7 @@ typedef struct LAB_GuiLabel
     SDL_Surface* text_surf;
 } LAB_GuiLabel;
 
-void LAB_GuiLabel_Create(LAB_GuiLabel* button,
+void LAB_GuiLabel_Create(LAB_GuiLabel* label,
                          int x, int y, int w, int h,
                          const char* title);
 
