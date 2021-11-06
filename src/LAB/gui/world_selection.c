@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+LAB_STATIC
+void LAB_GuiWorldSelection_Destroy(LAB_GuiComponent* self);
+
 LAB_STATIC bool LAB_GuiWorldSelection_ListDir(size_t* world_count, char*** world_names)
 {
     size_t world_capacity = *world_count;
@@ -94,6 +97,7 @@ void LAB_GuiWorldSelection_Create(LAB_GuiWorldSelection* gui, const char* title,
 
 }
 
+LAB_STATIC
 void LAB_GuiWorldSelection_Destroy(LAB_GuiComponent* self)
 {
     LAB_GuiContainer_Destroy(self);

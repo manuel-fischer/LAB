@@ -4,4 +4,4 @@
 # `LAB`
 <small>*Directory*</small>  
 ## File
-**[`gui`](LAB--gui.md)**  
+**[`gui`](LAB--gui.md)**&nbsp; &gt;&nbsp; <small>**[`LAB_GuiInventory`](LAB--gui--lab_guiinventory.md)** &bull; **[`LAB_GuiManager`](LAB--gui--lab_guimanager.md)** &bull; **[`LAB_GuiMenu`](LAB--gui--lab_guimenu.md)** &bull; **[`LAB_GuiWorldSelection`](LAB--gui--lab_guiworldselection.md)** ...</small>  

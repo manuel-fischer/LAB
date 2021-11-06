@@ -13,25 +13,7 @@ typedef struct LAB_GuiTextBox
     int state;
 } LAB_GuiTextBox;
 
-enum LAB_GuiTextBoxState
-{
-    LAB_GUI_TEXT_BOX_NORMAL = 0,
-    LAB_GUI_TEXT_BOX_FOCUSED,
-};
-
 void LAB_GuiTextBox_Create(LAB_GuiTextBox* cself,
-                          int x, int y, int w, int h);
+                           int x, int y, int w, int h);
 
-void LAB_GuiTextBox_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf,
-                          int x, int y);
-
-bool LAB_GuiTextBox_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Event* event);
-
-
-void LAB_GuiTextBox_Destroy(LAB_GuiComponent* self);
-
-
-/**
- *  Return 0 on failure (memory couldn't be allocated
- */
 bool LAB_GuiTextBox_SetContent(LAB_GuiTextBox* cself, const char* txt);

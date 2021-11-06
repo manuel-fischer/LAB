@@ -10,8 +10,6 @@ typedef struct LAB_World LAB_World; // Forward
 
 typedef void (*LAB_WorldSelectProc)(void* user, const char* world_filename);
 
-typedef LAB_GuiButton LAB_GuiListBox_, LAB_GuiTextBox_;
-
 typedef struct LAB_GuiWorldSelection
 {
     LAB_GUI_CONTAINER_INHERIT;
@@ -31,4 +29,4 @@ typedef struct LAB_GuiWorldSelection
 
 
 void LAB_GuiWorldSelection_Create(LAB_GuiWorldSelection* gui, const char* title, LAB_WorldSelectProc on_select);
-void LAB_GuiWorldSelection_Destroy(LAB_GuiComponent* self);
+

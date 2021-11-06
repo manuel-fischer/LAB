@@ -1,8 +1,26 @@
 #include "LAB/gui/text_box.h"
 #include "LAB_memory.h"
 #include "LAB_sdl.h"
+#include "LAB_attr.h"
 
 // TODO sel_start & sel_len
+
+enum LAB_GuiTextBoxState
+{
+    LAB_GUI_TEXT_BOX_NORMAL = 0,
+    LAB_GUI_TEXT_BOX_FOCUSED,
+};
+
+LAB_STATIC
+void LAB_GuiTextBox_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf,
+                          int x, int y);
+
+LAB_STATIC
+bool LAB_GuiTextBox_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Event* event);
+
+LAB_STATIC
+void LAB_GuiTextBox_Destroy(LAB_GuiComponent* self);
+
 
 void LAB_GuiTextBox_Create(LAB_GuiTextBox* cself,
                           int x, int y, int w, int h)
@@ -53,7 +71,7 @@ LAB_STATIC void LAB_GuiTextBox_UpdateText(LAB_GuiTextBox* cself)
     cself->text_surf = NULL;
 }
 
-
+LAB_STATIC
 void LAB_GuiTextBox_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf,
                            int x, int y)
 {
@@ -118,6 +136,7 @@ void LAB_GuiTextBox_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surf
     }
 }
 
+LAB_STATIC
 bool LAB_GuiTextBox_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Event* event)
 {
     LAB_GuiTextBox* cself = (LAB_GuiTextBox*)self;
@@ -188,6 +207,7 @@ bool LAB_GuiTextBox_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Eve
     return 0;
 }
 
+LAB_STATIC
 void LAB_GuiTextBox_Destroy(LAB_GuiComponent* self)
 {
     LAB_GuiTextBox* cself = (LAB_GuiTextBox*)self;

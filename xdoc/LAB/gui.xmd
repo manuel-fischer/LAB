@@ -46,92 +46,296 @@
     @todo Move the spritemap to the gui-manager
 
 
-@file[components] button.h
+@struct[components] LAB_GuiButton
     @locate LAB/gui/button.h
 
-    @struct LAB_GuiButton
-        @config inline
-        Inherits `LAB_GUI_COMPONENT_INHERIT`
-        @attr title
-            @briefx The text displayed on the button
-            The string is not owned
-        @attr text_surf
-            @brief The surface that is used to draw the text
+    Inherits `LAB_GUI_COMPONENT_INHERIT`
+    @attr title
+        @briefx The text displayed on the button
+        The string is not owned
 
-        @attr on_click,user
-            @brief The callback, that gets called when the button is clicked
-
-        @attr state
-            @brief The state of the button
-
-        @type LAB_GuiButtonState
-            @briefx Enumeration of the button states
-
-            @const LAB_GUI_BUTTON_NORMAL Default button state
-            @const LAB_GUI_BUTTON_FOCUSED The button is focused
-            @const LAB_GUI_BUTTON_PRESSED The button is clicked upon
-
-        
-        @fn LAB_GuiButton_Create
-            @syn void LAB_GuiButton_Create(LAB_GuiButton* button,
-                                          int x, int y, int w, int h,
-                                          const char* title,
-                                          void(*on_click)(void* user, LAB_GuiManager* mgr),
-                                          void* user)
-            @briefx Initializes the button
-            @param button The button
-            @param x,y,w,h The position and size of the button
-            @param title The text displayed on the button
-            @param on_click,user The callback, that gets called when the button is clicked
+    @attr on_click,user
+        @brief The callback, that gets called when the button is clicked
 
 
-        @fn[hooks] LAB_GuiButton_Render
-            @brief The `render` hook for the button
+    
+    @fn LAB_GuiButton_Create
+        @syn void LAB_GuiButton_Create(LAB_GuiButton* button,
+                                        int x, int y, int w, int h,
+                                        const char* title,
+                                        void(*on_click)(void* user, LAB_GuiManager* mgr),
+                                        void* user)
+        @briefx Initializes the button
+        @param button The button
+        @param x,y,w,h The position and size of the button
+        @param title The text displayed on the button
+        @param on_click,user The callback, that gets called when the button is clicked
 
-        @fn[hooks] LAB_GuiButton_OnEvent
-            @brief The `on_event` hook for the button
 
-        @fn[hooks] LAB_GuiButton_Destroy
-            @brief The `destroy` hook for the button
+    @fn[hooks] LAB_GuiButton_Render
+        @brief The `render` hook for the button
 
-@file[components] component.h
+    @fn[hooks] LAB_GuiButton_OnEvent
+        @brief The `on_event` hook for the button
+
+    @fn[hooks] LAB_GuiButton_Destroy
+        @brief The `destroy` hook for the button
+
+
+@struct[components] LAB_GuiComponent
     @locate LAB/gui/component.h
 
-    @struct LAB_GuiComponent
-        @config inline
-        @attr on_event The callback for any event
-            @syn bool (*on_event)(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Event* event)
-            @param self The component as a `LAB_GuiComponent`
-            @param mgr The GUI manager
-            @param event The event that should be handled
-            @return `true` if component got dirty and needs to be rerendered
+    @note Components are often not relocatable.
 
-        @attr render The callback to render the component
-            @syn void (*render)(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf, int x, int y)
-            @param self The component as a `LAB_GuiComponent`
-            @param mgr The GUI manager
-            @param surf The surface to draw to
-            @param x,y
-                @briefx The global offset into the surface
-                It is used in combination with nested components
+    @attr on_event The callback for any event
+        @syn bool (*on_event)(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Event* event)
+        @param self The component as a `LAB_GuiComponent`
+        @param mgr The GUI manager
+        @param event The event that should be handled
+        @return `true` if component got dirty and needs to be rerendered
 
-        @attr destroy The callback to destroy the resources of the component
-            @syn void (*destroy)(LAB_GuiComponent* self)
-            @param self The component as a `LAB_GuiComponent`
-            @note Do not free the memory of the component itself
+    @attr render The callback to render the component
+        @syn void (*render)(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf, int x, int y)
+        @param self The component as a `LAB_GuiComponent`
+        @param mgr The GUI manager
+        @param surf The surface to draw to
+        @param x,y
+            @briefx The global offset into the surface
+            It is used in combination with nested components
 
-        @def LAB_GUI_COMPONENT_INHERIT
-            @brief Used to inherit the basic fields of a `LAB_GuiComponent` into another struct
+    @attr destroy The callback to destroy the resources of the component
+        @syn void (*destroy)(LAB_GuiComponent* self)
+        @param self The component as a `LAB_GuiComponent`
+        @note Do not free the memory of the component itself
+
+    @def LAB_GUI_COMPONENT_INHERIT
+        @brief Used to inherit the basic fields of a `LAB_GuiComponent` into another struct
 
 
-        @fn[hooks] LAB_Gui_OnEvent_Ignore
-            @brief The default `on_event` hook, that does nothing
+    @fn[hooks] LAB_Gui_OnEvent_Ignore
+        @brief The default `on_event` hook, that does nothing
+    
+    @fn[hooks] LAB_GuiComponent_Destroy_Ignore
+        @brief The default `destroy` hook, that cleans up nothing
+
+
+@struct[components] LAB_GuiContainer
+    @locate LAB/gui/container.h
+
+    @def LAB_GUI_CONTAINER_INHERIT
+        @brief Used to inherit the fields of a `LAB_GuiContainer`
+    
+    @attr components
+        @briefx `NULL`-terminated array of pointers to components.
+        The memory of the array and the components is not owned
+
+    @attr current
+        @brief the current focused component or `NULL`
+
+
+    @fn[hooks] LAB_GuiContainer_OnEvent
+        @brief The default `on_event` hook for a container
         
-        @fn[hooks] LAB_GuiComponent_Destroy_Ignore
-            @brief The default `destroy` hook, that cleans up nothing
+    @fn[hooks] LAB_GuiContainer_Render
+        @brief The default `render` hook for a container
 
-    @fn LAB_GetMouseCoordPtr
-        @syn bool LAB_GetMouseCoordPtr(SDL_Event* event, int** x, int** y)
+    @fn[hooks] LAB_GuiContainer_Render_Framed
+        @brief `render` hook for a container, that also renders a frame around the container
+
+    @fn[hooks] LAB_GuiContainer_Destroy
+        @brief The default `destroy` hook for a container, which also destroys childs
+
+
+@struct[components] LAB_GuiInventoryList
+    @locate LAB/gui/inventory_list.h
+    
+    Inherits `LAB_GUI_COMPONENT_INHERIT`
+    @attr selected_slot Current selected slot
+    @attr inventory,inventory_user The inventory
+
+    @fn LAB_GuiInventoryList_Create
+        @syn void LAB_GuiInventoryList_Create(LAB_GuiInventoryList* lst,
+                                                int x, int y, int w, int h,
+                                                LAB_IInventory const* inventory,
+                                                void* inventory_user)
+
+        @briefx Initializes the inventory list
+        @param lst The inventory list
+        @param x,y,w,h The position and size of the list
+        @param inventory,inventory_user The inventory
+
+    
+    @fn LAB_GuiInventoryList_Create
+        @syn vLAB_GuiInventoryList_Create_Columns(LAB_GuiInventoryList* lst,
+                                                int x, int y, int columns,
+                                                LAB_IInventory const* inventory,
+                                                void* inventory_user);
+
+        @briefx Initializes the inventory list based on the number of columns
+        @param lst The inventory list
+        @param x,y The position of the list
+        @param colums The number of columns of the list
+        @param inventory,inventory_user The inventory
+
+
+@struct[dialogs] LAB_GuiInventory
+    @locate LAB/gui/inventory.h
+    @config inline
+
+    @briefx Inventory dialog
+
+    @fn LAB_GuiInventoryList_Create
+        @briefx Create the inventory dialog
+        @param gui The inventory dialog
+        @param inventory,inventory_user The inventory
+
+
+@struct[components] LAB_GuiLabel
+    @locate LAB/gui/label.h
+
+    Inherits `LAB_GUI_COMPONENT_INHERIT`
+    @attr title
+        @briefx The text displayed on the label
+        The string is not owned
+    
+    @fn LAB_GuiLabel_Create
+        @syn void LAB_GuiLabel_Create(LAB_GuiLabel* label,
+                                        int x, int y, int w, int h,
+                                        const char* title);
+        @briefx Initializes the label
+        @param label The label
+        @param x,y,w,h The position and size of the label
+        @param title The text displayed on the label
+
+
+@struct[components] LAB_GuiListBox
+    @locate LAB/gui/list_box.h
+    
+    @attr element_count,elements The elements as strings
+    @attr selected_element
+        @briefx The index of the currently selected element.
+
+        Any index above element_count means that no element is selected.
+
+    @attr on_selection,on_selection_user Callback on selection
+
+    @fn LAB_GuiListBox_Create
+        @syn void LAB_GuiListBox_Create(LAB_GuiListBox* cself,
+                                        int x, int y, int w, int h,
+                                        size_t element_count, const char* const* elements,
+                                        void (*on_selection)(void* user, size_t element),
+                                        void*  on_selection_user);
+        @param cself The list box
+        @param x,y,w,h The position and size of the list box
+        @param element_count,elements The elements as strings
+        @param on_selection,on_selection_user Callback on selection
+
+
+@struct LAB_GuiManager
+    @locate LAB/gui/manager.h
+    @config inline
+    @briefx Manages a single gui dialog
+    @todo Extend it to a stack of dialogs
+
+    @attr component The current dialog or `NULL` if none is displayed
+
+    @attr dismiss_component A previously dismissed component, that needs to be cleaned up
+
+    @attr gl_id The texture index, that is used to render the dialog
+
+    @attr surf The surface, to which the dialog gets drawn to
+
+    @attr rerender The whole dialog needs to be redrawn
+    @attr scale GUI metrics scale factor
+    @attr zoom Zoom, finally rendered surface scale factor
+
+
+    @attr[fonts] button_font The font commonly used to render buttons and other components
+    @attr[fonts] title_font The font commonly used to render the title of a dialog
+    @attr[fonts] mono_font Monospace font
+    
+
+    @fn bool LAB_GuiManager_Create(LAB_GuiManager* manager)
+        @briefx create the gui manager
+        @param manager The gui manager
+        @return `true` on success
+        
+    @fn bool LAB_GuiManager_Destroy(LAB_GuiManager* manager)
+        @briefx destroy the gui manager
+        @param manager The gui manager
+
+    @fn void LAB_GuiManager_ShowDialog(LAB_GuiManager* manager, LAB_GuiComponent* component)
+        @briefx Show a new dialog
+        @note It will take the ownership of `*component`
+        @param manager The gui manager
+        @param component The displayed dialog, allocated with `LAB_Malloc`
+
+    @fn void LAB_GuiManager_Dismiss(LAB_GuiManager* manager)
+        @briefx Close the current dialog
+        @param manager The gui manager
+        @pre There is an open dialog
+
+    @fn void LAB_GuiManager_Tick(LAB_GuiManager* manager)
+        @briefx Tick the GUI
+        @param manager The gui manager
+
+    @fn void LAB_GuiManager_Render(LAB_GuiManager* manager, int w, int h)
+        @briefx Render the dialog to OpenGL
+        @param manager The gui manager
+        @param w,h The size of the screen
+        @note The current matrices should be in the initial state
+
+    @fn bool LAB_GuiManager_HandleEvent(LAB_GuiManager* manager, SDL_Event* event);
+        @briefx Handle an SDL-event
+        @param manager The gui manager
+        @param event The SDL-event
+
+            
+
+@struct[dialogs] LAB_GuiMenu
+    @locate LAB/gui/menu.h
+    @config inline
+    
+    @briefx The game menu
+
+    @fn void LAB_GuiMenu_Create(LAB_GuiMenu* menu, LAB_World* world)
+        @param menu The menu
+        @param world The world, to link the menu to
+
+
+@struct[components] LAB_GuiTextBox
+    @locate LAB/gui/text_box.h
+
+    @attr content
+        @briefx The text, that was typed into the text box
+        
+        It might be NULL if nothing was typed in
+        @note
+            You should not assign to this variable.
+            Use LAB_GuiTextBox_SetContent instead.
+
+    @fn void LAB_GuiTextBox_Create(LAB_GuiTextBox* cself,
+                                  int x, int y, int w, int h)
+        @briefx Initialize the text box
+
+        It sets the contents to an empty string
+
+        @param cself The text box
+        @param x,y,w,h The size and position of the text box
+    
+    @fn bool LAB_GuiTextBox_SetContent(LAB_GuiTextBox* cself, const char* txt);
+        @briefx Set the contents of the text box
+        @param cself The text box
+        @param txt The new contents
+        @return `true` on success. `false` on failure, that is when the internal memory couldn't be allocated
+
+
+@file util.h
+    @locate LAB/gui/util.h
+
+    @fn bool LAB_GetMouseCoordPtr(SDL_Event* event, int** x, int** y)
+        @config inline
+
         @briefx Get the mouse coordinates from the event, if it is a mouse event
         @param event The event
         @param x,y
@@ -140,238 +344,21 @@
             Valid only if it is a mouse event.
         @return `true` if the event is a mouse event
 
-    @fn LAB_GuiHitTest
-        @syn bool LAB_GuiHitTest(LAB_GuiComponent* component, int x, int y)
+    @fn bool LAB_GuiHitTest(LAB_GuiComponent* component, int x, int y)
+        @config inline
+
         @briefx Check if the point lies in the component rectangle
         @param component The component
         @param x,y The point
 
 
-@file[components] container.h
-    @locate LAB/gui/container.h
-    
-    @struct LAB_GuiContainer
-        @config inline
-        Inherits `LAB_GUI_COMPONENT_INHERIT`
-        @def LAB_GUI_CONTAINER_INHERIT
-            @brief Used to inherit the fields of a `LAB_GuiContainer`
-        
-        @attr components
-            @briefx `NULL`-terminated array of pointers to components.
-            The memory of the array and the components is not owned
+@struct[dialogs] LAB_GuiWorldSelection
+    @locate LAB/gui/world_selection.h
+    @config inline
 
-        @attr current
-            @brief the current focused component or `NULL`
+    @fn void LAB_GuiWorldSelection_Create(LAB_GuiWorldSelection* gui, const char* title, LAB_WorldSelectProc on_select)
+        @briefx Initialize the world selection
+        @param gui The world selection dialog
+        @param title The title of the dialog
+        @param on_select Callback, when a world was selected
 
-
-        @fn[hooks] LAB_GuiContainer_OnEvent
-            @brief The default `on_event` hook for a container
-            
-        @fn[hooks] LAB_GuiContainer_Render
-            @brief The default `render` hook for a container
-
-        @fn[hooks] LAB_GuiContainer_Render_Framed
-            @brief `render` hook for a container, that also renders a frame around the container
-
-        @fn[hooks] LAB_GuiContainer_Destroy
-            @brief The default `destroy` hook for a container, which also destroys childs
-
-@file[components] inventory_list.h
-    @locate LAB/gui/inventory_list.h
-
-    @struct LAB_GuiInventoryList
-        @config inline
-        Inherits `LAB_GUI_COMPONENT_INHERIT`
-        @attr selected_slot Current selected slot
-        @attr inventory,inventory_user The inventory
-
-        @fn LAB_GuiInventoryList_Create
-            @syn void LAB_GuiInventoryList_Create(LAB_GuiInventoryList* lst,
-                                                 int x, int y, int w, int h,
-                                                 LAB_IInventory const* inventory,
-                                                 void* inventory_user)
-
-            @briefx Initializes the inventory list
-            @param lst The inventory list
-            @param x,y,w,h The position and size of the list
-            @param inventory,inventory_user The inventory
-
-        
-        @fn LAB_GuiInventoryList_Create
-            @syn vLAB_GuiInventoryList_Create_Columns(LAB_GuiInventoryList* lst,
-                                                 int x, int y, int columns,
-                                                 LAB_IInventory const* inventory,
-                                                 void* inventory_user);
-
-            @briefx Initializes the inventory list based on the number of columns
-            @param lst The inventory list
-            @param x,y The position of the list
-            @param colums The number of columns of the list
-            @param inventory,inventory_user The inventory
-
-
-        @fn[hooks] LAB_GuiInventoryList_Render
-            @brief The `render` hook for the inventory list
-
-        @fn[hooks] LAB_GuiInventoryList_OnEvent
-            @brief The `on_event` hook for the inventory list
-
-
-@file[dialogs] inventory.h
-    @locate LAB/gui/inventory.h
-
-    @struct LAB_GuiInventory
-        @config inline
-        @briefx Inventory dialog
-
-        Inherits `LAB_GUI_CONTAINER_INHERIT`
-
-        @note Not relocatable.
-
-        @attr components_arr Array buffer used for the container
-        @attr lblTitle
-        @attr lstInventory
-
-        @fn LAB_GuiInventoryList_Create
-            @briefx Create the inventory dialog
-            @param gui The inventory dialog
-            @param inventory,inventory_user The inventory
-
-
-@file[components] label.h
-    @locate LAB/gui/label.h
-    @struct LAB_GuiLabel
-        @config inline
-        Inherits `LAB_GUI_COMPONENT_INHERIT`
-        @attr title
-            @briefx The text displayed on the label
-            The string is not owned
-        @attr text_surf
-            @brief The surface that is used to draw the text
-        
-        @fn LAB_GuiLabel_Create
-            @syn void LAB_GuiLabel_Create(LAB_GuiLabel* label,
-                                         int x, int y, int w, int h,
-                                         const char* title);
-            @briefx Initializes the label
-            @param label The label
-            @param x,y,w,h The position and size of the label
-            @param title The text displayed on the label
-
-
-        @fn[hooks] LAB_GuiLabel_Render
-            @brief The `render` hook for the label
-
-        @fn[hooks] LAB_GuiLabel_Destroy
-            @brief The `destroy` hook for the label
-
-
-@file[components] list_box.h
-    @locate LAB/gui/list_box.h
-
-    @struct LAB_GuiListBox
-        @config inline
-        Inherits `LAB_GUI_COMPONENT_INHERIT`
-        @attr element_count,elements The elements as strings
-        @attr text_surfs The surfaces used to render the texts
-        @attr selected_element
-            @briefx The index of the currently selected element.
-
-            Any index above element_count means that no element is selected.
-
-        @attr on_selection,on_selection_user Callback on selection
-
-        @fn LAB_GuiListBox_Create
-            @syn void LAB_GuiListBox_Create(LAB_GuiListBox* cself,
-                                           int x, int y, int w, int h,
-                                           size_t element_count, const char* const* elements,
-                                           void (*on_selection)(void* user, size_t element),
-                                           void*  on_selection_user);
-            @param cself The list box
-            @param x,y,w,h The position and size of the list box
-            @param element_count,elements The elements as strings
-            @param on_selection,on_selection_user Callback on selection
-
-        @fn[hooks] LAB_GuiListBox_Render
-            @brief The `render` hook for list box
-
-        @fn[hooks] LAB_GuiListBox_OnEvent
-            @brief The `on_event` hook for list box
-
-        @fn[hooks] LAB_GuiListBox_Destroy
-            @brief The `destroy` hook for list box
-
-
-@file manager.h
-    @locate LAB/gui/manager.h
-
-    @struct LAB_GuiManager
-        @config inline
-        @briefx Manages a single gui dialog
-        @todo Extend it to a stack of dialogs
-
-        @attr component The current dialog or `NULL` if none is displayed
-
-        @attr dismiss_component A previously dismissed component, that needs to be cleaned up
-
-        @attr gl_id The texture index, that is used to render the dialog
-
-        @attr surf The surface, to which the dialog gets drawn to
-
-        @attr rerender The whole dialog needs to be redrawn
-        @attr scale GUI metrics scale factor
-        @attr zoom Zoom, finally rendered surface scale factor
-
-
-        @attr[fonts] button_font The font commonly used to render buttons and other components
-        @attr[fonts] title_font The font commonly used to render the title of a dialog
-        @attr[fonts] mono_font Monospace font
-        
-
-        @fn bool LAB_GuiManager_Create(LAB_GuiManager* manager)
-            @briefx create the gui manager
-            @param manager The gui manager
-            @return `true` on success
-            
-        @fn bool LAB_GuiManager_Destroy(LAB_GuiManager* manager)
-            @briefx destroy the gui manager
-            @param manager The gui manager
-
-        @fn void LAB_GuiManager_ShowDialog(LAB_GuiManager* manager, LAB_GuiComponent* component)
-            @briefx Show a new dialog
-            @note It will take the ownership of `*component`
-            @param manager The gui manager
-            @param component The displayed dialog, allocated with `LAB_Malloc`
-
-        @fn void LAB_GuiManager_Dismiss(LAB_GuiManager* manager)
-            @briefx Close the current dialog
-            @param manager The gui manager
-            @pre There is an open dialog
-
-        @fn void LAB_GuiManager_Tick(LAB_GuiManager* manager)
-            @briefx Tick the GUI
-            @param manager The gui manager
-
-        @fn void LAB_GuiManager_Render(LAB_GuiManager* manager, int w, int h)
-            @briefx Render the dialog to OpenGL
-            @param manager The gui manager
-            @param w,h The size of the screen
-            @note The current matrices should be in the initial state
-
-        @fn bool LAB_GuiManager_HandleEvent(LAB_GuiManager* manager, SDL_Event* event);
-            @briefx Handle an SDL-event
-            @param manager The gui manager
-            @param event The SDL-event
-
-            
-
-@file[dialogs] menu.h
-    @locate LAB/gui/menu.h
-
-    @struct LAB_GuiMenu
-        @config inline
-        @briefx The game menu
-
-        @fn void LAB_GuiMenu_Create(LAB_GuiMenu* menu, LAB_World* world)
-            @param menu The menu
-            @param world The world, to link the menu to

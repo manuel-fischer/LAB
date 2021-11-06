@@ -2,6 +2,15 @@
 
 #include "LAB/gui.h"
 #include "LAB_sdl.h"
+#include "LAB_attr.h"
+
+LAB_INLINE
+void LAB_GuiLabel_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf,
+                         int x, int y);
+
+LAB_INLINE
+void LAB_GuiLabel_Destroy(LAB_GuiComponent* self);
+
 
 void LAB_GuiLabel_Create(LAB_GuiLabel* label,
                          int x, int y, int w, int h,

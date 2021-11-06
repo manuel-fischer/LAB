@@ -9,9 +9,8 @@
         "HTL_PARAM"
     ],
     "C_Cpp.default.includePath": [
-        "${workspaceFolder}\\include",
-        "C:\\Libs\\include",
-        "C:\\Libs\\lib"
+        "${workspaceFolder}/include",
+        "${workspaceFolder}/libs/include"
     ],
     "C_Cpp.default.compilerArgs": [
         "-Wno-unused-parameter",

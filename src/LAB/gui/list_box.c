@@ -1,6 +1,24 @@
 #include "LAB/gui/list_box.h"
 #include "LAB_memory.h"
 #include "LAB_sdl.h"
+#include "LAB_attr.h"
+
+enum LAB_GuiListBoxState
+{
+    LAB_GUI_LIST_BOX_NORMAL = 0,
+    LAB_GUI_LIST_BOX_FOCUSED,
+};
+
+LAB_STATIC
+void LAB_GuiListBox_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf,
+                          int x, int y);
+
+LAB_STATIC
+bool LAB_GuiListBox_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Event* event);
+
+LAB_STATIC
+void LAB_GuiListBox_Destroy(LAB_GuiComponent* self);
+
 
 void LAB_GuiListBox_Create(LAB_GuiListBox* cself,
                           int x, int y, int w, int h,
@@ -30,6 +48,7 @@ void LAB_GuiListBox_Create(LAB_GuiListBox* cself,
 }
 
 
+LAB_STATIC
 void LAB_GuiListBox_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf,
                            int x, int y)
 {
@@ -67,6 +86,7 @@ void LAB_GuiListBox_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surf
     }
 }
 
+LAB_STATIC
 bool LAB_GuiListBox_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Event* event)
 {
     LAB_GuiListBox* cself = (LAB_GuiListBox*)self;
@@ -105,6 +125,7 @@ bool LAB_GuiListBox_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Eve
     return 0;
 }
 
+LAB_STATIC
 void LAB_GuiListBox_Destroy(LAB_GuiComponent* self)
 {
     LAB_GuiListBox* cself = (LAB_GuiListBox*)self;

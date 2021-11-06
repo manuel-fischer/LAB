@@ -2,6 +2,15 @@
 
 #include "LAB_render_item.h"
 #include "LAB_sdl.h"
+#include "LAB_attr.h"
+#include "LAB/gui/util.h"
+
+LAB_STATIC
+void LAB_GuiInventoryList_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf, int x, int y);
+
+LAB_STATIC
+bool LAB_GuiInventoryList_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Event* event);
+
 
 void LAB_GuiInventoryList_Create(LAB_GuiInventoryList* lst,
                                  int x, int y, int w, int h,

@@ -27,6 +27,3 @@ void LAB_GuiInventoryList_Create_Columns(LAB_GuiInventoryList* lst,
                                  int x, int y, int columns,
                                  LAB_IInventory const* inventory,
                                  void* inventory_user);
-
-void LAB_GuiInventoryList_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf, int x, int y);
-bool LAB_GuiInventoryList_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Event* event);

@@ -2,6 +2,27 @@
 
 #include "LAB/gui.h"
 #include "LAB_sdl.h"
+#include "LAB_attr.h"
+
+
+enum LAB_GuiButtonState
+{
+    LAB_GUI_BUTTON_NORMAL = 0,
+    LAB_GUI_BUTTON_FOCUSED,
+    LAB_GUI_BUTTON_PRESSED,
+};
+
+
+LAB_STATIC
+void LAB_GuiButton_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf,
+                          int x, int y);
+
+LAB_STATIC
+bool LAB_GuiButton_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Event* event);
+
+LAB_STATIC
+void LAB_GuiButton_Destroy(LAB_GuiComponent* self);
+
 
 void LAB_GuiButton_Create(LAB_GuiButton* button,
                           int x, int y, int w, int h,
