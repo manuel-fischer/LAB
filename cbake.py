@@ -290,6 +290,8 @@ def discover(file_times, file_includes, sources):
             if fn not in known_files or \
                f_time > file_times[fn]:
 
+                #print(f"{fn} modified")
+
                 includes = list(get_includes(fn, efn))
                 modified_files |= {fn}
             else:
@@ -314,7 +316,9 @@ def discover(file_times, file_includes, sources):
     # middle pass: create backpointers, invert graph
     included_from = {}
     for fn, includes in new_file_includes.items():
-        for ff in includes:
+        for ff, lineno in includes:
+            #if ff in modified_files:
+            #    print(f"{fn} includes {ff}")
             if ff in included_from:
                 included_from[ff] |= {fn}
             else:
@@ -463,7 +467,7 @@ def remove(filename):
 
 
 if __name__ == "__main__":
-    from sys import argv
+    from sys import argv, stderr
     settings = load_settings()
 
     if "help" in argv:

@@ -410,13 +410,31 @@ LAB_HOT                                                // TODO: |---------------
 void LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, int cz)
 {
 
+
     //static int i = 0;
     //printf("LAB_TickLight %i @ %i %i %i\n", i++, cx, cy, cz);
     LAB_Chunk* ctr_cnk = chunks[1+3+9];
     if(!ctr_cnk) return;
 
-    LAB_Color default_color_above = cy <  -2 ? LAB_RGB(16, 16, 16) : LAB_RGB(255, 255, 255);
-    LAB_Color default_color = cy <  0 ? LAB_RGB(16, 16, 16) : LAB_RGB(255, 255, 255);
+    for(int i = 0; i < 27; ++i)
+    {
+        if(i != 1+3+9)
+            LAB_ASSERT(!chunks[i] || chunks[i]->light_generated);
+    }
+
+#if 0
+    for(int i = 0; i < 16*16*16; ++i)
+    {
+        for(int q = 0; q < 8; ++q)
+        {
+            ctr_cnk->light[i].quadrants[q] = ctr_cnk->blocks[i]->dia;
+        }
+    }
+    return;
+#endif
+
+    LAB_Color default_color_above = cy < -2 ? LAB_RGB(16, 16, 16) : LAB_RGB(255, 255, 255);
+    LAB_Color default_color = cy < 0 ? LAB_RGB(16, 16, 16) : LAB_RGB(255, 255, 255);
 
     ctr_cnk->relit_blocks = 0;
 

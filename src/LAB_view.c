@@ -200,6 +200,8 @@ void LAB_View_Clear(LAB_View* view)
 
 void LAB_ViewChunkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update)
 {
+    LAB_ASSERT(LAB_Chunk_Access(chunk));
+
     LAB_View* view = (LAB_View*)user;
 
     // ignore far away chunks
@@ -307,9 +309,10 @@ LAB_STATIC bool LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entr
     LAB_Chunk* chunk_neighborhood[27];
 
     LAB_Chunk* chunk = chunk_entry->world_chunk;
+    if(chunk == NULL) return 0;
+
     LAB_GetChunkNeighbors(chunk, chunk_neighborhood);
 
-    if(chunk_neighborhood[1+3+9] == NULL) return 0;
     //chunk_entry->exist = chunk_neighborhood[1+3+9] != NULL;
     chunk_entry->exist = 1;
 #if 0
@@ -425,6 +428,7 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
 #define GET_LIGHT LAB_GetVisualNeighborhoodLight
 
     LAB_Block* block = cnk3x3x3[1+3+9]->blocks[LAB_CHUNK_OFFSET(x, y, z)];
+    if(block->model == NULL) return;
 
     int faces = 0;
     faces |=  1*(!(IS_BLOCK_OPAQUE(-1, 0, 0)));
@@ -1188,7 +1192,7 @@ LAB_STATIC void LAB_View_RenderBlockSelection(LAB_View* view)
     vpos[2] = view->z;
     LAB_ViewGetDirection(view, dir);
 
-    if(LAB_TraceBlock(view->world, 10, vpos, dir, LAB_CHUNK_GENERATE, LAB_BLOCK_INTERACTABLE, target, prev, hit))
+    if(LAB_TraceBlock(view->world, 10, vpos, dir, LAB_BLOCK_INTERACTABLE, target, prev, hit))
     {
         glEnable(GL_BLEND);
         //glEnable(GL_LINE_SMOOTH);
@@ -1202,7 +1206,7 @@ LAB_STATIC void LAB_View_RenderBlockSelection(LAB_View* view)
 
         if(memcmp(target, prev, sizeof target) != 0)
         {
-            LAB_Block* b = LAB_GetBlock(view->world, target[0], target[1], target[2], LAB_CHUNK_GENERATE);
+            LAB_Block* b = LAB_GetBlock(view->world, target[0], target[1], target[2]);
             float pos[3], size[3];
             LAB_Vec3_Add(pos,  target,       b->bounds[0]);
             LAB_Vec3_Sub(size, b->bounds[1], b->bounds[0]);
@@ -2208,11 +2212,15 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
             //entry->do_query = 1;
             entry->visible = 1;
 
-            LAB_Chunk* chunk = LAB_GetChunk(view->world, px, py, pz, LAB_CHUNK_GENERATE);
+            LAB_Chunk* chunk = LAB_GenerateChunk(view->world, px, py, pz);
             if(chunk)
             {
                 chunk->view_user = entry;
                 entry->world_chunk = chunk;
+            }
+            else
+            {
+                return;
             }
         }
     }
@@ -2221,7 +2229,7 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
     //int empty_load_amount = view->cfg.empty_load_amount;
 
 
-    LAB_Block* block = LAB_GetBlock(view->world, (int)floorf(view->x), (int)floorf(view->y), (int)floorf(view->z), LAB_CHUNK_EXISTING);
+    LAB_Block* block = LAB_GetBlock(view->world, (int)floorf(view->x), (int)floorf(view->y), (int)floorf(view->z));
     bool is_xray = !!(block->flags & LAB_BLOCK_OPAQUE);
 
     uint64_t begin_nanos = LAB_NanoSeconds();
@@ -2236,7 +2244,7 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
             {
                 --load_amount;
                 c->do_query = 1;
-                LAB_Chunk* chunk = LAB_GetChunk(view->world, c->x, c->y, c->z, LAB_CHUNK_GENERATE_LATER);
+                LAB_Chunk* chunk = LAB_GenerateChunk(view->world, c->x, c->y, c->z);
                 if(chunk)
                 {
                     chunk->view_user = c;
@@ -2269,7 +2277,7 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
 
                 entry->do_query = 1;
 
-                LAB_Chunk* chunk = LAB_GetChunk(view->world, xx, yy, zz, LAB_CHUNK_GENERATE_LATER);
+                LAB_Chunk* chunk = LAB_GenerateChunk(view->world, xx, yy, zz);
                 if(chunk)
                 {
                     chunk->view_user = entry;

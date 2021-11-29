@@ -32,6 +32,7 @@
 #define LAB_UNREACHABLE() __builtin_unreachable()
 
 // function attributes
+#define LAB_NEVER_INLINE  __attribute__((never_inline))
 #define LAB_ALWAYS_INLINE __attribute__((always_inline))
 #define LAB_NOINLINE      __attribute__((noinline))
 #define LAB_HOT           __attribute__((hot))
@@ -68,6 +69,7 @@
 
 #define LAB_UNREACHABLE() ((void)0)
 
+#define LAB_NEVER_INLINE
 #define LAB_ALWAYS_INLINE
 #define LAB_NOINLINE
 #define LAB_HOT
@@ -157,6 +159,7 @@
  */
 #define LAB_UNREACHABLE()
 
+#define LAB_NEVER_INLINE
 /**
  *  Declare a function to always be inlined
  *

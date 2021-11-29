@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <signal.h>
+#include <stdarg.h>
 
 #ifndef NDEBUG
     #ifdef __WINNT__
@@ -14,6 +15,91 @@
     #endif
 #endif
 
+
+#include <SDL2/SDL_thread.h>
+
+static SDL_mutex* LAB_dbg_out_mtx;
+
+void LAB_DbgInitOrAbort(void)
+{
+    LAB_dbg_out_mtx = SDL_CreateMutex();
+    if(LAB_dbg_out_mtx == NULL)
+    {
+        fprintf(stderr, "Fatal Error: LAB_DbgInitOrAbort failed, aborting\n");
+        abort();
+    }
+}
+
+void LAB_DbgExit(void)
+{
+    SDL_DestroyMutex(LAB_dbg_out_mtx);
+}
+
+void LAB_DbgPrintf(const char* fmt, ...)
+{
+    if(SDL_LockMutex(LAB_dbg_out_mtx)) abort();
+    va_list  ap;
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    fflush(stderr);
+    va_end(ap);
+    if(SDL_UnlockMutex(LAB_dbg_out_mtx)) abort();
+}
+
+
+
+
+
+#define LAB_HALT_ENTRIES 16
+struct LAB_HaltEntry
+{
+    void(*handler)(void* user);
+    void* user;
+} LAB_halt_list[LAB_HALT_ENTRIES];
+
+bool LAB_DbgAtHalt(void(*handler)(void* user), void* user)
+{
+    for(int i = 0; i < LAB_HALT_ENTRIES; ++i)
+    {
+        if(LAB_halt_list[i].handler == NULL)
+        {
+            LAB_halt_list[i].handler = handler;
+            LAB_halt_list[i].user    = user;
+            return true;
+        }
+    }
+    return false;
+}
+
+void LAB_DbgRemoveHalt(void(*handler)(void* user), void* user)
+{
+    for(int i = 0; i < LAB_HALT_ENTRIES; ++i)
+    {
+        if(LAB_halt_list[i].handler == handler && 
+           LAB_halt_list[i].user == user)
+        {
+            LAB_halt_list[i].handler = NULL;
+            LAB_halt_list[i].user    = NULL;
+            return;
+        }
+    }
+    // TODO not found
+}
+
+void LAB_DbgDoHalt(void)
+{
+    for(int i = 0; i < LAB_HALT_ENTRIES; ++i)
+    {
+        if(LAB_halt_list[i].handler != NULL)
+        {
+            LAB_halt_list[i].handler(LAB_halt_list[i].user);
+        }
+    }
+}
+
+
+
+
 void LAB_AssumptionFailed(const char* type,
                           const char* expr,
                           const char* file,
@@ -21,8 +107,10 @@ void LAB_AssumptionFailed(const char* type,
                           const char* function,
                           int trap)
 {
-    fprintf(stderr, "Checking %s failed at %s:%i%s%s:\n    %s\n",
-            type, file, line, function?" in ":"", function, expr);
+    LAB_DbgDoHalt();
+
+    LAB_DbgPrintf("Checking %s failed at %s:%i%s%s:\n    %s\n",
+                  type, file, line, function?" in ":"", function, expr);
     //raise(SIGILL); // alt: SIGINT SIGBREAK SIGTRAP
     #if !defined NDEBUG && defined __WINNT__ && !defined __GNUC__
     LAB_PrintStackTrace();

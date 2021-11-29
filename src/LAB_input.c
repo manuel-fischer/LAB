@@ -263,7 +263,7 @@ int LAB_Input_OnEvent_Proc(void* user, LAB_Window* window, SDL_Event* event)
 
                     char fname[256];
                     strftime(fname, sizeof fname, "screenshots/scr-%Y%m%d-%H%M%S.png", tinf);
-                    printf("Saving screenshot to %s\n", fname);
+                    LAB_DbgPrintf("Saving screenshot to %s\n", fname);
                     IMG_SavePNG(surf_screen, fname);
                     LAB_SDL_FREE(SDL_FreeSurface, &surf_screen);
                 } break;
@@ -277,7 +277,7 @@ int LAB_Input_OnEvent_Proc(void* user, LAB_Window* window, SDL_Event* event)
                 case SDLK_F4:
                 {
                     view->cfg.flags ^= LAB_VIEW_USE_VBO;
-                    printf("VBO turned %s\n", "off\0on"+4*!!(view->cfg.flags & LAB_VIEW_USE_VBO));
+                    LAB_DbgPrintf("VBO turned %s\n", "off\0on"+4*!!(view->cfg.flags & LAB_VIEW_USE_VBO));
                     LAB_ViewInvalidateEverything(view, /*free_buffers*/1);
 
                 } break;
@@ -302,11 +302,18 @@ int LAB_Input_OnEvent_Proc(void* user, LAB_Window* window, SDL_Event* event)
 
                 case SDLK_F11:
                 {
+                    #ifdef NDEBUG
                     uint32_t fs_flags;
                     fs_flags = (SDL_GetWindowFlags(window->window) & SDL_WINDOW_FULLSCREEN)
                              ? 0
                              : SDL_WINDOW_FULLSCREEN_DESKTOP;
                     SDL_SetWindowFullscreen(window->window, fs_flags);
+                    #else
+                    if(SDL_GetWindowFlags(window->window) & SDL_WINDOW_MAXIMIZED)
+                        SDL_RestoreWindow(window->window);
+                    else
+                        SDL_MaximizeWindow(window->window);
+                    #endif
                 } break;
 
                 #if 0
@@ -409,13 +416,13 @@ LAB_STATIC int LAB_Input_Interact(LAB_Input* input, int button)
     vpos[2] = view->z;
     LAB_ViewGetDirection(view, dir);
 
-    if(LAB_TraceBlock(view->world, 10, vpos, dir, LAB_CHUNK_GENERATE, LAB_BLOCK_INTERACTABLE, target, prev, hit))
+    if(LAB_TraceBlock(view->world, 10, vpos, dir, LAB_BLOCK_INTERACTABLE, target, prev, hit))
     {
         switch(button)
         {
             case SDL_BUTTON_LEFT:
             {
-                LAB_SetBlock(view->world, target[0], target[1], target[2], LAB_CHUNK_GENERATE, &LAB_BLOCK_AIR);
+                LAB_SetBlock(view->world, target[0], target[1], target[2], &LAB_BLOCK_AIR);
             } break;
 
             case SDL_BUTTON_RIGHT:
@@ -424,12 +431,12 @@ LAB_STATIC int LAB_Input_Interact(LAB_Input* input, int button)
                    &&  prev[0]==LAB_FastFloorF2I(view->x)
                    && (prev[1]==LAB_FastFloorF2I(view->y) || prev[1]==LAB_FastFloorF2I(view->y)-1)
                    &&  prev[2]==LAB_FastFloorF2I(view->z)) return 0;
-                LAB_SetBlock(view->world, prev[0], prev[1], prev[2], LAB_CHUNK_GENERATE, input->selected_block);
+                LAB_SetBlock(view->world, prev[0], prev[1], prev[2], input->selected_block);
             } break;
 
             default: // SDL_BUTTON_MIDDLE
             {
-                LAB_Block* b = LAB_GetBlock(view->world, target[0], target[1], target[2], LAB_CHUNK_EXISTING);
+                LAB_Block* b = LAB_GetBlock(view->world, target[0], target[1], target[2]);
                 if(b != &LAB_BLOCK_OUTSIDE)
                 {
                     input->selected_block = b;
@@ -550,10 +557,10 @@ void LAB_Input_Tick(LAB_Input* input, uint32_t delta_ms)
         for(int yy = -dist; yy <= dist; ++yy)
         for(int xx = -dist; xx <= dist; ++xx)
         {
-            if((input->flags & LAB_VIEWINPUT_CREATE) && LAB_GetBlock(view->world, bx+xx, by+yy, bz+zz, LAB_CHUNK_GENERATE) != &LAB_BLOCK_AIR)
+            if((input->flags & LAB_VIEWINPUT_CREATE) && LAB_GetBlock(view->world, bx+xx, by+yy, bz+zz) != &LAB_BLOCK_AIR)
                 continue;
             if(xx*xx+yy*yy+zz*zz <= dist*dist+dist)
-                LAB_SetBlock(view->world, bx+xx, by+yy, bz+zz, LAB_CHUNK_GENERATE, block);
+                LAB_SetBlock(view->world, bx+xx, by+yy, bz+zz, block);
         }
     }
 
@@ -604,14 +611,14 @@ void LAB_Input_Tick(LAB_Input* input, uint32_t delta_ms)
         LAB_ASSUME(ddy <= maxstep);
         LAB_ASSUME(ddz <= maxstep);
 
-        //printf("steps=%i, %f|%f  %f|%f  %f|%f\n", steps, dx, ddx, dy, ddy, dz, ddz);
+        //LAB_DbgPrintf("steps=%i, %f|%f  %f|%f  %f|%f\n", steps, dx, ddx, dy, ddy, dz, ddz);
 
         for(int step = 0; step < steps; ++step)
         {
             view->x += ddx;
             view->y += ddy;
             view->z += ddz;
-            //printf("    %04i: %f %f %f\n", step, view->x, view->y, view->z);
+            //LAB_DbgPrintf("    %04i: %f %f %f\n", step, view->x, view->y, view->z);
 
             int bx, by, bz;
             bx = LAB_FastFloorF2I(view->x);
@@ -642,21 +649,21 @@ void LAB_Input_Tick(LAB_Input* input, uint32_t delta_ms)
                 for(int xx = -1; xx <= 1; ++xx)
                 for(int zz = -1; zz <= 1; ++zz)
                 {
-                    LAB_Block* block  = LAB_GetBlock(view->world, bx+xx, by+yy, bz+zz, LAB_CHUNK_GENERATE);
+                    LAB_Block* block  = LAB_GetBlock(view->world, bx+xx, by+yy, bz+zz);
 
                     if(xx!=0||zz!=0)
                     {
                         // Blocks on the same axis
-                        LAB_Block* b1 = LAB_GetBlock(view->world, bx+xx, by+0,  bz,    LAB_CHUNK_GENERATE);
-                        LAB_Block* b2 = LAB_GetBlock(view->world, bx+xx, by-1,  bz,    LAB_CHUNK_GENERATE);
-                        LAB_Block* b3 = LAB_GetBlock(view->world, bx,    by+0,  bz+zz, LAB_CHUNK_GENERATE);
-                        LAB_Block* b4 = LAB_GetBlock(view->world, bx,    by-1,  bz+zz, LAB_CHUNK_GENERATE);
+                        LAB_Block* b1 = LAB_GetBlock(view->world, bx+xx, by+0,  bz   );
+                        LAB_Block* b2 = LAB_GetBlock(view->world, bx+xx, by-1,  bz   );
+                        LAB_Block* b3 = LAB_GetBlock(view->world, bx,    by+0,  bz+zz);
+                        LAB_Block* b4 = LAB_GetBlock(view->world, bx,    by-1,  bz+zz);
                         if(b1->flags&LAB_BLOCK_MASSIVE || b2->flags&LAB_BLOCK_MASSIVE) continue;
                         if(b3->flags&LAB_BLOCK_MASSIVE || b4->flags&LAB_BLOCK_MASSIVE) continue;
 
                         // Blocks possibly in the corners
-                        LAB_Block* b5 = LAB_GetBlock(view->world, bx+xx, by+0,  bz+zz, LAB_CHUNK_GENERATE);
-                        LAB_Block* b6 = LAB_GetBlock(view->world, bx+xx, by-1,  bz+zz, LAB_CHUNK_GENERATE);
+                        LAB_Block* b5 = LAB_GetBlock(view->world, bx+xx, by+0,  bz+zz);
+                        LAB_Block* b6 = LAB_GetBlock(view->world, bx+xx, by-1,  bz+zz);
                         if(b5->flags&LAB_BLOCK_MASSIVE || b6->flags&LAB_BLOCK_MASSIVE) continue;
                     }
 
@@ -690,7 +697,7 @@ void LAB_Input_Tick(LAB_Input* input, uint32_t delta_ms)
                 int zz = xz[i][1];
                 for(int yy = -2; yy <= 1; ++yy)
                 {
-                    LAB_Block* block = LAB_GetBlock(view->world, bx+xx, by+yy, bz+zz, LAB_CHUNK_GENERATE);
+                    LAB_Block* block = LAB_GetBlock(view->world, bx+xx, by+yy, bz+zz);
                     if(block->flags&LAB_BLOCK_MASSIVE)
                     {
                         int collides = 1;

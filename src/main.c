@@ -19,6 +19,8 @@
 
 #include "LAB_perf_info.h"
 
+#include "LAB_world_server.h"
+
 #define GEN_FLAT 0
 
 #include "LAB_texture_atlas.h" // TODO remove from here
@@ -113,9 +115,11 @@ static bool LAB_Client_Obj(bool destroy)
 
 
 
-
+#define THREADS 11
 int main(int argc, char** argv)
 {
+    LAB_DbgInitOrAbort();
+
     #define CHECK_INIT(expr) if(expr); else { init_msg = #expr; goto INIT_ERROR; }
 
     char const* init_msg;
@@ -124,6 +128,8 @@ int main(int argc, char** argv)
     int init = 0;
     static LAB_PerfInfo   perf_info   = {0};
     static LAB_World      the_world   = {0};
+    static LAB_WorldServer world_server;
+    LAB_WorldServer_Create(&world_server, &the_world, /*capacity*/1<<12, /*worker_count*/THREADS);
 
 
     LAB_ViewConfig view_cfg = {
@@ -232,7 +238,9 @@ int main(int argc, char** argv)
         LAB_Input_Tick(&LAB_client.input, delta_ms);
 
         LAB_PerfInfo_Next(&perf_info, LAB_TG_WORLD);
-        LAB_WorldTick(&the_world, delta_ms);
+        //LAB_WorldServer_Tick(&world_server);
+        LAB_WorldTick(&the_world, delta_ms,    &LAB_WorldServer_TickV, &world_server);
+        //LAB_WorldTick(&the_world, delta_ms,    NULL, NULL);
 
         LAB_PerfInfo_Next(&perf_info, LAB_TG_VIEW);
         LAB_ViewTick(&LAB_client.view, delta_ms);
@@ -250,6 +258,7 @@ int main(int argc, char** argv)
 EXIT:
     LAB_View_SetWorld(&LAB_client.view, NULL);
 
+    LAB_WorldServer_Destroy(&world_server);
     LAB_DestructWorld(&the_world);
     LAB_PerfInfo_Destroy(&perf_info);
     LAB_Client_Destroy();
@@ -261,6 +270,8 @@ EXIT:
     printf("Alive GL-Objects: %i\n", LAB_gl_debug_alloc_count);
     printf("Alive SDL-Objects: %i\n", LAB_sdl_debug_alloc_count);
     #endif
+
+    LAB_DbgExit();
 
     return return_value;
 

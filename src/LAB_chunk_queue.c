@@ -1,7 +1,9 @@
+#if 0
 #include "LAB_chunk_queue.h"
 #include "LAB_obj.h"
 #include "LAB_memory.h"
 
+#if 0
 bool LAB_ChunkQueue_Create(LAB_ChunkQueue* q, size_t capacity)
 {
     LAB_OBJ_SDL(q->sem_cnt = SDL_CreateSemaphore(0),
@@ -86,3 +88,10 @@ void LAB_ChunkQueue_Pop(LAB_ChunkQueue* q, LAB_Chunk** cnk, int* action)
     SDL_UnlockMutex(q->mtx_lock);
     SDL_SemPost(q->sem_free);
 }
+#endif
+
+#define HTL_PARAM LAB_CHUNK_QUEUE
+#include "HTL/mt_queue.t.c"
+#undef HTL_PARAM
+#endif
+static int empty;

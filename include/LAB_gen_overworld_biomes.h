@@ -11,9 +11,11 @@ typedef struct LAB_Gen_Biome
 
 } LAB_Gen_Biome;
 
-const LAB_Gen_Biome LAB_biome_forest;
-const LAB_Gen_Biome LAB_biome_plains;
-const LAB_Gen_Biome LAB_biome_desert;
+extern const LAB_Gen_Biome LAB_biome_forest;
+extern const LAB_Gen_Biome LAB_biome_birch_forest;
+extern const LAB_Gen_Biome LAB_biome_taiga;
+extern const LAB_Gen_Biome LAB_biome_plains;
+extern const LAB_Gen_Biome LAB_biome_desert;
 
 
 float LAB_Gen_Biome_Temperature_Func(LAB_GenOverworld* gen, int x, int z);

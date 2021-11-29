@@ -8,6 +8,8 @@
  *  - check that calls extern functions -> removed completely in release
 **/
 #include "LAB_opt.h"
+#include <stdbool.h>
+
 #ifdef NDEBUG
 #  define LAB_DBG_PRINTF(...) ((void)0)
 #  ifdef __GNUC__
@@ -23,7 +25,7 @@
     ((!(cond)) ? abort() : (void)0)
 #else
 #  include <stdio.h> // -> fprintf
-#  define LAB_DBG_PRINTF(...) fprintf(stderr, __VA_ARGS__)
+#  define LAB_DBG_PRINTF(...) LAB_DbgPrintf(__VA_ARGS__)
 #  ifdef __GNUC__
 #    define LAB_FUNCTION() __builtin_FUNCTION()
 #  else
@@ -80,6 +82,11 @@ void LAB_AssumptionFailed(const char* type,
                           int trap);
 
 
+void LAB_DbgInitOrAbort(void);
+void LAB_DbgExit(void);
+void LAB_DbgPrintf(const char* fmt, ...);
+bool LAB_DbgAtHalt(void(*handler)(void* user), void* user);
+void LAB_DbgRemoveHalt(void(*handler)(void* user), void* user);
 
 
 /**
