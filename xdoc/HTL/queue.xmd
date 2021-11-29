@@ -1,0 +1,86 @@
+@@file queue.t.h
+@locate HTL/queue.t.h
+
+Fixed sized Queue
+
+Template header (multiple inclusion)
+
+@param NAME       name of the generated type, prefix of all functions
+@param TYPE       content type
+
+@class Queue
+	@config inline
+	@attr queue
+		@syn ContentType* queue
+		@briefx The buffer to store the contents of the queue
+	@attr first
+		@syn size_t first
+		@briefx The first/next entry of the queue
+	@attr count
+		@syn size_t count
+		@briefx The number of active entries in the queue
+	@attr capacity
+		@syn size_t capacity
+		@briefx The maximum size of the queue
+		
+	@fn[lifetime] bool Queue_Create(Queue* q, size_t capacity)
+		Construct an empty queue at the referenced location.
+
+		The function never fails, because no memory allocations
+		are done, thus always 1 is returned
+
+		@param capacity maximum amount of elements
+		
+		@note Alternatively the bytes could be set to 0
+		
+		@return `true` on success
+		
+		@pre The queue was not already constructed
+		
+		@post The queue is valid to be used with the other functions
+
+
+	@fn[lifetime] void Queue_Destroy(Queue* q);
+		Destruct a queue at the referenced location.
+		Nothing happens, the function exists only for formal reasons.
+		
+		@post 
+			All references to entries get invalidated, because
+			the array gets freed, Construct could be called
+			again
+		
+		
+		
+	@fn[modifiers] ContentType* Queue_PushBack(Queue* q)
+		Creates room for an element at the back
+		
+		@return 
+			the allocated entry on success (that is `Back()` ),
+			`NULL` on failure.
+			It fails, when the queue is full
+
+	@fn[modifiers] void Queue_PopFront(Queue* q)
+		Removes element from the front
+		
+		@post References to the front get invalidated
+
+	@fn[observers] ContentType* Queue_Front(Queue* q)
+		@return reference to the front
+		
+		@pre  The queue is not empty
+		@post Return value points to a valid memory location
+		
+
+	@fn[observers] ContentType* Queue_Back(Queue* q)
+		@return reference to the back
+		
+		@pre  The queue is not empty
+		@post Return value points to a valid memory location
+		
+	@fn[observers] ContentType* Queue_Find(Queue* q, CompFunction comp1, void* ctx)
+		Find an element in the queue
+		
+		@return element that compares 0, otherwise `NULL`
+		
+		@type CompFunction
+			@syn typedef int (*CompFunction)(void* ctx, ContentType* content)

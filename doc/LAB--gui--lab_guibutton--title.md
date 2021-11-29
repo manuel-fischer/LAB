@@ -1,4 +1,4 @@
-[&#8593; `LAB_GuiButton`](LAB--gui--lab_guibutton.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8594; `LAB_GuiButton_Create`](LAB--gui--lab_guibutton--lab_guibutton_create.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB/gui.xmd#L52)</small>
+[&#8593; `LAB_GuiButton`](LAB--gui--lab_guibutton.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8594; `LAB_GuiButton_Create`](LAB--gui--lab_guibutton--lab_guibutton_create.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB/gui.xmd#L53)</small>
 ***
 
 # `title`

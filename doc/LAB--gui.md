@@ -1,8 +1,8 @@
-[&#8593; `LAB`](LAB.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB/gui.xmd#L1)</small>
+[&#8593; `LAB`](LAB.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB/gui.xmd#L3)</small>
 ***
 
 # `gui`
-<small>*File* &nbsp; - &nbsp; ["LAB/gui.h"](../include/LAB/gui.h)</small>  
+<small>*Module* &nbsp; - &nbsp; ["LAB/gui.h"](../include/LAB/gui.h)</small>  
 
 
 

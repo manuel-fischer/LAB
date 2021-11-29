@@ -1,5 +1,6 @@
 
 @locate LAB/gui.h
+@@module gui
 
 @type LAB_GuiEvent
     Custom events

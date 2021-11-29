@@ -149,6 +149,7 @@ HTL_DEF bool HTL_MEMBER(IsEntry)(HTL_P(NAME)* hasharray, HTL_P(ENTRY_TYPE)* entr
 
 HTL_DEF void HTL_MEMBER(Discard)(HTL_P(NAME)* hasharray, HTL_P(ENTRY_TYPE)* entry)
 {
+    HTL_ASSERT(!HTL_MEMBER(IsEntry)(hasharray, entry));
     --hasharray->size;
 }
 

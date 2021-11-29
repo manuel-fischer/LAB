@@ -1,4 +1,5 @@
 #include "LAB/gui/container.h"
+#include "LAB/gui/util.h"
 
 #include "LAB_debug.h"
 #include <stdio.h>

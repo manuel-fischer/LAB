@@ -1,4 +1,4 @@
-[&#8593; `LAB_GuiEvent`](LAB--gui--lab_guievent.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8594; `LAB_IS_GUI_EVENT`](LAB--gui--lab_guievent--lab_is_gui_event.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB/gui.xmd#L18)</small>
+[&#8593; `LAB_GuiEvent`](LAB--gui--lab_guievent.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8594; `LAB_IS_GUI_EVENT`](LAB--gui--lab_guievent--lab_is_gui_event.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB/gui.xmd#L19)</small>
 ***
 
 # `LAB_GUI_EVENT`

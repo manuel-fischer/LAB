@@ -4,6 +4,7 @@
 #include "LAB_gl.h"
 #include "LAB_debug.h"
 #include "LAB_sdl.h"
+#include "LAB/gui/util.h"
 
 #include <SDL2/SDL_ttf.h>
 

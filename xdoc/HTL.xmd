@@ -1,0 +1,35 @@
+@@namespace HTL
+
+HTL (Header Template Library) provides type generic containers using the C preprocessor.
+
+
+@param dynmem
+	@disp Dynamic Memory
+	@locate HTL/mem_config.h
+	@def HTL_CALLOC
+		@config inline
+		@locate HTL/config.h
+		@briefx Required to be defined
+		@syn void* HTL_CALLOC(size_t num, size_t size)
+		
+	@def HTL_FREE
+		@config inline
+		@locate HTL/config.h
+		@briefx Required to be defined
+		@syn void HTL_FREE(void* mem)
+
+
+@param mt
+	@disp Multithreading
+	@locate HTL/mt_config.h
+	@class HTL_MUTEX
+		@fn bool HTL_MUTEX_CREATE(HTL_MUTEX* mt)
+		@fn void HTL_MUTEX_DESTROY(HTL_MUTEX* mt)
+		@fn void HTL_MUTEX_LOCK(HTL_MUTEX* mt)
+		@fn void HTL_MUTEX_UNLOCK(HTL_MUTEX* mt)
+
+	@class HTL_SEMAPHORE
+		@fn bool HTL_SEMAPHORE_CREATE(HTL_SEMAPHORE* sem)
+		@fn void HTL_SEMAPHORE_DESTROY(HTL_SEMAPHORE* sem)
+		@fn void HTL_SEMAPHORE_WAIT(HTL_SEMAPHORE* sem)
+		@fn void HTL_SEMAPHORE_POST(HTL_SEMAPHORE* sem)

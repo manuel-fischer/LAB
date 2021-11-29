@@ -1,4 +1,4 @@
-[&#8592; `LAB_GuiManager_Create`](LAB--gui--lab_guimanager--lab_guimanager_create.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8593; `LAB_GuiManager`](LAB--gui--lab_guimanager.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8594; `LAB_GuiManager_ShowDialog`](LAB--gui--lab_guimanager--lab_guimanager_showdialog.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB/gui.xmd#L262)</small>
+[&#8592; `LAB_GuiManager_Create`](LAB--gui--lab_guimanager--lab_guimanager_create.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8593; `LAB_GuiManager`](LAB--gui--lab_guimanager.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8594; `LAB_GuiManager_ShowDialog`](LAB--gui--lab_guimanager--lab_guimanager_showdialog.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB/gui.xmd#L263)</small>
 ***
 
 # `LAB_GuiManager_Destroy`

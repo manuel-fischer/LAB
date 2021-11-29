@@ -1,4 +1,4 @@
-[&#8592; `LAB_GuiManager_Dismiss`](LAB--gui--lab_guimanager--lab_guimanager_dismiss.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8593; `LAB_GuiManager`](LAB--gui--lab_guimanager.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8594; `LAB_GuiManager_Render`](LAB--gui--lab_guimanager--lab_guimanager_render.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB/gui.xmd#L277)</small>
+[&#8592; `LAB_GuiManager_Dismiss`](LAB--gui--lab_guimanager--lab_guimanager_dismiss.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8593; `LAB_GuiManager`](LAB--gui--lab_guimanager.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8594; `LAB_GuiManager_Render`](LAB--gui--lab_guimanager--lab_guimanager_render.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/LAB/gui.xmd#L278)</small>
 ***
 
 # `LAB_GuiManager_Tick`

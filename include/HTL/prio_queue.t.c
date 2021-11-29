@@ -30,7 +30,7 @@ HTL_DEF bool HTL_MEMBER(IsFull)(HTL_P(NAME)* q)
 
 HTL_DEF HTL_P(TYPE)* HTL_MEMBER(Push)(HTL_P(NAME)* q, HTL_P(PRIO_TYPE) prio)
 {
-    // if the queue is full, the element with the highest probabilty
+    // if the queue is full, the element with the highest priority-value (lowest priority)
     // is replaced, all positions get invalidated
 
 

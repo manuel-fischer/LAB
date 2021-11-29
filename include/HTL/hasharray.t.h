@@ -1,4 +1,4 @@
-#include "HTL/hasharray_config.h"
+#include "HTL/mem_config.h"
 #include "HTL/pp.h"
 #include <stdlib.h>
 #include <stdbool.h>
