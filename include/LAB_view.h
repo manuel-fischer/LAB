@@ -166,6 +166,7 @@ typedef struct LAB_View
     LAB_FpsGraph fps_graph_view;
     LAB_FpsGraph fps_graph_view_render;*/
     LAB_PerfInfo* perf_info;
+    struct LAB_WorldServer* server; // TODO remove
 
     LAB_GuiManager gui_mgr;
 

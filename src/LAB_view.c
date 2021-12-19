@@ -34,6 +34,8 @@
 #include "LAB/gui/inventory.h"
 #include "LAB_inventory.h"
 
+#include "LAB_world_server.h" // TODO remove
+
 #define HTL_PARAM LAB_VIEW_CHUNK_TBL
 #include "HTL/hasharray.t.c"
 #undef HTL_PARAM
@@ -58,10 +60,12 @@
 ///############################
 
 
+LAB_STATIC void LAB_ViewChunkMeshProc(void* user, LAB_World* world, LAB_Chunk* chunk);
 LAB_STATIC void LAB_View_Position_Proc(void* user, LAB_World* world, LAB_OUT double xyz[3]);
 const LAB_IView LAB_view_interface = 
 {
     .chunkview    = &LAB_ViewChunkProc,
+    .chunkmesh    = &LAB_ViewChunkMeshProc,
     .chunkkeep    = &LAB_ViewChunkKeepProc,
     .chunkunlink  = &LAB_ViewChunkUnlinkProc,
     .position     = &LAB_View_Position_Proc,
@@ -208,21 +212,6 @@ void LAB_ViewChunkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, in
     // TODO: if neighboring chunk is inside view
     // TODO: make behavior in LAB_ViewChunkKeep proc into another function without a void* argument
     if(!LAB_ViewChunkKeepProc(user, world, chunk, x, y, z)) return;
-
-    /*LAB_ViewChunkEntry* entry = LAB_ViewGetChunkEntry(view, x, y, z);
-    if(entry)
-        entry->dirty = update;*/
-
-    // Handle block update at border correctly
-    /*for(int iz = -1; iz <= 1; ++iz)
-    for(int iy = -1; iy <= 1; ++iy)
-    for(int ix = -1; ix <= 1; ++ix)
-    {
-        LAB_ViewChunkEntry* entry = LAB_ViewFindChunkEntry(view, x+ix, y+iy, z+iz);
-        if(entry)
-            entry->dirty |= update;
-    }*/
-    // TODO update corner chunks
     LAB_ViewChunkEntry* entry;
     entry = chunk->view_user;
     if(!entry)
@@ -232,38 +221,10 @@ void LAB_ViewChunkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, in
         // link view entry into the world
         entry->world_chunk = chunk;
         chunk->view_user = entry;
+        //LAB_ASSERT_EQ(entry->dirty, ~0);
     }
 
     entry->dirty |= update;
-    /*for(int i = 0; i < 6; ++i)
-    {
-        if(entry->neighbors[i])
-            entry->neighbors[i]->dirty |= update;
-        //entry->delay_ticks = 30;
-    }*/
-    /*int i;
-    LAB_DIR_EACH(LAB_CCPS_Faces(chunk->dirty_blocks|chunk->relit_blocks), i,
-    {
-        if(entry->neighbors[i])
-            entry->neighbors[i]->dirty |= update;
-    });*/
-
-    /*int bits = LAB_CCPS_Neighborhood(chunk->dirty_blocks|chunk->relit_blocks)
-             & ~(1 << (1+3+9));
-
-    if(bits)
-    {
-        LAB_Chunk* chunks[27];
-        // TODO LAB_GetChunkEntryNeighbors(entry, ...)
-        LAB_GetChunkNeighbors(chunk, chunks);
-        int i;
-        LAB_BITS_EACH(bits, i,
-        {
-            LAB_ASSUME(0 <= i && i < 27 && i != 1+3+9);
-            if(chunks[i] && chunks[i]->view_user)
-                ((LAB_ViewChunkEntry*)chunks[i]->view_user)->dirty |= update;
-        });
-    }*/
 }
 
 bool LAB_ViewChunkKeepProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z)
@@ -278,7 +239,7 @@ bool LAB_ViewChunkKeepProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x
     int dy = y-py;
     int dz = z-pz;
     unsigned int dist = dx*dx+dy*dy+dz*dz;
-    return dist <= view->cfg.keep_dist*view->cfg.keep_dist+3;
+    return dist <= view->cfg.keep_dist*view->cfg.keep_dist;//+3;
 }
 
 void LAB_ViewChunkUnlinkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z)
@@ -287,6 +248,7 @@ void LAB_ViewChunkUnlinkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int
 
     LAB_ViewChunkEntry* entry = chunk->view_user;
     entry->world_chunk = NULL;
+    entry->exist = false;
     // does not need to clear chunk->view_user, because chunk gets destroyed
 }
 
@@ -301,6 +263,18 @@ void LAB_View_Position_Proc(void* user, LAB_World* world, double pos[3])
 }
 
 
+
+LAB_STATIC
+void LAB_ViewChunkMeshProc(void* vview, LAB_World* world, LAB_Chunk* chunk)
+{
+    LAB_View* view = vview;
+    LAB_ViewChunkEntry* e = chunk->view_user;
+    if(!e) return;
+    LAB_ViewBuildChunk(view, e);
+    e->update_pending = false;
+}
+
+
 /**
  *  Return 1 if the chunk was available
  */
@@ -310,6 +284,8 @@ LAB_STATIC bool LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entr
 
     LAB_Chunk* chunk = chunk_entry->world_chunk;
     if(chunk == NULL) return 0;
+
+    if(!chunk->light_generated) return 0;
 
     LAB_GetChunkNeighbors(chunk, chunk_neighborhood);
 
@@ -335,80 +311,18 @@ LAB_STATIC void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* 
     const int Y = 3*1;
     const int Z = 3*3*1;
 
-    LAB_View_Mesh* alpha_pass = &chunk_entry->render_passes[LAB_RENDER_PASS_ALPHA];
-    size_t old_alpha_capacity = alpha_pass->capacity;
-    size_t old_alpha_size = alpha_pass->size;
-
     for(int i = 0; i < LAB_RENDER_PASS_COUNT; ++i)
-        chunk_entry->render_passes[i].size = 0;
+        chunk_entry->render_passes[i].m_size = 0;
 
-    for(size_t z = 0; z < LAB_CHUNK_SIZE; ++z)
-    for(size_t y = 0; y < LAB_CHUNK_SIZE; ++y)
-    for(size_t x = 0; x < LAB_CHUNK_SIZE; ++x)
+    if(!cnk3x3x3[1+3+9]->empty)
     {
-        if(cnk3x3x3[X+Y+Z]->blocks[LAB_CHUNK_OFFSET(x, y, z)]->flags & LAB_BLOCK_VISUAL)
+        for(size_t z = 0; z < LAB_CHUNK_SIZE; ++z)
+        for(size_t y = 0; y < LAB_CHUNK_SIZE; ++y)
+        for(size_t x = 0; x < LAB_CHUNK_SIZE; ++x)
         {
-            LAB_ViewBuildMeshBlock(view, chunk_entry, cnk3x3x3, x, y, z, visibility);
-        }
-    }
-
-    // allocate/reallocate memory for mesh_order
-    // if old_mesh_count wasn't NULL previously
-    //     if old_mesh_count < mesh_count then
-    //         add indices counting upwards
-    //     else
-    //         go through mesh_order [0, old_mesh_count)
-    //         (this is possible because mesh_capacity never shrinks
-    //         and remove triangles that have indices >= mesh_count
-    if(old_alpha_capacity != alpha_pass->capacity || chunk_entry->mesh_order == NULL)
-    {
-        LAB_ASSUME(old_alpha_capacity <= alpha_pass->capacity);
-        // Never shrinks memory
-        LAB_TriangleOrder* mesh_order = LAB_ReallocN(chunk_entry->mesh_order, alpha_pass->capacity, sizeof*mesh_order);
-        if(!mesh_order)
-        {
-            // Memory error
-            // render without indices
-            LAB_Free(chunk_entry->mesh_order);
-            chunk_entry->mesh_order = NULL;
-            return;
-        }
-        chunk_entry->mesh_order = mesh_order;
-
-
-        LAB_BuildModelOrder(chunk_entry->mesh_order, alpha_pass->size);
-    }
-    else if(old_alpha_size != alpha_pass->size)
-    {
-        if(old_alpha_size < alpha_pass->size)
-        {
-            size_t index = 3*old_alpha_size;
-            for(size_t i = old_alpha_size; i < alpha_pass->size; ++i)
+            if(cnk3x3x3[X+Y+Z]->blocks[LAB_CHUNK_OFFSET(x, y, z)]->flags & LAB_BLOCK_VISUAL)
             {
-                chunk_entry->mesh_order[i].v[0] = index++;
-                chunk_entry->mesh_order[i].v[1] = index++;
-                chunk_entry->mesh_order[i].v[2] = index++;
-            }
-        }
-        else
-        {
-            // next empty slot
-            size_t j = 0;
-            size_t max = 3*alpha_pass->size;
-            for(size_t i = 0; i < old_alpha_size; ++i)
-            {
-                if(chunk_entry->mesh_order[i].v[0] < max)
-                {
-                    if(i!=j)
-                    {
-                        chunk_entry->mesh_order[j] = chunk_entry->mesh_order[i];
-                    }
-                    ++j;
-                }
-                else
-                {
-                    // Do nothing
-                }
+                LAB_ViewBuildMeshBlock(view, chunk_entry, cnk3x3x3, x, y, z, visibility);
             }
         }
     }
@@ -466,7 +380,7 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
         tri = LAB_ViewMeshAlloc(mesh, model->size, 0);
         if(LAB_UNLIKELY(tri == NULL)) return;
         int count = LAB_PutModelAt(tri, model, x, y, z, faces, visibility);
-        mesh->size -= model->size-count;
+        mesh->m_size -= model->size-count;
     }
     else if((view->cfg.flags&LAB_VIEW_FLAT_SHADE)||(block->flags&LAB_BLOCK_FLAT_SHADE))
     {
@@ -487,7 +401,7 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
         tri = LAB_ViewMeshAlloc(mesh, model->size, 0);
         if(LAB_UNLIKELY(tri == NULL)) return;
         int count = LAB_PutModelShadedAt(tri, model, x, y, z, faces, visibility, light_sides);
-        mesh->size -= model->size-count;
+        mesh->m_size -= model->size-count;
     }
     else
     {
@@ -557,7 +471,7 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
         tri = LAB_ViewMeshAlloc(mesh, model->size, 0);
         if(LAB_UNLIKELY(tri == NULL)) return;
         int count = LAB_PutModelSmoothShadedAt(tri, model, x, y, z, faces, visibility, (const LAB_Color(*)[4])light_sides);
-        mesh->size -= model->size-count;
+        mesh->m_size -= model->size-count;
     }
 
 
@@ -571,7 +485,7 @@ LAB_STATIC LAB_Triangle* LAB_ViewMeshAlloc(LAB_View_Mesh* mesh, size_t add_size,
 {
     size_t mesh_count, new_mesh_count, mesh_capacity;
 
-    mesh_count = mesh->size;
+    mesh_count = mesh->m_size;
     new_mesh_count = mesh_count+add_size;
     mesh_capacity = mesh->capacity;
 
@@ -588,7 +502,7 @@ LAB_STATIC LAB_Triangle* LAB_ViewMeshAlloc(LAB_View_Mesh* mesh, size_t add_size,
         mesh->data = mesh_data;
         mesh->capacity = mesh_capacity;
     }
-    mesh->size=new_mesh_count;
+    mesh->m_size=new_mesh_count;
 
     return &mesh->data[mesh_count];
 }
@@ -602,8 +516,26 @@ LAB_STATIC void LAB_ViewUploadVBO(LAB_View* view, LAB_View_Mesh* mesh)
         LAB_GL_ALLOC(glGenBuffers, 1, &mesh->vbo);
     }
 
+    mesh->vbo_size = mesh->m_size;
+
     glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
-    glBufferData(GL_ARRAY_BUFFER, mesh->size*sizeof *mesh_data, mesh_data, GL_DYNAMIC_DRAW);
+    //glBufferData(GL_ARRAY_BUFFER, mesh->vbo_size*sizeof *mesh_data, mesh_data, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, mesh->vbo_size*sizeof *mesh_data, mesh_data, GL_STATIC_DRAW);
+}
+
+LAB_STATIC bool LAB_View_ChunkNeedsUpdate(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
+{
+    if(!LAB_View_IsChunkInSight(view, chunk_entry->x, chunk_entry->y, chunk_entry->z))
+        return 0;
+
+    // TODO: enshure light update after at most 1 sec
+    if(     (chunk_entry->dirty&LAB_CHUNK_UPDATE_LOCAL)
+        ||  (chunk_entry->dirty&LAB_CHUNK_UPDATE_LIGHT)
+    )
+    {
+        return 1;
+    }
+    return 0;
 }
 
 LAB_STATIC bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
@@ -623,6 +555,7 @@ LAB_STATIC bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
     }
     #endif
 
+    #if 0
     // TODO: only build chunk if all neighbors are generated
     if(!LAB_View_IsChunkInSight(view, chunk_entry->x, chunk_entry->y, chunk_entry->z))
         return 0;
@@ -639,7 +572,8 @@ LAB_STATIC bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
         //|| ( chunk_entry->visible_faces!=visibility && (rand()&0x1f)==0) // some faces not hidden -> TODO: free memory
     )
     {
-        bool chunk_available = LAB_ViewBuildMesh(view, chunk_entry, view->world, visibility);
+    #endif
+        bool chunk_available = LAB_ViewBuildMesh(view, chunk_entry, view->world, 077);
         if(!chunk_available)
         {
             //chunk_entry->dirty = ~0;
@@ -660,36 +594,133 @@ LAB_STATIC bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
             //LAB_ViewUpdateChunk(view, chunk_entry);
 
         return 1;
+    #if 0
     }
     return 0;
+    #endif
 }
+
+
+LAB_STATIC void LAB_View_UpdateModelOrder(LAB_View* view, LAB_ViewChunkEntry* e)
+{
+    // allocate/reallocate memory for mesh_order
+    // if old_mesh_count wasn't NULL previously
+    //     if old_mesh_count < mesh_count then
+    //         add indices counting upwards
+    //     else
+    //         go through mesh_order [0, old_mesh_count)
+    //         (this is possible because mesh_capacity never shrinks
+    //         and remove triangles that have indices >= mesh_count
+
+
+
+    LAB_View_Mesh* alpha_pass = &e->render_passes[LAB_RENDER_PASS_ALPHA];
+
+    if(e->alpha_mesh_size != alpha_pass->vbo_size)
+    {
+        if(alpha_pass->vbo_size > e->alpha_mesh_capacity)
+        {
+            size_t mesh_capacity = e->alpha_mesh_capacity;
+            if(mesh_capacity == 0) mesh_capacity = 1<<3;
+            while(alpha_pass->vbo_size > mesh_capacity) mesh_capacity <<= 1;
+            // Never shrinks memory
+            LAB_TriangleOrder* mesh_order = LAB_ReallocN(e->mesh_order, mesh_capacity, sizeof*mesh_order);
+            if(!mesh_order)
+            {
+                // Memory error
+                // render without indices
+                LAB_Free(e->alpha_mesh_order);
+                e->mesh_order = NULL;
+                return;
+            }
+            e->alpha_mesh_order = mesh_order;
+            e->alpha_mesh_capacity = mesh_capacity;
+
+            /*e->alpha_mesh_size = alpha_pass->vbo_size;
+
+            LAB_BuildModelOrder(e->mesh_order, e->alpha_mesh_size);*/
+        }
+        
+        if(e->alpha_mesh_size != alpha_pass->vbo_size)
+        {
+            if(e->alpha_mesh_size < alpha_pass->vbo_size) // add additional indices
+            {
+                size_t index = 3*e->alpha_mesh_size;
+                for(size_t i = e->alpha_mesh_size; i < alpha_pass->vbo_size; ++i)
+                {
+                    e->mesh_order[i].v[0] = index++;
+                    e->mesh_order[i].v[1] = index++;
+                    e->mesh_order[i].v[2] = index++;
+                }
+                LAB_ASSERT(index == 3*alpha_pass->vbo_size);
+            }
+            else // remove indices greater than the new size
+            {
+                // next empty slot
+                size_t j = 0;
+                size_t max = 3*alpha_pass->vbo_size;
+                for(size_t i = 0; i < e->alpha_mesh_size; ++i)
+                {
+                    if(e->mesh_order[i].v[0] < max)
+                    {
+                        if(i!=j)
+                        {
+                            e->mesh_order[j] = e->mesh_order[i];
+                        }
+                        ++j;
+                    }
+                    else
+                    {
+                        // Do nothing
+                    }
+                }
+                LAB_ASSERT(j == alpha_pass->vbo_size);
+            }
+            e->alpha_mesh_size = alpha_pass->vbo_size;
+        }
+    }
+
+
+
+    // TODO lazy updating
+    if(e->mesh_order)
+    {
+        float cam[3];
+        cam[0] = view->x-e->x*16;
+        cam[1] = view->y-e->y*16;
+        cam[2] = view->z-e->z*16;
+        LAB_SortModelOrder(e->alpha_mesh_order, alpha_pass->data, e->alpha_mesh_size, cam); // TODO: what if size!=vbo_size
+    }
+}
+
 
 LAB_STATIC bool LAB_ViewUpdateChunk(LAB_View* view, LAB_ViewChunkEntry* e)
 {
     if(e->dirty & LAB_CHUNK_UPDATE_BLOCK)
         LAB_View_UpdateChunkSeethrough(view, e);
 
-    bool updated = LAB_ViewBuildChunk(view, e);
-
-    if(e->mesh_order && (updated || (rand()&0x1f) == 0))
-    //if(e->mesh_order)
+    
+    bool updated = false;
+    if(e->world_chunk && LAB_View_ChunkNeedsUpdate(view, e))
     {
-        // TODO move this section out of here
-        LAB_View_Mesh* alpha_pass = &e->render_passes[LAB_RENDER_PASS_ALPHA];
-        float cam[3];
-        cam[0] = view->x-e->x*16;
-        cam[1] = view->y-e->y*16;
-        cam[2] = view->z-e->z*16;
-        LAB_SortModelOrder(e->mesh_order, alpha_pass->data, alpha_pass->size, cam);
+        updated = LAB_ViewBuildChunk(view, e);
+        //e->update_pending = true;
+        //updated = LAB_WorldServer_PushChunkTask(view->server, LAB_PARITY_FROM_POS, e->world_chunk, LAB_CHUNK_STAGE_VIEW_MESH);
     }
+
+    if(!e->update_pending)
+        LAB_View_UpdateModelOrder(view, e);
     return updated;
 }
 
 
 LAB_STATIC int LAB_ViewUpdateChunks(LAB_View* view)
 {
+    //return 0;
+    //uint64_t stoptime = LAB_NanoSeconds() + 3500*1000; // 3.5 ms
+    uint64_t stoptime = LAB_NanoSeconds() + 1500*1000; // 3.5 ms
+    //uint64_t stoptime = LAB_NanoSeconds() +  500*1000; // 3.5 ms
     unsigned rest_update = view->cfg.max_update;
-    uint64_t nanos = LAB_NanoSeconds();
 
     int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
     int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
@@ -710,7 +741,7 @@ LAB_STATIC int LAB_ViewUpdateChunks(LAB_View* view)
            && (e->visible/* || !(rand() & 0x3f)*/))
             rest_update -= LAB_ViewUpdateChunk(view, e);
 
-        if(LAB_NanoSeconds() - nanos > 3500*1000) break; // 3.5 ms
+        if(stoptime < LAB_NanoSeconds()) break;
         if(!rest_update) break;
 
     }//);
@@ -720,7 +751,7 @@ LAB_STATIC int LAB_ViewUpdateChunks(LAB_View* view)
 LAB_STATIC bool LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_RenderPass pass)
 {
     LAB_View_Mesh* mesh = &chunk_entry->render_passes[pass];
-    if(mesh->size == 0)
+    if(mesh->vbo_size == 0)
         return 0;
 
     if(!chunk_entry->exist)
@@ -730,6 +761,11 @@ LAB_STATIC bool LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_en
     if(!LAB_View_IsChunkInSight(view, chunk_entry->x, chunk_entry->y, chunk_entry->z))
         return 0;
 
+    /*if(chunk_entry->render_delay)
+    {
+        chunk_entry->render_delay--;
+        return 0;
+    }*/
 
     if(view->cfg.flags & LAB_VIEW_USE_VBO)
     {
@@ -752,11 +788,12 @@ LAB_STATIC bool LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_en
 
     if(pass == LAB_RENDER_PASS_ALPHA && chunk_entry->mesh_order)
     {
-        glDrawElements(GL_TRIANGLES, 3*mesh->size, GL_UNSIGNED_INT, chunk_entry->mesh_order);
+        LAB_ASSERT(chunk_entry->alpha_mesh_size == mesh->vbo_size);
+        glDrawElements(GL_TRIANGLES, 3*mesh->vbo_size, GL_UNSIGNED_INT, chunk_entry->mesh_order);
     }
     else
     {
-        glDrawArrays(GL_TRIANGLES, 0, 3*mesh->size);
+        glDrawArrays(GL_TRIANGLES, 0, 3*mesh->vbo_size);
     }
     glPopMatrix();
 
@@ -822,44 +859,48 @@ LAB_STATIC void LAB_ViewRenderChunkGrids(LAB_View* view)
         if((e->x-px)*(e->x-px) + (e->y-py)*(e->y-py) + (e->z-pz)*(e->z-pz) <= dist_sq
            && e->sight_visible) // && LAB_View_IsChunkCompletelyInFrustum(view, e->x, e->y, e->z))
         {
-            int condition = 2;
-            switch(condition)
+            if(view->sorted_chunks[i].distance > 0.5)
             {
-                case 0:
+                //continue;
+                int condition = 2;
+                switch(condition)
                 {
-                    if(   e->neighbors[0] && e->neighbors[1]
-                       && e->neighbors[2] && e->neighbors[3]
-                       && e->neighbors[4] && e->neighbors[5]) continue;
-                } break;
-
-                case 1:
-                {
-                    bool has_mesh = false;
-                    for(int pass = 0; pass < LAB_RENDER_PASS_COUNT; ++pass)
+                    case 0:
                     {
-                        if(e->render_passes[pass].size)
+                        if(   e->neighbors[0] && e->neighbors[1]
+                        && e->neighbors[2] && e->neighbors[3]
+                        && e->neighbors[4] && e->neighbors[5]) continue;
+                    } break;
+
+                    case 1:
+                    {
+                        bool has_mesh = false;
+                        for(int pass = 0; pass < LAB_RENDER_PASS_COUNT; ++pass)
                         {
-                            has_mesh = true;
-                            break;
+                            if(e->render_passes[pass].vbo_size)
+                            {
+                                has_mesh = true;
+                                break;
+                            }
                         }
-                    }
-                    if(!has_mesh) continue;
-                } break;
+                        if(!has_mesh) continue;
+                    } break;
 
-                case 2:
-                {
-                    if(!e->dirty) continue;
-                } break;
+                    case 2:
+                    {
+                        if(!e->dirty) continue;
+                    } break;
 
-                case 3:
-                {
-                    if(e->exist) continue;
-                } break;
+                    case 3:
+                    {
+                        if(e->exist) continue;
+                    } break;
 
-                case 4:
-                {
-                    if(e->world_chunk) continue;
-                } break;
+                    case 4:
+                    {
+                        if(e->world_chunk) continue;
+                    } break;
+                }
             }
 
             float dx = LAB_CHUNK_SIZE*e->x;//-view->x;
@@ -883,6 +924,9 @@ LAB_STATIC void LAB_View_UploadChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_e
     if(!chunk_entry->exist)
         return;
 
+    if(chunk_entry->update_pending)
+        return;
+
     if(!LAB_View_IsChunkInSight(view, chunk_entry->x, chunk_entry->y, chunk_entry->z))
         return;
 
@@ -891,23 +935,40 @@ LAB_STATIC void LAB_View_UploadChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_e
     {
         LAB_View_Mesh* mesh = &chunk_entry->render_passes[i];
 
-        if(mesh->size == 0) continue;
+        if(mesh->m_size == 0)
+        {
+            if(mesh->vbo)
+            {
+                LAB_GL_FREE(glDeleteBuffers, 1, &mesh->vbo);
+                mesh->vbo = 0;
+                mesh->vbo_size = 0;
+            }
+            continue;
+        }
 
         LAB_ViewUploadVBO(view, mesh);
     }
+
+    LAB_View_UpdateModelOrder(view, chunk_entry);
+
+    //chunk_entry->render_delay = 20;
     chunk_entry->upload_vbo = 0;
 }
 
 LAB_STATIC void LAB_View_UploadChunks(LAB_View* view)
 {
+    LAB_Nanos stoptime = LAB_NanoSeconds() + 1000*1000;
+
     int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
     int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
     int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
 
     int dist_sq = view->cfg.render_dist*view->cfg.render_dist + 3;
     LAB_ViewChunkEntry* e;
-    HTL_HASHARRAY_EACH_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
+    //HTL_HASHARRAY_EACH_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
+    for(size_t i = 0; i < view->chunks.size; ++i)
     {
+        e = view->sorted_chunks[i].entry;
         int cx, cy, cz;
         cx = e->x;
         cy = e->y;
@@ -915,7 +976,9 @@ LAB_STATIC void LAB_View_UploadChunks(LAB_View* view)
         if((cx-px)*(cx-px) + (cy-py)*(cy-py) + (cz-pz)*(cz-pz) <= dist_sq
            && e->visible) // NOTE: when also invisible chunks are updated, this should be removed
             LAB_View_UploadChunk(view, e);
-    });
+
+        if(stoptime < LAB_NanoSeconds()) return;
+    }//);
 }
 
 
@@ -1600,6 +1663,8 @@ void LAB_ViewRender(LAB_View* view)
 
 void LAB_ViewRemoveDistantChunks(LAB_View* view)
 {
+    LAB_Nanos stoptime = LAB_NanoSeconds() + 500*1000;
+
     int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
     int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
     int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
@@ -1611,9 +1676,10 @@ void LAB_ViewRemoveDistantChunks(LAB_View* view)
     LAB_ViewChunkEntry* e;
     HTL_HASHARRAY_REMOVE_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
                                rest_unload && (e->x-px)*(e->x-px) + (e->y-py)*(e->y-py) + (e->z-pz)*(e->z-pz) > dist_sq,
-                               {
+    {
         LAB_ViewUnlinkChunk(view, e);
         --rest_unload;
+        if(stoptime < LAB_NanoSeconds()) break;
     });
 }
 
@@ -1688,11 +1754,12 @@ void LAB_ViewInvalidateEverything(LAB_View* view, int free_buffers)
         {
             for(int i = 0; i < LAB_RENDER_PASS_COUNT; ++i)
             {
-                unsigned* p_vbo = &e->render_passes[i].vbo;
-                if(*p_vbo)
+                LAB_View_Mesh* m = &e->render_passes[i];
+                if(m->vbo)
                 {
-                    LAB_GL_FREE(glDeleteBuffers, 1, p_vbo);
-                    *p_vbo = 0;
+                    LAB_GL_FREE(glDeleteBuffers, 1, &m->vbo);
+                    m->vbo = 0;
+                    m->vbo_size = 0;
                 }
             }
         });
@@ -1792,7 +1859,11 @@ LAB_STATIC void LAB_View_SortChunks(LAB_View* view, uint32_t delta_ms)
 
 void LAB_ViewTick(LAB_View* view, uint32_t delta_ms)
 {
+    LAB_PerfInfo_Push(view->perf_info, LAB_TG_VIEW_LOAD);
     LAB_ViewLoadNearChunks(view); // uses sorted_chunks
+    LAB_PerfInfo_Pop(view->perf_info);
+
+//    LAB_PerfInfo_Push(view->perf_info, LAB_TG_VIEW_UPDATE);
     //view->perf_info->current_time = LAB_NanoSeconds();
     LAB_ViewRemoveDistantChunks(view); // sorted_chunks has invalid content
     #if !LAB_VIEW_QUERY_IMMEDIATELY && LAB_VIEW_ENABLE_QUERY
@@ -1800,8 +1871,13 @@ void LAB_ViewTick(LAB_View* view, uint32_t delta_ms)
     #endif
     LAB_View_SortChunks(view, delta_ms); // sorted_chunks has valid content again
 
+    LAB_PerfInfo_Push(view->perf_info, LAB_TG_VIEW_UPDATE);
     int update_count = LAB_ViewUpdateChunks(view);
+    LAB_PerfInfo_Pop(view->perf_info);
     LAB_FpsGraph_SetSample(&view->perf_info->fps_graphs[LAB_TG_MESH], 32+update_count*2);
+
+
+    
     //LAB_FpsGraph_AddSample(&view->fps_graph, delta_ms);
     LAB_GuiManager_Tick(&view->gui_mgr);
     //LAB_View_SortChunks(view, delta_ms); // sorted_chunks has valid content again
@@ -2013,13 +2089,25 @@ LAB_STATIC void LAB_View_UpdateChunkSeethrough(LAB_View* view, LAB_ViewChunkEntr
     LAB_UNROLL(6)
     for(int face = 0; face < 6; ++face)
     {
-        const int  c = LAB_FACE_POSITIVE(face) ? 15 << (LAB_FACE_AXIS(face)*4) : 0;
-        const int da = LAB_AXF(face) | LAB_AYF(face)<<4 | LAB_AZF(face)<<8;
-        const int db = LAB_BXF(face) | LAB_BYF(face)<<4 | LAB_BZF(face)<<8;
+        const size_t  c = LAB_FACE_POSITIVE(face) ? 15 << (LAB_FACE_AXIS(face)*4) : 0;
+        const size_t da = LAB_AXF(face) | LAB_AYF(face)<<4 | LAB_AZF(face)<<8;
+        const size_t db = LAB_BXF(face) | LAB_BYF(face)<<4 | LAB_BZF(face)<<8;
 
-        for(int ib = 0, b = 0; ib < 16; ++ib, b+=db)
-        for(int ia = 0, a = 0; ia < 16; ++ia, a+=da)
+        #define AX_CNT(xyz) (!!((xyz)&0x00f) + !!((xyz)&0x0f0) + !!((xyz)&0xf00))
+        LAB_ASSERT(AX_CNT(c)  <= 1);
+        LAB_ASSERT(AX_CNT(da) == 1);
+        LAB_ASSERT(AX_CNT(db) == 1);
+        LAB_ASSERT(!(da&0x00f) || !(db&0x00f));
+        LAB_ASSERT(!(da&0x0f0) || !(db&0x0f0));
+        LAB_ASSERT(!(da&0xf00) || !(db&0xf00));
+        LAB_ASSERT(!(da&0x00f) || !(db&0x00f));
+        LAB_ASSERT(!(da&0x0f0) || !(db&0x0f0));
+        LAB_ASSERT(!(da&0xf00) || !(db&0xf00));
+
+        for(size_t ib = 0, b = 0; ib < 16; ++ib, b+=db)
+        for(size_t ia = 0, a = 0; ia < 16; ++ia, a+=da)
         {
+            LAB_ASSERT((c|a|b) < 16*16*16);
             if(!(chunk->blocks[c|a|b]->flags & LAB_BLOCK_OPAQUE))
             {
                 faces |= 1 << face;
@@ -2050,148 +2138,7 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
     int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
     int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
 
-#if 0
-    /**
 
-        pyramid index i;
-
-        8 Quadrants
-        the following are crosssections
-
-        x 0 0 0 | 0 0 0 x     x 0 0 0 | 0 0 0 x
-        3 x 0 0 | 0 0 x 1     3 x 0 0 | 0 0 x 1
-        3 3 x 0 | 0 x 1 1     3 3 y x | x y 1 1
-        3 3 3 y | y 1 1 1     3 3 x 4 | 4 x 1 1
-        --------+--------     --------+--------
-        3 3 3 y | y 1 1 1     3 3 x 4 | 4 x 1 1
-        3 3 x 2 | 2 x 1 1     3 3 y x | x y 1 1
-        3 x 2 2 | 2 2 x 1     3 x 2 2 | 2 2 x 1
-        x 2 2 2 | 2 2 2 x     x 2 2 2 | 2 2 2 x
-
-
-        x 0 0 0 | 0 0 0 x     y x x x | x x x y
-        3 y x x | x x y 1     x 4 4 4 | 4 4 4 x
-        3 x 4 4 | 4 4 x 1     x 4 4 4 | 4 4 4 x
-        3 x 4 4 | 4 4 x 1     x 4 4 4 | 4 4 4 x
-        --------+--------     --------+--------
-        3 x 4 4 | 4 4 x 1     x 4 4 4 | 4 4 4 x
-        3 x 4 4 | 4 4 x 1     x 4 4 4 | 4 4 4 x
-        3 y x x | x x y 1     x 4 4 4 | 4 4 4 x
-        x 2 2 2 | 2 2 2 x     y x x x | x x x y
-
-
-
-        Each sector consists of three pyramids
-        (with a right angle corner at each center of a surface
-         and the tip at the origin, the other corners are either
-         at the center of an edge of the cube or at the corner of
-         the cube, all three pyramids share that corner)
-        and 3 diagnoal triangular planes (x) connecting
-        those pyramids, there is a diagonal line (y)
-        at the intersection of all triangular planes
-
-        logically the xs are iterated twice and
-        the ys are iterated thrice
-        the plane is guarded, if i <
-        the line is guarded, if i is 0
-
-        a: the offset in the lower axis (ordering: x <<< y <<< z)
-           that is not the outward direction (r)
-        b: the offset in the higher axis
-    **/
-
-    int load_amount = view->load_amount; // should be configurable
-    int empty_load_amount = view->empty_load_amount;
-
-    for(int r = 0; r <= (int)view->preload_dist; ++r)
-    {
-        //for(int a = 0; a <= r/*+(i<=0)*/; ++a)
-        //for(int b = 0; b <= r/*+(i<=1)*/; ++b)
-        for(int i = 0; i <= r; ++i)
-        for(int j = 0; j <= i; ++j)
-        {
-            for(int k = 0; k <= 1; ++k)
-            {
-                int a, b;
-                if(k && i==j) break /*k*/;
-                a = k ? i : j;
-                b = k ? j : i;
-
-                for(int f = 0; f < 3; ++f)
-                {
-                    int x, y, z;
-                    switch(f)
-                    {
-                        case 0: x=r; y=a; z=b; break /*switch*/;
-                        case 1: x=a; y=b; z=r; break /*switch*/;
-                        case 2: x=b; y=r; z=a; break /*switch*/;
-                        default: LAB_UNREACHABLE();
-                    }
-                    for(int q = 0; q < 8; ++q)
-                    {
-                        // ~x == -x-1
-                        int xx, yy, zz;
-                        if(q&1 && x==0) continue; else xx = px+(q&1 ? -x : x);
-                        if(q&2 && y==0) continue; else yy = py+(q&2 ? -y : y);
-                        if(q&4 && z==0) continue; else zz = pz+(q&4 ? -z : z);
-
-                        //if(!LAB_View_IsChunkInSight(view, xx, yy, zz))
-                        if(!LAB_View_IsChunkPartlyInFrustum(view, xx, yy, zz))
-                        {
-                            LAB_ASSUME(r > 0);
-                            continue;
-                        }
-
-                        //if(r > 1 && !LAB_View_HasChunkVisibleNeighbors(view, xx, yy, zz))
-                        //    continue;
-
-                        LAB_ViewChunkEntry* entry = LAB_ViewFindChunkEntry(view, xx, yy, zz);
-                        if(entry == NULL)
-                        {
-                            entry = LAB_ViewNewChunkEntry(view, xx, yy, zz);
-                            if(entry == NULL) return; // NO MEMORY
-                            entry->dirty = ~0;
-                            --load_amount;
-                            LAB_ASSUME(!entry->exist);
-                        }
-                        if(!entry->exist)
-                        {
-                            entry->do_query = 1;
-                            #if 0
-                            LAB_GetChunk(view->world, xx, yy, zz, LAB_CHUNK_GENERATE_LATER);
-                            #else
-                            LAB_Chunk* chunk = LAB_GetChunk(view->world, xx, yy, zz, LAB_CHUNK_GENERATE);
-                            if(empty_load_amount)
-                            {
-                                int is_empty = 1;
-                                for(int c_i = 0; c_i < LAB_CHUNK_SIZE; ++c_i)
-                                {
-                                    if(chunk->blocks[c_i] != &LAB_BLOCK_AIR)
-                                    {
-                                        is_empty = 0;
-                                        break;
-                                    }
-                                }
-                                if(is_empty)
-                                {
-                                    load_amount++;
-                                    empty_load_amount--;
-                                }
-                            }
-                            #endif
-                            if(!load_amount) return;
-                        }
-
-                        //(void)LAB_GetChunk(view->world, -xx-1, yy, zz, LAB_CHUNK_GENERATE_LATER);
-                    }
-                    if(a==r) break /*f*/;
-                    if(b==r && f==1) break /*f*/;
-                }
-            }
-        }
-    }
-
-#else
     // to be able to use view->sorded_chunks to check for nearest non-loaded chunks
     // we need to save the size here, otherwise it might be one to big by the loading of
     // the local chunk
@@ -2226,13 +2173,11 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
     }
 
     int load_amount = view->cfg.load_amount; // should be configurable
-    //int empty_load_amount = view->cfg.empty_load_amount;
-
 
     LAB_Block* block = LAB_GetBlock(view->world, (int)floorf(view->x), (int)floorf(view->y), (int)floorf(view->z));
     bool is_xray = !!(block->flags & LAB_BLOCK_OPAQUE);
 
-    uint64_t begin_nanos = LAB_NanoSeconds();
+    uint64_t stoptime = LAB_NanoSeconds() + 2000*1000; // 2 ms
 
     for(int i = 0; i < sorted_size; ++i)
     {
@@ -2249,11 +2194,13 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
                 {
                     chunk->view_user = c;
                     c->world_chunk = chunk;
+
+                    c->exist = true; // TODO REMOVE AGAIN
                 }
                 else continue;
             }
             if(!load_amount) return;
-            if(LAB_NanoSeconds() - begin_nanos > 2500*1000) return; // 2.5 ms
+            if(stoptime < LAB_NanoSeconds()) return;
 
             int faces = LAB_OUTWARDS_FACES(c->x, c->y, c->z, px, py, pz);
             if(!is_xray) faces &= c->seethrough_faces;
@@ -2282,31 +2229,11 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
                 {
                     chunk->view_user = entry;
                     entry->world_chunk = chunk;
-                    /*
-                    if(empty_load_amount)
-                    {
-                        int is_empty = 1;
-                        for(int c_i = 0; c_i < LAB_CHUNK_SIZE; ++c_i)
-                        {
-                            if(chunk->blocks[c_i] != &LAB_BLOCK_AIR)
-                            {
-                                is_empty = 0;
-                                break;
-                            }
-                        }
-                        if(is_empty)
-                        {
-                            load_amount++;
-                            empty_load_amount--;
-                        }
-                    }
-                    */
                 }
                 if(!load_amount) return;
             });
         }
     }
-#endif
 }
 
 

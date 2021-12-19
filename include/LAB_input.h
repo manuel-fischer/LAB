@@ -21,6 +21,7 @@ typedef struct LAB_Input
     LAB_Block* selected_block;
 
     bool space_pressed;
+    bool graph_selected;
     uint32_t prev_space_down;
 } LAB_Input;
 

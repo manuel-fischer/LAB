@@ -266,8 +266,11 @@ bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
         LAB_Assets_NewTintedTexture(assets, tex, "light", LAB_RGBX(80ccff), LAB_RGBX(e0f0ff)); // LAB_RGBX(ddbe86)
         LAB_BlockLight_Init(assets, &LAB_BLOCK_COLD_LIGHT, tex, LAB_RGB(200, 230, 255));
 
-        LAB_Assets_NewTintedTexture(assets, tex, "light", LAB_RGB(16, 64, 255), LAB_RGBX(c0ffff));
+        LAB_Assets_NewTintedTexture(assets, tex, "light", LAB_RGB(16, 64, 255), LAB_RGBX(a0c0ff));
         LAB_BlockLight_Init(assets, &LAB_BLOCK_BLUE_LIGHT, tex, LAB_RGB(16, 64, 255));
+
+        LAB_Assets_NewTintedTexture(assets, tex, "light", LAB_RGB(16, 128, 255), LAB_RGBX(e0ffff));
+        LAB_BlockLight_Init(assets, &LAB_BLOCK_CYAN_LIGHT, tex, LAB_RGB(16, 128, 255));
 
         LAB_Assets_NewTintedTexture(assets, tex, "light", LAB_RGB(255, 240, 16), LAB_RGBX(ffffc0));
         LAB_BlockLight_Init(assets, &LAB_BLOCK_YELLOW_LIGHT, tex, LAB_RGB(255, 240, 16));

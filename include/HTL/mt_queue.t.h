@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include <SDL2/SDL_thread.h>
+//#include <SDL2/SDL_thread.h>
 
 typedef struct HTL_P(NAME)
 {

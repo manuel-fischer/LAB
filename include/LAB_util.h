@@ -80,7 +80,7 @@ bool LAB_MultOverflow(size_t a, size_t b)
 #endif
 }
 
-
+#define LAB_NANOS_MAX 0xffffffffffffffff
 typedef uint64_t LAB_Nanos;
 
 LAB_Nanos LAB_NanoSeconds();

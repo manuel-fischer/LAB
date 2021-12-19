@@ -1,22 +1,27 @@
 #pragma once
 
+#include "LAB_stdinc.h"
 #include "LAB_block.h"
+#include "LAB_chunk_pos.h"
 #include "LAB_light_node.h"
 #include "LAB_color.h"
 #include "LAB_crammed_chunk_pos_set.h"
+#include "LAB_rw_lock.h"
+
+#include "LAB_chunk_update.h"
 
 typedef struct LAB_World LAB_World;
 
-enum LAB_ChunkUpdate_Enum
+
+
+/*typedef enum LAB_ChunkFlags
 {
-    LAB_CHUNK_UPDATE_LIGHT = 1, // light changed, usually by neighboring chunk
-    LAB_CHUNK_UPDATE_BLOCK_ = 2, // block changed, usually in combination with light
-    LAB_CHUNK_UPDATE_BLOCK = 2+1,
-    LAB_CHUNK_UPDATE_LOCAL = 2+0*4, // the chunk itself has changed -> higher priority
-                                // when only the neighboring chunk had changed, the update
-                                // is not propagated (TODO)
-};
-typedef int LAB_ChunkUpdate;
+    LAB_CHUNK_GENERATED,
+    LAB_CHUNK_LIGHT_GENERATED,
+}
+LAB_ChunkFlags;*/
+
+
 
 #define LAB_CHUNK_SHIFT  4
 #define LAB_CHUNK_SIZE   (1 << LAB_CHUNK_SHIFT)
@@ -35,28 +40,91 @@ typedef int LAB_ChunkUpdate;
 #define LAB_FIELD(bits)
 #endif
 
-typedef struct LAB_Chunk
+
+#define LAB_CHUNK_MODIFIED          1
+
+#define LAB_CHUNK_BLOCKS            2
+#define LAB_CHUNK_BLOCKS_GENERATED  4
+#define LAB_CHUNK_LIGHT             8
+#define LAB_CHUNK_LIGHT_GENERATED  16
+
+typedef struct LAB_Chunk_Head
 {
-    LAB_Block*     blocks[LAB_CHUNK_LENGTH];
-    LAB_LightNode  light[LAB_CHUNK_LENGTH];
-    unsigned int dirty LAB_FIELD(8),
-                 modified LAB_FIELD(1),
-                 light_generated LAB_FIELD(1),
-                 empty LAB_FIELD(1), // usually set to 0, it is set to 1, if all blocks are air, TODO: this is tested, when the
-                          // the chunk is added to the list
-                          // this bit is only used for optimizations, it might not be set if all blocks are air
-                          // (when changed to this after generation)
-                          // alternative: air-counter, decreases if air got replaced by another block, increases if other block is replaced by air
-                          // 0 -> definitely empty
-                          // 1 -> might be empty, don't care
-                 generated LAB_FIELD(1), // chunk is completely generated and in a stable state
-                 pseudo LAB_FIELD(1); // chunk does not exist, this is a dummy chunk
-    LAB_CrammedChunkPosSet dirty_blocks; // used for updating light, set by world
-    LAB_CrammedChunkPosSet relit_blocks; // wich blocks are relit.
+    unsigned flags;
     int age;
     struct LAB_Chunk* _neighbors[6];
+
+} LAB_Chunk_Head;
+
+typedef struct LAB_Chunk_Blocks
+{
+    LAB_Block* blocks[LAB_CHUNK_LENGTH];
+} LAB_Chunk_Blocks;
+
+typedef struct LAB_Chunk_Light
+{
+    LAB_LightNode light[LAB_CHUNK_LENGTH];
+} LAB_Chunk_Light;
+
+
+
+typedef struct LAB_Chunk LAB_Chunk; // opaque
+
+typedef struct LAB_Chunk
+{
+    LAB_Block* _Atomic     blocks[LAB_CHUNK_LENGTH]; // not initialized
+    LAB_LightNode          light[LAB_CHUNK_LENGTH];  // not initialized
+
+    LAB_ChunkPos pos;
+
+    atomic_bool modified,
+         //light_generated,
+         empty; // usually set to 0, it is set to 1, if all blocks are air, TODO: this is tested, when the
+                // the chunk is added to the list
+                // this bit is only used for optimizations, it might not be set if all blocks are air
+                // (when changed to this after generation)
+                // alternative: air-counter, decreases if air got replaced by another block, increases if other block is replaced by air
+                // 0 -> definitely empty
+                // 1 -> might be empty, don't care
+         //generated, // chunk is completely generated and in a stable state
+         //pseudo; // chunk does not exist, this is a dummy chunk
+
+    _Atomic unsigned int dirty;
+
+    _Atomic LAB_CrammedChunkPosSet dirty_blocks; // used for updating light, set by world
+    _Atomic LAB_CrammedChunkPosSet relit_blocks; // wich blocks are relit.
+    _Atomic int dirty_neighbors;
+    _Atomic int relit_neighbors;
+
+    atomic_bool generated;
+    atomic_bool light_generated;
+
+
+    int age;
+    struct LAB_Chunk*_Atomic _neighbors[6];
     void* view_user; // managed by the view, non owning pointer, set to NULL when
+
+    // used by the world server to avoid accessing the same chunk from different
+    // threads, note that usually chunks with the same parity do not collide,
+    // only if it is the same chunk
+
+    // locked by the server mutex
+    bool is_accessed;
+
+
+    //atomic_size_t enqueue_count; // number of entries in the world task queue
+    // if queue_prev is NULL, the element is not enqueued
+    struct LAB_Chunk** queue_prev,* queue_next;
+    // Not initialized
+    size_t queue_timestamp;
+    unsigned int update_stage;
+    int update_parity, update_priority;
+
+
 } LAB_Chunk;
+
+LAB_STATIC_ASSUME(ATOMIC_POINTER_LOCK_FREE == 2, "Pointers should always be lock free");
+LAB_STATIC_ASSUME(sizeof(LAB_Chunk*) == sizeof(LAB_Chunk*_Atomic), "Atomic pointers should have the same size as normal pointers");
 
 typedef LAB_Chunk* (LAB_ChunkGenerator)(void* user, LAB_Chunk* chunk, int x, int y, int z);
 
@@ -65,7 +133,7 @@ typedef LAB_Chunk* (LAB_ChunkGenerator)(void* user, LAB_Chunk* chunk, int x, int
  *  Neighbors are all NULL
  *  Return NULL on failure
  */
-LAB_Chunk* LAB_CreateChunk(void);
+LAB_Chunk* LAB_CreateChunk(LAB_ChunkPos pos);
 
 /**
  *  Unlink neighbors and free chunk
@@ -77,7 +145,7 @@ void LAB_FillChunk(LAB_Chunk* chunk, LAB_Block* fill_block);
 
 
 LAB_INLINE
-LAB_Chunk* LAB_Chunk_Access(LAB_Chunk* chunk)
+LAB_Chunk* LAB_Chunk_Access(LAB_Chunk* chunk/*, LAB_ChunkFlags flags*/)
 {
     return chunk && chunk->generated ? chunk : NULL;
 }
@@ -100,3 +168,13 @@ void LAB_Chunk_Connect(LAB_Chunk* a, int face, LAB_Chunk* b)
     a->_neighbors[face  ] = b;
     b->_neighbors[face^1] = a;
 }
+
+
+void LAB_Chunk_LockRead(LAB_Chunk* chunk);
+void LAB_Chunk_UnlockRead(LAB_Chunk* chunk);
+void LAB_Chunk_LockWrite(LAB_Chunk* chunk);
+void LAB_Chunk_UnlockWrite(LAB_Chunk* chunk);
+
+// write in the center, read in the neighbors
+void LAB_Chunk_LockNeighbors(LAB_Chunk* chunks[27]);
+void LAB_Chunk_UnlockNeighbors(LAB_Chunk* chunks[27]);

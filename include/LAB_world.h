@@ -32,6 +32,7 @@
 typedef struct LAB_World LAB_World;
 
 typedef void(LAB_IView_ChunkViewer)(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update);
+typedef void(LAB_IView_ChunkMesh)(void* user, LAB_World* world, LAB_Chunk* chunk);
 typedef bool(LAB_IView_ChunkKeeper)(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z);
 typedef void(LAB_IView_ChunkUnlinker)(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z);
 typedef void(LAB_IView_Position)(void* user, LAB_World* world, LAB_OUT double xyz[3]);
@@ -39,6 +40,7 @@ typedef void(LAB_IView_Position)(void* user, LAB_World* world, LAB_OUT double xy
 typedef struct LAB_IView
 {
     LAB_IView_ChunkViewer* chunkview;
+    LAB_IView_ChunkMesh* chunkmesh;
     LAB_IView_ChunkKeeper* chunkkeep;
     LAB_IView_ChunkUnlinker* chunkunlink;
     LAB_IView_Position* position;
@@ -75,6 +77,8 @@ typedef struct LAB_World
     //LAB_LightUpdateQueue light_queue;
 
     LAB_PerfInfo* perf_info;
+
+    int px, py, pz; // TODO change this
 } LAB_World;
 
 

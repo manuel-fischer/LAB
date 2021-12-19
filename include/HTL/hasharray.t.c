@@ -24,13 +24,15 @@ HTL_DEF HTL_P(ENTRY_TYPE)* HTL_MEMBER(Locate)(HTL_P(NAME)* hasharray, HTL_P(KEY_
     size_t i;
     HTL_P(ENTRY_TYPE)* entry;
 
-    for(i = hashid; i < hasharray->capacity; ++i)
+    size_t dbg_probe = 0;
+
+    for(i = hashid; i < hasharray->capacity; ++i, ++dbg_probe)
     {
         entry = &hasharray->table[i];
         if(!HTL_MEMBER(IsEntry)(hasharray, entry))           goto EMPTY_ENTRY_FOUND;
         if(HTL_P(COMP_FUNC)(key, HTL_P(KEY_FUNC)(entry))==0) goto ENTRY_FOUND;
     }
-    for(i = 0; /*i < hashid*/; ++i)
+    for(i = 0; /*i < hashid*/; ++i, ++dbg_probe)
     {
         entry = &hasharray->table[i];
         if(!HTL_MEMBER(IsEntry)(hasharray, entry))           goto EMPTY_ENTRY_FOUND;
@@ -42,6 +44,7 @@ ENTRY_FOUND:
     hasharray->cached_entry = entry;
 #endif
 EMPTY_ENTRY_FOUND:
+    if(dbg_probe > hasharray->dbg_max_probe) hasharray->dbg_max_probe = dbg_probe;
     return entry;
 }
 
@@ -70,6 +73,7 @@ HTL_DEF HTL_P(ENTRY_TYPE)* HTL_MEMBER(PutAlloc)(HTL_P(NAME)* hasharray, HTL_P(KE
 
         hasharray->table = new_table;
         hasharray->capacity = new_capacity;
+        hasharray->dbg_max_probe = 0;
         //hasharray->size = hasharray->size;
 
 #if HTL_HASHARRAY_CACHE_LAST

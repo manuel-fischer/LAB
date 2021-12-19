@@ -326,8 +326,10 @@ int LAB_TickLight_GetLight(LAB_Chunk*const chunks[27], int quadrant, bool init, 
 
 // return faces that changed
 LAB_STATIC LAB_HOT
-void LAB_TickLight_ProcessQuadrant(LAB_Chunk*const chunks[27], int quadrant, bool init, LAB_Color default_color)
+LAB_CCPS LAB_TickLight_ProcessQuadrant(LAB_Chunk*const chunks[27], int quadrant, bool init, LAB_Color default_color)
 {
+    LAB_CCPS relit_blocks = 0;
+
     LAB_Chunk* ctr_cnk = chunks[1+3+9];
     LAB_ASSERT(ctr_cnk);
     LAB_PULL_CONST(int, c_init, 2, init)
@@ -381,13 +383,13 @@ void LAB_TickLight_ProcessQuadrant(LAB_Chunk*const chunks[27], int quadrant, boo
                 //c = LAB_AddColor(c, LAB_MulColor(cf, LAB_RGBX(555555)));
             }
 
-            if(init || ctr_cnk->light[block_index].quadrants[quadrant] != c)
+            if(c_init || ctr_cnk->light[block_index].quadrants[quadrant] != c)
             {
                 ctr_cnk->light[block_index].quadrants[quadrant] = c;
-                ctr_cnk->relit_blocks |= LAB_CCPS_Pos(x&15, y&15, z&15);
+                relit_blocks |= LAB_CCPS_Pos(x&15, y&15, z&15);
 
                 
-                LAB_UNROLL(3)
+                /*LAB_UNROLL(3)
                 for(int i = 0; i < 3; ++i)
                 {
                     int xyz[3] = {x, y, z};
@@ -397,10 +399,11 @@ void LAB_TickLight_ProcessQuadrant(LAB_Chunk*const chunks[27], int quadrant, boo
                     cnk = LAB_GetNeighborhoodRef(chunks, xyz[0], xyz[1], xyz[2], &block_index_ignored);
                     if(cnk && cnk != ctr_cnk)
                         cnk->dirty |= LAB_CHUNK_UPDATE_LIGHT;
-                }
+                }*/
             }
         }
     }
+    return relit_blocks;
 }
 
 
@@ -409,12 +412,11 @@ void LAB_TickLight_ProcessQuadrant(LAB_Chunk*const chunks[27], int quadrant, boo
 LAB_HOT                                                // TODO: |--------------------| not used
 void LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, int cz)
 {
-
-
     //static int i = 0;
     //printf("LAB_TickLight %i @ %i %i %i\n", i++, cx, cy, cz);
     LAB_Chunk* ctr_cnk = chunks[1+3+9];
-    if(!ctr_cnk) return;
+    //if(!ctr_cnk) return;
+    LAB_ASSERT(ctr_cnk);
 
     for(int i = 0; i < 27; ++i)
     {
@@ -423,27 +425,50 @@ void LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy,
     }
 
 #if 0
-    for(int i = 0; i < 16*16*16; ++i)
+    if(ctr_cnk->light_generated)
     {
-        for(int q = 0; q < 8; ++q)
+        int i = 0;
+        for(int z = 0; z < 16; ++z)
+        for(int y = 0; y < 16; ++y)
+        for(int x = 0; x < 16; ++x, ++i)
         {
-            ctr_cnk->light[i].quadrants[q] = ctr_cnk->blocks[i]->dia;
+            for(int q = 0; q < 8; ++q)
+            {
+                if(ctr_cnk->light[i].quadrants[q] != ctr_cnk->blocks[i]->dia)
+                {
+                    ctr_cnk->relit_blocks |= LAB_CCPS_Pos(x, y, z);
+                    ctr_cnk->light[i].quadrants[q] = ctr_cnk->blocks[i]->dia;
+                }
+            }
         }
     }
+    else
+    {
+        for(int i = 0; i < 16*16*16; ++i)
+        {
+            for(int q = 0; q < 8; ++q)
+            {
+                ctr_cnk->light[i].quadrants[q] = ctr_cnk->blocks[i]->dia;
+            }
+        }
+    }
+    ctr_cnk->relit_blocks = ~0;
+    ctr_cnk->light_generated = true;
     return;
 #endif
 
     LAB_Color default_color_above = cy < -2 ? LAB_RGB(16, 16, 16) : LAB_RGB(255, 255, 255);
     LAB_Color default_color = cy < 0 ? LAB_RGB(16, 16, 16) : LAB_RGB(255, 255, 255);
 
-    ctr_cnk->relit_blocks = 0;
+    LAB_CCPS relit_blocks = 0;
 
     for(int i = 0; i < 8; ++i)
     {
         LAB_Color default_c = i & 2 ? default_color : default_color_above;
-        LAB_TickLight_ProcessQuadrant(chunks, i, !ctr_cnk->light_generated, default_c);
+        relit_blocks |= LAB_TickLight_ProcessQuadrant(chunks, i, !ctr_cnk->light_generated, default_c);
     }
     
+    ctr_cnk->relit_blocks |= relit_blocks;
     ctr_cnk->light_generated = true;
 }
 

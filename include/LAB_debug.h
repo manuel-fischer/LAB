@@ -48,7 +48,9 @@
 
 // TODO remove ASSUME
 #define LAB_ASSERT(cond) LAB_ASSUME2("assertion", cond, #cond)
+#define LAB_ASSERT_EQ(a, b) LAB_ASSUME2("assertion", (a) == (b), #a " == " #b)
 #define LAB_ASSUME(cond) LAB_ASSUME2("assumption", cond, #cond)
+#define LAB_ASSERT_FALSE(msg) (LAB_ASSUME2("assertion", false, msg), LAB_UNREACHABLE())
 #define LAB_PRECONDITION(cond) LAB_ASSUME2("precondition", cond, #cond)
 #define LAB_POSTCONDITION(cond) LAB_ASSUME2("postcondition", cond, #cond)
 

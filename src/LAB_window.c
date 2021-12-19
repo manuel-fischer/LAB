@@ -38,7 +38,7 @@ int LAB_Window_Create(LAB_Window* window, int w, int h, uint32_t sdl_flags)
     //  0 for immediate updates,
     //  1 for updates synchronized with the vertical retrace,
     // -1 for adaptive vsync
-    #if 0
+    #if 1
     SDL_GL_SetSwapInterval(0);
     #else
     if(SDL_GL_SetSwapInterval(-1) < 0) // Adaptive VSync

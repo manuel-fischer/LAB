@@ -143,7 +143,7 @@ int main(int argc, char** argv)
         .max_update = 100,
         .max_unload = 20,
 
-        .load_amount = 100,
+        .load_amount = INT_MAX,//100,
         .empty_load_amount = 5,
     };
 
@@ -180,12 +180,17 @@ int main(int argc, char** argv)
     gen.overworld.seed = 58925789342573489;
     //gen.overworld.seed = 78434678123467586;
     //gen.overworld.seed = 7823489034819884932;
+    gen.overworld.seed = 123456789;
+    gen.overworld.seed = 1234567890123456789;
+    gen.overworld.seed = 9876543210;
     the_world.chunkgen      = &LAB_GenOverworldProc;
     the_world.chunkgen_user = &gen.overworld;
     #endif
     LAB_ObjCopy(&the_world.cfg, &world_cfg);
     the_world.perf_info = &perf_info;
     LAB_client.view.perf_info = &perf_info;
+
+    LAB_client.view.server = &world_server;
 
     LAB_GL_CHECK();
 
@@ -235,7 +240,9 @@ int main(int argc, char** argv)
         LAB_PerfInfo_Tick(&perf_info);
 
         LAB_PerfInfo_Next(&perf_info, LAB_TG_INPUT);
+        //LAB_WorldServer_Lock(&world_server);
         LAB_Input_Tick(&LAB_client.input, delta_ms);
+        //LAB_WorldServer_Unlock(&world_server);
 
         LAB_PerfInfo_Next(&perf_info, LAB_TG_WORLD);
         //LAB_WorldServer_Tick(&world_server);
@@ -243,12 +250,47 @@ int main(int argc, char** argv)
         //LAB_WorldTick(&the_world, delta_ms,    NULL, NULL);
 
         LAB_PerfInfo_Next(&perf_info, LAB_TG_VIEW);
+        //LAB_WorldServer_Lock(&world_server);
         LAB_ViewTick(&LAB_client.view, delta_ms);
+        //LAB_WorldServer_Unlock(&world_server);
 
         LAB_PerfInfo_Next(&perf_info, LAB_TG_NONE);
 
 
         LAB_FpsGraph_SetSample(&perf_info.fps_graphs[LAB_TG_WHOLE], delta_ms);
+
+        //LAB_DbgPrintf("Completed Cycles: %i\n", world_server.completed_cycles);
+        //LAB_DbgPrintf("Completed MTTasks: %i\n", world_server.completed_mainthread);
+        //LAB_DbgPrintf("Max Age: %i\n", world_server.max_age);
+        //LAB_DbgPrintf("Task Count: %i\n", world_server.task_count);
+        
+        #ifndef NDEBUG
+        LAB_WorldServer_Lock(&world_server);
+
+        int divW = the_world.chunks.size ? the_world.chunks.size : 1;
+        int divV = LAB_client.view.chunks.size ? LAB_client.view.chunks.size : 1;
+        LAB_DbgPrintf("\rMax Age:%5i, Task Count:%5i, MTTasks:%5i, "
+                        "WChunks:%5i, In Queue: %3i%%, WProbe: %i (%i%%), "
+                        "VChunks:%5i, VProbe: %i (%i%%)                    ",
+                      world_server.max_age,
+                      world_server.task_count,
+                      world_server.completed_mainthread,
+                      the_world.chunks.size,
+                      world_server.task_count*100 / divW,
+                      
+                      the_world.chunks.dbg_max_probe,
+                      the_world.chunks.dbg_max_probe*100 / divW,
+                      
+                      LAB_client.view.chunks.size,
+                      LAB_client.view.chunks.dbg_max_probe,
+                      LAB_client.view.chunks.dbg_max_probe*100 / divV);
+
+        LAB_ASSERT(world_server.task_count <= the_world.chunks.size);
+        LAB_WorldServer_Unlock(&world_server);
+        #endif
+
+        int den = world_server.max_age+1+2;
+        LAB_client.view.cfg.load_amount = (200+(rand()%den))/(den);
     }
 
 

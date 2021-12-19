@@ -20,6 +20,8 @@ typedef struct HTL_P(NAME)
 #if HTL_HASHARRAY_CACHE_LAST
     HTL_P(ENTRY_TYPE)* cached_entry; // last requested entry, not thread safe
 #endif
+
+    size_t dbg_max_probe;
 } HTL_P(NAME);
 
 

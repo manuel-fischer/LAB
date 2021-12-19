@@ -18,7 +18,11 @@ typedef struct LAB_ViewChunkEntry
     //unsigned vbos[LAB_RENDER_PASS_COUNT];
 
     LAB_View_Mesh render_passes[LAB_RENDER_PASS_COUNT];
-    LAB_TriangleOrder* mesh_order; // for LAB_RENDER_PASS_ALPHA
+    LAB_TriangleOrder* alpha_mesh_order; // for LAB_RENDER_PASS_ALPHA
+    size_t             alpha_mesh_size;
+    size_t             alpha_mesh_capacity;
+
+    //size_t render_delay;
 
     struct LAB_ViewChunkEntry* neighbors[6]; // - make table entries to pointers, remove occupied flag
                                              // - point to neighbor entries here,
@@ -44,6 +48,8 @@ typedef struct LAB_ViewChunkEntry
                                  // visible ==> sight_visible <==> ~sight_visible ==> ~visible
              do_query:1,         // visibility unknown, a query should be submitted
              upload_vbo:1;       // vbos changed, need reupload, gets set to 0 in last render pass
+
+    atomic_bool update_pending;  // chunk is going to be remeshed
 
     unsigned pad:1;
     unsigned visible_faces:6; // the faces that are currently rendered

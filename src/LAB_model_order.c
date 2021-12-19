@@ -2,7 +2,7 @@
 
 #include "LAB_debug.h"
 
-void LAB_BuildModelOrder(LAB_TriangleOrder* order, size_t triangle_count)
+/*void LAB_BuildModelOrder(LAB_TriangleOrder* order, size_t triangle_count)
 {
     // interpret as array of indices, because
     // LAB_TriangleOrder consists of three uint32_t which are
@@ -13,7 +13,7 @@ void LAB_BuildModelOrder(LAB_TriangleOrder* order, size_t triangle_count)
     {
         v[i] = i;
     }
-}
+}*/
 
 // fill `order` with distance data
 LAB_STATIC void LAB_PrepareSortModelOrder(LAB_TriangleOrder* order, LAB_Triangle const* mesh,

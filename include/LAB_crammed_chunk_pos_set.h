@@ -47,12 +47,12 @@ LAB_CCPS LAB_CCPS_Pos(int x, int y, int z)
     return bits;
 }
 
-LAB_PURE LAB_INLINE
+/*LAB_PURE LAB_INLINE
 LAB_CCPS LAB_CCPS_AddPos(LAB_CCPS set, int x, int y, int z)
 {
     set |= LAB_CCPS_Pos(x, y, z);
     return set;
-}
+}*/
 
 LAB_PURE LAB_INLINE
 bool LAB_CCPS_HasPos(LAB_CCPS set, int x, int y, int z)
@@ -95,7 +95,13 @@ int LAB_CCPS_Neighborhood(LAB_CCPS set)
                       | ((LAB_CCPS)(z==0)<<0 | (LAB_CCPS)(z==2)<<15) << 32;
         bits |= (int)((set&mask)==mask) << i;
     }
-    LAB_ASSUME(i == 27);
+    LAB_ASSERT(i == 27);
+    LAB_ASSERT(bits & 1 << (1+3+9));
+    if(!set)
+    {
+        //bits &= ~(1 << (1+3+9));
+        bits -= 1 << (1+3+9);
+    }
     return bits;
 }
 

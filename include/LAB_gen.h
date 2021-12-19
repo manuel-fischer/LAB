@@ -42,7 +42,7 @@ LAB_INLINE void LAB_Placer_SetBlockIfBlock(LAB_Placer* p, int x, int y, int z, L
 
     if(xx<16 && yy<16 && zz<16)
     {
-        LAB_Block** b = &p->chunk->blocks[xx|yy<<4|zz<<8];
+        LAB_Block*_Atomic* b = &p->chunk->blocks[xx|yy<<4|zz<<8];
         if(*b == replace)
             *b = block;
     }

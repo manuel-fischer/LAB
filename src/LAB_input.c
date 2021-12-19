@@ -98,6 +98,15 @@ int LAB_Input_OnEvent_Proc(void* user, LAB_Window* window, SDL_Event* event)
         case SDL_KEYDOWN:
         {
             SDL_Keycode key = ((SDL_KeyboardEvent*)event)->keysym.sym;
+            const Uint8* kbstate = SDL_GetKeyboardState(NULL);
+
+            if(SDLK_0 <= key && key <= SDLK_9)
+            {
+                if(kbstate[SDL_SCANCODE_F3])
+                {
+                    input->graph_selected = true;
+                }
+            }
 
             switch(key)
             {
@@ -114,10 +123,8 @@ int LAB_Input_OnEvent_Proc(void* user, LAB_Window* window, SDL_Event* event)
                 case SDLK_i:
                 {
                     view->az += key == SDLK_u ? -1 : 1;
-                    int siz;
-                    const uint8_t* state = SDL_GetKeyboardState(&siz);
                     int other_scancode = (key+(SDL_SCANCODE_U-SDLK_u))^(SDL_SCANCODE_U^SDL_SCANCODE_I);
-                    if(state[other_scancode]) view->az = 0;
+                    if(kbstate[other_scancode]) view->az = 0;
                 } break;
 
                 #if 1
@@ -142,6 +149,15 @@ int LAB_Input_OnEvent_Proc(void* user, LAB_Window* window, SDL_Event* event)
         case SDL_KEYUP:
         {
             SDL_Keycode key = ((SDL_KeyboardEvent*)event)->keysym.sym;
+            //const Uint8* kbstate = SDL_GetKeyboardState(NULL);
+
+            if(SDLK_0 <= key && key <= SDLK_9)
+            {
+                if(input->graph_selected)
+                {
+                    LAB_PerfInfo_Toggle(view->perf_info, key-SDLK_0);
+                }
+            }
 
             switch(key)
             {
@@ -270,7 +286,10 @@ int LAB_Input_OnEvent_Proc(void* user, LAB_Window* window, SDL_Event* event)
 
                 case SDLK_F3:
                 {
-                    view->cfg.flags ^= LAB_VIEW_SHOW_FPS_GRAPH;
+                    if(input->graph_selected)
+                        input->graph_selected = false;
+                    else
+                        view->cfg.flags ^= LAB_VIEW_SHOW_FPS_GRAPH;
 
                 } break;
 
@@ -460,10 +479,9 @@ void LAB_Input_Tick(LAB_Input* input, uint32_t delta_ms)
 
     if(view->gui_mgr.component == NULL)
     {
-        int kbstate_size;
-        const Uint8* kbstate = SDL_GetKeyboardState(&kbstate_size);
+        const Uint8* kbstate = SDL_GetKeyboardState(NULL); // simple load
         int mx, my;
-        Uint32 mbstate = SDL_GetMouseState(&mx, &my);
+        Uint32 mbstate = SDL_GetMouseState(&mx, &my); // simple load
 
         if(kbstate[SDL_SCANCODE_C])
             view->fov_factor = view->fov_factor*0.95 + 0.3*0.05;

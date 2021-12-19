@@ -13,3 +13,13 @@
 #include <string.h>  // strlen
 #include <stdbool.h> // bool, true, false
 #include <time.h>    // clock_gettime
+
+
+#ifdef __STDC_NO_ATOMICS__
+#error Atomics should be available to compile LAB
+#endif
+#include <stdatomic.h>
+
+#if !ATOMIC_POINTER_LOCK_FREE
+//#warning Atomic pointers should be lock free
+#endif

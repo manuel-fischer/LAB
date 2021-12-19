@@ -5,13 +5,14 @@
 #include "LAB_util.h"
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdatomic.h>
 
 #ifndef NDEBUG
-static size_t mem_allocs = 0;
-static size_t mem_relocs = 0;
-static size_t mem_frees = 0;
-static size_t mem_fails = 0;
-static ptrdiff_t mem_checksum = 0; // all pointers xored together
+static atomic_size_t mem_allocs = 0;
+static atomic_size_t mem_relocs = 0;
+static atomic_size_t mem_frees = 0;
+static atomic_size_t mem_fails = 0;
+static atomic_ptrdiff_t mem_checksum = 0; // all pointers xored together
 
 LAB_STATIC void LAB_DbgMemPrint(const char* format, const char* file, int line, ...);
 

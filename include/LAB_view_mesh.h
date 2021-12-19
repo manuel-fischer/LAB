@@ -2,12 +2,16 @@
 
 #include "LAB_attr.h"
 
+//#define m_size size
+
+// If capacity == 0/data == NULL, the data might be changed in another thread
 typedef struct LAB_View_Mesh
 {
-    size_t size, capacity;
+    size_t m_size, capacity;
     LAB_Triangle* data;
 
     unsigned vbo;
+    size_t vbo_size;
 } LAB_View_Mesh;
 
 

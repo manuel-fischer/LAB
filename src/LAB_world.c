@@ -50,6 +50,7 @@ void LAB_DestructWorld(LAB_World* world)
 }
 
 
+#if 0
 LAB_STATIC LAB_Chunk* LAB_GenerateNotifyChunk(LAB_World* world, int x, int y, int z)
 {
     LAB_ASSERT(false);
@@ -113,6 +114,7 @@ LAB_STATIC LAB_Chunk* LAB_GenerateNotifyChunk(LAB_World* world, int x, int y, in
 
     return chunk;
 }
+#endif
 
 
 LAB_STATIC
@@ -144,7 +146,7 @@ LAB_Chunk* LAB_GenerateChunk(LAB_World* world, int x, int y, int z)
     if(entry->chunk) // chunk generated or generating
         return LAB_Chunk_Access(entry->chunk);
 
-    LAB_Chunk* chunk = LAB_CreateChunk();
+    LAB_Chunk* chunk = LAB_CreateChunk(pos);
     if(chunk == NULL) // TODO Out of memory
     {
         LAB_ChunkTBL_Discard(&world->chunks, entry);
@@ -238,7 +240,7 @@ void LAB_GetChunkNeighbors(LAB_Chunk* center_chunk, LAB_Chunk* chunks[27])
 
 
 
-void LAB_UpdateChunk(LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update)
+/*void LAB_UpdateChunk(LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update)
 {
     LAB_ASSERT(LAB_Chunk_Access(chunk));
 
@@ -273,7 +275,7 @@ void LAB_UpdateChunk(LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LA
             chunks[i]->relit_blocks = 0;
         }
     }
-}
+}*/
 
 
 void LAB_UpdateChunkLater(LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update)
@@ -303,7 +305,7 @@ void LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_Block* block)
     //LAB_NotifyChunkLater(world, cx, cy, cz);
     chunk->modified = 1;
     if(block != &LAB_BLOCK_AIR) chunk->empty = 0;
-    chunk->dirty_blocks = LAB_CCPS_AddPos(chunk->dirty_blocks, x&LAB_CHUNK_MASK, y&LAB_CHUNK_MASK, z&LAB_CHUNK_MASK);
+    chunk->dirty_blocks |= LAB_CCPS_Pos(x&LAB_CHUNK_MASK, y&LAB_CHUNK_MASK, z&LAB_CHUNK_MASK);
     LAB_UpdateChunkLater(world, chunk, cx, cy, cz, LAB_CHUNK_UPDATE_BLOCK);
 }
 
@@ -438,6 +440,7 @@ typedef struct LAB_UpdatePQ_Entry { int table_index; int distance; } LAB_UpdateP
 #include "HTL/prio_queue.t.c"
 #undef HTL_PARAM
 
+#if 0
 LAB_STATIC void LAB_World_UpdateChunks(LAB_World* world, uint32_t delta_ms, uint64_t nanos)
 {
     double view_pos[3];
@@ -487,22 +490,33 @@ LAB_STATIC void LAB_World_UpdateChunks(LAB_World* world, uint32_t delta_ms, uint
     }
     LAB_UpdatePQ_Destroy(&q);
 }
+#endif
 
 
 void LAB_WorldTick(LAB_World* world, uint32_t delta_ms, void(*cb)(void*), void* cb_user)
 {
-    uint64_t nanos = LAB_NanoSeconds();
+    //uint64_t nanos = LAB_NanoSeconds();
+
+
+
+    double view_pos[3];
+    LAB_ASSERT(world->view);
+    world->view->position(world->view_user, world, view_pos);
+    world->px = LAB_Sar(LAB_FastFloorF2I(view_pos[0]), LAB_CHUNK_SHIFT);
+    world->py = LAB_Sar(LAB_FastFloorF2I(view_pos[1]), LAB_CHUNK_SHIFT);
+    world->pz = LAB_Sar(LAB_FastFloorF2I(view_pos[2]), LAB_CHUNK_SHIFT);
+
 
     // update chunks
-    LAB_World_UpdateChunks(world, delta_ms, nanos);
+//    LAB_World_UpdateChunks(world, delta_ms, nanos);
 
     // generate chunks
-    size_t rest_gen = world->cfg.max_gen;
+    //size_t rest_gen = world->cfg.max_gen;
     // TODO
     //LAB_ChunkPosQueue_Print(&world->gen_queue);
     //printf("         \r");
 
-    if(!cb)
+    /*if(!cb)
     {
         while(!LAB_ChunkPosQueue_IsEmpty(&world->gen_queue))
         {
@@ -513,7 +527,7 @@ void LAB_WorldTick(LAB_World* world, uint32_t delta_ms, void(*cb)(void*), void* 
             if(LAB_NanoSeconds() - nanos > 5000*1000) break; // 5 ms
             if(--rest_gen == 0) break;
         }
-    }
+    }*/
 
     if(cb) cb(cb_user);
 
@@ -538,7 +552,11 @@ void LAB_WorldTick(LAB_World* world, uint32_t delta_ms, void(*cb)(void*), void* 
                 cx = entry->pos.x;
                 cy = entry->pos.y;
                 cz = entry->pos.z;
-                bool keep = world->view->chunkkeep(world->view_user, world, chunk, cx, cy, cz); // DBG
+                bool keep = /*chunk->enqueue_count != 0
+                         ||*/ world->view->chunkkeep(world->view_user, world, chunk, cx, cy, cz); // DBG
+
+                keep = true; // TODO remove
+
                 if(keep)
                 {
                     chunk->age = 0;
