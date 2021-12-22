@@ -10,7 +10,8 @@ static LAB_Color LAB_time_graph_colors[LAB_TG_COUNT] =
     [LAB_TG_VIEW                ] = LAB_RGB(128, 128, 255),
     [LAB_TG_VIEW_RENDER         ] = LAB_RGB(255,  32, 128),
     [LAB_TG_VIEW_RENDER_UPLOAD  ] = LAB_RGB(255,   0, 255),
-    [LAB_TG_VIEW_RENDER_QUERY   ] = LAB_RGB(  0,   0,   0),
+//    [LAB_TG_VIEW_RENDER_QUERY   ] = LAB_RGB(  0,   0,   0),
+    [LAB_TG_OUT_OF_LOOP         ] = LAB_RGB(  0,   0,   0),
     [LAB_TG_MESH                ] = LAB_RGB( 32, 192, 192),
 
     [LAB_TG_VIEW_LOAD           ] = LAB_RGB(192, 192, 192),

@@ -20,22 +20,22 @@
 
 
 
-int LAB_ConstructWorld(LAB_World* world)
+int LAB_World_Create(LAB_World* world)
 {
     LAB_OBJ(LAB_ChunkTBL_Create(&world->chunks),
             LAB_ChunkTBL_Destroy(&world->chunks),
 
-    LAB_OBJ(LAB_ChunkPosQueue_Create(&world->gen_queue, LAB_MAX_LOAD_CHUNK),
-            LAB_ChunkPosQueue_Destroy(&world->gen_queue),
+    LAB_OBJ(LAB_ChunkBufQueue_Create(&world->gen_queue, LAB_MAX_LOAD_CHUNK),
+            LAB_ChunkBufQueue_Destroy(&world->gen_queue),
             
     return 1;
     ););
     return 0;
 }
 
-void LAB_DestructWorld(LAB_World* world)
+void LAB_World_Destroy(LAB_World* world)
 {
-    LAB_ChunkPosQueue_Destroy(&world->gen_queue);
+    LAB_ChunkBufQueue_Destroy(&world->gen_queue);
     for(size_t i = 0; i < world->chunks.capacity; ++i)
     {
         LAB_World_ChunkEntry* entry = &world->chunks.table[i];
@@ -153,11 +153,10 @@ LAB_Chunk* LAB_GenerateChunk(LAB_World* world, int x, int y, int z)
         return NULL;
     }
 
-    LAB_ChunkPos* request;
-    request = LAB_ChunkPosQueue_PushBack(&world->gen_queue);
+    LAB_Chunk** request;
+    request = LAB_ChunkBufQueue_PushBack(&world->gen_queue);
     if(request != NULL) {
-        *request = pos;
-        // request->chunk = chunk;
+        *request = chunk;
         
         entry->pos = pos;
         entry->chunk = chunk;
@@ -168,74 +167,6 @@ LAB_Chunk* LAB_GenerateChunk(LAB_World* world, int x, int y, int z)
         LAB_ChunkTBL_Discard(&world->chunks, entry);
     }
     return NULL;
-}
-
-void LAB_GetChunkNeighbors(LAB_Chunk* center_chunk, LAB_Chunk* chunks[27])
-{
-    LAB_ASSERT(center_chunk);
-    LAB_ASSERT(LAB_Chunk_Access(center_chunk));
-
-    #define NEIGHBOR(x, y, z) (chunks[(x)+3*(y)+9*(z)])
-    #define NEIGHBOR_FACE(x, y, z, face) LAB_Chunk_Neighbor(NEIGHBOR(x, y, z), face)
-    //#define NEIGHBOR_FACE(x, y, z, face)  (NEIGHBOR(x, y, z)?NEIGHBOR(x, y, z)->neighbors[face]:NULL)
-
-    NEIGHBOR(1, 1, 1) = center_chunk;
-    LAB_UNROLL(6)
-    for(int f = 0; f < 6; ++f)
-    {
-        NEIGHBOR(1+LAB_OX(f), 1+LAB_OY(f), 1+LAB_OZ(f)) = NEIGHBOR_FACE(1, 1, 1, f);
-    }
-
-
-    int i = 0;
-    for(int z = 0; z < 3; ++z)
-    for(int y = 0; y < 3; ++y)
-    for(int x = 0; x < 3; ++x, ++i)
-    {
-        LAB_ASSUME(i == x+3*y+9*z);
-        if((i&1) && i != 1+3+9)
-        {
-            if(x == 1)
-            {
-                if(!(chunks[i] = NEIGHBOR_FACE(1, 1, z, 1<<1^0^y>>1)))
-                     chunks[i] = NEIGHBOR_FACE(1, y, 1, 2<<1^0^z>>1);
-            }
-            else if(y == 1)
-            {
-                if(!(chunks[i] = NEIGHBOR_FACE(1, 1, z, 0<<1^0^x>>1)))
-                     chunks[i] = NEIGHBOR_FACE(x, 1, 1, 2<<1^0^z>>1);
-            }
-            else
-            {
-                LAB_ASSUME(z == 1);
-
-                if(!(chunks[i] = NEIGHBOR_FACE(1, y, 1, 0<<1^0^x>>1)))
-                     chunks[i] = NEIGHBOR_FACE(x, 1, 1, 1<<1^0^y>>1);
-            }
-        }
-    }
-
-    i = 0;
-    for(int z = 0; z < 3; z+=2, i+=6)
-    for(int y = 0; y < 3; y+=2, i+=2)
-    for(int x = 0; x < 3; x+=2, i+=2)
-    {
-        LAB_ASSUME(i == x+3*y+9*z);
-        if(!(chunks[i] = NEIGHBOR_FACE(1, y, z, 0<<1^0^x>>1)))
-        if(!(chunks[i] = NEIGHBOR_FACE(x, 1, z, 1<<1^0^y>>1)))
-             chunks[i] = NEIGHBOR_FACE(x, y, 1, 2<<1^0^z>>1);
-
-    }
-
-    #ifndef NDEBUG
-
-        for(int k = 0; k < 27; ++k)
-            if(chunks[k]) LAB_ASSERT(LAB_Chunk_Access(chunks[k]));
-
-    #endif
-
-    #undef NEIGHBOR_FACE
-    #undef NEIGHBOR
 }
 
 
@@ -493,88 +424,12 @@ LAB_STATIC void LAB_World_UpdateChunks(LAB_World* world, uint32_t delta_ms, uint
 #endif
 
 
-void LAB_WorldTick(LAB_World* world, uint32_t delta_ms, void(*cb)(void*), void* cb_user)
+void LAB_WorldTick(LAB_World* world)
 {
-    //uint64_t nanos = LAB_NanoSeconds();
-
-
-
     double view_pos[3];
     LAB_ASSERT(world->view);
     world->view->position(world->view_user, world, view_pos);
     world->px = LAB_Sar(LAB_FastFloorF2I(view_pos[0]), LAB_CHUNK_SHIFT);
     world->py = LAB_Sar(LAB_FastFloorF2I(view_pos[1]), LAB_CHUNK_SHIFT);
     world->pz = LAB_Sar(LAB_FastFloorF2I(view_pos[2]), LAB_CHUNK_SHIFT);
-
-
-    // update chunks
-//    LAB_World_UpdateChunks(world, delta_ms, nanos);
-
-    // generate chunks
-    //size_t rest_gen = world->cfg.max_gen;
-    // TODO
-    //LAB_ChunkPosQueue_Print(&world->gen_queue);
-    //printf("         \r");
-
-    /*if(!cb)
-    {
-        while(!LAB_ChunkPosQueue_IsEmpty(&world->gen_queue))
-        {
-            LAB_ChunkPos* pos;
-            pos = LAB_ChunkPosQueue_Front(&world->gen_queue);
-            LAB_GenerateNotifyChunk(world, pos->x, pos->y, pos->z);
-            LAB_ChunkPosQueue_PopFront(&world->gen_queue);
-            if(LAB_NanoSeconds() - nanos > 5000*1000) break; // 5 ms
-            if(--rest_gen == 0) break;
-        }
-    }*/
-
-    if(cb) cb(cb_user);
-
-
-    //world->perf_info->current_time = LAB_NanoSeconds();
-
-    //printf("chunks updated %3i/%3i (cap %i)\r", (int)(world->max_update-rest_update), (int)world->chunks.size, (int)world->max_update);
-
-    // Unload chunks
-    for(size_t i = 0; i < world->chunks.capacity; ++i)
-    {
-        // TODO: remove chunkkeep hook, instead add callback to get
-        //       position(s) and distance(s), multiple to be considered, if there are multiple views
-        LAB_World_ChunkEntry* entry = &world->chunks.table[i];
-        LAB_Chunk* chunk = entry->chunk;
-        if(LAB_Chunk_Access(chunk))
-        {
-            chunk->age++;
-            if(chunk->age >= LAB_MAX_CHUNK_AGE && !chunk->modified)
-            {
-                int cx, cy, cz;
-                cx = entry->pos.x;
-                cy = entry->pos.y;
-                cz = entry->pos.z;
-                bool keep = /*chunk->enqueue_count != 0
-                         ||*/ world->view->chunkkeep(world->view_user, world, chunk, cx, cy, cz); // DBG
-
-                keep = true; // TODO remove
-
-                if(keep)
-                {
-                    chunk->age = 0;
-                }
-                else
-                {
-                    // Only entries after this entry are changed, another entry
-                    // might be moved into this entry, the array itself is not
-                    // reallocated when removing entries
-                    //printf("Unload chunk %i %i %i\n", cx, cy, cz);
-                    if(chunk->view_user) world->view->chunkunlink(world->view_user, world, chunk, cx, cy, cz);
-                    LAB_DestroyChunk(chunk);
-                    LAB_ChunkTBL_RemoveEntry(&world->chunks, &world->chunks.table[i]);
-                    --i; // repeat index
-//                    if(LAB_NanoSeconds() - nanos > 6000*1000) break; // 6 ms
-//                    if(LAB_NanoSeconds() - nanos > 3500*1000) break; // 3.5 ms
-                }
-            }
-        }
-    }
 }

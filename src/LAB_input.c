@@ -24,6 +24,8 @@
 #include "LAB_ext.h"
 #include "LAB_util.h"
 
+#include "LAB_world_server.h"
+
 #include "LAB_blocks.h" // for inventory
 
 LAB_STATIC int  LAB_Input_Interact(LAB_Input* input, int button);
@@ -295,28 +297,34 @@ int LAB_Input_OnEvent_Proc(void* user, LAB_Window* window, SDL_Event* event)
 
                 case SDLK_F4:
                 {
-                    view->cfg.flags ^= LAB_VIEW_USE_VBO;
-                    LAB_DbgPrintf("VBO turned %s\n", "off\0on"+4*!!(view->cfg.flags & LAB_VIEW_USE_VBO));
-                    LAB_ViewInvalidateEverything(view, /*free_buffers*/1);
+                    //view->cfg.flags ^= LAB_VIEW_USE_VBO;
+                    //LAB_DbgPrintf("VBO turned %s\n", "off\0on"+4*!!(view->cfg.flags & LAB_VIEW_USE_VBO));
+                    //LAB_ViewInvalidateEverything(view, /*free_buffers*/1);
 
                 } break;
 
                 case SDLK_F6:
                 {
+                    LAB_WorldServer_Lock(view->server);
                     view->cfg.flags ^= LAB_VIEW_BRIGHTER;
                     LAB_ViewInvalidateEverything(view, /*free_buffers*/0);
+                    LAB_WorldServer_Unlock(view->server);
 
                 } break;
                 case SDLK_F7:
                 {
+                    LAB_WorldServer_Lock(view->server);
                     view->cfg.flags ^= LAB_VIEW_FLAT_SHADE;
                     LAB_ViewInvalidateEverything(view, /*free_buffers*/0);
+                    LAB_WorldServer_Unlock(view->server);
 
                 } break;
 
                 case SDLK_F10:
                 {
+                    LAB_WorldServer_Lock(view->server);
                     LAB_View_Clear(view);
+                    LAB_WorldServer_Unlock(view->server);
                 } break;
 
                 case SDLK_F11:
@@ -441,7 +449,9 @@ LAB_STATIC int LAB_Input_Interact(LAB_Input* input, int button)
         {
             case SDL_BUTTON_LEFT:
             {
+                //LAB_WorldServer_Lock(view->server);
                 LAB_SetBlock(view->world, target[0], target[1], target[2], &LAB_BLOCK_AIR);
+                //LAB_WorldServer_Unlock(view->server);
             } break;
 
             case SDL_BUTTON_RIGHT:
@@ -584,13 +594,17 @@ void LAB_Input_Tick(LAB_Input* input, uint32_t delta_ms)
 
     if(input->flags & LAB_VIEWINPUT_NOCLIP)
     {
-        view->vx *= 0.95;
-        view->vy *= 0.95;
-        view->vz *= 0.95;
+        const double c = pow(0.95, 0.9*60.f);
 
-        view->vx += dx*0.5;
-        view->vy += dy*0.5;
-        view->vz += dz*0.5;
+        float dt = (float)delta_ms*(1.f/1000.f);
+        double m = pow(c, dt);
+        view->vx *= m;
+        view->vy *= m;
+        view->vz *= m;
+
+        view->vx += dx*(0.5*60)*dt;
+        view->vy += dy*(0.5*60)*dt;
+        view->vz += dz*(0.5*60)*dt;
 
         view->x += view->vx;
         view->y += view->vy;

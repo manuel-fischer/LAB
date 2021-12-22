@@ -14,6 +14,7 @@
 #include "LAB_texture_atlas.h"
 
 #include "LAB_view_chunk.h"
+#include "LAB_view_array.h"
 #include "LAB_htl_config.h"
 
 
@@ -146,12 +147,14 @@ typedef struct LAB_View
     int on_ground;
 
     // Cache
-    LAB_View_ChunkTBL chunks;
+    //LAB_View_ChunkTBL chunks;
+    //SDL_mutex* tbl_mutex;
 
     // sorted from near to far chunks
-    size_t sorted_chunks_capacity;
-    LAB_ViewSortedChunkEntry* sorted_chunks;
+    //size_t sorted_chunks_capacity;
+    //LAB_ViewSortedChunkEntry* sorted_chunks;
 
+    LAB_ViewArray chunk_array;
 
     LAB_World* world;
 
@@ -176,6 +179,13 @@ typedef struct LAB_View
 
     GLdouble projection_mat[16], modelview_mat[16], modlproj_mat[16];
 
+    GLuint upload_time_query;
+    LAB_Nanos upload_time;
+    size_t upload_amount;
+    size_t current_upload_amount;
+
+    size_t delete_index;
+
 } LAB_View;
 
 const LAB_IView LAB_view_interface;
@@ -183,26 +193,23 @@ const LAB_IView LAB_view_interface;
 /**
  *  Create view, with given world
  */
-bool LAB_ConstructView(LAB_View* view, LAB_World* world, LAB_TexAtlas* atlas);
+bool LAB_View_Create(LAB_View* view, LAB_World* world, LAB_TexAtlas* atlas);
 
 /**
  *  Destruct view
  *  The view can be filled with 0 bytes
  */
-void LAB_DestructView(LAB_View* view);
+void LAB_View_Destroy(LAB_View* view);
 void LAB_View_SetWorld(LAB_View* view, LAB_World* world);
 
 void LAB_View_Clear(LAB_View* view);
 
 
-void LAB_ViewChunkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update);
-bool LAB_ViewChunkKeepProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z);
-void LAB_ViewChunkUnlinkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z);
 void LAB_ViewRenderProc(void* user, LAB_Window* window);
+
 
 void LAB_ViewRender(LAB_View* view);
 
-LAB_ViewChunkEntry* LAB_ViewGetChunkEntry(LAB_View* view, int x, int y, int z);
 void LAB_ViewInvalidateEverything(LAB_View* view, int free_buffers);
 
 void LAB_ViewGetDirection(LAB_View* view, LAB_OUT float dir[3]);

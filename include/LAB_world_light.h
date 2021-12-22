@@ -5,4 +5,4 @@
 /**
  *  Return face bitset of faces of the chunk cube that were touched
  */
-void LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27], int cx, int cy, int cz);
+void LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27]);

@@ -3,7 +3,9 @@
 #include "LAB_obj.h"
 #include "LAB_world.h"
 #include "LAB_world_light.h"
+#include "LAB_chunk_neighborhood.h"
 #include "LAB_opt.h"
+#include "LAB_thread.h"
 
 LAB_STATIC int LAB_WorldServer_ThreadRoutine(void* vsrv);
 
@@ -87,7 +89,7 @@ LAB_ChunkCallback LAB_ChunkStageCallback(int update)
 
 
 LAB_STATIC
-int LAB_UpdateParity_From(LAB_ChunkPos p)
+LAB_UpdateParity LAB_UpdateParity_From(LAB_ChunkPos p)
 {
     return (p.x&1) | (p.y&1) << 1 | (p.z&1) << 2;
 }
@@ -112,9 +114,11 @@ bool LAB_WorldServer_Create(LAB_WorldServer* srv,
 
     srv->parity = LAB_PARITY_000;
     srv->threads_parity = worker_count;
-    srv->rest_parity = LAB_PARITY_TASK_COUNT;
+    srv->parity_task_count = worker_count*8;
+    srv->rest_parity = srv->parity_task_count;
     srv->stop = false;
     srv->pause = false;
+    srv->main_waiting = false;
     srv->threads_paused = 0;
     srv->update_pointer = 0;
 
@@ -122,15 +126,15 @@ bool LAB_WorldServer_Create(LAB_WorldServer* srv,
     srv->completed_cycles_thrd = 0;
     srv->completed_mainthread = 0;
 
+    srv->runtime = 0;
+    srv->runtime_computed = 0;
+
     srv->task_count = 0;
 
     for(size_t i = 0; i < LAB_PARITY_COUNT; ++i)
     for(size_t j = 0; j < LAB_CHUNK_PRIORITIES; ++j)
-        LAB_ChunkQueue_Create(&srv->tasks[i][j]);
+        LAB_ChunkQueue_Create(&srv->tasks[i][j]); // Don't need to be destroyed
 
-    /*LAB_OBJ_FOR(p, LAB_PARITY_COUNT*LAB_CHUNK_PRIORITIES,
-                LAB_ChunkQueue_Create(&(*srv->tasks)[p]),
-                LAB_ChunkQueue_Destroy(&(*srv->tasks)[p]),*/
     LAB_OBJ_SDL(srv->mutex = SDL_CreateMutex(),
                 SDL_DestroyMutex(srv->mutex),
     LAB_OBJ(LAB_DbgAtHalt(LAB_SDL_LockMutexV, srv->mutex),
@@ -139,6 +143,8 @@ bool LAB_WorldServer_Create(LAB_WorldServer* srv,
                 SDL_DestroyCond(srv->update),
     LAB_OBJ_SDL(srv->paused = SDL_CreateCond(),
                 SDL_DestroyCond(srv->paused),
+    LAB_OBJ_SDL(srv->finished = SDL_CreateCond(),
+                SDL_DestroyCond(srv->finished),
     LAB_OBJ(srv->workers = LAB_MallocN(worker_count, sizeof(*srv->workers)),
             LAB_Free(srv->workers),
     LAB_OBJ_FOR2(i, worker_count,
@@ -149,7 +155,7 @@ bool LAB_WorldServer_Create(LAB_WorldServer* srv,
                  
     {
             return true;
-    }););););););
+    });););););););
     return false;
 }
 
@@ -169,46 +175,50 @@ void LAB_WorldServer_Destroy(LAB_WorldServer* srv)
     SDL_DestroyCond(srv->paused);
     SDL_DestroyCond(srv->update);
     SDL_DestroyMutex(srv->mutex);
-
-    //for(size_t i = 0; i < LAB_PARITY_COUNT; ++i)
-    //for(size_t j = 0; j < LAB_CHUNK_PRIORITIES; ++j)
-    //    LAB_ChunkQueue_Destroy(&srv->tasks[i][j]);
 }
 
 
 void LAB_WorldServer_SendStop(LAB_WorldServer* srv)
 {
-    SDL_LockMutex(srv->mutex);
+    LAB_ASSERT(LAB_IsMainThread());
+
+    LAB_SDL_LockMutex(srv->mutex);
     srv->stop = true;
-    SDL_UnlockMutex(srv->mutex);
-    SDL_CondBroadcast(srv->update);
+    LAB_SDL_UnlockMutex(srv->mutex);
+    LAB_SDL_CondBroadcast(srv->update);
 }
 
 
 int LAB_WorldServer_ThreadRoutine(void* vsrv)
 {
+    LAB_ASSERT(!LAB_IsMainThread());
+
     LAB_WorldServer* srv = vsrv;
 
     LAB_UpdateParity own_parity = srv->parity;
     bool has_finished_parity = false;
+    bool process_none_parity = false;
 
-    SDL_LockMutex(srv->mutex);
+    LAB_Nanos prev = LAB_NanoSeconds();
+
+    LAB_SDL_LockMutex(srv->mutex);
     while(true)
     {
 
         if(srv->pause)
         {
             srv->threads_paused++;
-            SDL_CondSignal(srv->paused);
+            if(srv->threads_paused == srv->worker_count)
+                LAB_SDL_CondSignal(srv->paused);
             while(srv->pause && !srv->stop)
-                SDL_CondWait(srv->update, srv->mutex);
+                LAB_SDL_CondWait(srv->update, srv->mutex);
 
             srv->threads_paused--;
         }
 
         if(srv->stop)
         {
-            SDL_UnlockMutex(srv->mutex);
+            LAB_SDL_UnlockMutex(srv->mutex);
             return 0;
         }
 
@@ -227,7 +237,12 @@ int LAB_WorldServer_ThreadRoutine(void* vsrv)
         // check if parity has more tasks
         if(!has_finished_parity)
         {
-            if(LAB_ChunkQueues_AllEmpty(qs)) srv->rest_parity = 0;
+            
+            if(LAB_ChunkQueues_AllEmpty(qs))
+            {
+                //if(srv->rest_parity && srv->rest_parity != 88) LAB_DbgPrintf("REST PARITY %i\n", srv->rest_parity);
+                srv->rest_parity = 0;
+            }
 
             if(!srv->rest_parity)
             {
@@ -239,41 +254,94 @@ int LAB_WorldServer_ThreadRoutine(void* vsrv)
                     // go on to the next parity
 
                     srv->threads_parity = srv->worker_count;
-                    srv->rest_parity = LAB_PARITY_TASK_COUNT;
+                    srv->rest_parity = srv->parity_task_count;
 
-                    // Next parity
-                    srv->parity++;
-                    if(srv->parity&8) srv->completed_cycles_thrd++;
-                    srv->parity&=7;
+                    // Next nonempty parity or next parity
+                    bool empty = false;
+                    while(true)
+                    {
+                        srv->parity++;
+                        if(srv->parity >= 8)
+                        {
+                            srv->completed_cycles_thrd++;
+                            srv->parity &= 7;
+                        }
+                        if(srv->parity == own_parity)
+                        {
+                            srv->parity++;
+                            srv->parity &= 7;
+                            empty = true;
+                            break;
+                        }
 
-                    own_parity = srv->parity;
+                        if(!LAB_ChunkQueues_AllEmpty(srv->tasks[srv->parity]))
+                            break;
+                    }
+
                     // keep has_finished_parity = false;                
 
-                    SDL_CondBroadcast(srv->update);
+                    if(!empty)
+                    {
+                        own_parity = srv->parity;
+                        LAB_SDL_CondBroadcast(srv->update);
+                        continue;
+                    }
+                    else
+                    {
+                        //LAB_SDL_CondWait(srv->update, srv->mutex);
+                        //has_finished_parity = true;
+                        own_parity = srv->parity;
+                        LAB_SDL_CondBroadcast(srv->update);
+                        process_none_parity = true;
+                        //continue;
+                    }
 
-                    continue;
                 }
                 else
                 {
                     has_finished_parity = true;
                 }
             }
+            else
+            {
+                srv->rest_parity--;
+            }
         }
 
 
-        if(has_finished_parity)
+        if(has_finished_parity || process_none_parity)
         {
+            process_none_parity = false;
             qs = srv->tasks[LAB_PARITY_NONE];
+            if(LAB_ChunkQueues_AllEmpty(qs))
+            {
+                bool all_parities_empty = true;
+                for(int i = 0; i < 8; ++i)
+                    if(!LAB_ChunkQueues_AllEmpty(srv->tasks[i]))
+                    {
+                        all_parities_empty = false;
+                        break;
+                    }
+                    
+                if(all_parities_empty)
+                    LAB_SDL_CondWait(srv->update, srv->mutex);
+                else
+                {
+                    LAB_SDL_UnlockMutex(srv->mutex);
+                    LAB_SDL_CondBroadcast(srv->update);
+                    LAB_SDL_LockMutex(srv->mutex);
+                }
+                continue;
+            }
         }
 
 
-        if(LAB_ChunkQueues_AllEmpty(qs))
+        LAB_ASSERT(!LAB_ChunkQueues_AllEmpty(qs));
+        /*if(LAB_ChunkQueues_AllEmpty(qs))
         {
-            SDL_CondWait(srv->update, srv->mutex);
-            //SDL_UnlockMutex(srv->mutex);
-            //SDL_LockMutex(srv->mutex);
+            LAB_SDL_CondWait(srv->update, srv->mutex);
             continue;
-        }
+        }*/
         
         
         int priority = LAB_ChunkQueues_NextQueue(qs);
@@ -287,27 +355,47 @@ int LAB_WorldServer_ThreadRoutine(void* vsrv)
             // such that this is safe
             LAB_ChunkQueue_PushBack(&qs[priority], chunk);
             //LAB_DbgPrintf("Reenqued\n");
-            SDL_UnlockMutex(srv->mutex);
+            LAB_SDL_UnlockMutex(srv->mutex);
             // TODO wait
-            SDL_LockMutex(srv->mutex);
+            LAB_SDL_LockMutex(srv->mutex);
             continue;
         }
         int update_stage = chunk->update_stage;
         chunk->update_stage = 0;
         chunk->is_accessed = true;
-        SDL_UnlockMutex(srv->mutex);
+        LAB_SDL_UnlockMutex(srv->mutex);
+
+        LAB_Nanos start = LAB_NanoSeconds();
 
         LAB_ChunkCallback cb = LAB_ChunkStageCallback(update_stage);
         cb(srv, chunk, chunk->pos, NULL);
 
-        SDL_LockMutex(srv->mutex);
-        //LAB_DbgPrintf("Finished\n");
-        
-        //task.chunk->enqueue_count--;
+        LAB_Nanos end = LAB_NanoSeconds();
+        LAB_Nanos comp = end-start;
+        LAB_Nanos cycle = end-prev;
+        prev = end;
+
+        LAB_SDL_LockMutex(srv->mutex);
 
         chunk->is_accessed = false;
 
         srv->task_count--;
+
+        srv->runtime += cycle;
+        srv->runtime_computed += comp;
+
+        if(srv->runtime > 1000*1000*1000) // all 1 sec
+        {
+            srv->runtime >>= 1;
+            srv->runtime_computed >>= 1;
+        }
+
+        if(srv->main_waiting)
+        {
+            LAB_SDL_UnlockMutex(srv->mutex);
+            LAB_SDL_CondSignal(srv->finished);
+            LAB_SDL_LockMutex(srv->mutex);
+        }
     }
 }
 
@@ -315,6 +403,8 @@ int LAB_WorldServer_ThreadRoutine(void* vsrv)
 
 void LAB_WorldServer_Tick(LAB_WorldServer* srv)
 {
+    LAB_ASSERT(LAB_IsMainThread());
+
     uint64_t stoptime = LAB_NanoSeconds() + 1000*1000;
 
     if(LAB_WorldServer_LockTimeout(srv, 1000*1000))
@@ -327,24 +417,20 @@ void LAB_WorldServer_Tick(LAB_WorldServer* srv)
 
     LAB_WorldServer_StartTasks(srv);
 
-    SDL_LockMutex(srv->mutex);
+    LAB_SDL_LockMutex(srv->mutex);
     srv->completed_cycles = srv->completed_cycles_thrd;
     srv->completed_cycles_thrd = 0;
-    SDL_UnlockMutex(srv->mutex);
+    LAB_SDL_UnlockMutex(srv->mutex);
     srv->timestamp++;
 }
-
-void LAB_WorldServer_TickV(void* vsrv)
-{
-    LAB_WorldServer_Tick((LAB_WorldServer*)vsrv);
-}
-
 
 
 
 LAB_STATIC
 void LAB_WorldServer_RunMainthreadTasks(LAB_WorldServer* srv, LAB_Nanos stop)
 {
+    LAB_ASSERT(LAB_IsMainThread());
+
     // Collect results
     #ifndef NDEBUG
     {
@@ -368,19 +454,14 @@ void LAB_WorldServer_RunMainthreadTasks(LAB_WorldServer* srv, LAB_Nanos stop)
         {
             return;
         }
-        //LAB_DbgPrintf("SPIN\n");
         
         LAB_Chunk* chunk = LAB_ChunkQueues_PopFront(qs);
         int update_stage = chunk->update_stage;
         chunk->update_stage = 0;
         LAB_ASSERT(!chunk->is_accessed);
 
-        //SDL_UnlockMutex(srv->mutex);
-
         LAB_ChunkCallback cb = LAB_ChunkStageCallback(update_stage);
         cb(srv, chunk, chunk->pos, NULL);
-
-        //SDL_LockMutex(srv->mutex);
 
         LAB_ASSERT(!chunk->is_accessed);
         srv->completed_mainthread++;
@@ -392,6 +473,8 @@ void LAB_WorldServer_RunMainthreadTasks(LAB_WorldServer* srv, LAB_Nanos stop)
 LAB_STATIC
 void LAB_WorldServer_StartTasks(LAB_WorldServer* srv)
 {
+    LAB_ASSERT(LAB_IsMainThread());
+
     srv->max_age = 0;
 
     LAB_Nanos stoptime = LAB_NanoSeconds() + 1000*1000;
@@ -399,7 +482,7 @@ void LAB_WorldServer_StartTasks(LAB_WorldServer* srv)
         size_t i0 = srv->update_pointer;
         size_t i = i0;
         LAB_ChunkTBL* tbl = &srv->world->chunks;
-        //for(size_t i = 0; i < tbl->capacity; ++i)
+
         if(tbl->size)
         for(;;)
         {
@@ -409,7 +492,7 @@ void LAB_WorldServer_StartTasks(LAB_WorldServer* srv)
             {
                 // Adjust chunk priority
                 LAB_Chunk* chunk = e->chunk;
-                SDL_LockMutex(srv->mutex);
+                LAB_SDL_LockMutex(srv->mutex);
                 if(chunk->queue_prev)
                 {
                     size_t age = srv->timestamp - chunk->queue_timestamp;
@@ -428,7 +511,7 @@ void LAB_WorldServer_StartTasks(LAB_WorldServer* srv)
                         }
                     }
                 }
-                SDL_UnlockMutex(srv->mutex);
+                LAB_SDL_UnlockMutex(srv->mutex);
 
                 // Update chunk
                 if(LAB_Chunk_Access(e->chunk) && e->chunk->dirty)
@@ -452,22 +535,17 @@ void LAB_WorldServer_StartTasks(LAB_WorldServer* srv)
     stoptime += 1000*1000;
 
     int rest = 20;
-    while(!LAB_ChunkPosQueue_IsEmpty(&srv->world->gen_queue))
+    while(!LAB_ChunkBufQueue_IsEmpty(&srv->world->gen_queue))
     {
         if(!--rest) break;
-        LAB_ChunkPos* pos;
-        pos = LAB_ChunkPosQueue_Front(&srv->world->gen_queue);
-
-        LAB_World_ChunkEntry* entry;
-        entry = LAB_ChunkTBL_Get(&srv->world->chunks, *pos);
-
-        LAB_ASSERT(entry != NULL);
-        LAB_Chunk* chunk = entry->chunk;
+        LAB_Chunk** pchunk = LAB_ChunkBufQueue_Front(&srv->world->gen_queue);
+        LAB_ASSERT(pchunk);
+        LAB_Chunk* chunk = *pchunk;
         
         LAB_ASSERT(chunk);
         LAB_ASSERT(!chunk->generated);
 
-        int x = pos->x, y = pos->y, z = pos->z;
+        int x = chunk->pos.x, y = chunk->pos.y, z = chunk->pos.z;
         // connect neighbors
         for(int face = 0; face < 6; ++face)
         {
@@ -480,7 +558,7 @@ void LAB_WorldServer_StartTasks(LAB_WorldServer* srv)
 
         if(LAB_WorldServer_PushChunkTask(srv, LAB_PARITY_NONE, chunk, LAB_CHUNK_STAGE_GENERATE))
         {
-            LAB_ChunkPosQueue_PopFront(&srv->world->gen_queue);
+            LAB_ChunkBufQueue_PopFront(&srv->world->gen_queue);
         }
         else
         {
@@ -496,9 +574,10 @@ void LAB_WorldServer_StartTasks(LAB_WorldServer* srv)
 LAB_STATIC
 void LAB_WorldServer_UnloadChunks(LAB_WorldServer* srv)
 {
-    LAB_Nanos stoptime = LAB_NanoSeconds() + 100*1000; // 100 us
+    LAB_ASSERT(LAB_IsMainThread());
 
-    //LAB_WorldServer_Lock(srv);
+    LAB_Nanos stoptime = LAB_NanoSeconds() + 300*1000; // 300 us
+
     LAB_World* world = srv->world;
 
 
@@ -534,7 +613,6 @@ void LAB_WorldServer_UnloadChunks(LAB_WorldServer* srv)
                     // Only entries after this entry are changed, another entry
                     // might be moved into this entry, the array itself is not
                     // reallocated when removing entries
-                    //printf("Unload chunk %i %i %i\n", cx, cy, cz);
                     if(chunk->view_user) world->view->chunkunlink(world->view_user, world, chunk, cx, cy, cz);
                     LAB_DestroyChunk(chunk);
                     LAB_ChunkTBL_RemoveEntry(&world->chunks, &world->chunks.table[i]);
@@ -569,7 +647,7 @@ bool LAB_WorldServer_PushChunkTask(LAB_WorldServer* srv,
 
     LAB_ChunkQueue* q = &srv->tasks[parity][priority];
 
-    SDL_LockMutex(srv->mutex);
+    LAB_SDL_LockMutex(srv->mutex);
     bool success = LAB_ChunkQueue_PushBack(q, chunk);
     if(success)
     {
@@ -598,13 +676,9 @@ bool LAB_WorldServer_PushChunkTask(LAB_WorldServer* srv,
         success = true;
     }
     bool same_update = chunk->update_stage == update;
-    //if(!success && !same_update) LAB_DbgPrintf("Already enqueued: cur:%i new:%i\n", chunk->update_stage, update);
-    SDL_UnlockMutex(srv->mutex);
-    if(success && parity != LAB_PARITY_MAIN) SDL_CondSignal(srv->update);
+    LAB_SDL_UnlockMutex(srv->mutex);
+    if(success && parity != LAB_PARITY_MAIN) LAB_SDL_CondSignal(srv->update);
 
-    //LAB_ASSERT(success);
-    //if(!success) LAB_DbgPrintf("Already enqueued: cur:%i new:%i\n", chunk->update_stage, update);
-    //else ;//LAB_DbgPrintf("Successfully enqueued\n");
     return success || same_update;
 }
 
@@ -621,7 +695,6 @@ void LAB_WorldServer_ChunkGenerate_CB(LAB_WorldServer* srv,
                                       LAB_Chunk* chunk, LAB_ChunkPos pos,
                                       void* uparam)
 {
-    //LAB_DbgPrintf("GEN %i %i %i %p\n", task.chunk.pos.x, task.chunk.pos.y, task.chunk.pos.z, task.chunk.chunk);
     LAB_ASSERT(!chunk->generated);
 
     srv->world->chunkgen(
@@ -642,33 +715,11 @@ void LAB_WorldServer_ChunkGenerate_CB(LAB_WorldServer* srv,
         }
     }
 
-    
-
 
     atomic_store_explicit(&chunk->generated, true, memory_order_release);
 
     if(!LAB_WorldServer_PushChunkTask(srv, LAB_PARITY_FROM_POS, chunk, LAB_CHUNK_STAGE_LIGHT))
         LAB_DbgPrintf("Generate->Light: Chunk queue full\n");
-
-
-
-    /*LAB_Chunk* chunks[27];
-    LAB_GetChunkNeighbors(chunk, chunks);
-
-    int i = 0;
-    for(int zz = -1; zz < 2; ++zz)
-    for(int yy = -1; yy < 2; ++yy)
-    for(int xx = -1; xx < 2; ++xx, ++i)
-    {
-        if(i != 1+3+9 &&
-            chunks[i] && 
-            chunks[i]->light_generated
-        )
-        {
-            if(!LAB_WorldServer_PushChunkTask(srv, LAB_MESH_PARITY, chunks[i], LAB_CHUNK_STAGE_VIEW_NOTIFY))
-                ; //LAB_DbgPrintf("Light->Light: Chunk queue full\n");
-        }
-    }*/
 }
 
 
@@ -690,18 +741,14 @@ void LAB_WorldServer_ChunkUpdateLight_CB(LAB_WorldServer* srv,
         if((i != 1+3+9 && chunks[i] && !chunks[i]->light_generated))
             chunks[i] = NULL;
 
-    LAB_TickLight(srv->world, chunks, pos.x, pos.y, pos.z);
+    LAB_TickLight(srv->world, chunks);
 
     LAB_ASSERT(chunk->light_generated);
 
     LAB_CCPS relit_blocks = atomic_exchange(&chunk->relit_blocks, 0);
-    //if(!relit_blocks) LAB_DbgPrintf("NOTHING RELIT\n");
-    //if(!dirty_blocks) LAB_DbgPrintf("NOTHING DIRTY\n");
 
     int dirty_neighbors = atomic_exchange(&chunk->dirty_neighbors, 0);
     int relit_neighbors = atomic_exchange(&chunk->relit_neighbors, 0);
-
-    //chunk->dirty = 0;
 
     int dirty_bits27 = LAB_CCPS_Neighborhood(dirty_blocks);
     int relit_bits27 = LAB_CCPS_Neighborhood(relit_blocks);
@@ -710,15 +757,11 @@ void LAB_WorldServer_ChunkUpdateLight_CB(LAB_WorldServer* srv,
     LAB_ASSERT(!!dirty_bits27 == !!dirty_blocks);
     LAB_ASSERT(!!relit_bits27 == !!relit_blocks);
 
-    //if(bits27 & 1 << (1+3+9))
     if(dirty_blocks || relit_blocks || dirty_neighbors || relit_neighbors)
     {
         if(!LAB_WorldServer_PushChunkTask(srv, LAB_VIEW_NOTIFY_PARITY, chunk, LAB_CHUNK_STAGE_VIEW_NOTIFY))
-        { /*LAB_DbgPrintf("Light->Mesh: Chunk queue full\n");*/ }
+        {}
     }
-
-    //bits27 &= 1<<(1+3+9) | 1<<(  3+9) | 1<<(1 + 9) | 1<<(1+3   )
-    //                     | 1<<(2+3+9) | 1<<(1+6+9) | 1<<(1+3+18);
 
     int i = 0;
     for(int zz = -1; zz < 2; ++zz)
@@ -736,13 +779,8 @@ void LAB_WorldServer_ChunkUpdateLight_CB(LAB_WorldServer* srv,
 
 
                 if(!LAB_WorldServer_PushChunkTask(srv, LAB_PARITY_FROM_POS, chunks[i], LAB_CHUNK_STAGE_LIGHT))
-                { /* LAB_DbgPrintf("Light->Light: Chunk queue full\n"); */ }
+                {}
             }
-            //else
-            //{
-            //    if(!LAB_WorldServer_PushChunkTask(srv, LAB_MESH_PARITY, chunks[i], LAB_CHUNK_STAGE_VIEW_NOTIFY))
-            //    { /* LAB_DbgPrintf("Light->Light: Chunk queue full\n"); */ }
-            //}
         }
     }
 }
@@ -775,48 +813,147 @@ void LAB_WorldServer_ChunkViewMesh_CB(LAB_WorldServer* srv,
 
 void LAB_WorldServer_Lock(LAB_WorldServer* srv)
 {
-    SDL_LockMutex(srv->mutex);
+    LAB_ASSERT(LAB_IsMainThread());
+
+    LAB_SDL_LockMutex(srv->mutex);
     srv->pause = true;
-    SDL_CondBroadcast(srv->update);
+    LAB_SDL_CondBroadcast(srv->update);
 
 
     while(srv->threads_paused != srv->worker_count)
-        SDL_CondWait(srv->paused, srv->mutex);
+        LAB_SDL_CondWait(srv->paused, srv->mutex);
 
-    SDL_UnlockMutex(srv->mutex);
+    LAB_SDL_UnlockMutex(srv->mutex);
 }
 
 bool LAB_WorldServer_LockTimeout(LAB_WorldServer* srv, LAB_Nanos ns)
 {
-    SDL_LockMutex(srv->mutex);
+    LAB_ASSERT(LAB_IsMainThread());
+
+    LAB_SDL_LockMutex(srv->mutex);
     srv->pause = true;
-    SDL_CondBroadcast(srv->update);
+    LAB_SDL_CondBroadcast(srv->update);
 
     LAB_Nanos stoptime = LAB_NanoSeconds() + ns;
 
     while(srv->threads_paused != srv->worker_count)
     {
-        // TODO: timeout to coarse: wake up main thread from another thread
-        SDL_CondWaitTimeout(srv->paused, srv->mutex, 1/*ms*/);
+        // TODO: timeout too coarse: wake up main thread from another thread
+        LAB_SDL_CondWaitTimeout(srv->paused, srv->mutex, 0/*ms*/);
         if(stoptime < LAB_NanoSeconds())
         {
             srv->pause = false;
-            SDL_UnlockMutex(srv->mutex);
-            SDL_CondBroadcast(srv->update);
+            LAB_SDL_UnlockMutex(srv->mutex);
+            LAB_SDL_CondBroadcast(srv->update);
             return false;
         }
     }
 
-    SDL_UnlockMutex(srv->mutex);
+    LAB_SDL_UnlockMutex(srv->mutex);
     return true;
 }
 
 void LAB_WorldServer_Unlock(LAB_WorldServer* srv)
 {
-    SDL_LockMutex(srv->mutex);
+    LAB_ASSERT(LAB_IsMainThread());
+
+    LAB_SDL_LockMutex(srv->mutex);
     LAB_ASSERT(srv->pause);
     srv->pause = false;
-    SDL_UnlockMutex(srv->mutex);
-    SDL_CondBroadcast(srv->update);
+    LAB_SDL_UnlockMutex(srv->mutex);
+    LAB_SDL_CondBroadcast(srv->update);
+
+}
+
+
+
+void LAB_WorldServer_LockChunk(LAB_WorldServer* srv, LAB_Chunk* chunk)
+{
+    LAB_ASSERT(LAB_IsMainThread());
+
+    // If the chunks parity is the current parity, only the chunk itself needs
+    // to be marked as being accessed.
+    // Otherwise all chunks in the neighborhood, that have the current parity
+    // need to be marked as being accessed.
+
+    LAB_SDL_LockMutex(srv->mutex);
+
+    LAB_Chunk* chunks[27];
+    LAB_GetChunkNeighbors(chunk, chunks);
+
+    LAB_Chunk* parity_chunks[8];
+    int p = 0; // number of chunks that need to be accessed
+
+    for(int i = 0; i < 27; ++i)
+    {
+        if(chunks[i] && LAB_UpdateParity_From(chunks[i]->pos) == srv->parity)
+        {
+            LAB_ASSERT(p < 8);
+            parity_chunks[p++] = chunks[i];
+        }
+    }
+    
+    srv->threads_parity++; // prevent parity change
+
+    srv->main_waiting = true;
+    while(true)
+    {
+        int j = 0;
+        for(int i = 0; i < p; ++i)
+        {
+            if(!parity_chunks[i]->is_accessed)
+                parity_chunks[i]->is_accessed = true;
+                // do not keep
+            else
+                // shift & keep
+                parity_chunks[j++] = parity_chunks[i];
+        }
+        p = j;
+
+        if(!p) break;
+        LAB_SDL_CondWait(srv->finished, srv->mutex);
+    }
+    srv->main_waiting = false;
+
+    LAB_SDL_UnlockMutex(srv->mutex);
+}
+
+void LAB_WorldServer_UnlockChunk(LAB_WorldServer* srv, LAB_Chunk* chunk)
+{
+    LAB_ASSERT(LAB_IsMainThread());
+
+    LAB_SDL_LockMutex(srv->mutex);
+
+    LAB_Chunk* chunks[27];
+    LAB_GetChunkNeighbors(chunk, chunks);
+
+    for(int i = 0; i < 27; ++i)
+    {
+        if(chunks[i] && LAB_UpdateParity_From(chunks[i]->pos) == srv->parity)
+        {
+            LAB_ASSERT(chunks[i]->is_accessed);
+            chunks[i]->is_accessed = false;
+        }
+    }
+
+    srv->threads_parity--; // allow parity change again
+
+    if(srv->threads_parity == 0)
+    {
+        // No thread works on the current parity
+        // go on to the next parity
+
+        srv->threads_parity = srv->worker_count;
+        srv->rest_parity = srv->parity_task_count;
+
+        // Next parity
+        srv->parity++;
+        if(srv->parity&8) srv->completed_cycles_thrd++;
+        srv->parity&=7;           
+
+        LAB_SDL_CondBroadcast(srv->update);
+    }
+
+    LAB_SDL_UnlockMutex(srv->mutex);
 
 }

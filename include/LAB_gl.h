@@ -24,7 +24,7 @@ const char* LAB_GL_GetCurrentError(void);
     GLenum errorid = glGetError();                                                                             \
     if(errorid != 0)                                                                                           \
     {                                                                                                          \
-        fprintf(stderr, "OpenGL Error occurred [" __FILE__ ",%i]:  %s\n", __LINE__, LAB_GL_GetError(errorid)); \
+        fprintf(stderr, "OpenGL Error occurred [" __FILE__ ":%i]:  %s\n", __LINE__, LAB_GL_GetError(errorid)); \
     }                                                                                                          \
 } while(0)
 

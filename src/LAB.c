@@ -28,7 +28,8 @@ static int LAB_InitSDL(void)
     LAB_OBJ_SDL(TTF_Init() == 0,
                 TTF_Quit(),
 
-        return SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH) == 0;
+        SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH); // Don't care if it fails
+        return true;
     );););
     return false;
 }

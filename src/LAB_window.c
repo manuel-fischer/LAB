@@ -38,7 +38,7 @@ int LAB_Window_Create(LAB_Window* window, int w, int h, uint32_t sdl_flags)
     //  0 for immediate updates,
     //  1 for updates synchronized with the vertical retrace,
     // -1 for adaptive vsync
-    #if 1
+    #if 0
     SDL_GL_SetSwapInterval(0);
     #else
     if(SDL_GL_SetSwapInterval(-1) < 0) // Adaptive VSync
@@ -80,6 +80,7 @@ void LAB_Window_Destroy(LAB_Window* window)
 int LAB_WindowLoop(LAB_Window* window)
 {
     SDL_Event event;
+    //LAB_Nanos stoptime = LAB_NanoSeconds() + 1000*1000;
     while (SDL_PollEvent(&event) == 1) {
         if(event.type == SDL_QUIT) {
             return 0;
@@ -88,6 +89,7 @@ int LAB_WindowLoop(LAB_Window* window)
             if(window->onevent(window->onevent_user, window, &event) == 0)
                 return 0;
 
+        //if(stoptime < LAB_NanoSeconds()) break;
     }
 
     if(LAB_LIKELY(window->render != NULL))

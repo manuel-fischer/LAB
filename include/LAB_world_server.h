@@ -70,8 +70,6 @@ typedef enum LAB_UpdateParity
     LAB_PARITY_COUNT
 } LAB_UpdateParity;
 
-#define LAB_PARITY_TASK_COUNT 30
-
 struct LAB_WorldServer;
 
 typedef void(*LAB_ChunkCallback)(struct LAB_WorldServer* srv,
@@ -115,6 +113,10 @@ typedef struct LAB_WorldServer
     SDL_cond* update; // Signaled whenever an element was added to the queue
                       // or a stop has been requested
     SDL_cond* paused;
+    SDL_cond* finished; // Signaled, whenever a task was finished in a worker thread
+                        // Only the main thread waits for it
+                        // Only signaled when the main thread waits for it
+                        // (main_waiting)
 
 
     SDL_Thread** workers;
@@ -122,10 +124,12 @@ typedef struct LAB_WorldServer
 
     LAB_UpdateParity parity;
     size_t threads_parity; // number of threads, that currently work on the current parity
-    int rest_parity;
+    size_t rest_parity;
     bool stop;
+    size_t parity_task_count;
 
     bool pause;
+    bool main_waiting;
     size_t threads_paused;
 
     size_t update_pointer;
@@ -138,6 +142,9 @@ typedef struct LAB_WorldServer
     size_t max_age; // maximum age of chunks currently in the queue
 
     size_t task_count;
+
+    LAB_Nanos runtime;
+    LAB_Nanos runtime_computed;
 } LAB_WorldServer;
 
 /**
@@ -154,7 +161,6 @@ bool LAB_WorldServer_Create(LAB_WorldServer* srv,
 void LAB_WorldServer_Destroy(LAB_WorldServer* srv);
 
 void LAB_WorldServer_Tick(LAB_WorldServer* srv);
-void LAB_WorldServer_TickV(void* vsrv); 
 
 
 
@@ -172,3 +178,9 @@ bool LAB_WorldServer_PushChunkTask(LAB_WorldServer* srv,
 void LAB_WorldServer_Lock(LAB_WorldServer* srv);
 bool LAB_WorldServer_LockTimeout(LAB_WorldServer* srv, LAB_Nanos ns);
 void LAB_WorldServer_Unlock(LAB_WorldServer* srv);
+
+
+// Locks chunk and its neighbors
+// You should not change neighbors while locking a specific chunk
+void LAB_WorldServer_LockChunk(LAB_WorldServer* srv, LAB_Chunk* chunk);
+void LAB_WorldServer_UnlockChunk(LAB_WorldServer* srv, LAB_Chunk* chunk);

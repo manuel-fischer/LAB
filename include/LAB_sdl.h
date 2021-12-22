@@ -35,3 +35,12 @@ extern int LAB_sdl_debug_alloc_count;
     LAB_SDL_DEBUG_FREE(obj); \
     (func)(*(obj)); \
 } while(0)
+
+
+
+#define LAB_SDL_CHECK(expr) do \
+{ \
+    bool LAB_SDL_CHECK_cond = (expr) >= 0; \
+    LAB_ASSUME2("SDL Check", LAB_SDL_CHECK_cond, #expr); \
+} \
+while(0)

@@ -6,21 +6,10 @@
 #include "LAB_light_node.h"
 #include "LAB_color.h"
 #include "LAB_crammed_chunk_pos_set.h"
-#include "LAB_rw_lock.h"
 
 #include "LAB_chunk_update.h"
 
 typedef struct LAB_World LAB_World;
-
-
-
-/*typedef enum LAB_ChunkFlags
-{
-    LAB_CHUNK_GENERATED,
-    LAB_CHUNK_LIGHT_GENERATED,
-}
-LAB_ChunkFlags;*/
-
 
 
 #define LAB_CHUNK_SHIFT  4
@@ -79,7 +68,7 @@ typedef struct LAB_Chunk
 
     atomic_bool modified,
          //light_generated,
-         empty; // usually set to 0, it is set to 1, if all blocks are air, TODO: this is tested, when the
+         empty, // usually set to 0, it is set to 1, if all blocks are air, TODO: this is tested, when the
                 // the chunk is added to the list
                 // this bit is only used for optimizations, it might not be set if all blocks are air
                 // (when changed to this after generation)
@@ -88,6 +77,8 @@ typedef struct LAB_Chunk
                 // 1 -> might be empty, don't care
          //generated, // chunk is completely generated and in a stable state
          //pseudo; // chunk does not exist, this is a dummy chunk
+         sky_light; // when empty, this marks that the chunk only has skylight
+                    // but at every block
 
     _Atomic unsigned int dirty;
 

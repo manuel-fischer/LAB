@@ -4,6 +4,6 @@
 #include "HTL/hasharray.t.c"
 #undef HTL_PARAM
 
-#define HTL_PARAM LAB_CHUNKPOS_QUEUE
+#define HTL_PARAM LAB_CHUNK_BUF_QUEUE
 #include "HTL/queue.t.c"
 #undef HTL_PARAM

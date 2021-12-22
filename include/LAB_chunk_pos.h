@@ -3,6 +3,7 @@
 #include "LAB_stdinc.h"
 #include "LAB_opt.h"
 #include "LAB_attr.h"
+#include "LAB_check.h"
 
 typedef struct LAB_ChunkPos
 {

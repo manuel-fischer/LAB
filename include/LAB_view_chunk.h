@@ -1,5 +1,9 @@
 #pragma once
 
+#include "LAB_view_mesh.h"
+#include "LAB_model_order.h"
+#include "LAB_thread.h"
+
 #define LAB_VIEW_QUERY_IMMEDIATELY 0
 #define LAB_VIEW_ENABLE_QUERY 0
 
@@ -24,20 +28,19 @@ typedef struct LAB_ViewChunkEntry
 
     //size_t render_delay;
 
-    struct LAB_ViewChunkEntry* neighbors[6]; // - make table entries to pointers, remove occupied flag
+    /*struct LAB_ViewChunkEntry* neighbors[6]; // - make table entries to pointers, remove occupied flag
                                              // - point to neighbor entries here,
                                              //   when a new entry is created:
                                              //   - iterate neighboring chunk entries
                                              //     by looking them up in the hash table
                                              //   - add the chunk entry itself to them
                                              //   - add neighboring chunk entries to itself
-                                             // -> use entry->neighbors[face] instead of table lookup with x+LAB_OX(face), ...
+                                             // -> use entry->neighbors[face] instead of table lookup with x+LAB_OX(face), ...*/
+    struct LAB_ViewChunkEntry* del_list_next;
 
     LAB_Chunk* world_chunk; // pointer into the world, is NULL when there is no chunk in the world
-                            // TODO implement linking
 
     unsigned dirty:2,            // chunk needs update
-             exist:1,            // chunk exists in world
              visible:1,          // chunk is visible when in sight, changed on every query
                                  // -> used to update chunks
                                  // -> possibly used to render chunks, if the orientation of the camera is stable
@@ -49,7 +52,7 @@ typedef struct LAB_ViewChunkEntry
              do_query:1,         // visibility unknown, a query should be submitted
              upload_vbo:1;       // vbos changed, need reupload, gets set to 0 in last render pass
 
-    atomic_bool update_pending;  // chunk is going to be remeshed
+    LAB_Access is_accessed;  // chunk is currently accessed
 
     unsigned pad:1;
     unsigned visible_faces:6; // the faces that are currently rendered

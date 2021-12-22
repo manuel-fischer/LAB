@@ -7,6 +7,7 @@
 #include "LAB_opt.h"
 #include "LAB_attr.h"
 #include "LAB_debug.h"
+#include "LAB_stdinc.h"
 #include <assert.h>
 
 #ifndef DOXYGEN
