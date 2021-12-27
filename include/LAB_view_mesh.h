@@ -18,11 +18,4 @@ typedef struct LAB_View_Mesh
 } LAB_View_Mesh;
 
 
-LAB_INLINE void LAB_View_Mesh_Destroy(LAB_View_Mesh* mesh)
-{
-    if(mesh->data)
-        LAB_Free(mesh->data);
-
-    if(mesh->vbo)
-        LAB_GL_FREE(glDeleteBuffers, 1, &mesh->vbo);
-}
+void LAB_View_Mesh_Destroy(LAB_View_Mesh* mesh);

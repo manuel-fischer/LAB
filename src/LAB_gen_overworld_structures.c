@@ -17,6 +17,7 @@ LAB_STATIC void LAB_Gen_Overworld_Tower(LAB_Placer* p, LAB_Random* rnd, const vo
 LAB_STATIC void LAB_Gen_Overworld_House(LAB_Placer* p, LAB_Random* rnd, const void* param);
 
 LAB_STATIC void LAB_Gen_Cave_CeilingCrystal(LAB_Placer* p, LAB_Random* rnd, const void* param);
+LAB_STATIC void LAB_Gen_Ore(LAB_Placer* p, LAB_Random* rnd, const void* param);
 
 
 typedef struct LAB_Gen_Overworld_Tree_Params
@@ -66,27 +67,31 @@ static const LAB_Gen_BuildingPalette desert_palette = {
 const LAB_StructureLayer overworld_layers[] =
 { //       salt    probability   count      height range  radius         place                           func                        tags                      param
   //                            <?   >?       <?   >?
-    {0x91827364,  F(1.    ),     0,   1,      20, 200,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Rock,        LAB_GEN_TAG_MOUNTAINS,         NULL            },
-    {0x32547698,  F(1.    ),     0,   4,     -80,  60,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Bush,        LAB_GEN_TAG_BUSHES,            NULL            },
-    {0x56789abc,  F(1.    ),     3,  35,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_GRASS,             &LAB_BLOCK_TALLGRASS            },
-    {0xd8f8e945,  F(1.    ),     3,  35,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_GRASS,             &LAB_BLOCK_TALLERGRASS            },
-    {0xfd874567,  F(1  /2.),     1,  10,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_FLOWERS,           &LAB_BLOCK_RED_TULIP            },
-    {0xfbc90356,  F(1  /2.),     1,  10,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_FLOWERS,           &LAB_BLOCK_YELLOW_TULIP            },
-    {0xfbc90356,  F(1.    ),    64, 192,     -80,  33,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_BIRCH_FOREST,      &LAB_BLOCK_FALLEN_LEAVES            },
-    {0x93475493,  F(1  /8.),     1,   5,     -80,  80,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_DirtPatch,   LAB_GEN_TAG_FOREST,            NULL            },
-    {0x13579bdf,  F(1.    ),     3,   5,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_FOREST,            &oak_tree       },
-    {0x13579bdf,  F(1 /32.),     1,   1,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_PLAINS,            &oak_tree       },
-    {0x85484857,  F(1  /2.),     0,   2,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_FOREST,            &birch_tree     },
-    {0x85484857,  F(1.    ),     3,   6,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_BIRCH_FOREST,      &birch_tree     },
-    {0x85484857,  F(1.    ),     4,   5,     -80,  30,      2,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_LargeTree,   LAB_GEN_TAG_TAIGA,             NULL     },
-//    {0xfdb97531,  F(1/128.),     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_RUINS,             NULL            },
-    {0xfdb97531,  F(1/256.),     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_RUINS,             &stone_palette             },
-    //{0x783f45df,  F(1/512.),     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_RUINS,             &basalt_tower            },
-    {0x7845fdf3,  F(1/512.),     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_RUINS,             &marble_palette            },
-    {0xf89df80f,  F(1/128.),     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_House,       LAB_GEN_TAG_RUINS,             &marble_palette            },
-    {0x783f45df,  F(1/ 64.),     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_DESERT,            &desert_palette            },
+    {0x91827364,  F(1.    ),     0,   1,      20, 200,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Rock,        LAB_GEN_TAG_MOUNTAINS,         NULL                         },
+    {0x32547698,  F(1.    ),     0,   4,     -80,  60,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Bush,        LAB_GEN_TAG_BUSHES,            NULL                         },
+    {0x56789abc,  F(1.    ),     3,  35,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_GRASS,             &LAB_BLOCK_TALLGRASS         },
+    {0xd8f8e945,  F(1.    ),     3,  35,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_GRASS,             &LAB_BLOCK_TALLERGRASS       },
+    {0xfd874567,  F(1  /2.),     1,  10,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_FLOWERS,           &LAB_BLOCK_RED_TULIP         },
+    {0xfbc90356,  F(1  /2.),     1,  10,     -80,  70,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_FLOWERS,           &LAB_BLOCK_YELLOW_TULIP      },
+    {0xfbc90356,  F(1.    ),    64, 192,     -80,  33,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Plant,       LAB_GEN_TAG_BIRCH_FOREST,      &LAB_BLOCK_FALLEN_LEAVES     },
+    {0x93475493,  F(1  /8.),     1,   5,     -80,  80,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_DirtPatch,   LAB_GEN_TAG_FOREST,            NULL                         },
+    {0x13579bdf,  F(1.    ),     3,   5,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_FOREST,            &oak_tree                    },
+    {0x13579bdf,  F(1 /32.),     1,   1,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_PLAINS,            &oak_tree                    },
+    {0x85484857,  F(1  /2.),     0,   2,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_FOREST,            &birch_tree                  },
+    {0x85484857,  F(1.    ),     3,   6,     -80,  30,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tree,        LAB_GEN_TAG_BIRCH_FOREST,      &birch_tree                  },
+    {0x85484857,  F(1.    ),     4,   5,     -80,  30,      2,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_LargeTree,   LAB_GEN_TAG_TAIGA,             NULL                         },
+    {0xfdb97531,  F(1/256.),     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_RUINS,             &stone_palette               },
+    {0x7845fdf3,  F(1/512.),     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_RUINS,             &marble_palette              },
+    {0xf89df80f,  F(1/128.),     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_House,       LAB_GEN_TAG_RUINS,             &marble_palette              },
+    {0x783f45df,  F(1/ 64.),     1,   1,     -80,  10,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_DESERT,            &desert_palette              },
 
-    {0x21436587,  F(    1.),        0,   5, INT_MIN, -50,      1,    LAB_Gen_PlaceOnCaveCeiling,    LAB_Gen_Cave_CeilingCrystal,   LAB_GEN_TAG_CAVE,              NULL            },
+    {0x21436587,  F(    1.),     0,   5, INT_MIN, -50,      1,    LAB_Gen_PlaceOnCaveCeiling,    LAB_Gen_Cave_CeilingCrystal,   LAB_GEN_TAG_CAVE,              NULL                         },
+
+    {0x78578947,  F(   0.7),     1,   5, INT_MIN, 100,      1,    LAB_Gen_PlaceAnywhere,         LAB_Gen_Ore,                   LAB_GEN_TAG_MINERALS,          &LAB_BLOCK_IRON_ORE          },
+    {0x67856465,  F(   0.7),     1,   4, INT_MIN, 100,      1,    LAB_Gen_PlaceAnywhere,         LAB_Gen_Ore,                   LAB_GEN_TAG_MINERALS,          &LAB_BLOCK_COPPER_ORE        },
+    {0x08765324,  F(   0.5),     1,   4, INT_MIN, 100,      1,    LAB_Gen_PlaceAnywhere,         LAB_Gen_Ore,                   LAB_GEN_TAG_MINERALS,          &LAB_BLOCK_GOLD_ORE          },
+    {0x21567890,  F(   0.6),     1,   4, INT_MIN, 100,      1,    LAB_Gen_PlaceAnywhere,         LAB_Gen_Ore,                   LAB_GEN_TAG_MINERALS,          &LAB_BLOCK_SILVER_ORE        },
+    {0x67565456,  F(   0.4),     1,   4, INT_MIN, 100,      1,    LAB_Gen_PlaceAnywhere,         LAB_Gen_Ore,                   LAB_GEN_TAG_MINERALS,          &LAB_BLOCK_URANIUM_ORE       },
 };
 const size_t overworld_layers_count = sizeof(overworld_layers)/sizeof(overworld_layers[0]);
 #undef F
@@ -431,4 +436,22 @@ LAB_STATIC void LAB_Gen_Cave_CeilingCrystal(LAB_Placer* p, LAB_Random* rnd, cons
         }
     }
     #endif
+}
+
+
+
+
+LAB_STATIC void LAB_Gen_Ore(LAB_Placer* p, LAB_Random* rnd, const void* param)
+{
+    LAB_Block* ore_block = (void*)param;
+
+    uint64_t R = LAB_NextRandom(rnd);
+    int r = 1+(R & 1);
+
+    for(int z = 0; z <= r; ++z)
+    for(int y =-1; y <= 1; ++y)
+    for(int x = 0; x <= r; ++x)
+    {
+        LAB_Placer_SetBlockIfBlock(p, x, y, z, ore_block, &LAB_BLOCK_STONE.raw);
+    }
 }

@@ -9,7 +9,7 @@
 		"@DEBUG: -O2",
 		"@DEBUG: -g",
 
-		"-Ilibs/include",
+		"@WIN: -Ilibs/include",
 
 		
 		"-Wall",
@@ -44,12 +44,18 @@
 		"@WIN: -ldxguid",
 		"@WIN&32: -lRelease/Win32/glew32",
 		"@WIN&64: -lRelease/x64/glew32",
+		
 		"-lSDL2main",
 		"-lSDL2",
 		"-lSDL2_image",
 		"-lSDL2_ttf",
-		"-lopengl32",
+		
+		"@WIN: -lopengl32",
+		"@!WIN: -lGL",
+		"@!WIN: -lGLU",
 
-		"-limagehlp"
+		"@WIN: -limagehlp",
+		"@!WIN: -lm",
+		"@!WIN: -ldl"
 	]
 }

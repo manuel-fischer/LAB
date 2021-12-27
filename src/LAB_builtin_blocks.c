@@ -59,6 +59,73 @@ bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
 
 
 
+    ///// ORES /////
+    {
+        {
+            size_t tex[2][2];
+            LAB_TextureComposite c[] = {
+                { "stone", 0,  LAB_RGB(180, 180, 170) },
+                { "ore_overlay", LAB_RGBX(bb6655), LAB_RGBX(cc8866) },
+                {0},
+            };
+            LAB_Assets_NewComposedTexture(assets, tex, c);
+            LAB_BlockFull_Init(assets, &LAB_BLOCK_IRON_ORE, tex, LAB_COLOR_WHITE, LAB_RENDER_PASS_SOLID);
+        }
+        {
+            size_t tex[2][2];
+            LAB_TextureComposite c[] = {
+                { "stone", 0,  LAB_RGB(180, 180, 170) },
+                { "ore_overlay", LAB_RGBX(cc6622), LAB_RGBX(ddaa55) },
+                {0},
+            };
+            LAB_Assets_NewComposedTexture(assets, tex, c);
+            LAB_BlockFull_Init(assets, &LAB_BLOCK_COPPER_ORE, tex, LAB_COLOR_WHITE, LAB_RENDER_PASS_SOLID);
+        }
+        {
+            size_t tex[2][2];
+            LAB_TextureComposite c[] = {
+                { "stone", 0,  LAB_RGB(180, 180, 170) },
+                { "ore_overlay", LAB_RGBX(aa8822), LAB_RGBX(eecc99) }, // LAB_RGBX(bb9955), LAB_RGBX(ccbb66) },
+                {0},
+            };
+            LAB_Assets_NewComposedTexture(assets, tex, c);
+            LAB_BlockFull_Init(assets, &LAB_BLOCK_GOLD_ORE, tex, LAB_COLOR_WHITE, LAB_RENDER_PASS_SOLID);
+        }
+        {
+            size_t tex[2][2];
+            LAB_TextureComposite c[] = {
+                { "stone", 0,  LAB_RGB(180, 180, 170) },
+                { "ore_overlay", LAB_RGBX(8899bb), LAB_RGBX(ffffff) },
+                {0},
+            };
+            LAB_Assets_NewComposedTexture(assets, tex, c);
+            LAB_BlockFull_Init(assets, &LAB_BLOCK_SILVER_ORE, tex, LAB_COLOR_WHITE, LAB_RENDER_PASS_SOLID);
+        }
+        {
+            size_t tex[2][2];
+            LAB_TextureComposite c[] = {
+                { "stone", 0,  LAB_RGB(180, 180, 170) },
+                { "ore_overlay", LAB_RGBX(55dd22), LAB_RGBX(ffff33) },
+                {0},
+            };
+            LAB_Assets_NewComposedTexture(assets, tex, c);
+            LAB_BlockFull_Init(assets, &LAB_BLOCK_URANIUM_ORE, tex, LAB_COLOR_WHITE, LAB_RENDER_PASS_SOLID);
+        }
+        {
+            size_t tex[2][2];
+            LAB_TextureComposite c[] = {
+                { "layered_stone", 0,  LAB_RGB(180, 180, 170) },
+                { "coal_ore_overlay", LAB_RGBX(000000), LAB_RGBX(222222) },
+                {0},
+            };
+            LAB_Assets_NewComposedTexture(assets, tex, c);
+            LAB_BlockFull_Init(assets, &LAB_BLOCK_COAL_ORE, tex, LAB_COLOR_WHITE, LAB_RENDER_PASS_SOLID);
+        }
+    }
+
+
+
+
     ///// SOIL TYPES /////
     {
         size_t tex[2][2];
@@ -191,6 +258,8 @@ bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
             LAB_BLOCK_FALLEN_LEAVES.model = m;
             LAB_BLOCK_FALLEN_LEAVES.item_texture = LAB_Assets_RenderItem(assets, (const size_t(*)[2])tex, LAB_COLOR_BIRCH_LEAVES);
             LAB_AABB3_Assign(LAB_BLOCK_FALLEN_LEAVES.bounds,   0, 0, 0,   1, 0.0625, 1);
+
+            LAB_RegisterBlock(&LAB_BLOCK_FALLEN_LEAVES);
         }
     }
 

@@ -415,3 +415,7 @@ bool LAB_Gen_PlaceOnCaveFloor(void* gen, int* x, int* y, int* z)
     return 0;
 }
 
+bool LAB_Gen_PlaceAnywhere(void* /*LAB_GenOverworld*/ gen, int* x, int* y, int* z)
+{
+    return 1;
+}

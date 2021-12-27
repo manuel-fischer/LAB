@@ -133,12 +133,12 @@ while(0)
     loop_dir(size_t, LAB_ViewArray_i, 0, LAB_ViewArray_v, \
     { \
         LAB_ViewArray_ChunkOffset* LAB_ViewArray_offset = &(arr)->sorted_offsets[LAB_ViewArray_i]; \
-        LAB_ChunkPos p = { \
+        LAB_ChunkPos LAB_ViewArray_p = { \
             (arr)->origin.x+LAB_ViewArray_offset->x, \
             (arr)->origin.y+LAB_ViewArray_offset->y, \
             (arr)->origin.z+LAB_ViewArray_offset->z, \
         }; \
-        (e) = LAB_ViewArray_Get(arr, p); \
+        (e) = LAB_ViewArray_Get(arr, LAB_ViewArray_p); \
         if((e)) { __VA_ARGS__ } \
     }); \
 } \
@@ -155,12 +155,12 @@ while(0)
                                   + LAB_ViewArray_offset->y*LAB_ViewArray_offset->y \
                                   + LAB_ViewArray_offset->z*LAB_ViewArray_offset->z; \
         if(LAB_ViewArray_dist >= LAB_ViewArray_r2) break; \
-        LAB_ChunkPos p = { \
+        LAB_ChunkPos LAB_ViewArray_p = { \
             (arr)->origin.x+LAB_ViewArray_offset->x, \
             (arr)->origin.y+LAB_ViewArray_offset->y, \
             (arr)->origin.z+LAB_ViewArray_offset->z, \
         }; \
-        (e) = LAB_ViewArray_Get(arr, p); \
+        (e) = LAB_ViewArray_Get(arr, LAB_ViewArray_p); \
         { __VA_ARGS__ } \
     } \
 } \

@@ -8,6 +8,16 @@ extern int LAB_sdl_debug_alloc_count;
 
 #include "LAB_debug.h"
 
+#define LAB_SDL_DEBUG_ALLOC_1() do \
+{ \
+    LAB_sdl_debug_alloc_count++; \
+} while(0)
+#define LAB_SDL_DEBUG_FREE_1() do \
+{ \
+    LAB_sdl_debug_alloc_count--; \
+    LAB_ASSUME(LAB_sdl_debug_alloc_count>=0); \
+} while(0)
+
 #define LAB_SDL_DEBUG_ALLOC(obj) do \
 { \
     /*LAB_ASSUME_OR_WARN(*(obj));*/ \
@@ -19,6 +29,8 @@ extern int LAB_sdl_debug_alloc_count;
     LAB_ASSUME(LAB_sdl_debug_alloc_count>=0); \
 } while(0)
 #else
+#define LAB_SDL_DEBUG_ALLOC_1() ((void)0)
+#define LAB_SDL_DEBUG_FREE_1() ((void)0)
 #define LAB_SDL_DEBUG_ALLOC(obj) ((void)0)
 #define LAB_SDL_DEBUG_FREE(obj) ((void)0)
 #endif

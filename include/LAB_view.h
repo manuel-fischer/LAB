@@ -90,7 +90,7 @@ LAB_INLINE LAB_ChunkPos LAB_MakeChunkPos(int x, int y, int z)
 #undef HTL_PARAM
 
 
-#define LAB_VIEW_USE_VBO           1u
+//#define LAB_VIEW_USE_VBO           1u
 #define LAB_VIEW_SHOW_HUD          2u
 #define LAB_VIEW_SHOW_FPS_GRAPH    4u
 #define LAB_VIEW_FLAT_SHADE        8u

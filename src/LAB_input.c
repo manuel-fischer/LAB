@@ -23,6 +23,7 @@
 
 #include "LAB_ext.h"
 #include "LAB_util.h"
+#include "LAB_debug.h"
 
 #include "LAB_world_server.h"
 
@@ -31,6 +32,8 @@
 LAB_STATIC int  LAB_Input_Interact(LAB_Input* input, int button);
 LAB_STATIC void LAB_Input_GrabMouse(LAB_Input* input, LAB_Window* window, bool grab);
 LAB_STATIC bool LAB_Input_IsMaskedEvent(LAB_View* view, SDL_Event* event);
+
+LAB_STATIC void LAB_DBG_Input_OnError(void* vinput);
 
 //static int selected_block = 1;
 
@@ -42,12 +45,22 @@ bool LAB_Input_Create(LAB_Input* input, LAB_View* view)
     input->view = view;
     input->brushsize = 3;
     input->selected_block = &LAB_BLOCK_STONE.cobble;
+
+    LAB_DbgAtHalt(&LAB_DBG_Input_OnError, input);
+
     return 1;
 }
 
 void LAB_Input_Destroy(LAB_Input* input)
 {
+    LAB_DbgRemoveHalt(&LAB_DBG_Input_OnError, input);
+}
 
+LAB_STATIC void LAB_DBG_Input_OnError(void* vinput)
+{
+    LAB_Input* input = vinput;
+    input->mouse_grabbed = false;
+    SDL_SetRelativeMouseMode(false);
 }
 
 

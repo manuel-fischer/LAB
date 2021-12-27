@@ -18,6 +18,6 @@ void LAB_AppendError(const char* fmt, ...) __attribute__((format(printf, 1, 2)))
 void LAB_AddErrorContext(const char* filename, int line, const char* expression);
 
 
-// returns
+// TODO
 #define LAB_CHECK_ALLOC(ptr, on_error)
 #define LAB_ALLOC(lval_ptr, alloc_expr)

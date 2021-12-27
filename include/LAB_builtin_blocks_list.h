@@ -15,7 +15,14 @@ LAB_BlockGroupStone LAB_BLOCK_BASALT,
                     LAB_BLOCK_GRANITE;
 
 LAB_BUILTIN_VIS
-LAB_Block LAB_BLOCK_SAND,
+LAB_Block LAB_BLOCK_IRON_ORE,
+          LAB_BLOCK_COPPER_ORE,
+          LAB_BLOCK_GOLD_ORE,
+          LAB_BLOCK_SILVER_ORE,
+          LAB_BLOCK_URANIUM_ORE,
+          LAB_BLOCK_COAL_ORE,
+
+          LAB_BLOCK_SAND,
           LAB_BLOCK_GLASS,
           LAB_BLOCK_LEAVES,
           LAB_BLOCK_WOOD,

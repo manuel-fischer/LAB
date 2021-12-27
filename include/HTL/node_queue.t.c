@@ -71,6 +71,7 @@ HTL_DEF void HTL_MEMBER(Splice)(HTL_P(NAME)* q, HTL_P(TYPE)* elem)
 
 HTL_DEF void HTL_MEMBER(DbgValidate)(HTL_P(NAME)* q)
 {
+    #ifndef NDEBUG
     HTL_P(TYPE)** prev = &q->head;
     HTL_P(TYPE)* n;
     size_t counted_size = 0;
@@ -84,6 +85,7 @@ HTL_DEF void HTL_MEMBER(DbgValidate)(HTL_P(NAME)* q)
     HTL_ASSERT(q->tail == prev);
 
     HTL_ASSERT(q->dbg_size == counted_size);
+    #endif
 }
 
 #endif // HTL_PARAM

@@ -106,7 +106,6 @@ void LAB_SDL_LockMutexV(void* lock)
 
 bool LAB_WorldServer_Create(LAB_WorldServer* srv,
                             LAB_World* world,
-                            size_t queue_capacity,
                             size_t worker_count)
 {
     srv->world = world;
@@ -172,9 +171,10 @@ void LAB_WorldServer_Destroy(LAB_WorldServer* srv)
     LAB_Free(srv->workers);
     LAB_DbgRemoveHalt(LAB_SDL_LockMutexV, srv->mutex);
 
-    SDL_DestroyCond(srv->paused);
-    SDL_DestroyCond(srv->update);
-    SDL_DestroyMutex(srv->mutex);
+    SDL_DestroyCond(srv->finished); LAB_SDL_DEBUG_FREE_1();
+    SDL_DestroyCond(srv->paused);   LAB_SDL_DEBUG_FREE_1();
+    SDL_DestroyCond(srv->update);   LAB_SDL_DEBUG_FREE_1();
+    SDL_DestroyMutex(srv->mutex);   LAB_SDL_DEBUG_FREE_1();
 }
 
 
@@ -363,6 +363,9 @@ int LAB_WorldServer_ThreadRoutine(void* vsrv)
         int update_stage = chunk->update_stage;
         chunk->update_stage = 0;
         chunk->is_accessed = true;
+
+        srv->task_count--;
+
         LAB_SDL_UnlockMutex(srv->mutex);
 
         LAB_Nanos start = LAB_NanoSeconds();
@@ -378,8 +381,6 @@ int LAB_WorldServer_ThreadRoutine(void* vsrv)
         LAB_SDL_LockMutex(srv->mutex);
 
         chunk->is_accessed = false;
-
-        srv->task_count--;
 
         srv->runtime += cycle;
         srv->runtime_computed += comp;
@@ -407,14 +408,15 @@ void LAB_WorldServer_Tick(LAB_WorldServer* srv)
 
     uint64_t stoptime = LAB_NanoSeconds() + 1000*1000;
 
+    LAB_WorldServer_RunMainthreadTasks(srv, stoptime);
     if(LAB_WorldServer_LockTimeout(srv, 1000*1000))
     {
-        LAB_WorldServer_RunMainthreadTasks(srv, stoptime);
         LAB_WorldServer_UnloadChunks(srv);
 
         LAB_WorldServer_Unlock(srv);
     }
 
+    LAB_SDL_CondBroadcast(srv->update);
     LAB_WorldServer_StartTasks(srv);
 
     LAB_SDL_LockMutex(srv->mutex);
@@ -430,6 +432,7 @@ LAB_STATIC
 void LAB_WorldServer_RunMainthreadTasks(LAB_WorldServer* srv, LAB_Nanos stop)
 {
     LAB_ASSERT(LAB_IsMainThread());
+    LAB_SDL_LockMutex(srv->mutex);
 
     // Collect results
     #ifndef NDEBUG
@@ -452,20 +455,28 @@ void LAB_WorldServer_RunMainthreadTasks(LAB_WorldServer* srv, LAB_Nanos stop)
 
         if(LAB_ChunkQueues_AllEmpty(qs) || LAB_NanoSeconds() >= stop)
         {
+            LAB_SDL_UnlockMutex(srv->mutex);
             return;
         }
         
         LAB_Chunk* chunk = LAB_ChunkQueues_PopFront(qs);
         int update_stage = chunk->update_stage;
         chunk->update_stage = 0;
-        LAB_ASSERT(!chunk->is_accessed);
+        //LAB_ASSERT(!chunk->is_accessed);
+
+        srv->task_count--;
+
+        LAB_SDL_UnlockMutex(srv->mutex);
+        LAB_WorldServer_LockChunk(srv, chunk);
 
         LAB_ChunkCallback cb = LAB_ChunkStageCallback(update_stage);
         cb(srv, chunk, chunk->pos, NULL);
 
-        LAB_ASSERT(!chunk->is_accessed);
+        LAB_WorldServer_UnlockChunk(srv, chunk);
+        LAB_SDL_LockMutex(srv->mutex);
+
+        //LAB_ASSERT(!chunk->is_accessed);
         srv->completed_mainthread++;
-        srv->task_count--;
     }
 }
 
@@ -867,9 +878,21 @@ void LAB_WorldServer_Unlock(LAB_WorldServer* srv)
 
 
 
+#ifndef NDEBUG
+static bool LAB_DBG_chunkLocked = false;
+static LAB_ChunkPos LAB_DBG_lockPos;
+static size_t LAB_DBG_neighborcount;
+#endif
+
 void LAB_WorldServer_LockChunk(LAB_WorldServer* srv, LAB_Chunk* chunk)
 {
     LAB_ASSERT(LAB_IsMainThread());
+
+#ifndef NDEBUG
+    LAB_ASSERT(!LAB_DBG_chunkLocked);
+    LAB_DBG_chunkLocked = true;
+    LAB_DBG_lockPos = chunk->pos;
+#endif
 
     // If the chunks parity is the current parity, only the chunk itself needs
     // to be marked as being accessed.
@@ -879,10 +902,15 @@ void LAB_WorldServer_LockChunk(LAB_WorldServer* srv, LAB_Chunk* chunk)
     LAB_SDL_LockMutex(srv->mutex);
 
     LAB_Chunk* chunks[27];
-    LAB_GetChunkNeighbors(chunk, chunks);
+    LAB_GetChunkNeighborsAll(chunk, chunks);
 
     LAB_Chunk* parity_chunks[8];
     int p = 0; // number of chunks that need to be accessed
+
+#ifndef NDEBUG
+    LAB_DBG_neighborcount = 0;
+    for(int i = 0; i < 27; ++i) LAB_DBG_neighborcount += !!chunks[i];
+#endif
 
     for(int i = 0; i < 27; ++i)
     {
@@ -922,10 +950,22 @@ void LAB_WorldServer_UnlockChunk(LAB_WorldServer* srv, LAB_Chunk* chunk)
 {
     LAB_ASSERT(LAB_IsMainThread());
 
+#ifndef NDEBUG
+    LAB_ASSERT(LAB_DBG_chunkLocked);
+    LAB_DBG_chunkLocked = false;
+    LAB_ASSERT(LAB_ChunkPosComp(LAB_DBG_lockPos, chunk->pos) == 0);
+#endif
+
     LAB_SDL_LockMutex(srv->mutex);
 
     LAB_Chunk* chunks[27];
-    LAB_GetChunkNeighbors(chunk, chunks);
+    LAB_GetChunkNeighborsAll(chunk, chunks);
+
+#ifndef NDEBUG
+    size_t neighborcount = 0;
+    for(int i = 0; i < 27; ++i) neighborcount += !!chunks[i];
+    LAB_ASSERT(LAB_DBG_neighborcount == neighborcount);
+#endif
 
     for(int i = 0; i < 27; ++i)
     {

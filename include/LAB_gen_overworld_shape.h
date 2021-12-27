@@ -16,3 +16,4 @@ bool LAB_Gen_PlaceOnSurface(void* /*LAB_GenOverworld*/ gen, int* x, int* y, int*
 bool LAB_Gen_PlaceOnRiverFloor(void* /*LAB_GenOverworld*/ gen, int* x, int* y, int* z);
 bool LAB_Gen_PlaceOnCaveCeiling(void* /*LAB_GenOverworld*/ gen, int* x, int* y, int* z);
 bool LAB_Gen_PlaceOnCaveFloor(void* /*LAB_GenOverworld*/ gen, int* x, int* y, int* z);
+bool LAB_Gen_PlaceAnywhere(void* /*LAB_GenOverworld*/ gen, int* x, int* y, int* z);

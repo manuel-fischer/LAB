@@ -8,7 +8,7 @@
 const LAB_Gen_Biome LAB_biome_forest =
 {
     .tags           = LAB_GEN_TAG_FOREST | LAB_GEN_TAG_BUSHES | LAB_GEN_TAG_GRASS
-                    | LAB_GEN_TAG_CAVE | LAB_GEN_TAG_MOUNTAINS,
+                    | LAB_GEN_TAG_CAVE | LAB_GEN_TAG_MINERALS | LAB_GEN_TAG_MOUNTAINS,
     .surface_block  = &LAB_BLOCK_GRASS,
     .ground_block   = &LAB_BLOCK_DIRT,
 };
@@ -16,7 +16,7 @@ const LAB_Gen_Biome LAB_biome_forest =
 const LAB_Gen_Biome LAB_biome_birch_forest =
 {
     .tags           = LAB_GEN_TAG_BIRCH_FOREST | LAB_GEN_TAG_BUSHES | LAB_GEN_TAG_GRASS | LAB_GEN_TAG_FLOWERS
-                    | LAB_GEN_TAG_CAVE | LAB_GEN_TAG_MOUNTAINS,
+                    | LAB_GEN_TAG_CAVE | LAB_GEN_TAG_MINERALS | LAB_GEN_TAG_MOUNTAINS,
     .surface_block  = &LAB_BLOCK_GRASS, //LAB_BLOCK_BIRCH_LEAVES,
     .ground_block   = &LAB_BLOCK_DIRT,
 };
@@ -24,7 +24,7 @@ const LAB_Gen_Biome LAB_biome_birch_forest =
 const LAB_Gen_Biome LAB_biome_taiga =
 {
     .tags           = LAB_GEN_TAG_TAIGA | LAB_GEN_TAG_BUSHES | LAB_GEN_TAG_GRASS
-                    | LAB_GEN_TAG_CAVE | LAB_GEN_TAG_MOUNTAINS,
+                    | LAB_GEN_TAG_CAVE | LAB_GEN_TAG_MINERALS | LAB_GEN_TAG_MOUNTAINS,
     .surface_block  = &LAB_BLOCK_DIRT, //LAB_BLOCK_BIRCH_LEAVES,
     .ground_block   = &LAB_BLOCK_DIRT,
 };
@@ -33,16 +33,16 @@ const LAB_Gen_Biome LAB_biome_plains =
 {
     .tags           = LAB_GEN_TAG_BUSHES | LAB_GEN_TAG_GRASS | LAB_GEN_TAG_FLOWERS
                     | LAB_GEN_TAG_RUINS
-                    | LAB_GEN_TAG_CAVE | LAB_GEN_TAG_MOUNTAINS | LAB_GEN_TAG_PLAINS,
+                    | LAB_GEN_TAG_CAVE | LAB_GEN_TAG_MINERALS | LAB_GEN_TAG_MOUNTAINS | LAB_GEN_TAG_PLAINS,
     .surface_block  = &LAB_BLOCK_GRASS, //_PLAINS,
     .ground_block   = &LAB_BLOCK_DIRT,
 };
 
 const LAB_Gen_Biome LAB_biome_desert =
 {
-    .tags           = LAB_GEN_TAG_CAVE | LAB_GEN_TAG_MOUNTAINS | LAB_GEN_TAG_DESERT,
+    .tags           = LAB_GEN_TAG_CAVE | LAB_GEN_TAG_MINERALS | LAB_GEN_TAG_MOUNTAINS | LAB_GEN_TAG_DESERT,
     .surface_block  = &LAB_BLOCK_SAND,
-    .ground_block   = &LAB_BLOCK_SANDSTONE.raw,
+    .ground_block   = &LAB_BLOCK_SANDSTONE.layered,
 };
 
 

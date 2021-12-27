@@ -22,7 +22,9 @@
 
 //#define LAB_PRELOAD_CHUNK(chunk_dist) ((chunk_dist)+1)
 //#define LAB_KEEP_CHUNK(chunk_dist)    ((chunk_dist)+2)
-#define LAB_PRELOAD_CHUNK(chunk_dist) ((chunk_dist)+3)
+//#define LAB_PRELOAD_CHUNK(chunk_dist) ((chunk_dist)+3)
+//#define LAB_PRELOAD_CHUNK(chunk_dist) ((chunk_dist)*5/4+3)
+#define LAB_PRELOAD_CHUNK(chunk_dist) ((chunk_dist)*3/2+3)
 #define LAB_KEEP_CHUNK(chunk_dist)    ((chunk_dist)*2+3)
 
 

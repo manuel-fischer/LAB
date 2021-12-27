@@ -40,12 +40,13 @@ bool LAB_BlockFull_Init_(LAB_Assets* assets, LAB_Block* b,
 
 
 
-#define LAB_BLOCK_GROUP_STONE_NUM 4
+#define LAB_BLOCK_GROUP_STONE_NUM 5
 typedef union LAB_BlockGroupStone
 {
     struct
     {
         LAB_Block raw,
+                  layered,
                   cobble,
                   bricks,
                   smooth/*,
@@ -65,9 +66,10 @@ LAB_INLINE
 bool LAB_MaterialGroupStone_Init(LAB_Assets* assets, LAB_MaterialGroupStone* mat, LAB_Color black, LAB_Color white)
 {
     LAB_Assets_NewTintedTexture(assets, mat->textures[0], "stone",          black, white);
-    LAB_Assets_NewTintedTexture(assets, mat->textures[1], "cobble",         black, white);
-    LAB_Assets_NewTintedTexture(assets, mat->textures[2], "bricks",         black, white);
-    LAB_Assets_NewTintedTexture(assets, mat->textures[3], "smooth_stone",   black, white);
+    LAB_Assets_NewTintedTexture(assets, mat->textures[1], "layered_stone",  black, white);
+    LAB_Assets_NewTintedTexture(assets, mat->textures[2], "cobble",         black, white);
+    LAB_Assets_NewTintedTexture(assets, mat->textures[3], "bricks",         black, white);
+    LAB_Assets_NewTintedTexture(assets, mat->textures[4], "smooth_stone",   black, white);
     /*LAB_Assets_NewTintedTexture(assets, mat->textures[4], "polished_stone", black, white);
 
     LAB_TextureComposite c[] = {

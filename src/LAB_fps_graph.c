@@ -53,6 +53,16 @@ void LAB_FpsGraph_SetSample(LAB_FpsGraph* graph, float frame_ms)
     //graph->samples[LAB_FPS_GRAPH_MAX_SAMPLES-1].color |= LAB_RGBA(255, 255, 128, 0);
 }
 
+void LAB_FpsGraph_SetSampleOffset(LAB_FpsGraph* graph, float frame_ms)
+{
+    LAB_PRECONDITION(LAB_PROPER(graph));
+    //LAB_PRECONDITION(graph->start_pos!=LAB_FPS_GRAPH_MAX_SAMPLES); // TODO
+
+    graph->samples[LAB_FPS_GRAPH_MAX_SAMPLES-1].y = LAB_FPS_GRAPH_CALC_Y(frame_ms);
+    graph->samples[LAB_FPS_GRAPH_MAX_SAMPLES-2].y = LAB_FPS_GRAPH_CALC_Y(frame_ms);
+    //graph->samples[LAB_FPS_GRAPH_MAX_SAMPLES-1].color |= LAB_RGBA(255, 255, 128, 0);
+}
+
 void LAB_FpsGraph_AddSample(LAB_FpsGraph* graph, float frame_ms)
 {
     LAB_PRECONDITION(LAB_PROPER(graph));

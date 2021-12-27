@@ -10,6 +10,12 @@
 #include "LAB_opt.h"
 #include <stdbool.h>
 
+#include <signal.h>
+
+#define LAB_DBG_BREAK() ((void)raise(SIGTRAP), (void)0)
+
+
+
 #ifdef NDEBUG
 #  define LAB_DBG_PRINTF(...) ((void)0)
 #  ifdef __GNUC__
@@ -36,7 +42,7 @@
         LAB_AssumptionFailed(type, cond_str, __FILE__, __LINE__, LAB_FUNCTION()); \
     } while(0) */
 #  define LAB_ASSUME2(type, cond, cond_str) \
-    ((!(cond)) ? LAB_AssumptionFailed(type, cond_str, __FILE__, __LINE__, LAB_FUNCTION(), 1) : (void)0)
+    ((!(cond)) ? (LAB_AssumptionFailed(type, cond_str, __FILE__, __LINE__, LAB_FUNCTION(), 0), LAB_DBG_BREAK()) : (void)0)
 #  define LAB_ASSUME_0 LAB_ASSUME // no parameter aliasing -> keep text replacement behavior
 #  define LAB_INIT_DBG(...) __VA_ARGS__
 

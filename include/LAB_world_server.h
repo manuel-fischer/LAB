@@ -152,7 +152,6 @@ typedef struct LAB_WorldServer
  */
 bool LAB_WorldServer_Create(LAB_WorldServer* srv,
                             LAB_World* world,
-                            size_t queue_capacity,
                             size_t worker_count);
 
 /**

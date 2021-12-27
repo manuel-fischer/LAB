@@ -12,3 +12,4 @@
 #define LAB_GEN_TAG_FLOWERS       (1 <<  8)
 #define LAB_GEN_TAG_PLAINS        (1 <<  9)
 #define LAB_GEN_TAG_DESERT        (1 << 10)
+#define LAB_GEN_TAG_MINERALS      (1 << 11)

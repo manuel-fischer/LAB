@@ -25,6 +25,7 @@ void LAB_FpsGraph_Destroy(LAB_FpsGraph* graph);
 
 void LAB_FpsGraph_Shift(LAB_FpsGraph* graph);
 void LAB_FpsGraph_SetSample(LAB_FpsGraph* graph, float frame_ms);
+void LAB_FpsGraph_SetSampleOffset(LAB_FpsGraph* graph, float frame_ms);
 void LAB_FpsGraph_AddSample(LAB_FpsGraph* graph, float frame_ms);
 
 void LAB_FpsGraph_Render_Prepare();

@@ -36,9 +36,9 @@ static int LAB_InitSDL(void)
 
 static void LAB_QuitSDL(void)
 {
-    TTF_Quit();
-    IMG_Quit();
-    SDL_Quit();
+    TTF_Quit(); LAB_SDL_DEBUG_FREE_1();
+    IMG_Quit(); LAB_SDL_DEBUG_FREE_1();
+    SDL_Quit(); LAB_SDL_DEBUG_FREE_1();
 }
 
 

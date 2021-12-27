@@ -1,6 +1,7 @@
 #pragma once
 
 #include "LAB_error.h"
+#include "LAB_sdl.h"
 
 // ... -- on success
 #define LAB_OBJ(init, defer, ...) do \
@@ -59,8 +60,10 @@
 { \
     if((init)) \
     { \
+        LAB_SDL_DEBUG_ALLOC_1(); \
         { __VA_ARGS__ } \
         { defer; } \
+        LAB_SDL_DEBUG_FREE_1(); \
     } \
     else \
     { \

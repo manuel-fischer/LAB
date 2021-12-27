@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <limits.h> // INT_MAX
 #include "LAB.h"
+#include "LAB_config.h"
 #include <SDL2/SDL.h>
 
 #include <math.h>
@@ -116,7 +118,6 @@ static bool LAB_Client_Obj(bool destroy)
 
 
 
-#define THREADS 11
 int main(int argc, char** argv)
 {
     LAB_DbgInitOrAbort();
@@ -131,9 +132,12 @@ int main(int argc, char** argv)
     static LAB_World      the_world   = {0};
     static LAB_WorldServer world_server;
 
+    size_t core_count = LAB_CoreCount();
+    printf("%zi cores\n", core_count);
+    size_t worker_count = core_count > 1 ? core_count-1 : 1;
 
     LAB_ViewConfig view_cfg = {
-        .flags = LAB_VIEW_SHOW_HUD | LAB_VIEW_USE_VBO,
+        .flags = LAB_VIEW_SHOW_HUD,
 
         .preload_dist = LAB_PRELOAD_CHUNK(12),
         .render_dist = 12, //5,
@@ -171,7 +175,7 @@ int main(int argc, char** argv)
 
     CHECK_INIT(LAB_InitThread());
     
-    CHECK_INIT(LAB_WorldServer_Create(&world_server, &the_world, /*capacity*/1<<12, /*worker_count*/THREADS));
+    CHECK_INIT(LAB_WorldServer_Create(&world_server, &the_world, worker_count));
 
     CHECK_INIT(LAB_World_Create(&the_world));
     #if GEN_FLAT
@@ -187,6 +191,8 @@ int main(int argc, char** argv)
     gen.overworld.seed = 123456789;
     gen.overworld.seed = 1234567890123456789;
     gen.overworld.seed = 9876543210;
+    gen.overworld.seed = 73489564378791825;
+    gen.overworld.seed = 42;
     the_world.chunkgen      = &LAB_GenOverworldProc;
     the_world.chunkgen_user = &gen.overworld;
     #endif
@@ -263,8 +269,8 @@ int main(int argc, char** argv)
         LAB_PerfInfo_Next(&perf_info, LAB_TG_NONE);
 
 
-        LAB_FpsGraph_SetSample(&perf_info.fps_graphs[LAB_TG_WHOLE], delta_ms);
-        LAB_FpsGraph_SetSample(&perf_info.fps_graphs[LAB_TG_OUT_OF_LOOP], ool);
+        LAB_FpsGraph_SetSampleOffset(&perf_info.fps_graphs[LAB_TG_WHOLE], delta_ms);
+        LAB_FpsGraph_SetSampleOffset(&perf_info.fps_graphs[LAB_TG_OUT_OF_LOOP], ool);
 
         //LAB_DbgPrintf("Completed Cycles: %i\n", world_server.completed_cycles);
         //LAB_DbgPrintf("Completed MTTasks: %i\n", world_server.completed_mainthread);
