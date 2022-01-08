@@ -99,15 +99,29 @@ LAB_Chunk* LAB_CreateChunk(LAB_ChunkPos pos)
     chunk->view_user = NULL;
 
 
-    chunk->is_accessed = false;
+    //chunk->is_accessed = false;
+    chunk->access_mode = 0;
+
+    memset(&chunk->stats, 0, sizeof chunk->stats);
 
     chunk->queue_prev = NULL;
     chunk->queue_next = NULL;
+
+    //chunk->reenqueue = 0;
 
     return chunk;
 }
 
 void LAB_DestroyChunk(LAB_Chunk* chunk)
+{
+    LAB_ASSUME(chunk);
+
+    // unlink neighbors
+    LAB_UnlinkChunk(chunk);
+    LAB_DestroyChunk_Unlinked(chunk);
+}
+
+void LAB_UnlinkChunk(LAB_Chunk* chunk)
 {
     LAB_ASSUME(chunk);
 
@@ -121,6 +135,11 @@ void LAB_DestroyChunk(LAB_Chunk* chunk)
             neighbor->_neighbors[face^1] = NULL;
         }
     }
+}
+
+void LAB_DestroyChunk_Unlinked(LAB_Chunk* chunk)
+{
+    LAB_ASSUME(chunk);
 
 
     //LAB_RWLock_Destroy(&chunk->lock);

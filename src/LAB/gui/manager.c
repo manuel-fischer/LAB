@@ -25,6 +25,9 @@ bool LAB_GuiManager_Create(LAB_GuiManager* mgr)
     LAB_SDL_ALLOC(TTF_OpenFont, &mgr->mono_font, "fonts/DejaVuSansMono.ttf", 11*mgr->scale); // 13
     if(!mgr->mono_font)   return 0;
 
+    LAB_SDL_ALLOC(TTF_OpenFont, &mgr->mono_font_small, "fonts/DejaVuSansMono.ttf", 7*mgr->scale); // 13
+    if(!mgr->mono_font_small)   return 0;
+
     return 1;
 }
 
@@ -46,6 +49,7 @@ void LAB_GuiManager_Destroy(LAB_GuiManager* mgr)
     LAB_SDL_FREE(TTF_CloseFont, &mgr->button_font);
     LAB_SDL_FREE(TTF_CloseFont, &mgr->title_font);
     LAB_SDL_FREE(TTF_CloseFont, &mgr->mono_font);
+    LAB_SDL_FREE(TTF_CloseFont, &mgr->mono_font_small);
 
     LAB_GL_FREE(glDeleteTextures, 1, &mgr->gl_id);
 }

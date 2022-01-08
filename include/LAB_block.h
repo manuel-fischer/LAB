@@ -40,16 +40,17 @@ typedef uint32_t LAB_BlockFlags;
 #define LAB_BLOCK_GLOWING      (LAB_BLOCK_FLAT_SHADE|LAB_BLOCK_EMISSIVE)
 #define LAB_BLOCK_NOSHADE      256u
 
+#define LAB_BLOCK_TAG_REPLACEABLE  1
+
 
 
 typedef struct LAB_Block
 {
     LAB_BlockFlags flags;
+    uint32_t tags;
     LAB_Color lum;
     LAB_Color dia; // diaphanety/transparency color of the block, the incoming light gets multiplied with this color,
                    // should be #ffffff for completely transparent blocks.
-    LAB_Color item_tint; // TODO remove
-    uint8_t item_tx, item_ty; // Offset of the texture tile for the item, TODO remove
 
     LAB_Model const* model;
     SDL_Surface* item_texture;

@@ -39,7 +39,7 @@
 
 #include "LAB_chunk_neighborhood.h" // TODO remove
 
-#include "LAB_world_server.h" // TODO remove
+#include "LAB_game_server.h" // TODO remove
 
 #define HTL_PARAM LAB_VIEW_CHUNK_TBL
 #include "HTL/hasharray.t.c"
@@ -177,6 +177,9 @@ void LAB_View_Destroy(LAB_View* view)
     LAB_ViewArray_Destroy(&view->chunk_array);
 
     LAB_ViewCoordInfo_Destroy(&view->info);
+
+    LAB_SDL_FREE(SDL_FreeSurface, &view->stats_display.surf);
+    LAB_GL_FREE(glDeleteTextures, 1, &view->stats_display.gl_texture);
 }
 
 
@@ -224,6 +227,8 @@ void LAB_View_Clear(LAB_View* view)
 
 void LAB_ViewChunkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update)
 {
+    // TODO remove this callback
+    return;
     LAB_ASSERT(LAB_Chunk_Access(chunk));
 
     LAB_View* view = (LAB_View*)user;
@@ -246,6 +251,8 @@ void LAB_ViewChunkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, in
     // TODO: Chunk recovery, Chunk might be in delete queue
 
     entry->dirty |= update;
+
+    //LAB_View_UpdateChunkSeethrough(view, entry);
 }
 
 bool LAB_ViewChunkKeepProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z)
@@ -287,12 +294,13 @@ void LAB_View_Position_Proc(void* user, LAB_World* world, double pos[3])
 LAB_STATIC
 void LAB_ViewChunkMeshProc(void* vview, LAB_World* world, LAB_Chunk* chunk)
 {
-LAB_View* view = vview;
+    LAB_View* view = vview;
     LAB_ViewChunkEntry* e = chunk->view_user;
     if(!e) return;
 
     if(!LAB_Access_TryLock(&e->is_accessed)) return;
 
+    LAB_View_UpdateChunkSeethrough(view, e);
     LAB_ViewBuildChunk(view, e);
     LAB_Access_Unlock(&e->is_accessed);
 }
@@ -316,6 +324,10 @@ LAB_STATIC bool LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entr
         for(int i = 0; i < 27; ++i)
             if(chunk_neighborhood[i] == NULL && (rand()&0x3) == 0) return 0;
             //if(chunk_neighborhood[i] == NULL) return 0;
+#endif
+#if 1
+    for(int i = 0; i < 27; ++i)
+        if(chunk_neighborhood[i] && !chunk_neighborhood[i]->light_generated) return 0;
 #endif
 
     chunk_entry->visible_faces = visibility;
@@ -370,11 +382,17 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
             :LAB_GetVisualNeighborhoodLight(neighborhood, x, y, z, face, default_color))*/
 
     #define POW_COLOR4(x) (~LAB_MulColor_Fast(LAB_MulColor_Fast(~(x), ~(x)), LAB_MulColor_Fast(~(x), ~(x))))
-    #define GET_LIGHT(neighborhood, x, y, z, face, default_color) \
+    /*#define GET_LIGHT(neighborhood, x, y, z, face, default_color) \
         (view->cfg.flags&LAB_VIEW_BRIGHTER \
             ?LAB_MinColor(POW_COLOR4(LAB_GetVisualNeighborhoodLight(neighborhood, x, y, z, face, default_color)), GET_LIT_COLOR(neighborhood, x, y, z)) \
-            :LAB_GetVisualNeighborhoodLight(neighborhood, x, y, z, face, default_color))
+            :LAB_GetVisualNeighborhoodLight(neighborhood, x, y, z, face, default_color))*/
             
+    /*#define GET_LIGHT(neighborhood, x, y, z, face, default_color) \
+        LAB_MinColor(LAB_View_GammaMap_MapColor(view->cfg.gamma_map, LAB_GetVisualNeighborhoodLight(neighborhood, x, y, z, face, default_color)), \
+                     GET_LIT_COLOR(neighborhood, x, y, z))*/
+
+    #define GET_LIGHT(neighborhood, x, y, z, face, default_color) \
+        LAB_View_GammaMap_MapColor(view->cfg.gamma_map, LAB_GetVisualNeighborhoodLight(neighborhood, x, y, z, face, default_color))
             
 
     LAB_Block* block = cnk3x3x3[1+3+9]->blocks[LAB_CHUNK_OFFSET(x, y, z)];
@@ -568,14 +586,18 @@ LAB_STATIC bool LAB_View_ChunkNeedsUpdate(LAB_View* view, LAB_ViewChunkEntry* ch
     if(!LAB_View_IsChunkInSight(view, chunk_entry->x, chunk_entry->y, chunk_entry->z))
         return 0;
 
+    LAB_ASSERT(chunk_entry->world_chunk);
+    if(!chunk_entry->world_chunk->light_generated) return false;
+
     // TODO: enshure light update after at most 1 sec
-    if(     (chunk_entry->dirty&LAB_CHUNK_UPDATE_LOCAL)
+    /*if(     (chunk_entry->dirty&LAB_CHUNK_UPDATE_LOCAL)
         ||  (chunk_entry->dirty&LAB_CHUNK_UPDATE_LIGHT)
-    )
+    )*/
+    if(chunk_entry->dirty)
     {
-        return 1;
+        return true;
     }
-    return 0;
+    return false;
 }
 
 LAB_STATIC bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
@@ -735,8 +757,8 @@ LAB_STATIC void LAB_View_UpdateModelOrder(LAB_View* view, LAB_ViewChunkEntry* e)
 
 LAB_STATIC bool LAB_ViewUpdateChunk(LAB_View* view, LAB_ViewChunkEntry* e)
 {
-    if(e->dirty & LAB_CHUNK_UPDATE_BLOCK)
-        LAB_View_UpdateChunkSeethrough(view, e);
+//    if(e->dirty & LAB_CHUNK_UPDATE_BLOCK)
+//        LAB_View_UpdateChunkSeethrough(view, e);
 
     
     bool updated = false;
@@ -747,7 +769,15 @@ LAB_STATIC bool LAB_ViewUpdateChunk(LAB_View* view, LAB_ViewChunkEntry* e)
         {
             //updated = LAB_ViewBuildChunk(view, e);
 
-            updated = LAB_WorldServer_PushChunkTask(view->server, LAB_PARITY_FROM_POS, e->world_chunk, LAB_CHUNK_STAGE_VIEW_MESH);
+            if(e->world_chunk->empty)
+            {
+                e->seethrough_faces = 63;
+                e->dirty = 0;
+            }
+            else
+            {
+                updated = LAB_GameServer_PushChunkTask(view->server, e->world_chunk, LAB_CHUNK_STAGE_VIEW_MESH);
+            }
         }
         else
             LAB_View_UpdateModelOrder(view, e);
@@ -766,12 +796,12 @@ LAB_STATIC int LAB_ViewUpdateChunks(LAB_View* view)
     //uint64_t stoptime = LAB_NanoSeconds() +  500*1000; // 3.5 ms
     unsigned rest_update = view->cfg.max_update;
 
-    int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
+    /*int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
     int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
     int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
 
 
-    int dist_sq = view->cfg.preload_dist*view->cfg.preload_dist + 3;
+    int dist_sq = view->cfg.preload_dist*view->cfg.preload_dist + 3;*/
     // LAB_ViewChunkEntry* e;
     // for(size_t i = 0; i < view->chunks.size; ++i)
     // {
@@ -791,19 +821,27 @@ LAB_STATIC int LAB_ViewUpdateChunks(LAB_View* view)
     // }//);
 
     LAB_ViewChunkEntry* e;
-    LAB_ViewArray_EACH_SORTED(&view->chunk_array, LAB_LOOP_FORWARD, e,
+    size_t i = view->update_pointer;
+    if(view->chunk_array.entries_sorted_count)
+    while(1)
     {
-        int cx, cy, cz;
-        cx = e->x;
-        cy = e->y;
-        cz = e->z;
-        if((cx-px)*(cx-px) + (cy-py)*(cy-py) + (cz-pz)*(cz-pz) <= dist_sq)
-           //&& (e->visible/* || !(rand() & 0x3f)*/))
-            rest_update -= LAB_ViewUpdateChunk(view, e);
+        ++i;
+        if(i >= view->chunk_array.entries_sorted_count)
+        {
+            i = 0;
+            view->server->stats.view_update_cycles++;
+        }
+
+        e = view->chunk_array.entries_sorted[i];
+        rest_update -= LAB_ViewUpdateChunk(view, e);
 
         if(stoptime < LAB_NanoSeconds()) break;
         if(!rest_update) break;
-    });
+        if(i == view->update_pointer) break;
+
+    }
+    //if(view->cfg.max_update != rest_update) i = 0;
+    view->update_pointer = i;
     return view->cfg.max_update - rest_update;
 }
 // TODO use glMultiDrawElements
@@ -930,7 +968,7 @@ LAB_STATIC void LAB_ViewRenderChunkGrids(LAB_View* view)
             //if(view->sorted_chunks[i].distance > 0.5)
             {
                 //continue;
-                int condition = 2;
+                int condition = 6; //2;
                 switch(condition)
                 {
                     case 0:
@@ -968,6 +1006,36 @@ LAB_STATIC void LAB_ViewRenderChunkGrids(LAB_View* view)
                     {
                         if(e->world_chunk) continue;
                     } break;
+
+                    case 5:
+                    {
+                        // TODO: Note: unthreaded access, it could be changed non-atomically
+                        if(e->world_chunk && !e->world_chunk->queue_prev && !e->world_chunk->access_mode) continue;
+
+                        switch(e->world_chunk ? e->world_chunk->access_mode : 0)
+                        {
+                            case -1: glColor3f(1, 0, 0); break;
+                            case  0: glColor3f(1, 1, 1); break;
+                            default: glColor3f(0, 1, 0); break;
+                        }
+
+                    } break;
+
+                    case 6:
+                    {
+                        // TODO: Note: unthreaded access, it could be changed non-atomically
+                        if(e->world_chunk && !e->world_chunk->queue_prev) continue;
+
+                        switch(e->world_chunk ? e->world_chunk->update_stage : ~0u)
+                        {
+                            case LAB_CHUNK_STAGE_GENERATE: glColor3f(1, 0, 0); break;
+                            case LAB_CHUNK_STAGE_LIGHT: glColor3f(0, 1, 0); break;
+                            case LAB_CHUNK_STAGE_VIEW_MESH: glColor3f(0, 0, 1); break;
+
+                            default: glColor3f(1, 1, 1); break;
+                        }
+
+                    } break;
                 }
             }
 
@@ -976,6 +1044,8 @@ LAB_STATIC void LAB_ViewRenderChunkGrids(LAB_View* view)
             float dz = LAB_CHUNK_SIZE*e->z;//-view->z;
             //glPushMatrix();
             LAB_RenderBox(view, dx, dy, dz, 16, 16, 16);
+            //LAB_RenderBox(view, dx+0.5, dy+0.5, dz+0.5, 16-1.0, 16-1.0, 16-1.0);
+            //LAB_RenderBox(view, dx+71.5, dy+7.5, dz+7.5, 1.0, 1.0, 1.0);
             //glPopMatrix();
         }
     });
@@ -1030,7 +1100,7 @@ LAB_STATIC void LAB_View_UploadChunks(LAB_View* view)
     LAB_GL_CHECK();
 
 
-    GLuint elapsed = 0;
+    //GLuint elapsed = 0;
     /*if(view->current_upload_amount)
     {
         glGetQueryObjectuiv(view->upload_time_query, GL_QUERY_RESULT, &elapsed);
@@ -1507,26 +1577,15 @@ void LAB_ViewRenderHud(LAB_View* view)
         LAB_GL_ActivateTexture(&view->info.gl_texture);
         if(rerender)
         {
-            if(view->info.surf != NULL) LAB_SDL_FREE(SDL_FreeSurface, &view->info.surf);
-            //LAB_SDL_FREE(SDL_FreeSurface, &view->info.surf);
-
             char buf[64];
             snprintf(buf, sizeof(buf), "%i %i %i", px, py, pz);
-            //char buf[64];
-            //snprintf(buf, sizeof(buf), "%i %i %i - %i", px, py, pz,
-            //         LAB_gl_debug_alloc_count);
-            //char buf[512];
-            //snprintf(buf, sizeof(buf), "%i %i %i",
-            //         px, py, pz,
-            //         view->world->chunks.size,
-            //         view->chunk_capacity);
 
             SDL_Color fg = { 255, 255, 255, 255 };
             SDL_Color bg = {   0,   0,   0, 255 };
 
+            LAB_SDL_FREE(SDL_FreeSurface, &view->info.surf);
             LAB_SDL_ALLOC(TTF_RenderUTF8_Shaded, &view->info.surf, font, buf, fg, bg);
             if(!view->info.surf) return;
-
 
             LAB_GL_UploadSurf(view->info.gl_texture, view->info.surf);
         }
@@ -1535,6 +1594,22 @@ void LAB_ViewRenderHud(LAB_View* view)
         //int scale = scale_i > 0x80 ? 2 : 1;
         int scale = 1;
         LAB_GL_DrawSurf(view->info.gl_texture, 0, view->h-scale*view->info.surf->h, scale*view->info.surf->w, scale*view->info.surf->h, view->w, view->h);
+
+
+
+        if(view->cfg.flags & LAB_VIEW_SHOW_FPS_GRAPH && view->stats_display.surf)
+        {
+            LAB_GL_ActivateTexture(&view->stats_display.gl_texture);
+            if(view->stats_display.reupload)
+            {
+                LAB_GL_UploadSurf(view->stats_display.gl_texture, view->stats_display.surf);
+                view->stats_display.reupload = false;
+            }
+            LAB_GL_DrawSurf(view->stats_display.gl_texture, 
+                            0, view->h-view->info.surf->h-view->stats_display.surf->h, 
+                            view->stats_display.surf->w, view->stats_display.surf->h,
+                            view->w, view->h);
+        }
     }
 }
 
@@ -1803,10 +1878,11 @@ void LAB_ViewRemoveDistantChunks(LAB_View* view)
     LAB_ViewArray_DeleteList_EACH(&view->chunk_array, e,
     {
         LAB_Chunk* w_chunk = e->world_chunk;
-        if(w_chunk) LAB_WorldServer_LockChunk(view->server, w_chunk);
+        if(w_chunk) LAB_GameServer_Lock1Chunk(view->server, w_chunk);
         LAB_ViewUnlinkChunk(view, e);
+        view->stats.deleted++;
         --rest_unload;
-        if(w_chunk) LAB_WorldServer_UnlockChunk(view->server, w_chunk);
+        if(w_chunk) LAB_GameServer_Unlock1Chunk(view->server, w_chunk);
         if(stoptime < LAB_NanoSeconds()) return;
         //if(!rest_unload) return;
     });
@@ -1819,15 +1895,18 @@ void LAB_ViewRemoveDistantChunks(LAB_View* view)
     size_t i = s;
     do
     {
+        LAB_ASSERT(i < v);
         e = view->chunk_array.entries[i];
         if(e && (e->x-px)*(e->x-px) + (e->y-py)*(e->y-py) + (e->z-pz)*(e->z-pz) > dist_sq)
         {
             LAB_Chunk* w_chunk = e->world_chunk;
-            if(w_chunk) LAB_WorldServer_LockChunk(view->server, w_chunk);
+            if(w_chunk) LAB_GameServer_Lock1Chunk(view->server, w_chunk);
             LAB_ViewUnlinkChunk(view, e);
             view->chunk_array.entries[i] = NULL;
+            view->chunk_array.entries_count--;
+            view->stats.deleted++;
             --rest_unload;
-            if(w_chunk) LAB_WorldServer_UnlockChunk(view->server, w_chunk);
+            if(w_chunk) LAB_GameServer_Unlock1Chunk(view->server, w_chunk);
         }
         if(stoptime < LAB_NanoSeconds()) break;
         //if(!rest_unload) break;
@@ -2047,6 +2126,7 @@ void LAB_ViewTick(LAB_View* view, uint32_t delta_ms)
     LAB_PerfInfo_Push(view->perf_info, LAB_TG_VIEW_UPDATE);
     int update_count = LAB_ViewUpdateChunks(view);
     LAB_PerfInfo_Pop(view->perf_info);
+    (void)update_count;
 //    LAB_FpsGraph_SetSample(&view->perf_info->fps_graphs[LAB_TG_MESH], 32+update_count*2);
 
 
@@ -2257,6 +2337,12 @@ LAB_STATIC void LAB_View_UpdateChunkSeethrough(LAB_View* view, LAB_ViewChunkEntr
     LAB_Chunk* chunk = e->world_chunk;
     if(!chunk) return;
 
+    if(e->world_chunk->empty)
+    {
+        e->seethrough_faces = 63;
+        return;
+    }
+
     int faces = 0;
 
     LAB_UNROLL(6)
@@ -2324,23 +2410,29 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
 
         if(entry == NULL)
         {
-            entry = LAB_ViewNewChunkEntry(view, px, py, pz);
-            if(entry == NULL) return; // NO MEMORY
-            entry->dirty = ~0;
-            LAB_ASSUME(!entry->world_chunk);
-
-            //entry->do_query = 1;
-            entry->visible = 1;
-
             LAB_Chunk* chunk = LAB_GenerateChunk(view->world, px, py, pz);
             if(chunk)
             {
-                chunk->view_user = entry;
-                entry->world_chunk = chunk;
-            }
-            else
-            {
-                //return;
+                if(chunk->view_user)
+                {
+                    LAB_ViewChunkEntry* e = chunk->view_user;
+                    LAB_ViewArray_Recover(&view->chunk_array, e);
+                    view->stats.recovered_count++;
+                }
+                else
+                {
+                    entry = LAB_ViewNewChunkEntry(view, px, py, pz);
+                    if(entry == NULL) return; // NO MEMORY
+                    entry->dirty = ~0;
+                    LAB_ASSUME(!entry->world_chunk);
+                    LAB_ASSUME(!chunk->view_user);
+
+                    //entry->do_query = 1;
+                    entry->visible = 1;
+
+                    chunk->view_user = entry;
+                    entry->world_chunk = chunk;
+                }
             }
         }
     }
@@ -2350,13 +2442,53 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
     LAB_Block* block = LAB_GetBlock(view->world, (int)floorf(view->x), (int)floorf(view->y), (int)floorf(view->z));
     bool is_xray = !!(block->flags & LAB_BLOCK_OPAQUE);
 
-    uint64_t stoptime = LAB_NanoSeconds() + 1000*1000; // 1 ms
+    uint64_t stoptime = LAB_NanoSeconds() + 3000*1000; // 1 ms
 
     LAB_ViewChunkEntry* c;
-    LAB_ViewArray_EACH_SORTED(&view->chunk_array, LAB_LOOP_FORWARD, c,
+    //LAB_ViewArray_EACH_SORTED(&view->chunk_array, LAB_LOOP_FORWARD, c,
+
+    static
+    size_t si = 0; // TODO
+    if(si >= view->chunk_array.entries_sorted_count) si = 0;
+
+    size_t i = si;
+
+    unsigned int xray_faces = is_xray ? 63 : 0;
+
+    // find first chunk with missing neighbors
+    // Loop
+    /*for(i = si; i < view->chunk_array.entries_sorted_count; ++i)
     {
-        if(c->visible && (    LAB_View_IsChunkPartlyInFrustum(view, c->x, c->y, c->z)
-                           || LAB_View_IsLocalChunk(view, c->x, c->y, c->z)))
+        break;
+        c = view->chunk_array.entries_sorted[i];
+
+        if(LAB_UNLIKELY(!c->world_chunk))
+        {
+            goto empty_found;
+        }
+
+        int faces = LAB_OUTWARDS_FACES(c->x, c->y, c->z, px, py, pz);
+        faces &= c->seethrough_faces | xray_faces;
+        int face;
+        LAB_DIR_EACH(faces, face,
+        {
+            int xx = c->x+LAB_OX(face), yy = c->y+LAB_OY(face), zz = c->z+LAB_OZ(face);
+            LAB_ChunkPos pp = { xx, yy, zz };
+
+            if(LAB_UNLIKELY(!LAB_ViewArray_Get(&view->chunk_array, pp)))
+                goto empty_found;
+        });
+    }
+    empty_found:;*/
+
+    int dbg_waiting_count = 0;
+    unsigned int dbg_maxdist = 0;
+    for(; i < view->chunk_array.entries_sorted_count; ++i)
+    {
+        c = view->chunk_array.entries_sorted[i];
+
+        /*if(c->visible && (    LAB_View_IsChunkPartlyInFrustum(view, c->x, c->y, c->z)
+                           || LAB_View_IsLocalChunk(view, c->x, c->y, c->z)))*/
         {
             if(!c->world_chunk)
             {
@@ -2367,14 +2499,23 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
                 {
                     chunk->view_user = c;
                     c->world_chunk = chunk;
+
+                    if(chunk->light_generated)
+                    {
+                        LAB_GameServer_PushChunkTask(view->server, chunk, LAB_CHUNK_STAGE_VIEW_MESH);
+                    }
                 }
-                else continue;
+                else
+                {
+                    dbg_waiting_count++;
+                    continue;
+                }
             }
-            if(!load_amount) return;
-            if(stoptime < LAB_NanoSeconds()) return;
+            if(!load_amount) break;
+            if(stoptime < LAB_NanoSeconds()) break;
 
             int faces = LAB_OUTWARDS_FACES(c->x, c->y, c->z, px, py, pz);
-            if(!is_xray) faces &= c->seethrough_faces;
+            faces &= c->seethrough_faces | xray_faces;
             int face;
             LAB_DIR_EACH(faces, face,
             {
@@ -2395,24 +2536,53 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
                 if(dist > view->cfg.preload_dist*view->cfg.preload_dist + 3)
                     continue;
 
-                LAB_ViewChunkEntry* entry = LAB_ViewNewChunkEntry(view, xx, yy, zz);
-                if(entry == NULL) return; // NO MEMORY
-                entry->dirty = ~0;
-                --load_amount;
-                LAB_ASSUME(!entry->world_chunk);
+                if(dist > dbg_maxdist) dbg_maxdist = dist;
 
-                entry->do_query = 1;
 
                 LAB_Chunk* chunk = LAB_GenerateChunk(view->world, xx, yy, zz);
                 if(chunk)
                 {
-                    chunk->view_user = entry;
-                    entry->world_chunk = chunk;
+                    if(chunk->view_user)
+                    {
+                        LAB_ViewChunkEntry* e = chunk->view_user;
+                        LAB_ViewArray_Recover(&view->chunk_array, e);
+                        view->stats.recovered_count++;
+                    }
+                    else
+                    {
+                        LAB_ViewChunkEntry* entry = LAB_ViewNewChunkEntry(view, xx, yy, zz);
+                        LAB_ASSERT_OR_WARN(entry);
+                        if(entry == NULL) break; // NO MEMORY
+                        entry->dirty = ~0;
+                        --load_amount;
+                        LAB_ASSUME(!entry->world_chunk);
+                        LAB_ASSUME(!chunk->view_user);
+
+                        //entry->do_query = 1;
+
+                        chunk->view_user = entry;
+                        entry->world_chunk = chunk;
+                    }
                 }
-                if(!load_amount) return;
+                if(!load_amount) break;
             });
         }
-    });
+    }
+    /*LAB_DbgPrintf("%5i, %3i, %3i, %2i, %2i, %5.1f, %c\n",
+                    i,
+                    view->cfg.load_amount - load_amount,
+                    dbg_waiting_count,
+                    view->cfg.preload_dist,
+                    view->cfg.keep_dist,
+                    sqrt(dbg_maxdist),
+                    (stoptime < LAB_NanoSeconds() ? 'X' : '1')
+                    );*/
+    si = i;
+
+    if(view->cfg.load_amount - load_amount)
+        si = 0;
+
+
 }
 
 
@@ -2449,7 +2619,10 @@ void LAB_ViewUnlinkChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
         }
     }*/
     if(chunk_entry->world_chunk)
+    {
+        LAB_ASSERT(chunk_entry->world_chunk->view_user == chunk_entry);
         chunk_entry->world_chunk->view_user = NULL;
+    }
 
     LAB_ViewDestructFreeChunk(view, chunk_entry);
 }

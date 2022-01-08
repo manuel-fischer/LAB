@@ -10,8 +10,6 @@ typedef enum LAB_BlockField
     LAB_BlockField_flags = 1,
     LAB_BlockField_lum,
     LAB_BlockField_dia,
-    LAB_BlockField_item_tint,
-    LAB_BlockField_item_texture,
     //LAB_BlockField_model,
     LAB_BlockField_bounds,
 } LAB_BlockField;
@@ -34,15 +32,6 @@ bool LAB_Block_Set_VL(LAB_Block* b, va_list ap)
 
         case LAB_BlockField_dia:
             b->dia = va_arg(ap, LAB_Color);
-            break;
-
-        case LAB_BlockField_item_tint:
-            b->item_tint = va_arg(ap, LAB_Color);
-            break;
-
-        case LAB_BlockField_item_texture:
-            b->item_tx = va_arg(ap, int);
-            b->item_ty = va_arg(ap, int);
             break;
 
         /*case LAB_BlockField_model:

@@ -11,16 +11,19 @@ typedef struct LAB_ViewArray
     LAB_ChunkPos origin;
     size_t radius;
     size_t cube_length; // always a pow2
-    LAB_ViewChunkEntry** entries; // cube_length**3
     LAB_ViewArray_ChunkOffset* sorted_offsets;
 
-    LAB_ViewChunkEntry* del_list;
-    
+    size_t entries_count;
+    LAB_ViewChunkEntry** entries; // cube_length**3
+
     size_t entries_sorted_count;
     LAB_ViewChunkEntry** entries_sorted;
 
     size_t entries_sorted_nonempty_count;
     LAB_ViewChunkEntry** entries_sorted_nonempty;
+
+    size_t del_list_count;
+    LAB_ViewChunkEntry* del_list;
 } LAB_ViewArray;
 
 bool LAB_ViewArray_Create(LAB_ViewArray* arr, size_t r);
@@ -47,6 +50,20 @@ size_t LAB_ViewArray_Volume(LAB_ViewArray* arr)
 {
     size_t l = arr->cube_length;
     return l*l*l;
+}
+
+
+
+LAB_INLINE
+void LAB_ViewArray_PushDel(LAB_ViewArray* arr, LAB_ViewChunkEntry* e)
+{
+    LAB_ASSERT(!e->del_list_prev);
+    e->del_list_prev = &arr->del_list;
+    e->del_list_next = arr->del_list;
+    if(arr->del_list) arr->del_list->del_list_prev = &e->del_list_next;
+    arr->del_list = e;
+
+    arr->del_list_count++;
 }
 
 // undefined if array is null sized
@@ -85,11 +102,11 @@ void LAB_ViewArray_Set(LAB_ViewArray* arr, LAB_ViewChunkEntry* e)
     //if(e == e2) return;
     if(e2 && (e->x != e2->x || e->y != e2->y || e->z != e2->z))
     {
-        LAB_ASSERT(!e2->del_list_next);
-        e2->del_list_next = arr->del_list;
-        arr->del_list = e2;
+        LAB_ViewArray_PushDel(arr, e2);
+        arr->entries_count--;
     }
     arr->entries[index] = e;
+    arr->entries_count++;
 }
 
 LAB_INLINE
@@ -100,14 +117,26 @@ bool LAB_ViewArray_SetClipped(LAB_ViewArray* arr, LAB_ViewChunkEntry* e)
        abs(arr->origin.y - e->y) >= arr->radius ||
        abs(arr->origin.z - e->z) >= arr->radius)
     {
-        LAB_ASSERT(!e->del_list_next);
-        e->del_list_next = arr->del_list;
-        arr->del_list = e;
+        LAB_ViewArray_PushDel(arr, e);
         return false;
     }
     
     LAB_ViewArray_Set(arr, e);
     return true;
+}
+
+// Do not use inside a del loop
+LAB_INLINE
+void LAB_ViewArray_Recover(LAB_ViewArray* arr, LAB_ViewChunkEntry* e)
+{
+    LAB_ASSERT(e->del_list_prev);
+    *e->del_list_prev = e->del_list_next;
+    if(e->del_list_next) e->del_list_next->del_list_prev = e->del_list_prev;
+    e->del_list_prev = NULL;
+    e->del_list_next = NULL;
+
+    arr->del_list_count--;
+    LAB_ViewArray_Set(arr, e);
 }
 
 
@@ -197,7 +226,9 @@ while(0)
     while((arr)->del_list) \
     { \
         (e) = (arr)->del_list; \
+        (arr)->del_list_count--; \
         (arr)->del_list = (e)->del_list_next; \
+        if((arr)->del_list) (arr)->del_list->del_list_prev = &(arr)->del_list; \
         { __VA_ARGS__ } \
     } \
 } \

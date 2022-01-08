@@ -213,7 +213,7 @@ LAB_STATIC void LAB_Gen_Surface_PopulateLayer_Func(LAB_GenOverworld* gen, LAB_Pl
 
 LAB_STATIC void LAB_Gen_Cave(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y, int z)
 {
-    if(y <= -1)
+    if(y < LAB_CAVE_ALTITUDE_C)
     {
         // Underground Generation
         LAB_Gen_Cave_Carve(gen, chunk, x, y, z);

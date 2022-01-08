@@ -47,3 +47,31 @@ LAB_INLINE void LAB_Placer_SetBlockIfBlock(LAB_Placer* p, int x, int y, int z, L
             *b = block;
     }
 }
+
+LAB_INLINE void LAB_Placer_SetBlockIfAny(LAB_Placer* p, int x, int y, int z, LAB_Block* block, uint32_t tags)
+{
+    unsigned xx = x - p->ox;
+    unsigned yy = y - p->oy;
+    unsigned zz = z - p->oz;
+
+    if(xx<16 && yy<16 && zz<16)
+    {
+        LAB_Block*_Atomic* b = &p->chunk->blocks[xx|yy<<4|zz<<8];
+        if((*b)->tags&tags)
+            *b = block;
+    }
+}
+
+LAB_INLINE void LAB_Placer_SetBlockIfAll(LAB_Placer* p, int x, int y, int z, LAB_Block* block, uint32_t tags)
+{
+    unsigned xx = x - p->ox;
+    unsigned yy = y - p->oy;
+    unsigned zz = z - p->oz;
+
+    if(xx<16 && yy<16 && zz<16)
+    {
+        LAB_Block*_Atomic* b = &p->chunk->blocks[xx|yy<<4|zz<<8];
+        if(((*b)->tags&tags) == tags)
+            *b = block;
+    }
+}

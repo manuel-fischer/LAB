@@ -66,6 +66,8 @@ bool LAB_ViewArray_Resize(LAB_ViewArray* arr, size_t r)
 
         arr->radius = r;
         arr->cube_length = l;
+        
+        arr->entries_count = 0;
         arr->entries = n_entries;
         LAB_ASSERT(v == LAB_ViewArray_Volume(arr));
 
@@ -117,12 +119,11 @@ void LAB_ViewArray_Clear(LAB_ViewArray* arr)
         LAB_ViewChunkEntry* e = arr->entries[i];
         if(e)
         {
-            LAB_ASSERT(!e->del_list_next);
-            e->del_list_next = arr->del_list;
-            arr->del_list = e;
+            LAB_ViewArray_PushDel(arr, e);
             arr->entries[i] = NULL;
         }
     }
+    arr->entries_count = 0;
     arr->entries_sorted_count = 0;
     arr->entries_sorted_nonempty_count = 0;
 }
@@ -148,4 +149,7 @@ void LAB_ViewArray_Collect(LAB_ViewArray* arr)
 
     //arr->entries_sorted_nonempty = arr->entries_sorted;
     //arr->entries_sorted_nonempty_count = arr->entries_sorted_count;
+
+    LAB_ASSERT(arr->entries_sorted_count <= arr->entries_count);
+    LAB_ASSERT(arr->entries_sorted_nonempty_count <= arr->entries_sorted_count);
 }

@@ -32,7 +32,7 @@
 #define LAB_UNREACHABLE() __builtin_unreachable()
 
 // function attributes
-#define LAB_NEVER_INLINE  __attribute__((never_inline))
+#define LAB_NEVER_INLINE  __attribute__((noinline))
 #define LAB_ALWAYS_INLINE __attribute__((always_inline))
 #define LAB_NOINLINE      __attribute__((noinline))
 #define LAB_HOT           __attribute__((hot))
@@ -97,6 +97,10 @@
 #define LAB_EMPTY_TU LAB_UNUSED static char empty_tu = 0
 
 
+
+#define LAB_GLOBAL_CONST LAB_PURE
+#define LAB_POINTER_CONST LAB_PURE
+#define LAB_VALUE_CONST LAB_CONST
 
 
 // value evaluated multiple times

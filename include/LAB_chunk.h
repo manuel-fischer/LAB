@@ -57,7 +57,11 @@ typedef struct LAB_Chunk_Light
 
 
 
-typedef struct LAB_Chunk LAB_Chunk; // opaque
+typedef struct LAB_ChunkStats
+{
+    size_t executed_updates;
+
+} LAB_ChunkStats;
 
 typedef struct LAB_Chunk
 {
@@ -80,12 +84,17 @@ typedef struct LAB_Chunk
          sky_light; // when empty, this marks that the chunk only has skylight
                     // but at every block
 
-    _Atomic unsigned int dirty;
+    //_Atomic unsigned int dirty; 
+    atomic_bool dirty; // TODO remove
 
     _Atomic LAB_CrammedChunkPosSet dirty_blocks; // used for updating light, set by world
     _Atomic LAB_CrammedChunkPosSet relit_blocks; // wich blocks are relit.
+    LAB_CrammedChunkPosSet active_blocks;
+
     _Atomic int dirty_neighbors;
     _Atomic int relit_neighbors;
+    int active_neighbors;
+
 
     atomic_bool generated;
     atomic_bool light_generated;
@@ -100,16 +109,20 @@ typedef struct LAB_Chunk
     // only if it is the same chunk
 
     // locked by the server mutex
-    bool is_accessed;
+//    bool is_accessed; // TODO remove
+    int access_mode; // -1: write, 0: available, positive: read count
 
+    LAB_ChunkStats stats;
 
     //atomic_size_t enqueue_count; // number of entries in the world task queue
     // if queue_prev is NULL, the element is not enqueued
     struct LAB_Chunk** queue_prev,* queue_next;
+    //size_t reenqueue;
+
     // Not initialized
     size_t queue_timestamp;
     unsigned int update_stage;
-    int update_parity, update_priority;
+    int update_priority;
 
 
 } LAB_Chunk;
@@ -130,6 +143,9 @@ LAB_Chunk* LAB_CreateChunk(LAB_ChunkPos pos);
  *  Unlink neighbors and free chunk
  */
 void LAB_DestroyChunk(LAB_Chunk* chunk);
+
+void LAB_UnlinkChunk(LAB_Chunk* chunk);
+void LAB_DestroyChunk_Unlinked(LAB_Chunk* chunk);
 
 
 void LAB_FillChunk(LAB_Chunk* chunk, LAB_Block* fill_block);

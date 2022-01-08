@@ -20,6 +20,10 @@
 
 #define LAB_COLOR_BIRCH_LEAVES LAB_RGBX(ee8811) // LAB_RGB(0, 100, 10) // LAB_RGB(20, 150, 40)
 
+//#define LAB_COLOR_WATER     LAB_RGBAX(2244aa44)
+#define LAB_COLOR_WATER     LAB_RGBAX(2277ff44)
+#define LAB_COLOR_WATER_DIA LAB_RGBX(ccddee)
+
 
 
 bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
@@ -32,6 +36,7 @@ bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
         //LAB_RegisterBlock(&LAB_BLOCK_OUTSIDE);
 
         LAB_BLOCK_AIR.flags = 0;
+        LAB_BLOCK_AIR.tags = LAB_BLOCK_TAG_REPLACEABLE;
         LAB_BLOCK_AIR.dia = LAB_RGB(255, 255, 255);
         //LAB_RegisterBlock(&LAB_BLOCK_AIR);
     }
@@ -264,13 +269,29 @@ bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
     }
 
 
-    ///// MISC /////
+    ///// METAL BLOCKS /////
     {
         size_t tex[2][2];
         
         LAB_Assets_NewTexture(assets, tex, "metal");
         LAB_BlockFull_Init(assets, &LAB_BLOCK_METAL, tex, LAB_COLOR_WHITE, LAB_RENDER_PASS_SOLID);
+    }
 
+    ///// FLUIDS /////
+    {
+        size_t tex[2][2];
+        LAB_Assets_NewTintedTexture(assets, tex, "water", 0, LAB_COLOR_WATER);
+        LAB_BlockFull_Init(assets, &LAB_BLOCK_WATER, tex, LAB_RGBA(255, 255, 255, 255), LAB_RENDER_PASS_ALPHA);
+        LAB_BLOCK_WATER.flags = LAB_BLOCK_MASSIVE|LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL|LAB_BLOCK_OPAQUE_SELF;
+        LAB_BLOCK_WATER.tags  = LAB_BLOCK_TAG_REPLACEABLE;
+        LAB_BLOCK_WATER.dia   = LAB_COLOR_WATER_DIA;
+
+    }
+
+
+    ///// MISC /////
+    {
+        size_t tex[2][2];
         {
             static const LAB_TextureComposite c[] = {
                 { "torch_stick", 0, LAB_RGB(120, 97, 80) },

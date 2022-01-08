@@ -25,7 +25,7 @@
 #include "LAB_util.h"
 #include "LAB_debug.h"
 
-#include "LAB_world_server.h"
+#include "LAB_game_server.h"
 
 #include "LAB_blocks.h" // for inventory
 
@@ -318,26 +318,27 @@ int LAB_Input_OnEvent_Proc(void* user, LAB_Window* window, SDL_Event* event)
 
                 case SDLK_F6:
                 {
-                    LAB_WorldServer_Lock(view->server);
+                    LAB_GameServer_Lock(view->server);
                     view->cfg.flags ^= LAB_VIEW_BRIGHTER;
+                    view->cfg.gamma_map = view->cfg.flags & LAB_VIEW_BRIGHTER ? &LAB_gamma_light : &LAB_gamma_dark;
                     LAB_ViewInvalidateEverything(view, /*free_buffers*/0);
-                    LAB_WorldServer_Unlock(view->server);
+                    LAB_GameServer_Unlock(view->server);
 
                 } break;
                 case SDLK_F7:
                 {
-                    LAB_WorldServer_Lock(view->server);
+                    LAB_GameServer_Lock(view->server);
                     view->cfg.flags ^= LAB_VIEW_FLAT_SHADE;
                     LAB_ViewInvalidateEverything(view, /*free_buffers*/0);
-                    LAB_WorldServer_Unlock(view->server);
+                    LAB_GameServer_Unlock(view->server);
 
                 } break;
 
                 case SDLK_F10:
                 {
-                    LAB_WorldServer_Lock(view->server);
+                    LAB_GameServer_Lock(view->server);
                     LAB_View_Clear(view);
-                    LAB_WorldServer_Unlock(view->server);
+                    LAB_GameServer_Unlock(view->server);
                 } break;
 
                 case SDLK_F11:

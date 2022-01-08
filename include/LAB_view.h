@@ -17,6 +17,8 @@
 #include "LAB_view_array.h"
 #include "LAB_htl_config.h"
 
+#include "LAB_view_gamma.h"
+
 
 /*
  * It might be better to use a sorted array and then use binary search on that,
@@ -128,6 +130,8 @@ typedef struct LAB_ViewConfig
 
     uint32_t load_amount;
     uint32_t empty_load_amount;
+
+    const LAB_View_GammaMap* gamma_map;
 } LAB_ViewConfig;
 
 
@@ -161,6 +165,20 @@ typedef struct LAB_View
     LAB_ViewConfig cfg;
 
     LAB_ViewCoordInfo info;
+
+    struct
+    {
+        unsigned gl_texture;
+        bool reupload;
+        SDL_Surface* surf;
+    } stats_display;
+
+    struct
+    {
+        size_t recovered_count;
+        size_t deleted;
+    } stats;
+
     int w, h; // window size
 
     /*LAB_FpsGraph fps_graph;
@@ -169,7 +187,7 @@ typedef struct LAB_View
     LAB_FpsGraph fps_graph_view;
     LAB_FpsGraph fps_graph_view_render;*/
     LAB_PerfInfo* perf_info;
-    struct LAB_WorldServer* server; // TODO remove
+    struct LAB_GameServer* server; // TODO remove
 
     LAB_GuiManager gui_mgr;
 
@@ -184,6 +202,7 @@ typedef struct LAB_View
     size_t upload_amount;
     size_t current_upload_amount;
 
+    size_t update_pointer;
     size_t delete_index;
 
 } LAB_View;

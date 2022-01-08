@@ -194,3 +194,15 @@ void LAB_PrintStackTrace()
 }
 #endif
 #endif
+
+
+
+#ifdef LAB_DBG_SET_BREAKPOINT
+static volatile int LAB_DbgVar = 0;
+void LAB_DbgBreak(void)
+{
+    // Set breakpoint here
+    LAB_DbgPrintf("Breakpoint reached\n");
+    getchar();
+}
+#endif

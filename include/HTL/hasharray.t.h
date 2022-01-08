@@ -8,6 +8,10 @@
 // Implementation Constants
 #define HTL_HASHARRAY_LOAD_NUM          3
 #define HTL_HASHARRAY_LOAD_DEN          4
+
+#define HTL_HASHARRAY_SHRINK_NUM        1
+#define HTL_HASHARRAY_SHRINK_DEN        3
+
 #define HTL_HASHARRAY_GROW_FACTOR       2
 #define HTL_HASHARRAY_INITIAL_CAPACITY 16
 #define HTL_HASHARRAY_CACHE_LAST        0
@@ -40,3 +44,6 @@ bool HTL_MEMBER(IsEntry)(HTL_P(NAME)* hasharray, HTL_P(ENTRY_TYPE)* entry);
 void HTL_MEMBER(Discard)(HTL_P(NAME)* hasharray, HTL_P(ENTRY_TYPE)* entry);
 
 void HTL_MEMBER(Clear)(HTL_P(NAME)* hasharray);
+
+bool HTL_MEMBER(Resize)(HTL_P(NAME)* hasharray, size_t capacity);
+bool HTL_MEMBER(ShrinkToFit)(HTL_P(NAME)* hasharray); // false for fail and no change

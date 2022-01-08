@@ -32,12 +32,14 @@ HTL_DEF HTL_P(ENTRY_TYPE)* HTL_MEMBER(Locate)(HTL_P(NAME)* hasharray, HTL_P(KEY_
         if(!HTL_MEMBER(IsEntry)(hasharray, entry))           goto EMPTY_ENTRY_FOUND;
         if(HTL_P(COMP_FUNC)(key, HTL_P(KEY_FUNC)(entry))==0) goto ENTRY_FOUND;
     }
-    for(i = 0; /*i < hashid*/; ++i, ++dbg_probe)
+    for(i = 0; i < hashid; ++i, ++dbg_probe)
     {
         entry = &hasharray->table[i];
         if(!HTL_MEMBER(IsEntry)(hasharray, entry))           goto EMPTY_ENTRY_FOUND;
         if(HTL_P(COMP_FUNC)(key, HTL_P(KEY_FUNC)(entry))==0) goto ENTRY_FOUND;
     }
+    HTL_ASSERT(false);
+    entry = NULL;
 
 ENTRY_FOUND:
 #if HTL_HASHARRAY_CACHE_LAST
@@ -59,36 +61,12 @@ HTL_DEF HTL_P(ENTRY_TYPE)* HTL_MEMBER(PutAlloc)(HTL_P(NAME)* hasharray, HTL_P(KE
             if(HTL_MEMBER(IsEntry)(hasharray, entry)) return entry;
         }
 
-        size_t old_capacity, new_capacity;
-        HTL_P(ENTRY_TYPE)* old_table;
-        HTL_P(ENTRY_TYPE)* new_table;
-        new_capacity = (hasharray->capacity == 0) ? HTL_HASHARRAY_INITIAL_CAPACITY : hasharray->capacity * HTL_HASHARRAY_GROW_FACTOR;
-        /*printf("A " HTL_STR(HTL_P(NAME)) " was resized to a capacity of %zu, with current size %zu\n",
-               new_capacity, hasharray->size);*/
-        new_table = HTL_CALLOC(new_capacity, (sizeof *new_table));
-        if(new_table == NULL) return NULL;
-
-        old_table = hasharray->table;
-        old_capacity = hasharray->capacity;
-
-        hasharray->table = new_table;
-        hasharray->capacity = new_capacity;
-        hasharray->dbg_max_probe = 0;
-        //hasharray->size = hasharray->size;
-
-#if HTL_HASHARRAY_CACHE_LAST
-        hasharray->cached_entry = NULL;
-#endif
-
-        for(size_t i = 0; i < old_capacity; ++i)
-        {
-            if(HTL_MEMBER(IsEntry)(hasharray, &old_table[i]))
-            {
-                HTL_P(ENTRY_TYPE)* e = HTL_MEMBER(Locate)(hasharray, HTL_P(KEY_FUNC)(&old_table[i]));
-                *e = old_table[i]; // memcpy
-            }
-        }
-        HTL_FREE(old_table);
+        size_t new_capacity = (hasharray->capacity == 0)
+            ? HTL_HASHARRAY_INITIAL_CAPACITY
+            : hasharray->capacity * HTL_HASHARRAY_GROW_FACTOR;
+        
+        if(!HTL_MEMBER(Resize)(hasharray, new_capacity))
+            return NULL;
     }
 
     HTL_P(ENTRY_TYPE)* entry = HTL_MEMBER(Locate)(hasharray, key);
@@ -160,9 +138,66 @@ HTL_DEF void HTL_MEMBER(Discard)(HTL_P(NAME)* hasharray, HTL_P(ENTRY_TYPE)* entr
 
 HTL_DEF void HTL_MEMBER(Clear)(HTL_P(NAME)* hasharray)
 {
-    if(hasharray->table)
+    /*if(hasharray->table)
         memset(hasharray->table, 0, hasharray->capacity * sizeof *hasharray->table);
 
-    hasharray->size = 0;
+    hasharray->size = 0;*/
+
+    HTL_FREE(hasharray->table);
+    memset(hasharray, 0, sizeof *hasharray);
 }
 #endif // HTL_PARAM
+
+
+HTL_DEF bool HTL_MEMBER(Resize)(HTL_P(NAME)* hasharray, size_t new_capacity)
+{
+    // strictly greater, because of probing!
+    HTL_ASSERT(new_capacity > hasharray->size);
+    HTL_ASSERT(new_capacity != hasharray->capacity);
+
+    size_t old_capacity;
+    HTL_P(ENTRY_TYPE)* old_table;
+    HTL_P(ENTRY_TYPE)* new_table;
+    new_table = HTL_CALLOC(new_capacity, (sizeof *new_table));
+    if(new_table == NULL) return false;
+
+    old_table = hasharray->table;
+    old_capacity = hasharray->capacity;
+
+    hasharray->table = new_table;
+    hasharray->capacity = new_capacity;
+    hasharray->dbg_max_probe = 0;
+    //hasharray->size = hasharray->size;
+
+#if HTL_HASHARRAY_CACHE_LAST
+    hasharray->cached_entry = NULL;
+#endif
+
+    size_t dbg_insert_count = 0;
+    for(size_t i = 0; i < old_capacity; ++i)
+    {
+        if(HTL_MEMBER(IsEntry)(hasharray, &old_table[i]))
+        {
+            HTL_P(ENTRY_TYPE)* e = HTL_MEMBER(Locate)(hasharray, HTL_P(KEY_FUNC)(&old_table[i]));
+            *e = old_table[i]; // memcpy
+            ++dbg_insert_count;
+        }
+    }
+    LAB_ASSERT(dbg_insert_count == hasharray->size);
+    HTL_FREE(old_table);
+    return true;
+}
+
+
+HTL_DEF bool HTL_MEMBER(ShrinkToFit)(HTL_P(NAME)* hasharray)
+{
+    if(hasharray->capacity <= HTL_HASHARRAY_INITIAL_CAPACITY) return false;
+
+    if(hasharray->size * HTL_HASHARRAY_SHRINK_DEN <= hasharray->capacity * HTL_HASHARRAY_SHRINK_NUM)
+    {
+        size_t new_capacity = hasharray->capacity / HTL_HASHARRAY_GROW_FACTOR;
+        return HTL_MEMBER(Resize)(hasharray, new_capacity);
+    }
+
+    return false;
+}

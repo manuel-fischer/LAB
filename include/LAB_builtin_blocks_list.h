@@ -41,6 +41,9 @@ LAB_Block LAB_BLOCK_IRON_ORE,
           //LAB_BLOCK_GRASS_PLAINS,
           LAB_BLOCK_DIRT,
           LAB_BLOCK_METAL,
+
+          LAB_BLOCK_WATER,
+
           LAB_BLOCK_TORCH,
           LAB_BLOCK_LIGHT,
           LAB_BLOCK_WARM_LIGHT,

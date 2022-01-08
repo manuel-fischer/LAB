@@ -89,8 +89,6 @@ bool LAB_BlockGroupStone_Init(LAB_Assets* assets,
     LAB_BlockGroupStone* grp,
     LAB_Color tint)
 {
-    grp->blocks[0].item_tint = tint;
-
     for(int i = 1; i < LAB_BLOCK_GROUP_STONE_NUM; ++i)
         LAB_ObjCopy(&grp->blocks[i], &grp->blocks[0]);
 

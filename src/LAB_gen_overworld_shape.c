@@ -19,7 +19,7 @@ void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y
     LAB_ChunkRandom(&random, gen->seed^LAB_GEN_DIRT_SALT, x, y, z);
 
     //                         v  for dirt generation below the surface
-    if(y >= LAB_SURFACE_MIN_CY-1 && y < LAB_SURFACE_MAX_CY)
+    if(y >= LAB_SEA_BOTTOM_C-1 && y < LAB_SURFACE_MAX_CY)
     {
         for(int zz = 0; zz < 16; ++zz)
         for(int xx = 0; xx < 16; ++xx)
@@ -37,11 +37,12 @@ void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y
                 int yi = 16*y|yy;
 
                 const LAB_Block* b = &LAB_BLOCK_AIR;
+                if(yi < 0) b = &LAB_BLOCK_WATER;
 
                 //if(sheight < (int)(LAB_NextRandom(&random)&15) + 20)
-                if(sheight < (int)(LAB_NextRandom(&random)&31) + 40)
+                if(sheight < (int)(LAB_NextRandom(&random)&31) + LAB_ROCKY_ALTITUDE)
                 {
-                    if(yi == sheight)
+                    if(yi == sheight && yi >= -1)
                         b = biome->surface_block;
                     else if(yi <= sheight)
                     {
@@ -55,6 +56,7 @@ void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y
                     }
                 }
                 else if(yi <= sheight)
+                    //b = &LAB_BLOCK_CLAY.layered;
                     continue; // keep stone
 
                 if(river && b != &LAB_BLOCK_AIR) b = &LAB_BLOCK_LAPIZ.raw;
@@ -161,6 +163,53 @@ int LAB_Gen_Surface_Shape_Func(LAB_GenOverworld* gen, int xi, int zi)
     //n = n + pow(8., n-1.);
     //n *= (1./LAB_SURFACE_FACTOR);
 
+
+    // sea & rivers
+    /*double rq = LAB_SimplexNoise2D(x*0.003, z*0.001);
+    double rr = LAB_SimplexNoise2D(x*0.001+1234, z*0.003-4321);
+    double rs = LAB_SimplexNoise2D(x*0.003, z*0.003)*0.5+0.5;*/
+    /*double rq = LAB_SimplexNoise2D(x*0.01, z*0.03)
+              + LAB_SimplexNoise2D(x*0.03, z*0.01);
+    double rr = LAB_SimplexNoise2D(x*0.01+1234, z*0.03-4321)
+              + LAB_SimplexNoise2D(x*0.03+1234, z*0.01-4321);*/
+    x*=0.2;
+    z*=0.2;
+    double rq = LAB_SimplexNoise2D(x*0.01,      z*0.03)
+              + LAB_SimplexNoise2D(x*0.03+1234, z*0.01-4321)
+              + LAB_SimplexNoise2D(x*0.01+7654, z*0.01-9876);
+    //double rr = 0;
+    double rs = LAB_SimplexNoise2D(x*0.03, z*0.03)*0.5+0.5;
+
+    //double r = 1 - (rq*rq + rr*rr - rs)/4;
+    //double r = (rq*rq + rr*rr)/4;
+    //r = 1-r;
+    //r*=r;
+    //r*=r;
+    //r*=r*r;
+    //r = 1-r;
+    //r = LAB_fSmoothStep(r*0.1, 0, 0.001);
+    //r = LAB_CLAMP(r*0.1, 0.005, 0.01)/0.01;
+
+
+    
+    double r = (rq*rq);
+    //r = LAB_CLAMP(r, 0.f, 0.01f)/0.01f;
+    //r = LAB_fSmoothStep(r, 0, 0.01f);
+    r = LAB_fSmoothMin(r, 0.01f, 0.02f)/0.01f;
+    r = 1-r;
+
+    r += rs*3;
+
+    //n = 0.15;
+
+    //n = (n+0.1)*r-0.1;
+    //n = n-r*0.1;
+    float mul = 1-n;
+    mul*=mul;
+    mul*=mul;
+    mul*=0.03;
+    n = n-r*mul;
+
     return LAB_FastFloorF2I(n*(LAB_SURFACE_MAX_Y-LAB_SURFACE_MIN_Y-1))+LAB_SURFACE_MIN_Y; // Range [LAB_SURFACE_MIN_Y, LAB_SURFACE_MAX_Y)
 }
 
@@ -189,17 +238,40 @@ int  LAB_Gen_River_Func(LAB_GenOverworld* gen, int x, int z)
 
 void LAB_Gen_Cave_Carve(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y, int z)
 {
-    // Carve out caves
-    for(int zz = 0; zz < 16; ++zz)
-    for(int yy = 0; yy < 16; ++yy)
-    for(int xx = 0; xx < 16; ++xx)
+    if (LAB_SEA_BOTTOM_C <= y && y < 0)
     {
-        double xi = x*16|xx;
-        double yi = y*16|yy;
-        double zi = z*16|zz;
-        if(LAB_Gen_Cave_Carve_Func(gen, xi, yi, zi))
-        //if(LAB_Gen_Cave_Carve_Func(gen, xi, yi, zi)||LAB_Gen_Cave_Carve_Func(gen, xi, yi-1, zi))
-            chunk->blocks[xx|yy<<4|zz<<8] = &LAB_BLOCK_AIR;
+        const int floor_depth = 3;
+        // Carve out caves but with solid floor under water
+        for(int zz = 0; zz < 16; ++zz)
+        for(int xx = 0; xx < 16; ++xx)
+        {
+            double xi = x*16|xx;
+            double zi = z*16|zz;
+            int yt = LAB_Gen_Surface_Shape_Func(gen, xi, zi);
+            for(int yy = 0; yy < 16; ++yy)
+            {
+                double yi = y*16|yy;
+                if(yt < 0 && yi > yt-floor_depth) break;
+                if(LAB_Gen_Cave_Carve_Func(gen, xi, yi, zi))
+                //if(LAB_Gen_Cave_Carve_Func(gen, xi, yi, zi)||LAB_Gen_Cave_Carve_Func(gen, xi, yi-1, zi))
+                    chunk->blocks[xx|yy<<4|zz<<8] = &LAB_BLOCK_AIR;
+            }
+        }
+    }
+    else
+    {
+        // Carve out caves
+        for(int zz = 0; zz < 16; ++zz)
+        for(int yy = 0; yy < 16; ++yy)
+        for(int xx = 0; xx < 16; ++xx)
+        {
+            double xi = x*16|xx;
+            double yi = y*16|yy;
+            double zi = z*16|zz;
+            if(LAB_Gen_Cave_Carve_Func(gen, xi, yi, zi))
+            //if(LAB_Gen_Cave_Carve_Func(gen, xi, yi, zi)||LAB_Gen_Cave_Carve_Func(gen, xi, yi-1, zi))
+                chunk->blocks[xx|yy<<4|zz<<8] = &LAB_BLOCK_AIR;
+        }
     }
 }
 
@@ -296,7 +368,7 @@ bool LAB_Gen_Cave_Carve_Func(LAB_GenOverworld* gen, int xi, int yi, int zi)
     double treshold = 1-1/(double)(fabs(y)*32*0.001+20)*20;
     return h < treshold*0.2;
 #elif 1
-    float x = xi, y = yi, z = zi;
+    float x = xi, y = yi-LAB_CAVE_ALTITUDE, z = zi;
     //x*=0.5;
     //y*=0.5;
     //z*=0.5;

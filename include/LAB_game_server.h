@@ -1,10 +1,11 @@
 #pragma once
+// TODO remove
 
 #include "LAB_stdinc.h"
 
 #include "LAB_htl_config.h"
 #include "LAB_world.h"
-
+#include "LAB_chunk_lock.h"
 
 /*enum LAB_Action
 {
@@ -18,6 +19,8 @@
 LAB_INLINE
 int LAB_ChunkPriority_Distance(int chunk_distance_sq)
 {
+    //return 0;
+
     int d = chunk_distance_sq;
 #if 1
     return d < 16 ? d <  4 ? d <  2 ? 0
@@ -50,48 +53,11 @@ int LAB_ChunkPriority(LAB_World* w, LAB_Chunk* chunk)
     return LAB_ChunkPriority_Distance(distance);
 }
 
+struct LAB_GameServer;
 
-typedef enum LAB_UpdateParity
-{
-    LAB_PARITY_FROM_POS = 0,
-    LAB_PARITY_000      = 0,
-    LAB_PARITY_100      = 1,
-    LAB_PARITY_010      = 2,
-    LAB_PARITY_110      = 3,
-    LAB_PARITY_001      = 4,
-    LAB_PARITY_101      = 5,
-    LAB_PARITY_011      = 6,
-    LAB_PARITY_111      = 7,
-    LAB_PARITY_NONE     = 8,
-    //LAB_PARITY_ALL    = 9,
-
-    LAB_PARITY_MAIN     = 10, // run in main thread
-
-    LAB_PARITY_COUNT
-} LAB_UpdateParity;
-
-struct LAB_WorldServer;
-
-typedef void(*LAB_ChunkCallback)(struct LAB_WorldServer* srv,
+typedef void(*LAB_ChunkCallback)(struct LAB_GameServer* srv,
                                  LAB_Chunk* chunk, LAB_ChunkPos pos,
                                  void* uparam);
-
-typedef struct LAB_WorldTask
-{
-    LAB_ChunkCallback cb; // NULL for terminate
-    LAB_Chunk* chunk;
-    LAB_ChunkPos pos;
-    void* uparam;
-    
-} LAB_WorldTask;
-
-#define LAB_WORLD_TASK_QUEUE_TYPE LAB_WorldTask
-#define LAB_WORLD_TASK_QUEUE_NAME LAB_WorldTaskQueue
-
-#define HTL_PARAM LAB_WORLD_TASK_QUEUE
-#include "HTL/queue.t.h"
-#undef HTL_PARAM
-
 
 #define LAB_CHUNK_QUEUE_NAME LAB_ChunkQueue
 #define LAB_CHUNK_QUEUE_TYPE LAB_Chunk
@@ -102,12 +68,46 @@ typedef struct LAB_WorldTask
 #include "HTL/node_queue.t.h"
 #undef HTL_PARAM
 
-#define LAB_WorldServerChunkQueue_Empty(q) ((q)->first == NULL)
+#define LAB_GameServerChunkQueue_Empty(q) ((q)->first == NULL)
 
-typedef struct LAB_WorldServer
+typedef struct LAB_GameServerStats
+{
+    size_t completed_mainthread;
+
+    size_t noop_spins;
+    size_t spins;
+
+    size_t timestamp;
+    size_t max_age; // maximum age of chunks currently in the queue
+
+    size_t completed_task_count;
+    size_t waiting_task_count;
+    size_t requeued_count;
+    size_t new_task_count;
+    size_t overriden_task_count;
+
+    size_t update_cycles;
+    size_t unload_cycles;
+
+    size_t view_update_cycles;
+
+    LAB_Nanos runtime;
+    LAB_Nanos runtime_computed;
+
+    size_t max_chunk_updates;
+    float  avg_chunk_updates;
+
+    size_t gen_queue_size;
+
+    size_t update_counts[LAB_CHUNK_STAGE_COUNT];
+    LAB_Nanos update_runtimes[LAB_CHUNK_STAGE_COUNT];
+
+} LAB_GameServerStats;
+
+typedef struct LAB_GameServer
 {
     LAB_World* world;
-    LAB_ChunkQueue tasks[LAB_PARITY_COUNT][LAB_CHUNK_PRIORITIES];
+    LAB_ChunkQueue tasks[LAB_CHUNK_PRIORITIES];
     
     SDL_mutex* mutex;
     SDL_cond* update; // Signaled whenever an element was added to the queue
@@ -122,64 +122,55 @@ typedef struct LAB_WorldServer
     SDL_Thread** workers;
     size_t worker_count;
 
-    LAB_UpdateParity parity;
-    size_t threads_parity; // number of threads, that currently work on the current parity
-    size_t rest_parity;
     bool stop;
-    size_t parity_task_count;
 
     bool pause;
     bool main_waiting;
     size_t threads_paused;
 
     size_t update_pointer;
+    size_t unload_pointer;
 
-    size_t completed_cycles_thrd;
-    size_t completed_cycles; // completed parity cycles since the last call to LAB_WorldServer_Tick
-    size_t completed_mainthread;
+    LAB_GameServerStats stats;
+} LAB_GameServer;
 
-    size_t timestamp;
-    size_t max_age; // maximum age of chunks currently in the queue
-
-    size_t task_count;
-
-    LAB_Nanos runtime;
-    LAB_Nanos runtime_computed;
-} LAB_WorldServer;
 
 /**
  *  create server and start threads
  */
-bool LAB_WorldServer_Create(LAB_WorldServer* srv,
+bool LAB_GameServer_Create(LAB_GameServer* srv,
                             LAB_World* world,
                             size_t worker_count);
 
 /**
  *  stop threads and destroy server
  */
-void LAB_WorldServer_Destroy(LAB_WorldServer* srv);
+void LAB_GameServer_Destroy(LAB_GameServer* srv);
 
-void LAB_WorldServer_Tick(LAB_WorldServer* srv);
+void LAB_GameServer_Tick(LAB_GameServer* srv);
+void LAB_GameServer_GetStats(LAB_GameServer* srv, LAB_GameServerStats* out);
 
 
 
 
 // parity: LAB_PARITY_POS or LAB_PARITY_NONE
 // do not use this for terminating
-bool LAB_WorldServer_PushChunkTask(LAB_WorldServer* srv,
-                                   int /*LAB_UpdateParity*/ parity,
+bool LAB_GameServer_PushChunkTask(LAB_GameServer* srv,
                                    LAB_Chunk* chunk,
                                    unsigned int update);
 
 
 
 // DO NOT CALL INSIDE TASK-ROUTINES
-void LAB_WorldServer_Lock(LAB_WorldServer* srv);
-bool LAB_WorldServer_LockTimeout(LAB_WorldServer* srv, LAB_Nanos ns);
-void LAB_WorldServer_Unlock(LAB_WorldServer* srv);
+void LAB_GameServer_Lock(LAB_GameServer* srv);
+bool LAB_GameServer_LockTimeout(LAB_GameServer* srv, LAB_Nanos ns);
+void LAB_GameServer_Unlock(LAB_GameServer* srv);
 
 
 // Locks chunk and its neighbors
 // You should not change neighbors while locking a specific chunk
-void LAB_WorldServer_LockChunk(LAB_WorldServer* srv, LAB_Chunk* chunk);
-void LAB_WorldServer_UnlockChunk(LAB_WorldServer* srv, LAB_Chunk* chunk);
+bool LAB_GameServer_Locked_TryLockChunk(LAB_GameServer* srv, LAB_Chunk* chunks[27]);
+void LAB_GameServer_Locked_UnlockChunk(LAB_GameServer* srv, LAB_Chunk* chunks[27]);
+
+void LAB_GameServer_Lock1Chunk(LAB_GameServer* srv, LAB_Chunk* chunk);
+void LAB_GameServer_Unlock1Chunk(LAB_GameServer* srv, LAB_Chunk* chunk);

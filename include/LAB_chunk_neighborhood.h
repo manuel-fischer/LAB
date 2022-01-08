@@ -8,12 +8,18 @@ LAB_INLINE LAB_Chunk* LAB_GetNeighborhoodRef(LAB_Chunk*const neighborhood[27], i
 LAB_INLINE LAB_Block* LAB_GetNeighborhoodBlock(LAB_Chunk*const neighborhood[27], int x, int y, int z);
 
 
+LAB_INLINE
+void LAB_GetChunkNeighborsNone(LAB_Chunk* center_chunk, LAB_Chunk* chunks[27])
+{
+    memset(chunks, 0, sizeof(LAB_Chunk*)*27);
+    chunks[1+3+7] = center_chunk;
+}
 
 LAB_INLINE
 void LAB_GetChunkNeighborsAll(LAB_Chunk* center_chunk, LAB_Chunk* chunks[27])
 {
     LAB_ASSERT(center_chunk);
-    LAB_ASSERT(LAB_Chunk_Access(center_chunk));
+    //LAB_ASSERT(LAB_Chunk_Access(center_chunk));
 
     #define NEIGHBOR(x, y, z) (chunks[(x)+3*(y)+9*(z)])
     #define NEIGHBOR_FACE(x, y, z, face) (NEIGHBOR(x, y, z)?NEIGHBOR(x, y, z)->_neighbors[face]:NULL)
@@ -75,7 +81,7 @@ LAB_INLINE
 void LAB_GetChunkNeighbors(LAB_Chunk* center_chunk, LAB_Chunk* chunks[27])
 {
     LAB_ASSERT(center_chunk);
-    LAB_ASSERT(LAB_Chunk_Access(center_chunk));
+    //LAB_ASSERT(LAB_Chunk_Access(center_chunk));
 
     #define NEIGHBOR(x, y, z) (chunks[(x)+3*(y)+9*(z)])
     #define NEIGHBOR_FACE(x, y, z, face) LAB_Chunk_Neighbor(NEIGHBOR(x, y, z), face)

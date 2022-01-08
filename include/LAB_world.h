@@ -16,16 +16,19 @@
 
 
 
-#define LAB_MAX_CHUNK_AGE 256
+#define LAB_MAX_CHUNK_AGE 1
+//#define LAB_MAX_CHUNK_AGE 256
 //#define LAB_MAX_LOAD_CHUNK 16
-#define LAB_MAX_LOAD_CHUNK 256
+//#define LAB_MAX_LOAD_CHUNK 256
 
 //#define LAB_PRELOAD_CHUNK(chunk_dist) ((chunk_dist)+1)
 //#define LAB_KEEP_CHUNK(chunk_dist)    ((chunk_dist)+2)
 //#define LAB_PRELOAD_CHUNK(chunk_dist) ((chunk_dist)+3)
 //#define LAB_PRELOAD_CHUNK(chunk_dist) ((chunk_dist)*5/4+3)
-#define LAB_PRELOAD_CHUNK(chunk_dist) ((chunk_dist)*3/2+3)
-#define LAB_KEEP_CHUNK(chunk_dist)    ((chunk_dist)*2+3)
+//#define LAB_PRELOAD_CHUNK(chunk_dist) ((chunk_dist)*3/2+3)
+//#define LAB_KEEP_CHUNK(chunk_dist)    ((chunk_dist)*2+3)
+#define LAB_PRELOAD_CHUNK(chunk_dist) ((chunk_dist)*5/4+3)
+#define LAB_KEEP_CHUNK(chunk_dist)    ((chunk_dist)*3/2+3)
 
 
 
@@ -72,7 +75,7 @@ typedef struct LAB_World
 
     LAB_ChunkTBL chunks;
 
-    LAB_ChunkBufQueue gen_queue;
+    //LAB_ChunkBufQueue gen_queue;
     //LAB_ChunkPos2Queue update_queue;
 
     LAB_WorldConfig cfg;
@@ -80,6 +83,8 @@ typedef struct LAB_World
     //LAB_LightUpdateQueue light_queue;
 
     LAB_PerfInfo* perf_info;
+
+    struct LAB_GameServer* server;
 } LAB_World;
 
 

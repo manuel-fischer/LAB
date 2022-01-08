@@ -15,6 +15,8 @@
 
 #include "LAB_obj.h"
 
+#include "LAB_game_server.h"
+
 #include <math.h>
 #include <stdio.h> // DBG
 
@@ -25,17 +27,17 @@ int LAB_World_Create(LAB_World* world)
     LAB_OBJ(LAB_ChunkTBL_Create(&world->chunks),
             LAB_ChunkTBL_Destroy(&world->chunks),
 
-    LAB_OBJ(LAB_ChunkBufQueue_Create(&world->gen_queue, LAB_MAX_LOAD_CHUNK),
-            LAB_ChunkBufQueue_Destroy(&world->gen_queue),
+    //LAB_OBJ(LAB_ChunkBufQueue_Create(&world->gen_queue, LAB_MAX_LOAD_CHUNK),
+    //        LAB_ChunkBufQueue_Destroy(&world->gen_queue),
             
     return 1;
-    ););
+    );//);
     return 0;
 }
 
 void LAB_World_Destroy(LAB_World* world)
 {
-    LAB_ChunkBufQueue_Destroy(&world->gen_queue);
+    //LAB_ChunkBufQueue_Destroy(&world->gen_queue);
     for(size_t i = 0; i < world->chunks.capacity; ++i)
     {
         LAB_World_ChunkEntry* entry = &world->chunks.table[i];
@@ -144,7 +146,7 @@ LAB_Chunk* LAB_GenerateChunk(LAB_World* world, int x, int y, int z)
         return NULL;
 
     if(entry->chunk) // chunk generated or generating
-        return LAB_Chunk_Access(entry->chunk);
+        return entry->chunk; //LAB_Chunk_Access(entry->chunk);
 
     LAB_Chunk* chunk = LAB_CreateChunk(pos);
     if(chunk == NULL) // TODO Out of memory
@@ -153,7 +155,7 @@ LAB_Chunk* LAB_GenerateChunk(LAB_World* world, int x, int y, int z)
         return NULL;
     }
 
-    LAB_Chunk** request;
+    /*LAB_Chunk** request;
     request = LAB_ChunkBufQueue_PushBack(&world->gen_queue);
     if(request != NULL) {
         *request = chunk;
@@ -165,8 +167,25 @@ LAB_Chunk* LAB_GenerateChunk(LAB_World* world, int x, int y, int z)
     {
         LAB_DestroyChunk(chunk);
         LAB_ChunkTBL_Discard(&world->chunks, entry);
+        entry = NULL;
+    }*/
+
+    // connect neighbors
+    for(int face = 0; face < 6; ++face)
+    {
+        LAB_ChunkPos pos2 = { x+LAB_OX(face), y+LAB_OY(face), z+LAB_OZ(face) };
+        LAB_World_ChunkEntry* neighbor = LAB_ChunkTBL_Get(&world->chunks, pos2);
+        if(neighbor)
+            LAB_Chunk_Connect(chunk, face, neighbor->chunk);
     }
-    return NULL;
+    entry->pos = pos;
+    entry->chunk = chunk;
+
+
+    LAB_GameServer_PushChunkTask(world->server, chunk, LAB_CHUNK_STAGE_GENERATE);
+
+    return entry->chunk;
+    //return NULL;
 }
 
 
@@ -209,10 +228,10 @@ LAB_Chunk* LAB_GenerateChunk(LAB_World* world, int x, int y, int z)
 }*/
 
 
-void LAB_UpdateChunkLater(LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update)
+/*void LAB_UpdateChunkLater(LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update)
 {
     chunk->dirty |= update;
-}
+}*/
 
 
 LAB_Block* LAB_GetBlock(LAB_World* world, int x, int y, int z)
@@ -237,7 +256,10 @@ void LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_Block* block)
     chunk->modified = 1;
     if(block != &LAB_BLOCK_AIR) chunk->empty = 0;
     chunk->dirty_blocks |= LAB_CCPS_Pos(x&LAB_CHUNK_MASK, y&LAB_CHUNK_MASK, z&LAB_CHUNK_MASK);
-    LAB_UpdateChunkLater(world, chunk, cx, cy, cz, LAB_CHUNK_UPDATE_BLOCK);
+    //LAB_UpdateChunkLater(world, chunk, cx, cy, cz, LAB_CHUNK_UPDATE_BLOCK);
+    chunk->dirty = true; // TODO remove
+
+    LAB_GameServer_PushChunkTask(world->server, chunk, LAB_CHUNK_STAGE_LIGHT);
 }
 
 void LAB_FillBlocks(LAB_World* world, int x0, int y0, int z0, int x1, int y1, int z1, LAB_Block* block)

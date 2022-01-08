@@ -7,17 +7,33 @@
  *  LAB_ASSUME_0(cond)
  *  - check that calls extern functions -> removed completely in release
 **/
+#include "LAB_attr.h"
 #include "LAB_opt.h"
 #include <stdbool.h>
 
 #include <signal.h>
 
-#define LAB_DBG_BREAK() ((void)raise(SIGTRAP), (void)0)
+//#define LAB_DBG_SET_BREAKPOINT
 
+#ifdef LAB_DBG_SET_BREAKPOINT
+void LAB_DbgBreak(void);
+#define LAB_DBG_BREAK LAB_DbgBreak
+#else
+#ifdef _POSIX
+#define LAB_DBG_BREAK() ((void)raise(SIGTRAP), (void)0)
+#else
+#ifdef __GNUC__
+#define LAB_DBG_BREAK() ((void)__builtin_trap(), (void)0)
+#else
+#define LAB_DBG_BREAK() ((void)raise(SIGBREAK), (void)0)
+#endif
+#endif
+#endif
 
 
 #ifdef NDEBUG
 #  define LAB_DBG_PRINTF(...) ((void)0)
+#  define LAB_FUNCTION() NULL
 #  ifdef __GNUC__
      /* hint to compiler */
 //#    define LAB_ASSUME2(type, cond, cond_str) do { if (!(cond)) LAB_UNREACHABLE(); } while(0)
@@ -29,13 +45,14 @@
 #  define LAB_INIT_DBG(...)
 #  define LAB_ASSERT_OR_ABORT(cond) \
     ((!(cond)) ? abort() : (void)0)
+#  define LAB_ASSERT_OR_WARN(cond) (void)(0)
 #else
 #  include <stdio.h> // -> fprintf
 #  define LAB_DBG_PRINTF(...) LAB_DbgPrintf(__VA_ARGS__)
 #  ifdef __GNUC__
 #    define LAB_FUNCTION() __builtin_FUNCTION()
 #  else
-#    define LAB_FUNCTION() NULL
+#    define LAB_FUNCTION() "??"
 #  endif
 /*#  define LAB_ASSUME2(type, cond, cond_str) do { \
     if(!(cond)) \
@@ -47,10 +64,10 @@
 #  define LAB_INIT_DBG(...) __VA_ARGS__
 
 #  define LAB_ASSERT_OR_ABORT LAB_ASSERT
+#  define LAB_ASSERT_OR_WARN(cond) \
+    ((!(cond)) ? LAB_AssumptionFailed("warned assertion", #cond, __FILE__, __LINE__, LAB_FUNCTION(), 0) : (void)0)
 #endif
 
-#  define LAB_ASSERT_OR_WARN(cond) \
-    ((!(cond)) ? LAB_AssumptionFailed("warned assertion", cond_str, __FILE__, __LINE__, LAB_FUNCTION(), 0) : (void)0)
 
 // TODO remove ASSUME
 #define LAB_ASSERT(cond) LAB_ASSUME2("assertion", cond, #cond)

@@ -17,7 +17,7 @@
  *
  *  \return Pointer to the first char of the filename
  */
-LAB_PURE
+LAB_POINTER_CONST
 const char* LAB_Filename(const char* path);
 
 
@@ -30,16 +30,18 @@ const char* LAB_Filename(const char* path);
 #define LAB_MIN3(a, b, c) (  (a)<(b) ? ( (a)<(c) ? (a) : (c) ) : ( (b)<(c) ? (b) : (c) )  )
 #define LAB_MAX3(a, b, c) (  (a)>(b) ? ( (a)>(c) ? (a) : (c) ) : ( (b)>(c) ? (b) : (c) )  )
 
-#define LAB_CLAMP(x, a, b) ((x) < (a) ? (a) : (x) > (b) ? (b) : (a))
+#define LAB_CLAMP(x, a, b) ((x) < (a) ? (a) : (x) > (b) ? (b) : (x))
 
 
-LAB_PURE LAB_INLINE
+LAB_INLINE
+LAB_VALUE_CONST
 float LAB_fMix(float a, float b, float mult)
 {
     return a + (b-a)*mult;
 }
 
-LAB_PURE LAB_INLINE
+LAB_INLINE
+LAB_VALUE_CONST
 float LAB_fSmoothMin(float a, float b, float k)
 {
     float mult = 0.5f + 0.5f*(a-b)/k;
@@ -48,6 +50,23 @@ float LAB_fSmoothMin(float a, float b, float k)
 }
 
 #define LAB_fSmoothMax(a, b, c) (-LAB_fSmoothMin(-(a), -(b), c))
+
+
+LAB_INLINE
+LAB_VALUE_CONST
+float LAB_fSmoothStep(float x, float a, float b)
+{
+    float f = (x - a) / (b - a);
+    f = LAB_CLAMP(f, 0.0, 1.0);
+    return f * f * (3 - 2 * f);
+}
+
+LAB_INLINE
+LAB_VALUE_CONST
+float LAB_fSmoothClamp(float x, float a, float b)
+{
+    return LAB_fSmoothStep(x, a, b) * (b-a) + a;
+}
 
 
 #define LAB_SELECT_MAX(a,va, b,vb) ((a)>(b) ? (va) : (vb))
@@ -69,7 +88,8 @@ float LAB_fSmoothMin(float a, float b, float k)
 } while(0)
 
 
-LAB_PURE LAB_ALWAYS_INLINE LAB_INLINE
+LAB_ALWAYS_INLINE LAB_INLINE
+LAB_VALUE_CONST
 bool LAB_MultOverflow(size_t a, size_t b)
 {
 #ifdef __GNUC__
@@ -86,7 +106,7 @@ typedef uint64_t LAB_Nanos;
 LAB_Nanos LAB_NanoSeconds();
 
 
-LAB_PURE
+LAB_POINTER_CONST
 size_t LAB_StrHash(const char* str);
 
 

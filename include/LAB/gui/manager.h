@@ -16,7 +16,8 @@ typedef struct LAB_GuiManager
 
     TTF_Font* button_font,
             * title_font,
-            * mono_font;
+            * mono_font,
+            * mono_font_small;
 } LAB_GuiManager;
 
 bool LAB_GuiManager_Create(LAB_GuiManager* manager);

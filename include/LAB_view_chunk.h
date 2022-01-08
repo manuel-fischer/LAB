@@ -36,7 +36,8 @@ typedef struct LAB_ViewChunkEntry
                                              //   - add the chunk entry itself to them
                                              //   - add neighboring chunk entries to itself
                                              // -> use entry->neighbors[face] instead of table lookup with x+LAB_OX(face), ...*/
-    struct LAB_ViewChunkEntry* del_list_next;
+    struct LAB_ViewChunkEntry** del_list_prev, // != NULL if in the del queue
+                              * del_list_next;
 
     LAB_Chunk* world_chunk; // pointer into the world, is NULL when there is no chunk in the world
 
