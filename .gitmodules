@@ -1,0 +1,3 @@
+[submodule "CBake"]
+	path = CBake
+	url = https://github.com/manuel-fischer/CBake
