@@ -4,8 +4,10 @@
 
 #ifdef __WIN32__
 
+//#include <windef.h> // -> RECT, BOOL
 typedef struct RECT RECT;
 typedef int BOOL;
+//#include <winuser.h>
 BOOL ClipCursor(const RECT *lpRect);
 
 LAB_INLINE void SDL_SetWindowGrab_Fix(SDL_Window* window, SDL_bool grabbed)

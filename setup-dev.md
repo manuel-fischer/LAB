@@ -51,12 +51,29 @@ following libraries. If your IDE provides its own installation process of
 those libraries, you might prefer that instead.
 
 ## 1. Install SDL2, SDL2-ttf, SDL2-image
-Select the **development library** for your specific target for all of the
-following libraries:
 
-1. [SDL2](https://www.libsdl.org/download-2.0.php)
-2. [SDL2-ttf](https://www.libsdl.org/projects/SDL_ttf/)
-3. [SDL2-image](https://www.libsdl.org/tmp/SDL_image/)
+**From your Package Manager**
+
+Install the following packages:`
+
+1. `libsdl2-dev`
+2. `libsdl2-ttf-dev`
+3. `libsdl2-image-dev`
+
+*Using apt:*
+
+1. `sudo apt install libsdl2-dev libsdl2-ttf-dev libsdl2-image-dev`
+
+---
+
+**From the Website**
+
+Select the **development library** for your specific target for all of the
+following libraries (eg. using GCC on Windows: `SDL2-*-devel-2.*.*-mingw.zip`):
+
+1. [SDL2](https://github.com/libsdl-org/SDL/releases)
+2. [SDL2-ttf](https://github.com/libsdl-org/SDL_ttf/releases)
+3. [SDL2-image](https://github.com/libsdl-org/SDL_image/releases)
 
 For each of these archive files, do the following.
 
@@ -65,7 +82,7 @@ Windows or usually your default package manager on Linux.
 
 Navigate the archive file structure, until you reach a directory
 that contains an `include/` and `lib/` subdirectory. You might have to select
-a subdirectory for your target machine.
+a subdirectory corresponding to your target machine (like `x86_64-w64-mingw32`).
 
 Copy the `include/` and `lib/` directories into the `libs/` directory.
 
@@ -74,8 +91,10 @@ When using CodeBlocks, global variables like `$(sdl2)` can be set under
 into the prompt. Then enter the path(s) on the right, usually only the
 `base`-field is needed.
 
+On Windows you might need to copy `zlib.dll` or `libpng16-16.dll` from the bin directory into the root directory of this repository.
+
 ## 2. Install glew (Only windows)
-(Independent of section 2.)
+(Independent of section 1.)
 
 Select **binary** (grey box)
 1. [GLEW](http://glew.sourceforge.net)
