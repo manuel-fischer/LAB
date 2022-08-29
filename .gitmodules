@@ -1,3 +1,6 @@
 [submodule "CBake"]
 	path = CBake
 	url = https://github.com/manuel-fischer/CBake
+[submodule "submodules/IXO"]
+	path = submodules/IXO
+	url = https://github.com/manuel-fischer/IXO
