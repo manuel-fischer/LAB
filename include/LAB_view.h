@@ -207,7 +207,7 @@ typedef struct LAB_View
 
 } LAB_View;
 
-const LAB_IView LAB_view_interface;
+extern const LAB_IView LAB_view_interface;
 
 /**
  *  Create view, with given world
