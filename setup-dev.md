@@ -1,7 +1,8 @@
 # Overview
-1. [Setup an IDE](#Setup-an-IDE)
-2. [Install libraries](#Install-libraries)
-2. [Build and Test LAB](#Build-and-Test-LAB)
+1. Clone repo recursively `git clone --recursive https://github.com/manuel-fischer/LAB`
+2. [Setup an IDE](#Setup-an-IDE)
+3. [Install libraries](#Install-libraries)
+4. [Build and Test LAB](#Build-and-Test-LAB)
 
 # Setup an IDE
 Select your IDE
@@ -91,7 +92,7 @@ When using CodeBlocks, global variables like `$(sdl2)` can be set under
 into the prompt. Then enter the path(s) on the right, usually only the
 `base`-field is needed.
 
-On Windows you might need to copy `zlib.dll` or `libpng16-16.dll` from the bin directory into the root directory of this repository.
+On Windows you might need to copy `libfreetype-6`, `zlib.dll` or `libpng16-16.dll` from the bin directory into the root directory of this repository.
 
 ## 2. Install glew (Only windows)
 (Independent of section 1.)
