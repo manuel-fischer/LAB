@@ -1,0 +1,12 @@
+@@topic Spatial Cache-efficient Hash Map
+
+*Status:* Not implemented
+
+Group chunks together into chunk clusters or super chunks.
+An entry in the hash map corresponds to a super chunk, which is mapped from
+the coordinates as a key. Similar to how multiple world coordinates are mapped
+to a single chunk by dividing xyz by a factor of 16. Chunks can be associated
+with a super chunk.
+
+This technique can be combined with the allocated blocks as described in
+cache efficient linked lists.

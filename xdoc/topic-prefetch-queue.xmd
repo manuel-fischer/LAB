@@ -1,0 +1,12 @@
+@@topic Prefetch Queue
+
+*Status:* Not implemented
+
+Simply store an additional pointer, that is some fixed amount of elements in
+the queue behind. If an element gets removed, the pointer advances to the next
+element and prefetches data associated with the element.
+
+For multithreading, the global queue is split into thread specific queues.
+When an element is popped from a thread specific queue, another element gets
+popped from the global queue, the element gets pushed into the thread specific
+queue and the data gets prefetched.

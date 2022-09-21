@@ -592,7 +592,7 @@ def xmd2md(xmd_entity : Entity, parent_entity : Entity, depth : int = 999, secti
 
 def read_file(fname):
     print(f"Reading {fname}")
-    with open(fname, "rt") as f:
+    with open(fname, "rt", encoding="utf8") as f:
         s = f.read()
     return s
 
@@ -603,7 +603,7 @@ def write_file(fname, s):
         os.makedirs(path, exist_ok=True)
         
     print(f"Writing {fname}")
-    with open(fname, "wt") as f:
+    with open(fname, "wt", encoding="utf8") as f:
         f.write(s)
 
 def parse_xmd_file(cwd, ifile):
@@ -706,7 +706,7 @@ def load_node(cwd, p, is_root=False):
 
 def process_doc(cwd):
     try:
-        with open(os.path.join(cwd,"xdoc","config.json")) as f:
+        with open(os.path.join(cwd,"xdoc","config.json"), encoding="utf8") as f:
             config = json.loads(f.read())
 
     except FileNotFoundError:

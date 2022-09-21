@@ -14,7 +14,10 @@ To build LAB follow the instructions [here](setup-dev.md)
 ## Documentation
 The documentation can be found [here](doc/table.md).
 
-### *"Blog"*
+### Topics
+[Spatial Cache-efficient Hash Map](doc/topic-cache-efficient-hash-map.md)  
+[Spatial Cache-efficient Linked Lists](topic-cache-efficient-linked-lists.md)  
+[Prefetch Queue](topic-prefetch-queue.md)  
 [Template Headers](doc/topic-template-headers.md)
 
 ## The language choice: C
