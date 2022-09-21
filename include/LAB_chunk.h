@@ -1,4 +1,5 @@
 #pragma once
+#define LAB_ALLOC_CHUNK_DATA 1
 
 #include "LAB_stdinc.h"
 #include "LAB_block.h"
@@ -65,8 +66,13 @@ typedef struct LAB_ChunkStats
 
 typedef struct LAB_Chunk
 {
+#if LAB_ALLOC_CHUNK_DATA
+    LAB_Block* _Atomic* blocks;
+    LAB_LightNode*      light;
+#else
     LAB_Block* _Atomic     blocks[LAB_CHUNK_LENGTH]; // not initialized
     LAB_LightNode          light[LAB_CHUNK_LENGTH];  // not initialized
+#endif
 
     LAB_ChunkPos pos;
 

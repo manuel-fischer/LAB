@@ -75,7 +75,17 @@ LAB_Chunk* LAB_CreateChunk(LAB_ChunkPos pos)
     if(LAB_UNLIKELY(chunk == NULL))
         return (LAB_SetError("CreateChunk failed to allocate"), NULL);
 
+#if LAB_ALLOC_CHUNK_DATA
+    chunk->blocks = LAB_Malloc(sizeof(LAB_Block* _Atomic) * LAB_CHUNK_LENGTH);
+    chunk->light  = LAB_Calloc(sizeof(LAB_LightNode), LAB_CHUNK_LENGTH);
+    if(!chunk->blocks || ! chunk->light)
+    {
+        LAB_DestroyChunk(chunk);
+        return NULL;
+    }
+#else
     memset(chunk->light, 0, sizeof chunk->light);
+#endif
 
     chunk->pos = pos;
 
@@ -144,6 +154,10 @@ void LAB_DestroyChunk_Unlinked(LAB_Chunk* chunk)
 
     //LAB_RWLock_Destroy(&chunk->lock);
     
+#if LAB_ALLOC_CHUNK_DATA
+    LAB_Free(chunk->blocks);
+    LAB_Free(chunk->light);
+#endif
 
     //LAB_Free(chunk);
     LAB_FreeChunkMem(chunk);

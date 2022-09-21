@@ -874,14 +874,16 @@ LAB_STATIC bool LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_en
 
     LAB_GL_CHECK();
     {
-        // TODO: the following does not change:
-        LAB_Triangle* mesh_data = NULL;
+        #define LAB_glPointer2(Name, type, vec_member, vec_dim, elemtype) \
+            gl##Name##Pointer(vec_dim, elemtype, sizeof(type), (void*)offsetof(type,vec_member))
+        #define LAB_glPointer(Name, type, vec_member, vec_dim) \
+            LAB_glPointer2(Name, type, vec_member, vec_dim, LAB_GL_TYPEOF_MEMBER(type,vec_member))
 
-        glVertexPointer(3, LAB_GL_TYPEOF(mesh_data->v[0].x), sizeof *mesh_data->v, &mesh_data->v[0].x);
+        LAB_glPointer(Vertex, LAB_Vertex, x, 3);
         LAB_GL_CHECK();
-        glColorPointer(4, GL_UNSIGNED_BYTE, sizeof *mesh_data->v, &mesh_data->v[0].color);
+        LAB_glPointer2(Color, LAB_Vertex, color, 4, GL_UNSIGNED_BYTE);
         LAB_GL_CHECK();
-        glTexCoordPointer(2, LAB_GL_TYPEOF(mesh_data->v[0].u), sizeof *mesh_data->v, &mesh_data->v[0].u);
+        LAB_glPointer(TexCoord, LAB_Vertex, u, 2);
         LAB_GL_CHECK();
     }
 

@@ -95,6 +95,8 @@ extern int LAB_gl_debug_alloc_count;
              //GLfixed:  GL_FIXED,
              //GLhalf:   GL_HALF_FLOAT)
 
+#define LAB_GL_TYPEOF_MEMBER(tp, member) LAB_GL_TYPEOF(((tp*)NULL)->member)
+
 
 void LAB_GL_ActivateTexture(unsigned* gl_id);
 
