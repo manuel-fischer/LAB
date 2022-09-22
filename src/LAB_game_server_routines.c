@@ -43,7 +43,7 @@ void LAB_ChunkStageNeighbors(int update, LAB_Chunk* chunk, LAB_Chunk* chunks[27]
     if(update == LAB_CHUNK_STAGE_GENERATE)
         LAB_GetChunkNeighborsNone(chunk, chunks);
     else
-        LAB_GetChunkNeighborsAll(chunk, chunks);
+        LAB_GetChunkNeighbors(chunk, chunks);
 }
 
 
@@ -55,24 +55,15 @@ void LAB_GameServer_ChunkGenerate_CB(LAB_GameServer* srv,
 {
     LAB_ASSERT(!chunk->generated);
 
-    srv->world->chunkgen(
+    bool success = srv->world->chunkgen(
         srv->world->chunkgen_user,
         chunk,
         pos.x, pos.y, pos.z
     );
+    // TODO use success
+    (void)success;
 
-
-    //update empty bit
-    chunk->empty = true;
-    for(int i = 0; i < 16*16*16; ++i)
-    {
-        if(chunk->blocks[i] != &LAB_BLOCK_AIR)
-        {
-            chunk->empty = false;
-            break;
-        }
-    }
-
+    LAB_Chunk_Blocks_Optimize(chunk);
 
     atomic_store_explicit(&chunk->generated, true, memory_order_release);
 

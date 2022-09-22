@@ -122,8 +122,8 @@ void LAB_UpdateChunk(LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LA
 void LAB_UpdateChunkLater(LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update);
 
 LAB_Block* LAB_GetBlock(LAB_World* world, int x, int y, int z);
-void LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_Block* block);
-void LAB_FillBlocks(LAB_World* world, int x0, int y0, int z0, int x1, int y1, int z1, LAB_Block* block);
+bool LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_Block* block); // return false on failure
+bool LAB_FillBlocks(LAB_World* world, int x0, int y0, int z0, int x1, int y1, int z1, LAB_Block* block); // return false on failure
 
 
 // dir should be an unit vector

@@ -1,5 +1,7 @@
 #include "LAB_chunk.h"
 
+#include "LAB_builtin_blocks.h"
+
 #include "LAB_memory.h"
 #include "LAB_error.h"
 
@@ -67,6 +69,60 @@ void LAB_FreeChunkMem(LAB_Chunk* chunk)
 
 
 
+// Empty Chunk Data
+LAB_Chunk_Blocks LAB_chunk_empty_blocks_air = {0};
+LAB_Chunk_Blocks LAB_chunk_empty_blocks_outside = {0};
+LAB_Chunk_Light  LAB_chunk_empty_light_dark = {0};
+LAB_Chunk_Light  LAB_chunk_empty_light_sunlight = {0};
+
+LAB_STATIC LAB_CONST
+LAB_Color LAB_Chunk_Light_Sunlight(LAB_Dir dir)
+{
+    return dir & 2 ? LAB_RGB(0, 0, 0) : LAB_RGB(255, 255, 255);
+}
+
+LAB_STATIC
+void LAB_Chunk_Light_MakeDark(LAB_Chunk_Light* l)
+{
+    for(int i = 0; i < LAB_CHUNK_LENGTH; ++i)
+        for(int j = 0; j < 8; ++j)
+            l->light[i].quadrants[j] = LAB_RGB(0, 0, 0);
+}
+
+LAB_STATIC
+void LAB_Chunk_Light_MakeSunlight(LAB_Chunk_Light* l)
+{
+    for(int i = 0; i < LAB_CHUNK_LENGTH; ++i)
+        for(int j = 0; j < 8; ++j)
+            l->light[i].quadrants[j] = LAB_Chunk_Light_Sunlight(j);
+}
+
+void LAB_InitEmptyChunks(void)
+{
+    for(int i = 0; i < LAB_CHUNK_LENGTH; ++i)
+        LAB_chunk_empty_blocks_air.blocks[i] = &LAB_BLOCK_AIR;
+    
+    for(int i = 0; i < LAB_CHUNK_LENGTH; ++i)
+        LAB_chunk_empty_blocks_outside.blocks[i] = &LAB_BLOCK_OUTSIDE;
+
+    LAB_Chunk_Light_MakeDark(&LAB_chunk_empty_light_sunlight);
+    LAB_Chunk_Light_MakeSunlight(&LAB_chunk_empty_light_sunlight);
+}
+
+LAB_STATIC
+bool LAB_Chunk_Light_IsAllocated(LAB_Chunk_Light* l)
+{
+    return l != NULL && l != &LAB_chunk_empty_light_dark && l != &LAB_chunk_empty_light_sunlight;
+}
+
+
+
+
+
+
+
+
+
 LAB_Chunk* LAB_CreateChunk(LAB_ChunkPos pos)
 {
     LAB_Chunk* chunk;
@@ -75,22 +131,12 @@ LAB_Chunk* LAB_CreateChunk(LAB_ChunkPos pos)
     if(LAB_UNLIKELY(chunk == NULL))
         return (LAB_SetError("CreateChunk failed to allocate"), NULL);
 
-#if LAB_ALLOC_CHUNK_DATA
-    chunk->blocks = LAB_Malloc(sizeof(LAB_Block* _Atomic) * LAB_CHUNK_LENGTH);
-    chunk->light  = LAB_Calloc(sizeof(LAB_LightNode), LAB_CHUNK_LENGTH);
-    if(!chunk->blocks || ! chunk->light)
-    {
-        LAB_DestroyChunk(chunk);
-        return NULL;
-    }
-#else
-    memset(chunk->light, 0, sizeof chunk->light);
-#endif
+    chunk->buf_blocks = LAB_Malloc(sizeof(LAB_Chunk_Blocks));
+    chunk->buf_light  = LAB_Malloc(sizeof(LAB_Chunk_Light));
 
     chunk->pos = pos;
 
     chunk->modified = false;
-    chunk->empty = true;
 
     chunk->dirty = 1;
     chunk->dirty_blocks = ~0;
@@ -154,22 +200,21 @@ void LAB_DestroyChunk_Unlinked(LAB_Chunk* chunk)
 
     //LAB_RWLock_Destroy(&chunk->lock);
     
-#if LAB_ALLOC_CHUNK_DATA
-    LAB_Free(chunk->blocks);
-    LAB_Free(chunk->light);
-#endif
+    LAB_Free(chunk->buf_blocks);
+    if(LAB_Chunk_Light_IsAllocated(chunk->buf_light)) LAB_Free(chunk->buf_light);
 
     //LAB_Free(chunk);
     LAB_FreeChunkMem(chunk);
 }
 
 
-void LAB_FillChunk(LAB_Chunk* chunk, LAB_Block* fill_block)
+void LAB_Chunk_Blocks_Fill(LAB_Chunk_Blocks* blocks, LAB_Block* fill_block)
 {
+    LAB_ASSERT(blocks != NULL);
     LAB_ASSERT(LAB_READABLE(fill_block));
-    for(int i = 0; i < LAB_CHUNK_LENGTH; ++i) chunk->blocks[i] = fill_block;
-}
 
+    for(int i = 0; i < LAB_CHUNK_LENGTH; ++i) blocks->blocks[i] = fill_block;
+}
 
 
 
@@ -227,3 +272,89 @@ void LAB_Chunk_UnlockNeighbors(LAB_Chunk* chunks[27])
     }
 }
 */
+
+
+
+LAB_Chunk_Blocks* LAB_Chunk_Blocks_Read(LAB_Chunk* chunk)
+{
+    LAB_ASSERT(chunk);
+    return chunk->buf_blocks ? chunk->buf_blocks : &LAB_chunk_empty_blocks_air;
+}
+
+LAB_Chunk_Blocks* LAB_Chunk_Blocks_Write(LAB_Chunk* chunk)
+{
+    LAB_ASSERT(chunk);
+    if(!chunk->buf_blocks)
+    {
+        chunk->buf_blocks = LAB_Malloc(sizeof(LAB_Chunk_Blocks));
+        if(!chunk->buf_blocks) return NULL;
+        LAB_Chunk_Blocks_Fill(chunk->buf_blocks, &LAB_BLOCK_AIR);
+    }
+    return chunk->buf_blocks;
+}
+
+void LAB_Chunk_Blocks_Optimize(LAB_Chunk* chunk)
+{
+    LAB_ASSERT(chunk);
+    if(!chunk->buf_blocks) return; // already optimal
+    for(int i = 0; i < 16*16*16; ++i)
+        if(chunk->buf_blocks->blocks[i] != &LAB_BLOCK_AIR) return;
+
+    LAB_Free(chunk->buf_blocks);
+    chunk->buf_blocks = NULL;
+}
+
+LAB_Chunk_Light* LAB_Chunk_Light_Read(LAB_Chunk* chunk)
+{
+    LAB_ASSERT(chunk);
+    return chunk->buf_light ? chunk->buf_light : &LAB_chunk_empty_light_dark;
+}
+
+LAB_Chunk_Light* LAB_Chunk_Light_Write(LAB_Chunk* chunk)
+{
+    LAB_ASSERT(chunk);
+    if(!LAB_Chunk_Light_IsAllocated(chunk->buf_light))
+    {
+        LAB_Chunk_Light* l = LAB_Malloc(sizeof(LAB_Chunk_Light));
+        if(!l) return NULL;
+        if(chunk->buf_light == &LAB_chunk_empty_light_sunlight)
+            LAB_Chunk_Light_MakeSunlight(l);
+        else
+            LAB_Chunk_Light_MakeDark(l);
+        chunk->buf_light = l;
+    }
+    return chunk->buf_light;
+}
+
+void LAB_Chunk_Light_Optimize(LAB_Chunk* chunk)
+{
+    LAB_ASSERT(chunk);
+    if(!LAB_Chunk_Light_IsAllocated(chunk->buf_light)) return; // already optimal
+    
+    // Decide between sunlight and darkness
+    LAB_Chunk_Light* l;
+    if(chunk->buf_light->light[0].quadrants[0] == LAB_RGB(255, 255, 255)) // sunlight
+    {
+        for(int i = 0; i < 16*16*16; ++i)
+            for(int j = 0; j < 8; ++j)
+                if(chunk->buf_light->light[i].quadrants[j] != LAB_Chunk_Light_Sunlight(j)) return;
+        l = &LAB_chunk_empty_light_sunlight;
+    }
+    else
+    {
+        for(int i = 0; i < 16*16*16; ++i)
+            for(int j = 0; j < 8; ++j)
+                if(chunk->buf_light->light[i].quadrants[j] != LAB_RGB(0, 0, 0)) return;
+        l = &LAB_chunk_empty_light_dark;
+    }
+    
+    LAB_Free(chunk->buf_light);
+    chunk->buf_light = l;
+}
+
+
+
+LAB_Chunk_Light* LAB_Chunk_Light_Read_ByY(int y)
+{
+    return y < 0 ? &LAB_chunk_empty_light_dark : &LAB_chunk_empty_light_sunlight;
+}

@@ -7,7 +7,7 @@ typedef struct LAB_RelativeChunkPlacer
 {
     int ox, oy, oz; // coordinates of the chunk origin in the relative coordinate system
                     // chunk x in [ox, ox+16), etc.
-    LAB_Chunk* chunk;
+    LAB_Chunk_Blocks* chunk_blocks;
 } LAB_RelativeChunkPlacer;
 
 typedef LAB_RelativeChunkPlacer LAB_Placer;
@@ -31,7 +31,7 @@ LAB_INLINE void LAB_Placer_SetBlock(LAB_Placer* p, int x, int y, int z, LAB_Bloc
     unsigned zz = z - p->oz;
 
     if(xx<16 && yy<16 && zz<16)
-        p->chunk->blocks[xx|yy<<4|zz<<8] = block;
+        p->chunk_blocks->blocks[xx|yy<<4|zz<<8] = block;
 }
 
 LAB_INLINE void LAB_Placer_SetBlockIfBlock(LAB_Placer* p, int x, int y, int z, LAB_Block* block, LAB_Block* replace)
@@ -42,7 +42,7 @@ LAB_INLINE void LAB_Placer_SetBlockIfBlock(LAB_Placer* p, int x, int y, int z, L
 
     if(xx<16 && yy<16 && zz<16)
     {
-        LAB_Block*_Atomic* b = &p->chunk->blocks[xx|yy<<4|zz<<8];
+        LAB_Block*_Atomic* b = &p->chunk_blocks->blocks[xx|yy<<4|zz<<8];
         if(*b == replace)
             *b = block;
     }
@@ -56,7 +56,7 @@ LAB_INLINE void LAB_Placer_SetBlockIfAny(LAB_Placer* p, int x, int y, int z, LAB
 
     if(xx<16 && yy<16 && zz<16)
     {
-        LAB_Block*_Atomic* b = &p->chunk->blocks[xx|yy<<4|zz<<8];
+        LAB_Block*_Atomic* b = &p->chunk_blocks->blocks[xx|yy<<4|zz<<8];
         if((*b)->tags&tags)
             *b = block;
     }
@@ -70,7 +70,7 @@ LAB_INLINE void LAB_Placer_SetBlockIfAll(LAB_Placer* p, int x, int y, int z, LAB
 
     if(xx<16 && yy<16 && zz<16)
     {
-        LAB_Block*_Atomic* b = &p->chunk->blocks[xx|yy<<4|zz<<8];
+        LAB_Block*_Atomic* b = &p->chunk_blocks->blocks[xx|yy<<4|zz<<8];
         if(((*b)->tags&tags) == tags)
             *b = block;
     }

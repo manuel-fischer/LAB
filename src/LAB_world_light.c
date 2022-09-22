@@ -22,19 +22,23 @@
 
 // return blocks that changed
 LAB_STATIC LAB_HOT
-LAB_CCPS LAB_TickLight_ProcessQuadrant(LAB_Chunk*const chunks[27], int quadrant, bool init, LAB_Color default_color, int faces_changed, LAB_CCPS update_blocks)
+LAB_CCPS LAB_TickLight_ProcessQuadrant(
+    LAB_Chunk_Blocks* blocks_ctr, LAB_LightNbHood_Mut* light_chunks,
+    int quadrant, bool init, LAB_Color default_color, 
+    int faces_changed, LAB_CCPS update_blocks)
 {
+
     LAB_CCPS relit_blocks = 0;
 
-    LAB_Chunk* ctr_cnk = chunks[1+3+9];
-    LAB_ASSERT(ctr_cnk);
+    LAB_Chunk_Light* light_ctr = light_chunks->bufs[1+3+9];
 
+    LAB_ASSERT(blocks_ctr);
 
-    #define LAB_TickLight_ProcessBlock(getblockref) do \
+    #define LAB_TickLight_ProcessBlock(getLightAt) do \
     { \
         int block_index = LAB_XADD3(x, y<<4, z<<8); \
         \
-        LAB_Block* b = ctr_cnk->blocks[block_index]; \
+        LAB_Block* b = blocks_ctr->blocks[block_index]; \
         LAB_Color c = 0; \
         LAB_UNROLL(3) \
         for(int i = 0; i < 3; ++i) \
@@ -44,17 +48,7 @@ LAB_CCPS LAB_TickLight_ProcessQuadrant(LAB_Chunk*const chunks[27], int quadrant,
             \
             bool is_down = i==1 && !(quadrant&2); \
             \
-            int block_index2; \
-            LAB_Chunk* cnk; \
-            cnk = getblockref(chunks, xyz[0], xyz[1], xyz[2], &block_index2); \
-            LAB_Color cf; \
-            if(cnk) \
-            { \
-                cf = cnk->light[block_index2].quadrants[quadrant]; \
-            } \
-            else \
-                cf = default_color; \
-            \
+            LAB_Color cf = getLightAt(light_chunks, xyz[0], xyz[1], xyz[2], quadrant); \
             if(!is_down || (cf&LAB_COL_MASK) != LAB_COL_MASK) \
                 cf = LAB_LIGHT_FALL_OFF(cf); \
             c = LAB_MaxColor(c, cf); \
@@ -63,11 +57,11 @@ LAB_CCPS LAB_TickLight_ProcessQuadrant(LAB_Chunk*const chunks[27], int quadrant,
         c = LAB_MaxColor(LAB_MulColor_Fast(c, b->dia), b->lum); \
         c |= LAB_ALP_MASK; \
         \
-        bool relit = c_init || ctr_cnk->light[block_index].quadrants[quadrant] != c; \
+        bool relit = c_init || light_ctr->light[block_index].quadrants[quadrant] != c; \
         \
         /*if(relit)*/ \
         { \
-            ctr_cnk->light[block_index].quadrants[quadrant] = c; \
+            light_ctr->light[block_index].quadrants[quadrant] = c; \
             relit_blocks  |= LAB_CCPS_Pos(x, y, z)*relit; \
             update_blocks |= LAB_CCPS_Pos(x, y, z)*relit; \
         } \
@@ -130,7 +124,11 @@ LAB_CCPS LAB_TickLight_ProcessQuadrant(LAB_Chunk*const chunks[27], int quadrant,
             {
                 x = x0, y = y0; z = z0;
         process_block:;
-                LAB_TickLight_ProcessBlock(LAB_GetNeighborhoodRef);
+                #define LAB_GETLIGHTAT(light_chunks, x, y, z, quadrant) \
+                    (LAB_LightNbHood_RefLightNode(light_chunks, x, y, z)->quadrants[quadrant])
+
+                LAB_TickLight_ProcessBlock(LAB_GETLIGHTAT);
+                #undef LAB_GETLIGHTAT
             }
 
             switch(cur_loop)
@@ -180,9 +178,11 @@ LAB_CCPS LAB_TickLight_ProcessQuadrant(LAB_Chunk*const chunks[27], int quadrant,
         y_loop(1, false)
         x_loop(1, false)
         {
-            #define LAB_TickLight_CenterChunkBlock(chunks, x, y, z, p_block_index) \
-                (*(p_block_index) = LAB_XADD3((x), (y)<<4, (z)<<8), ctr_cnk)
-            LAB_TickLight_ProcessBlock(LAB_TickLight_CenterChunkBlock);
+            #define LAB_GETLIGHTAT(light_chunks, x, y, z, quadrant) \
+                (light_ctr->light[LAB_XADD3((x), (y)<<4, (z)<<8)].quadrants[quadrant])
+
+            LAB_TickLight_ProcessBlock(LAB_GETLIGHTAT);
+            #undef LAB_GETLIGHTAT
         }
     }
     return relit_blocks;
@@ -281,17 +281,23 @@ LAB_CCPS LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27],
     }
     else*/
     {
+        LAB_Chunk_Blocks* ctr_blocks = LAB_Chunk_Blocks_Read(chunk);
+        if(!ctr_blocks) return 0; // TODO: correct error handling
+
+        LAB_LightNbHood_Mut light_chunks;
+        if(!LAB_LightNbHood_GetWrite(chunks, &light_chunks)) return 0; // TODO: correct error handling
+        
+
         for(int i = 0; i < 8; ++i, relit_quads>>=1)
         {
             if(relit_quads&1)
             {
                 LAB_Color default_c = i & 2 ? default_color : default_color_above;
-                relit_blocks |= LAB_TickLight_ProcessQuadrant(chunks, i, !chunk->light_generated, default_c, faces_changed, blocks_changed);
+                relit_blocks |= LAB_TickLight_ProcessQuadrant(ctr_blocks, &light_chunks, i, !chunk->light_generated, default_c, faces_changed, blocks_changed);
             }
         }
 
-        // TODO insert check here
-        chunk->sky_light = false;
+        LAB_Chunk_Light_Optimize(chunk);
     }
     
     chunk->light_generated = true;

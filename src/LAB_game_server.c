@@ -424,7 +424,9 @@ void LAB_GameServer_UnloadChunks(LAB_GameServer* srv)
                 {
                     LAB_SDL_LockMutex(srv->mutex);
                     LAB_Chunk* neighbors[27];
-                    LAB_GetChunkNeighborsAll(chunk, neighbors);
+                    // TODO: what if new chunks are created in the 3x3x3 region simultaneously
+                    // in another thread
+                    LAB_GetChunkNeighbors(chunk, neighbors);
                     if(LAB_GameServer_Locked_TryLockChunk(srv, neighbors))
                     {
 

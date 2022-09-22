@@ -20,7 +20,7 @@
 
 #define LAB_GEN_CRYSTAL_SALT     0x98765
 
-LAB_STATIC void LAB_Gen_PopulateLayers(LAB_GenOverworld* gen, LAB_Chunk* chunk,
+LAB_STATIC void LAB_Gen_PopulateLayers(LAB_GenOverworld* gen, LAB_Chunk_Blocks* chunk_blocks,
                                        const LAB_StructureLayer* layers, size_t layer_count,
                                        int cx, int cy, int cz);
 
@@ -38,33 +38,34 @@ LAB_STATIC void LAB_Gen_Surface_PopulateLayer_Func(LAB_GenOverworld* gen, LAB_Pl
 LAB_STATIC void LAB_Gen_Surface_Populate(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
 LAB_STATIC void LAB_Gen_Surface_Populate_Func(LAB_GenOverworld* gen, LAB_Placer* p, int cx, int cy, int cz);
 #endif
-LAB_STATIC void LAB_Gen_Cave(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
+LAB_STATIC void LAB_Gen_Cave(LAB_GenOverworld* gen, LAB_Chunk_Blocks* chunk_blocks, int cx, int cy, int cz);
 
-LAB_STATIC void LAB_Gen_Cave_RockVariety(LAB_GenOverworld* gen, LAB_Chunk* chunk, int cx, int cy, int cz);
+LAB_STATIC void LAB_Gen_Cave_RockVariety(LAB_GenOverworld* gen, LAB_Chunk_Blocks* chunk_blocks, int cx, int cy, int cz);
 
 
 
 LAB_HOT
-LAB_Chunk* LAB_GenOverworldProc(void* user, LAB_Chunk* chunk, int x, int y, int z)
+bool LAB_GenOverworldProc(void* user, LAB_Chunk* chunk, int x, int y, int z)
 {
     //if(x < 0) return LAB_CreateChunk(&LAB_BLOCK_AIR);
 
     LAB_GenOverworld* gen = user;
 
     LAB_Block* block = y < LAB_SURFACE_MAX_CY ? &LAB_BLOCK_STONE.raw : &LAB_BLOCK_AIR;
-    LAB_FillChunk(chunk, block);
+    LAB_Chunk_FillGenerate(chunk, block);
+    LAB_Chunk_Blocks* chunk_blocks = chunk->buf_blocks;
 
     //LAB_Gen_Surface(gen, chunk, x, y, z);
 
-    LAB_Gen_Surface_Shape(gen, chunk, x, y, z);
+    LAB_Gen_Surface_Shape(gen, chunk_blocks, x, y, z);
     //return chunk; // DBG
-    LAB_Gen_Cave(gen, chunk, x, y, z);
+    LAB_Gen_Cave(gen, chunk_blocks, x, y, z);
     //LAB_Gen_Surface_Populate(gen, chunk, x, y, z);
     /*for(size_t i = 0; i < overworld_layers_count; ++i)
         LAB_Gen_Surface_PopulateLayer(gen, chunk, &overworld_layers[i], x, y, z);*/
-    LAB_Gen_PopulateLayers(gen, chunk, overworld_layers, overworld_layers_count, x, y, z);
+    LAB_Gen_PopulateLayers(gen, chunk_blocks, overworld_layers, overworld_layers_count, x, y, z);
 
-    return chunk;
+    return true;
 }
 
 
@@ -77,7 +78,7 @@ LAB_Chunk* LAB_GenOverworldProc(void* user, LAB_Chunk* chunk, int x, int y, int 
 
 
 
-LAB_STATIC void LAB_Gen_PopulateLayers(LAB_GenOverworld* gen, LAB_Chunk* chunk,
+LAB_STATIC void LAB_Gen_PopulateLayers(LAB_GenOverworld* gen, LAB_Chunk_Blocks* chunk_blocks,
                                               const LAB_StructureLayer* layers, size_t layer_count,
                                               int cx, int cy, int cz)
 {
@@ -91,7 +92,7 @@ LAB_STATIC void LAB_Gen_PopulateLayers(LAB_GenOverworld* gen, LAB_Chunk* chunk,
         for(int x = -structure_radius; x <= structure_radius; ++x)
         {
             LAB_Placer p;
-            p.chunk = chunk;
+            p.chunk_blocks = chunk_blocks;
             p.ox = -16*x;
             p.oy = -16*y;
             p.oz = -16*z;
@@ -134,7 +135,7 @@ LAB_STATIC void LAB_Gen_PopulateLayer_Func(LAB_GenOverworld* gen, LAB_Placer* p,
                 && lyr->min_height <= ay && ay <= lyr->max_height)
             {
                 LAB_Placer p2;
-                p2.chunk = p->chunk;
+                p2.chunk_blocks = p->chunk_blocks;
                 p2.ox = p->ox - (ax&15);
                 p2.oy = p->oy - (ay&15);
                 p2.oz = p->oz - (az&15);
@@ -211,14 +212,14 @@ LAB_STATIC void LAB_Gen_Surface_PopulateLayer_Func(LAB_GenOverworld* gen, LAB_Pl
 
 
 
-LAB_STATIC void LAB_Gen_Cave(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y, int z)
+LAB_STATIC void LAB_Gen_Cave(LAB_GenOverworld* gen, LAB_Chunk_Blocks* chunk_blocks, int x, int y, int z)
 {
     if(y < LAB_CAVE_ALTITUDE_C)
     {
         // Underground Generation
-        LAB_Gen_Cave_Carve(gen, chunk, x, y, z);
+        LAB_Gen_Cave_Carve(gen, chunk_blocks, x, y, z);
         //LAB_Gen_Cave_Crystals(gen, chunk, x, y, z);
-        LAB_Gen_Cave_RockVariety(gen, chunk, x, y, z);
+        LAB_Gen_Cave_RockVariety(gen, chunk_blocks, x, y, z);
     }
     //LAB_Gen_Cave_RockVariety(gen, chunk, x, y, z);
 }
@@ -227,7 +228,7 @@ LAB_STATIC void LAB_Gen_Cave(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int
 
 
 
-LAB_STATIC void LAB_Gen_Cave_RockVariety(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y, int z)
+LAB_STATIC void LAB_Gen_Cave_RockVariety(LAB_GenOverworld* gen, LAB_Chunk_Blocks* chunk_blocks, int x, int y, int z)
 {
     for(int zz = 0; zz < 16; ++zz)
     for(int yy = 0; yy < 16; ++yy)
@@ -236,7 +237,7 @@ LAB_STATIC void LAB_Gen_Cave_RockVariety(LAB_GenOverworld* gen, LAB_Chunk* chunk
         int xi = xx|x<<4;
         int yi = yy|y<<4;
         int zi = zz|z<<4;
-        if(chunk->blocks[xx|yy<<4|zz<<8] == &LAB_BLOCK_STONE.raw)
+        if(chunk_blocks->blocks[xx|yy<<4|zz<<8] == &LAB_BLOCK_STONE.raw)
         {
             #define F (1./42.)
             double n = (1+LAB_SimplexNoise3DS(gen->seed+0x12345, (double)xi*F, (double)yi*F, (double)zi*F))*0.5;
@@ -244,11 +245,11 @@ LAB_STATIC void LAB_Gen_Cave_RockVariety(LAB_GenOverworld* gen, LAB_Chunk* chunk
             //if(n >= 0.375 && n <= 0.625)
             //if(n <= 0.25)
             if(n <= 0.17)
-                chunk->blocks[xx|yy<<4|zz<<8] = &LAB_BLOCK_MARBLE.raw;
+                chunk_blocks->blocks[xx|yy<<4|zz<<8] = &LAB_BLOCK_MARBLE.raw;
             //else if(n >= 0.25 && n <= 0.75)
             //else if(n >= 0.75)
             else if(n >= 0.83)
-                chunk->blocks[xx|yy<<4|zz<<8] = &LAB_BLOCK_BASALT.raw;
+                chunk_blocks->blocks[xx|yy<<4|zz<<8] = &LAB_BLOCK_BASALT.raw;
         }
     }
 }

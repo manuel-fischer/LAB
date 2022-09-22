@@ -144,7 +144,7 @@ void LAB_ViewArray_Collect(LAB_ViewArray* arr)
     LAB_ViewArray_EACH_SORTED(arr, LAB_LOOP_FORWARD, e,
     {
         arr->entries_sorted_nonempty[arr->entries_sorted_nonempty_count] = e;
-        arr->entries_sorted_nonempty_count += e->world_chunk && !e->world_chunk->empty;
+        arr->entries_sorted_nonempty_count += e->world_chunk && !LAB_Chunk_IsEmpty(e->world_chunk);
     });
 
     //arr->entries_sorted_nonempty = arr->entries_sorted;

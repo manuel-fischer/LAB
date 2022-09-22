@@ -1,5 +1,4 @@
 #pragma once
-#define LAB_ALLOC_CHUNK_DATA 1
 
 #include "LAB_stdinc.h"
 #include "LAB_block.h"
@@ -48,7 +47,7 @@ typedef struct LAB_Chunk_Head
 
 typedef struct LAB_Chunk_Blocks
 {
-    LAB_Block* blocks[LAB_CHUNK_LENGTH];
+    LAB_Block* _Atomic blocks[LAB_CHUNK_LENGTH];
 } LAB_Chunk_Blocks;
 
 typedef struct LAB_Chunk_Light
@@ -56,6 +55,10 @@ typedef struct LAB_Chunk_Light
     LAB_LightNode light[LAB_CHUNK_LENGTH];
 } LAB_Chunk_Light;
 
+extern LAB_Chunk_Blocks LAB_chunk_empty_blocks_air;
+extern LAB_Chunk_Blocks LAB_chunk_empty_blocks_outside;
+extern LAB_Chunk_Light  LAB_chunk_empty_light_dark;
+extern LAB_Chunk_Light  LAB_chunk_empty_light_sunlight;
 
 
 typedef struct LAB_ChunkStats
@@ -66,19 +69,14 @@ typedef struct LAB_ChunkStats
 
 typedef struct LAB_Chunk
 {
-#if LAB_ALLOC_CHUNK_DATA
-    LAB_Block* _Atomic* blocks;
-    LAB_LightNode*      light;
-#else
-    LAB_Block* _Atomic     blocks[LAB_CHUNK_LENGTH]; // not initialized
-    LAB_LightNode          light[LAB_CHUNK_LENGTH];  // not initialized
-#endif
+    LAB_Chunk_Blocks* buf_blocks; // corresponds to AIR if NULL
+    LAB_Chunk_Light*  buf_light;  // corresponds to complete darkness if NULL
 
     LAB_ChunkPos pos;
 
-    atomic_bool modified,
+    atomic_bool modified;
          //light_generated,
-         empty, // usually set to 0, it is set to 1, if all blocks are air, TODO: this is tested, when the
+         //empty, // usually set to 0, it is set to 1, if all blocks are air, TODO: this is tested, when the
                 // the chunk is added to the list
                 // this bit is only used for optimizations, it might not be set if all blocks are air
                 // (when changed to this after generation)
@@ -87,7 +85,7 @@ typedef struct LAB_Chunk
                 // 1 -> might be empty, don't care
          //generated, // chunk is completely generated and in a stable state
          //pseudo; // chunk does not exist, this is a dummy chunk
-         sky_light; // when empty, this marks that the chunk only has skylight
+         //sky_light; // when empty, this marks that the chunk only has skylight
                     // but at every block
 
     //_Atomic unsigned int dirty; 
@@ -136,10 +134,14 @@ typedef struct LAB_Chunk
 LAB_STATIC_ASSUME(ATOMIC_POINTER_LOCK_FREE == 2, "Pointers should always be lock free");
 LAB_STATIC_ASSUME(sizeof(LAB_Chunk*) == sizeof(LAB_Chunk*_Atomic), "Atomic pointers should have the same size as normal pointers");
 
-typedef LAB_Chunk* (LAB_ChunkGenerator)(void* user, LAB_Chunk* chunk, int x, int y, int z);
+typedef bool (LAB_ChunkGenerator)(void* user, LAB_Chunk* chunk, int x, int y, int z);
+
+
+void LAB_InitEmptyChunks(void);
+
 
 /**
- *  Create chunk filled with fill_block,
+ *  Create uninitialized chunk
  *  Neighbors are all NULL
  *  Return NULL on failure
  */
@@ -153,10 +155,18 @@ void LAB_DestroyChunk(LAB_Chunk* chunk);
 void LAB_UnlinkChunk(LAB_Chunk* chunk);
 void LAB_DestroyChunk_Unlinked(LAB_Chunk* chunk);
 
+void LAB_Chunk_Blocks_Fill(LAB_Chunk_Blocks* blocks, LAB_Block* fill_block);
 
-void LAB_FillChunk(LAB_Chunk* chunk, LAB_Block* fill_block);
+LAB_INLINE
+void LAB_Chunk_FillGenerate(LAB_Chunk* chunk, LAB_Block* fill_block)
+{
+    LAB_ASSERT(!chunk->generated);
+    LAB_ASSERT(chunk->buf_blocks);
+    LAB_Chunk_Blocks_Fill(chunk->buf_blocks, fill_block);
+}
 
 
+// Multi threaded access
 LAB_INLINE
 LAB_Chunk* LAB_Chunk_Access(LAB_Chunk* chunk/*, LAB_ChunkFlags flags*/)
 {
@@ -191,3 +201,29 @@ void LAB_Chunk_UnlockWrite(LAB_Chunk* chunk);
 // write in the center, read in the neighbors
 void LAB_Chunk_LockNeighbors(LAB_Chunk* chunks[27]);
 void LAB_Chunk_UnlockNeighbors(LAB_Chunk* chunks[27]);
+
+LAB_Chunk_Blocks* LAB_Chunk_Blocks_Read(LAB_Chunk* chunk); // Does not modify chunk, return value should not be modified
+LAB_Chunk_Blocks* LAB_Chunk_Blocks_Write(LAB_Chunk* chunk); // Modifies chunk, can fail
+void LAB_Chunk_Blocks_Optimize(LAB_Chunk* chunk);
+LAB_INLINE bool LAB_Chunk_IsEmpty(LAB_Chunk* chunk) { return chunk->buf_blocks == NULL; }
+
+LAB_Chunk_Light* LAB_Chunk_Light_Read(LAB_Chunk* chunk); // Does not modify chunk, return value should not be modified
+LAB_Chunk_Light* LAB_Chunk_Light_Write(LAB_Chunk* chunk); // Modifies chunk, can fail
+void LAB_Chunk_Light_Optimize(LAB_Chunk* chunk);
+LAB_Chunk_Light* LAB_Chunk_Light_Read_ByY(int y);
+
+typedef enum LAB_LightFill
+{
+    LAB_LIGHT_FILL_DARK,
+    LAB_LIGHT_FILL_SUNLIGHT,
+    LAB_LIGHT_FILL_DATA
+} LAB_LightFill;
+
+LAB_INLINE LAB_LightFill LAB_Chunk_GetLightFill(LAB_Chunk* chunk)
+{
+    LAB_Chunk_Light* l = chunk->buf_light;
+    return l == NULL ? LAB_LIGHT_FILL_DARK
+         : l == &LAB_chunk_empty_light_dark ? LAB_LIGHT_FILL_DARK
+         : l == &LAB_chunk_empty_light_sunlight ? LAB_LIGHT_FILL_SUNLIGHT
+         : LAB_LIGHT_FILL_DATA;
+}

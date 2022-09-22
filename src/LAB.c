@@ -7,6 +7,7 @@
 #include "LAB_obj.h"
 
 #include "LAB_blocks.h"
+#include "LAB_chunk.h" // LAB_Init_Chunks
 #include "LAB_builtin_blocks.h"
 
 
@@ -44,6 +45,8 @@ static void LAB_QuitSDL(void)
 
 bool LAB_Init()
 {
+    LAB_InitEmptyChunks();
+
     LAB_OBJ(LAB_InitSDL(),
             LAB_QuitSDL(),
     

@@ -241,37 +241,46 @@ LAB_Block* LAB_GetBlock(LAB_World* world, int x, int y, int z)
 
     LAB_Chunk* chunk = LAB_GetChunk(world, cx, cy, cz);
     if(chunk == NULL) return &LAB_BLOCK_OUTSIDE;
-    return chunk->blocks[LAB_CHUNK_OFFSET(x&LAB_CHUNK_MASK, y&LAB_CHUNK_MASK, z&LAB_CHUNK_MASK)];
+    if(chunk->buf_blocks == NULL) return &LAB_BLOCK_AIR;
+    return chunk->buf_blocks->blocks[LAB_CHUNK_OFFSET(x&LAB_CHUNK_MASK, y&LAB_CHUNK_MASK, z&LAB_CHUNK_MASK)];
 }
 
-void LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_Block* block)
+bool LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_Block* block)
 {
+    // TODO: fix multithreading
     int cx, cy, cz;
     cx = x>>LAB_CHUNK_SHIFT; cy = y>>LAB_CHUNK_SHIFT; cz = z>>LAB_CHUNK_SHIFT;
 
     LAB_Chunk* chunk = LAB_GetChunk(world, cx, cy, cz);
-    if(chunk == NULL) return;
-    chunk->blocks[LAB_CHUNK_OFFSET(x&LAB_CHUNK_MASK, y&LAB_CHUNK_MASK, z&LAB_CHUNK_MASK)] = block;
+    if(chunk == NULL) return false;
+
+    LAB_Chunk_Blocks* blocks = LAB_Chunk_Blocks_Write(chunk);
+    if(!blocks) return false;
+
+    blocks->blocks[LAB_CHUNK_OFFSET(x&LAB_CHUNK_MASK, y&LAB_CHUNK_MASK, z&LAB_CHUNK_MASK)] = block;
     //LAB_NotifyChunkLater(world, cx, cy, cz);
     chunk->modified = 1;
-    if(block != &LAB_BLOCK_AIR) chunk->empty = 0;
     chunk->dirty_blocks |= LAB_CCPS_Pos(x&LAB_CHUNK_MASK, y&LAB_CHUNK_MASK, z&LAB_CHUNK_MASK);
     //LAB_UpdateChunkLater(world, chunk, cx, cy, cz, LAB_CHUNK_UPDATE_BLOCK);
     chunk->dirty = true; // TODO remove
 
     LAB_GameServer_PushChunkTask(world->server, chunk, LAB_CHUNK_STAGE_LIGHT);
+
+    return true;
 }
 
-void LAB_FillBlocks(LAB_World* world, int x0, int y0, int z0, int x1, int y1, int z1, LAB_Block* block)
+bool LAB_FillBlocks(LAB_World* world, int x0, int y0, int z0, int x1, int y1, int z1, LAB_Block* block)
 {
     // TODO optimize without repeeking chunks
     //      and effectively change chunk->dirty_blocks
+    bool success = true;
     for(int z = z0; z < z1; ++z)
     for(int y = y0; y < y1; ++y)
     for(int x = x0; x < x1; ++x)
     {
-        LAB_SetBlock(world, x, y, z, block);
+        success &= LAB_SetBlock(world, x, y, z, block);
     }
+    return success;
 }
 
 // hit currently not written

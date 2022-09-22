@@ -13,7 +13,7 @@
 //      - thread local
 //      - special function that finalizes cache,
 //        - when all height values have been calculated, that is when a chunk has been generated
-void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y, int z)
+void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk_Blocks* chunk_blocks, int x, int y, int z)
 {
     LAB_Random random;
     LAB_ChunkRandom(&random, gen->seed^LAB_GEN_DIRT_SALT, x, y, z);
@@ -61,7 +61,7 @@ void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y
 
                 if(river && b != &LAB_BLOCK_AIR) b = &LAB_BLOCK_LAPIZ.raw;
 
-                chunk->blocks[LAB_CHUNK_OFFSET(xx, yy, zz)] = (LAB_Block* /*TODO make this all const*/)b;
+                chunk_blocks->blocks[LAB_CHUNK_OFFSET(xx, yy, zz)] = (LAB_Block* /*TODO make this all const*/)b;
             }
         }
     }
@@ -236,7 +236,7 @@ int  LAB_Gen_River_Func(LAB_GenOverworld* gen, int x, int z)
 
 
 
-void LAB_Gen_Cave_Carve(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y, int z)
+void LAB_Gen_Cave_Carve(LAB_GenOverworld* gen, LAB_Chunk_Blocks* chunk_blocks, int x, int y, int z)
 {
     if (LAB_SEA_BOTTOM_C <= y && y < 0)
     {
@@ -254,7 +254,7 @@ void LAB_Gen_Cave_Carve(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y, i
                 if(yt < 0 && yi > yt-floor_depth) break;
                 if(LAB_Gen_Cave_Carve_Func(gen, xi, yi, zi))
                 //if(LAB_Gen_Cave_Carve_Func(gen, xi, yi, zi)||LAB_Gen_Cave_Carve_Func(gen, xi, yi-1, zi))
-                    chunk->blocks[xx|yy<<4|zz<<8] = &LAB_BLOCK_AIR;
+                    chunk_blocks->blocks[xx|yy<<4|zz<<8] = &LAB_BLOCK_AIR;
             }
         }
     }
@@ -270,7 +270,7 @@ void LAB_Gen_Cave_Carve(LAB_GenOverworld* gen, LAB_Chunk* chunk, int x, int y, i
             double zi = z*16|zz;
             if(LAB_Gen_Cave_Carve_Func(gen, xi, yi, zi))
             //if(LAB_Gen_Cave_Carve_Func(gen, xi, yi, zi)||LAB_Gen_Cave_Carve_Func(gen, xi, yi-1, zi))
-                chunk->blocks[xx|yy<<4|zz<<8] = &LAB_BLOCK_AIR;
+                chunk_blocks->blocks[xx|yy<<4|zz<<8] = &LAB_BLOCK_AIR;
         }
     }
 }
