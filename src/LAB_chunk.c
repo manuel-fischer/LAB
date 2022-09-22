@@ -100,10 +100,10 @@ void LAB_Chunk_Light_MakeSunlight(LAB_Chunk_Light* l)
 void LAB_InitEmptyChunks(void)
 {
     for(int i = 0; i < LAB_CHUNK_LENGTH; ++i)
-        LAB_chunk_empty_blocks_air.blocks[i] = &LAB_BLOCK_AIR;
+        LAB_chunk_empty_blocks_air.blocks[i] = LAB_BID_AIR;
     
     for(int i = 0; i < LAB_CHUNK_LENGTH; ++i)
-        LAB_chunk_empty_blocks_outside.blocks[i] = &LAB_BLOCK_OUTSIDE;
+        LAB_chunk_empty_blocks_outside.blocks[i] = LAB_BID_OUTSIDE;
 
     LAB_Chunk_Light_MakeDark(&LAB_chunk_empty_light_sunlight);
     LAB_Chunk_Light_MakeSunlight(&LAB_chunk_empty_light_sunlight);
@@ -208,11 +208,9 @@ void LAB_DestroyChunk_Unlinked(LAB_Chunk* chunk)
 }
 
 
-void LAB_Chunk_Blocks_Fill(LAB_Chunk_Blocks* blocks, LAB_Block* fill_block)
+void LAB_Chunk_Blocks_Fill(LAB_Chunk_Blocks* blocks, LAB_BlockID fill_block)
 {
     LAB_ASSERT(blocks != NULL);
-    LAB_ASSERT(LAB_READABLE(fill_block));
-
     for(int i = 0; i < LAB_CHUNK_LENGTH; ++i) blocks->blocks[i] = fill_block;
 }
 
@@ -288,7 +286,7 @@ LAB_Chunk_Blocks* LAB_Chunk_Blocks_Write(LAB_Chunk* chunk)
     {
         chunk->buf_blocks = LAB_Malloc(sizeof(LAB_Chunk_Blocks));
         if(!chunk->buf_blocks) return NULL;
-        LAB_Chunk_Blocks_Fill(chunk->buf_blocks, &LAB_BLOCK_AIR);
+        LAB_Chunk_Blocks_Fill(chunk->buf_blocks, LAB_BID_AIR);
     }
     return chunk->buf_blocks;
 }
@@ -298,7 +296,7 @@ void LAB_Chunk_Blocks_Optimize(LAB_Chunk* chunk)
     LAB_ASSERT(chunk);
     if(!chunk->buf_blocks) return; // already optimal
     for(int i = 0; i < 16*16*16; ++i)
-        if(chunk->buf_blocks->blocks[i] != &LAB_BLOCK_AIR) return;
+        if(chunk->buf_blocks->blocks[i] != LAB_BID_AIR) return;
 
     LAB_Free(chunk->buf_blocks);
     chunk->buf_blocks = NULL;

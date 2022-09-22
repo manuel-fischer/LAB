@@ -113,6 +113,8 @@ static bool LAB_Client_Obj(bool destroy)
             (void)0,
 
     {
+        LAB_client.input.selected_block = LAB_BLOCK_STONE.cobble;
+
         return true;
         lbl_destroy:;
     }););););););););

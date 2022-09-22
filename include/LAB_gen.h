@@ -2,6 +2,7 @@
 
 #include "LAB_attr.h"
 #include "LAB_chunk.h"
+#include "LAB_blocks.h"
 
 typedef struct LAB_RelativeChunkPlacer
 {
@@ -14,7 +15,7 @@ typedef LAB_RelativeChunkPlacer LAB_Placer;
 
 
 LAB_INLINE bool LAB_Placer_IsInside(LAB_Placer* p, int x, int y, int z, int w, int h, int d);
-LAB_INLINE void LAB_Placer_SetBlock(LAB_Placer* p, int x, int y, int z, LAB_Block* block);
+LAB_INLINE void LAB_Placer_SetBlock(LAB_Placer* p, int x, int y, int z, LAB_BlockID block);
 
 
 LAB_INLINE bool LAB_Placer_IsInside(LAB_Placer* p, int x, int y, int z, int w, int h, int d)
@@ -24,7 +25,7 @@ LAB_INLINE bool LAB_Placer_IsInside(LAB_Placer* p, int x, int y, int z, int w, i
         && (z <= p->oz+16 && z+d >= p->oz);
 }
 
-LAB_INLINE void LAB_Placer_SetBlock(LAB_Placer* p, int x, int y, int z, LAB_Block* block)
+LAB_INLINE void LAB_Placer_SetBlock(LAB_Placer* p, int x, int y, int z, LAB_BlockID block)
 {
     unsigned xx = x - p->ox;
     unsigned yy = y - p->oy;
@@ -34,7 +35,7 @@ LAB_INLINE void LAB_Placer_SetBlock(LAB_Placer* p, int x, int y, int z, LAB_Bloc
         p->chunk_blocks->blocks[xx|yy<<4|zz<<8] = block;
 }
 
-LAB_INLINE void LAB_Placer_SetBlockIfBlock(LAB_Placer* p, int x, int y, int z, LAB_Block* block, LAB_Block* replace)
+LAB_INLINE void LAB_Placer_SetBlockIfBlock(LAB_Placer* p, int x, int y, int z, LAB_BlockID block, LAB_BlockID replace)
 {
     unsigned xx = x - p->ox;
     unsigned yy = y - p->oy;
@@ -42,13 +43,13 @@ LAB_INLINE void LAB_Placer_SetBlockIfBlock(LAB_Placer* p, int x, int y, int z, L
 
     if(xx<16 && yy<16 && zz<16)
     {
-        LAB_Block*_Atomic* b = &p->chunk_blocks->blocks[xx|yy<<4|zz<<8];
+        LAB_BlockID _Atomic* b = &p->chunk_blocks->blocks[xx|yy<<4|zz<<8];
         if(*b == replace)
             *b = block;
     }
 }
 
-LAB_INLINE void LAB_Placer_SetBlockIfAny(LAB_Placer* p, int x, int y, int z, LAB_Block* block, uint32_t tags)
+LAB_INLINE void LAB_Placer_SetBlockIfAny(LAB_Placer* p, int x, int y, int z, LAB_BlockID block, uint32_t tags)
 {
     unsigned xx = x - p->ox;
     unsigned yy = y - p->oy;
@@ -56,13 +57,13 @@ LAB_INLINE void LAB_Placer_SetBlockIfAny(LAB_Placer* p, int x, int y, int z, LAB
 
     if(xx<16 && yy<16 && zz<16)
     {
-        LAB_Block*_Atomic* b = &p->chunk_blocks->blocks[xx|yy<<4|zz<<8];
-        if((*b)->tags&tags)
+        LAB_BlockID _Atomic* b = &p->chunk_blocks->blocks[xx|yy<<4|zz<<8];
+        if(LAB_BlockP(*b)->tags&tags)
             *b = block;
     }
 }
 
-LAB_INLINE void LAB_Placer_SetBlockIfAll(LAB_Placer* p, int x, int y, int z, LAB_Block* block, uint32_t tags)
+LAB_INLINE void LAB_Placer_SetBlockIfAll(LAB_Placer* p, int x, int y, int z, LAB_BlockID block, uint32_t tags)
 {
     unsigned xx = x - p->ox;
     unsigned yy = y - p->oy;
@@ -70,8 +71,8 @@ LAB_INLINE void LAB_Placer_SetBlockIfAll(LAB_Placer* p, int x, int y, int z, LAB
 
     if(xx<16 && yy<16 && zz<16)
     {
-        LAB_Block*_Atomic* b = &p->chunk_blocks->blocks[xx|yy<<4|zz<<8];
-        if(((*b)->tags&tags) == tags)
+        LAB_BlockID _Atomic* b = &p->chunk_blocks->blocks[xx|yy<<4|zz<<8];
+        if((LAB_BlockP(*b)->tags&tags) == tags)
             *b = block;
     }
 }

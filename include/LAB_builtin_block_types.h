@@ -3,19 +3,21 @@
 #include "LAB_assets.h"
 #include "LAB_block.h"
 #include "LAB_opt.h"
-#include "LAB_builtin_block_init.h"
 #include "LAB_builtin_model.h"
 #include "LAB_blocks.h"
 #include "LAB_render_item.h"
 #include "LAB_color_defs.h"
 
 
-#define LAB_BlockFull_Init(assets, b, tex, tint, render_pass) \
-        LAB_BlockFull_Init_(assets, b, (const size_t(*)[2])tex, tint, render_pass)
+#define LAB_BlockFull_Init(assets, bid, tex, tint, render_pass) \
+        LAB_BlockFull_Init_(assets, bid, (const size_t(*)[2])tex, tint, render_pass)
 LAB_INLINE 
-bool LAB_BlockFull_Init_(LAB_Assets* assets, LAB_Block* b,
+bool LAB_BlockFull_Init_(LAB_Assets* assets, LAB_BlockID* bid,
                         const size_t tex[2][2], LAB_Color tint, LAB_RenderPass render_pass)
 {
+    if(!LAB_RegisterBlocksGen(bid, 1)) return false;
+    LAB_Block* b = LAB_BlockP(*bid);
+
     b->flags = LAB_BLOCK_SOLID;
 
     const float tex_f[2][2] = { { tex[0][0], tex[0][1] }, { tex[1][0], tex[1][1] } };
@@ -32,7 +34,7 @@ bool LAB_BlockFull_Init_(LAB_Assets* assets, LAB_Block* b,
     //b->item_texture = LAB_Assets_LoadTexture(assets, "stone");
     b->item_texture = LAB_Assets_RenderItem(assets, tex, tint);
 
-    LAB_RegisterBlock(b);
+    LAB_AddBlockItems(*bid, 1);
 
     return true;
 }
@@ -45,15 +47,15 @@ typedef union LAB_BlockGroupStone
 {
     struct
     {
-        LAB_Block raw,
-                  layered,
-                  cobble,
-                  bricks,
-                  smooth/*,
-                  polished,
-                  mossy*/;
+        LAB_BlockID raw,
+                    layered,
+                    cobble,
+                    bricks,
+                    smooth/*,
+                    polished,
+                    mossy*/;
     };
-    LAB_Block blocks[LAB_BLOCK_GROUP_STONE_NUM];
+    LAB_BlockID blocks[LAB_BLOCK_GROUP_STONE_NUM];
 } LAB_BlockGroupStone;
 
 typedef struct LAB_MaterialGroupStone
@@ -106,9 +108,12 @@ bool LAB_BlockGroupStone_Init(LAB_Assets* assets,
 #define LAB_BlockCross_Init(assets, b, tex, tint, render_pass) \
         LAB_BlockCross_Init_(assets, b, (const size_t(*)[2])tex, tint, render_pass)
 LAB_INLINE 
-bool LAB_BlockCross_Init_(LAB_Assets* assets, LAB_Block* b,
+bool LAB_BlockCross_Init_(LAB_Assets* assets, LAB_BlockID* bid,
                           const size_t tex[2][2], LAB_Color tint, LAB_RenderPass render_pass)
 {
+    if(!LAB_RegisterBlocksGen(bid, 1)) return false;
+    LAB_Block* b = LAB_BlockP(*bid);
+
     b->flags = LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL|LAB_BLOCK_FLAT_SHADE;
     b->dia = LAB_COLOR_WHITE;
 
@@ -126,7 +131,7 @@ bool LAB_BlockCross_Init_(LAB_Assets* assets, LAB_Block* b,
     //b->item_texture = LAB_Assets_LoadTexture(assets, "stone");
     b->item_texture = LAB_Assets_RenderItem(assets, tex, tint);
 
-    LAB_RegisterBlock(b);
+    LAB_AddBlockItems(*bid, 1);
 
     return true;
 }
@@ -134,12 +139,15 @@ bool LAB_BlockCross_Init_(LAB_Assets* assets, LAB_Block* b,
 
 
 
-#define LAB_BlockLight_Init(assets, b, tex, lum) \
-        LAB_BlockLight_Init_(assets, b, (const size_t(*)[2])tex, lum)
+#define LAB_BlockLight_Init(assets, bid, tex, lum) \
+        LAB_BlockLight_Init_(assets, bid, (const size_t(*)[2])tex, lum)
 LAB_INLINE 
-bool LAB_BlockLight_Init_(LAB_Assets* assets, LAB_Block* b,
+bool LAB_BlockLight_Init_(LAB_Assets* assets, LAB_BlockID* bid,
                           const size_t tex[2][2], LAB_Color lum)
 {
+    if(!LAB_RegisterBlocksGen(bid, 1)) return false;
+    LAB_Block* b = LAB_BlockP(*bid);
+
     LAB_Model* m = LAB_Assets_NewModel(assets);
     const float tex_f[2][2] = { { tex[0][0], tex[0][1] }, { tex[1][0], tex[1][1] } };
     LAB_Builtin_ModelAddCubeAll(m, LAB_full_aabb, tex_f, LAB_cube_color_flat, LAB_COLOR_WHITE);
@@ -152,6 +160,8 @@ bool LAB_BlockLight_Init_(LAB_Assets* assets, LAB_Block* b,
         .model = m,
         .bounds = LAB_AABB_FULL_CUBE,
     };
-    LAB_RegisterBlock(b);
+
+    LAB_AddBlockItems(*bid, 1);
+
     return true; // TODO
 }

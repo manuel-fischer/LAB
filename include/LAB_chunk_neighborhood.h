@@ -24,52 +24,6 @@ void LAB_LightNbHood_GetRead(LAB_Chunk*const chunks[27], LAB_LightNbHood* out);
 bool LAB_LightNbHood_GetWrite(LAB_Chunk*const chunks[27], LAB_LightNbHood_Mut* out); // return false if allocation failed
 
 
-
-#if 0
-LAB_INLINE LAB_Chunk* LAB_GetNeighborhoodRef(LAB_Chunk*const neighborhood[27], int x, int y, int z, int* /*out*/ index);
-LAB_INLINE LAB_Block* LAB_GetNeighborhoodBlock(LAB_Chunk*const neighborhood[27], int x, int y, int z);
-
-
-
-
-/**
- *  the origin of x,y,z is at (0,0,0) of the chunk at [1+3+3*3]
- */
-LAB_ALWAYS_INLINE LAB_INLINE
-LAB_Chunk* LAB_GetNeighborhoodRef(LAB_Chunk*const neighborhood[27], int x, int y, int z, int* /*out*/ index)
-{
-    LAB_ASSUME(x >= -16 && x < 32);
-    LAB_ASSUME(y >= -16 && y < 32);
-    LAB_ASSUME(z >= -16 && z < 32);
-
-    int cx, cy, cz,  ix, iy, iz;
-
-    cx = (x+16) >> LAB_CHUNK_SHIFT;
-    ix = LAB_CHUNK_X(x & LAB_CHUNK_MASK);
-
-    cy = 3*((y+16) >> LAB_CHUNK_SHIFT);
-    iy = LAB_CHUNK_Y(y & LAB_CHUNK_MASK);
-
-    cz = 3*3*((z+16) >> LAB_CHUNK_SHIFT);
-    iz = LAB_CHUNK_Z(z & LAB_CHUNK_MASK);
-
-    *index = ix+iy+iz;
-    return neighborhood[cx+cy+cz];
-}
-
-LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
-LAB_Block* LAB_GetNeighborhoodBlock(LAB_Chunk*const neighborhood[27], int x, int y, int z)
-{
-    int block_index;
-    LAB_Chunk* chunk;
-    chunk = LAB_GetNeighborhoodRef(neighborhood, x, y, z, &block_index);
-    //if(LAB_UNLIKELY(chunk == NULL)) return &LAB_BLOCK_OUTSIDE;
-    if(chunk == NULL) return &LAB_BLOCK_OUTSIDE;
-    return chunk->blocks[block_index];
-}
-#endif
-
-
 LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
 void LAB_Neighborhood_Index(int x, int y, int z, int* chunk, int* block)
 {
@@ -90,10 +44,13 @@ void LAB_Neighborhood_Index(int x, int y, int z, int* chunk, int* block)
 
     *chunk = cx+cy+cz;
     *block = ix+iy+iz;
+#if 0 /*fun*/
+    *block ^= (rand()&rand()&rand()&rand()&rand()&rand()&rand()&0xfff);
+#endif
 }
 
 LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
-LAB_Block*_Atomic * LAB_BlockNbHood_RefBlock(LAB_BlockNbHood* n, int x, int y, int z)
+LAB_BlockID _Atomic * LAB_BlockNbHood_RefBlock(LAB_BlockNbHood* n, int x, int y, int z)
 {
     int chunk, block;
     LAB_Neighborhood_Index(x, y, z, &chunk, &block);

@@ -2,6 +2,7 @@
 #include "LAB_debug.h"
 #include "LAB_chunk_pseudo.h"
 #include "LAB_chunk_neighborhood.h"
+#include "LAB_blocks.h"
 // TODO: use pseudo chunks instead of NULL chunks -> no branching required
 //       - build chunk neighborhood with these pseudo chunks
 // TODO: reduce range of searching for possibly changed block positions
@@ -38,7 +39,7 @@ LAB_CCPS LAB_TickLight_ProcessQuadrant(
     { \
         int block_index = LAB_XADD3(x, y<<4, z<<8); \
         \
-        LAB_Block* b = blocks_ctr->blocks[block_index]; \
+        LAB_Block* b = LAB_BlockP(blocks_ctr->blocks[block_index]); \
         LAB_Color c = 0; \
         LAB_UNROLL(3) \
         for(int i = 0; i < 3; ++i) \
@@ -93,6 +94,9 @@ LAB_CCPS LAB_TickLight_ProcessQuadrant(
 
         int zi, yi, xi;
         int x, y, z;
+
+        // Hide uninitialized warning message
+        zi=yi=xi = x=y=z = 0;
 
         // if-condition: check if the previous or current column has changes
         #define x_loop(start, all_if) \

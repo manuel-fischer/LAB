@@ -234,18 +234,18 @@ LAB_Chunk* LAB_GenerateChunk(LAB_World* world, int x, int y, int z)
 }*/
 
 
-LAB_Block* LAB_GetBlock(LAB_World* world, int x, int y, int z)
+LAB_BlockID LAB_GetBlock(LAB_World* world, int x, int y, int z)
 {
     int cx, cy, cz;
     cx = x>>LAB_CHUNK_SHIFT; cy = y>>LAB_CHUNK_SHIFT; cz = z>>LAB_CHUNK_SHIFT;
 
     LAB_Chunk* chunk = LAB_GetChunk(world, cx, cy, cz);
-    if(chunk == NULL) return &LAB_BLOCK_OUTSIDE;
-    if(chunk->buf_blocks == NULL) return &LAB_BLOCK_AIR;
+    if(chunk == NULL) return LAB_BID_OUTSIDE;
+    if(chunk->buf_blocks == NULL) return LAB_BID_AIR;
     return chunk->buf_blocks->blocks[LAB_CHUNK_OFFSET(x&LAB_CHUNK_MASK, y&LAB_CHUNK_MASK, z&LAB_CHUNK_MASK)];
 }
 
-bool LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_Block* block)
+bool LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_BlockID block)
 {
     // TODO: fix multithreading
     int cx, cy, cz;
@@ -269,7 +269,7 @@ bool LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_Block* block)
     return true;
 }
 
-bool LAB_FillBlocks(LAB_World* world, int x0, int y0, int z0, int x1, int y1, int z1, LAB_Block* block)
+bool LAB_FillBlocks(LAB_World* world, int x0, int y0, int z0, int x1, int y1, int z1, LAB_BlockID block)
 {
     // TODO optimize without repeeking chunks
     //      and effectively change chunk->dirty_blocks
@@ -335,7 +335,7 @@ int LAB_TraceBlock(LAB_World* world, int max_distance, float vpos[3], float dir[
     // loop
     do
     {
-        LAB_Block* b = LAB_GetBlock(world, x, y, z);
+        LAB_Block* b = LAB_GetBlockP(world, x, y, z);
         if(b->flags&block_flags)
         {
             float rect1[3], rect2[3];

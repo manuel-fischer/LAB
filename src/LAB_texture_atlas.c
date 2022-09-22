@@ -8,10 +8,10 @@
 
 bool LAB_TexAlloc_Create(LAB_TexAlloc* alloc)
 {
-    LAB_ARRAY_CREATE(alloc->nodes);
+    LAB_ARRAY_CREATE(LAB_TexAlloc_Nodes(alloc));
 
     /*LAB_TexAlloc_Node* node;
-    LAB_ARRAY_APPEND(alloc->nodes, 1, node);
+    LAB_ARRAY_APPEND(LAB_TexAlloc_Nodes(alloc), 1, node);
     if(!node) return false;
     memset(node[0].states, LAB_TexAlloc_EMPTY, sizeof(node.childs[0]));
     node[0].parent = LAB_TexAlloc_Node_NULL;
@@ -29,14 +29,14 @@ bool LAB_TexAlloc_Create(LAB_TexAlloc* alloc)
 
 void LAB_TexAlloc_Destroy(LAB_TexAlloc* alloc)
 {
-    LAB_ARRAY_DESTROY(alloc->nodes);
+    LAB_ARRAY_DESTROY(LAB_TexAlloc_Nodes(alloc));
 
 }
 
 LAB_STATIC size_t LAB_TexAlloc_NewNode_Alloc(LAB_TexAlloc* alloc)
 {
     size_t node;
-    #define NODE (alloc->nodes.data[node])
+    #define NODE (alloc->nodes[node])
     if(alloc->next_unoccupied != LAB_TexAlloc_Node_NULL)
     {
         node = alloc->next_unoccupied;
@@ -46,9 +46,9 @@ LAB_STATIC size_t LAB_TexAlloc_NewNode_Alloc(LAB_TexAlloc* alloc)
     {
         // Allocate new node
         LAB_TexAlloc_Node* node_p;
-        LAB_ARRAY_APPEND(alloc->nodes, 1, node_p);
+        LAB_ARRAY_APPEND(LAB_TexAlloc_Nodes(alloc), 1, node_p);
         if(!node_p) return LAB_TexAlloc_Node_NULL;
-        node = node_p - alloc->nodes.data;
+        node = node_p - alloc->nodes;
     }
     #undef NODE
     return node;
@@ -58,7 +58,7 @@ LAB_STATIC size_t LAB_TexAlloc_NewNode_Alloc(LAB_TexAlloc* alloc)
 LAB_STATIC size_t LAB_TexAlloc_NewNode(LAB_TexAlloc* alloc, size_t parent)
 {
     size_t node = LAB_TexAlloc_NewNode_Alloc(alloc);
-    #define NODE (alloc->nodes.data[node])
+    #define NODE (alloc->nodes[node])
     if(node == LAB_TexAlloc_Node_NULL) return node;
 
     // memset(&NODE, 0xEE, sizeof(NODE)); // debug
@@ -71,7 +71,7 @@ LAB_STATIC size_t LAB_TexAlloc_NewNode(LAB_TexAlloc* alloc, size_t parent)
 
 LAB_STATIC void LAB_TexAlloc_DelNode(LAB_TexAlloc* alloc, size_t node)
 {
-    #define NODE (alloc->nodes.data[node])
+    #define NODE (alloc->nodes[node])
     NODE.next_unoccupied = alloc->next_unoccupied;
     alloc->next_unoccupied = node;
     #undef NODE
@@ -86,7 +86,7 @@ bool LAB_TexAlloc_Add(LAB_TexAlloc* alloc, size_t side_cells, LAB_OUT size_t top
     size_t cur_x = 0, cur_y = 0;
 
     size_t node = alloc->root_node;
-    #define NODE (alloc->nodes.data[node])
+    #define NODE (alloc->nodes[node])
     if(current_size > side_cells)
     {
         bool downwards = true;

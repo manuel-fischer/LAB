@@ -59,3 +59,6 @@ typedef struct LAB_Block
 
 //IXO_DECLARE_CLASS(LAB_Block);
 
+typedef uint16_t LAB_BlockID;
+#define LAB_BID_MAX ((LAB_BlockID)0xfffe)
+#define LAB_BID_INVALID ((LAB_BlockID)0xffff)

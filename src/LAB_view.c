@@ -351,7 +351,8 @@ LAB_STATIC void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* 
     for(size_t y = 0; y < LAB_CHUNK_SIZE; ++y)
     for(size_t x = 0; x < LAB_CHUNK_SIZE; ++x)
     {
-        if(blocknbh->bufs[1+3+9]->blocks[LAB_CHUNK_OFFSET(x, y, z)]->flags & LAB_BLOCK_VISUAL)
+        LAB_BlockID bid = blocknbh->bufs[1+3+9]->blocks[LAB_CHUNK_OFFSET(x, y, z)];
+        if(LAB_BlockP(bid)->flags & LAB_BLOCK_VISUAL)
             LAB_ViewBuildMeshBlock(view, chunk_entry, blocknbh, lightnbh, x, y, z, visibility);
     }
 }
@@ -361,7 +362,7 @@ LAB_HOT
 LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_IN LAB_BlockNbHood* blocknbh, LAB_IN LAB_LightNbHood* lightnbh, int x, int y, int z, unsigned visibility)
 {
 
-#define GET_BLOCK(bx, by, bz) (*LAB_BlockNbHood_RefBlock(blocknbh, x+(bx), y+(by), z+(bz)))
+#define GET_BLOCK(bx, by, bz) LAB_BlockP(*LAB_BlockNbHood_RefBlock(blocknbh, x+(bx), y+(by), z+(bz)))
 #define GET_BLOCK_FLAGS(bx, by, bz) (GET_BLOCK(bx, by, bz)->flags)
 
     LAB_Block* tmp_block;
@@ -395,7 +396,8 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
         LAB_View_GammaMap_MapColor(view->cfg.gamma_map, LAB_GetVisualNeighborhoodLight(lightnbh, x, y, z, face/*, default_color*/))
             
 
-    LAB_Block* block = blocknbh->bufs[1+3+9]->blocks[LAB_CHUNK_OFFSET(x, y, z)];
+    LAB_BlockID bid = blocknbh->bufs[1+3+9]->blocks[LAB_CHUNK_OFFSET(x, y, z)];
+    LAB_Block* block = LAB_BlockP(bid);
     if(block->model == NULL) return;
 
     int faces = 0;
@@ -1461,7 +1463,7 @@ LAB_STATIC void LAB_View_RenderBlockSelection(LAB_View* view)
 
         if(memcmp(target, prev, sizeof target) != 0)
         {
-            LAB_Block* b = LAB_GetBlock(view->world, target[0], target[1], target[2]);
+            LAB_Block* b = LAB_GetBlockP(view->world, target[0], target[1], target[2]);
             float pos[3], size[3];
             LAB_Vec3_Add(pos,  target,       b->bounds[0]);
             LAB_Vec3_Sub(size, b->bounds[1], b->bounds[0]);
@@ -2326,7 +2328,8 @@ LAB_STATIC void LAB_View_UpdateChunkSeethrough(LAB_View* view, LAB_ViewChunkEntr
         for(size_t ia = 0, a = 0; ia < 16; ++ia, a+=da)
         {
             LAB_ASSERT((c|a|b) < 16*16*16);
-            if(!(blocks->blocks[c|a|b]->flags & LAB_BLOCK_OPAQUE))
+            LAB_BlockID bid = blocks->blocks[c|a|b];
+            if(!(LAB_BlockP(bid)->flags & LAB_BLOCK_OPAQUE))
             {
                 faces |= 1 << face;
                 goto finish_face;
@@ -2398,8 +2401,8 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
 
     int load_amount = view->cfg.load_amount; // should be configurable
 
-    LAB_Block* block = LAB_GetBlock(view->world, (int)floorf(view->x), (int)floorf(view->y), (int)floorf(view->z));
-    bool is_xray = !!(block->flags & LAB_BLOCK_OPAQUE);
+    LAB_Block* b = LAB_GetBlockP(view->world, (int)floorf(view->x), (int)floorf(view->y), (int)floorf(view->z));
+    bool is_xray = !!(b->flags & LAB_BLOCK_OPAQUE);
 
     uint64_t stoptime = LAB_NanoSeconds() + 3000*1000; // 1 ms
 
@@ -2613,7 +2616,7 @@ void LAB_View_ShowGuiMenu(LAB_View* view)
     LAB_GuiManager_ShowDialog(&view->gui_mgr, (LAB_GuiComponent*)gui);
 }
 
-void LAB_View_ShowGuiInventory(LAB_View* view, LAB_Block** block)
+void LAB_View_ShowGuiInventory(LAB_View* view, LAB_BlockID* block)
 {
     LAB_GuiInventory* gui = LAB_Malloc(sizeof *gui);
     if(!gui) return;

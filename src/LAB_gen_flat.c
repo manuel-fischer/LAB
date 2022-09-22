@@ -4,7 +4,7 @@ bool LAB_GenFlatProc(void* user, LAB_Chunk* chunk, int x, int y, int z)
 {
     LAB_GenFlat* gen_flat = user;
 
-    LAB_Block* block = y < 0 ? gen_flat->block : &LAB_BLOCK_AIR;
+    LAB_BlockID block = y < 0 ? gen_flat->block : LAB_BID_AIR;
     LAB_Chunk_FillGenerate(chunk, block);
 
     #if 0

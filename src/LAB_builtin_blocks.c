@@ -25,20 +25,56 @@
 #define LAB_COLOR_WATER_DIA LAB_RGBX(ccddff)
 
 
+// TODO move
+LAB_INLINE
+bool LAB_InitBlock(LAB_BlockID* id, LAB_Block b)
+{
+    if(!LAB_RegisterBlocksGen(id, 1)) return false;
+    *LAB_BlockP(*id) = b;
+    return true;
+}
+
+LAB_INLINE
+bool LAB_InitItemBlock(LAB_BlockID* id, LAB_Block b)
+{
+    if(!LAB_RegisterBlocksGen(id, 1)) return false;
+    *LAB_BlockP(*id) = b;
+    return LAB_AddBlockItems(*id, 1);
+}
+
+
+LAB_INLINE
+bool LAB_LeavesBlock_Init(LAB_Assets* assets, LAB_BlockID* bid,
+                          size_t tex[2][2], LAB_Color tint, LAB_RenderPass render_pass, LAB_Color dia)
+{
+    if(!LAB_BlockFull_Init(assets, bid, tex, tint, render_pass)) return false;
+    LAB_BlockP(*bid)->dia = dia;
+    LAB_BlockP(*bid)->flags = LAB_BLOCK_MASSIVE|LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL;
+    return true;
+}
+
+
+
+
 
 bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
 {
     // TODO error checking
     ///// FUNDAMENTAL /////
     {
-        LAB_BLOCK_OUTSIDE.flags = LAB_BLOCK_OPAQUE;
-        LAB_BLOCK_OUTSIDE.dia = LAB_RGB(255, 255, 255);
-        //LAB_RegisterBlock(&LAB_BLOCK_OUTSIDE);
+        if(!LAB_InitBlock(&LAB_BLOCK_AIR, (LAB_Block) {
+            .flags = 0,
+            .tags = LAB_BLOCK_TAG_REPLACEABLE,
+            .dia = LAB_RGB(255, 255, 255)
+        })) return false;
 
-        LAB_BLOCK_AIR.flags = 0;
-        LAB_BLOCK_AIR.tags = LAB_BLOCK_TAG_REPLACEABLE;
-        LAB_BLOCK_AIR.dia = LAB_RGB(255, 255, 255);
-        //LAB_RegisterBlock(&LAB_BLOCK_AIR);
+        if(!LAB_InitBlock(&LAB_BLOCK_OUTSIDE, (LAB_Block) {
+            .flags = LAB_BLOCK_OPAQUE,
+            .dia = LAB_RGB(255, 255, 255)
+        })) return false;
+
+        LAB_ASSERT(LAB_BLOCK_AIR == LAB_BID_AIR);
+        LAB_ASSERT(LAB_BLOCK_OUTSIDE == LAB_BID_OUTSIDE);
     }
     
 
@@ -147,8 +183,8 @@ bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
         size_t tex[2][2];
         LAB_Assets_NewTexture(assets, tex, "glass");
         LAB_BlockFull_Init(assets, &LAB_BLOCK_GLASS, tex, LAB_RGBA(255, 255, 255, 128), LAB_RENDER_PASS_ALPHA);
-        LAB_BLOCK_GLASS.flags = LAB_BLOCK_MASSIVE|LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL|LAB_BLOCK_OPAQUE_SELF;
-        LAB_BLOCK_GLASS.dia   = LAB_COLOR_WHITE;
+        LAB_BlockP(LAB_BLOCK_GLASS)->flags = LAB_BLOCK_MASSIVE|LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL|LAB_BLOCK_OPAQUE_SELF;
+        LAB_BlockP(LAB_BLOCK_GLASS)->dia   = LAB_COLOR_WHITE;
     }
 
 
@@ -167,28 +203,19 @@ bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
 
 
         ///// OAK /////
-        LAB_BlockFull_Init(assets, &LAB_BLOCK_LEAVES, tex_leaves, LAB_COLOR_LEAVES, LAB_RENDER_PASS_MASKED);
-        LAB_BLOCK_LEAVES.dia = LAB_RGB(130, 200, 130);
-        LAB_BLOCK_LEAVES.flags = LAB_BLOCK_MASSIVE|LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL;
-
+        LAB_LeavesBlock_Init(assets, &LAB_BLOCK_LEAVES, tex_leaves, LAB_COLOR_LEAVES, LAB_RENDER_PASS_MASKED, LAB_RGB(130, 200, 130));
         LAB_BlockFull_Init(assets, &LAB_BLOCK_WOOD, tex_oak_log, LAB_COLOR_WOOD, LAB_RENDER_PASS_SOLID);
         LAB_BlockFull_Init(assets, &LAB_BLOCK_WOOD_PLANKS, tex_planks, LAB_RGB(220, 197, 162), LAB_RENDER_PASS_SOLID);
         LAB_BlockFull_Init(assets, &LAB_BLOCK_WOOD_PLANKS_DARK, tex_planks, LAB_RGB(120, 97, 80), LAB_RENDER_PASS_SOLID);
 
 
         ///// BIRCH /////
-        LAB_BlockFull_Init(assets, &LAB_BLOCK_BIRCH_LEAVES, tex_leaves, LAB_COLOR_BIRCH_LEAVES, LAB_RENDER_PASS_MASKED);
-        LAB_BLOCK_BIRCH_LEAVES.dia = LAB_COLOR_BIRCH_LEAVES;
-        LAB_BLOCK_BIRCH_LEAVES.flags = LAB_BLOCK_MASSIVE|LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL;
-
+        LAB_LeavesBlock_Init(assets, &LAB_BLOCK_BIRCH_LEAVES, tex_leaves, LAB_COLOR_BIRCH_LEAVES, LAB_RENDER_PASS_MASKED, LAB_COLOR_BIRCH_LEAVES);
         LAB_BlockFull_Init(assets, &LAB_BLOCK_BIRCH_WOOD, tex_birch_log, LAB_COLOR_WHITE, LAB_RENDER_PASS_SOLID);
 
         
         ///// SPRUCE /////
-        LAB_BlockFull_Init(assets, &LAB_BLOCK_SPRUCE_LEAVES, tex_leaves, LAB_RGBX(006622), LAB_RENDER_PASS_MASKED);
-        LAB_BLOCK_SPRUCE_LEAVES.dia = LAB_RGBX(006622);
-        LAB_BLOCK_SPRUCE_LEAVES.flags = LAB_BLOCK_MASSIVE|LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL;
-
+        LAB_LeavesBlock_Init(assets, &LAB_BLOCK_SPRUCE_LEAVES, tex_leaves, LAB_RGBX(006622), LAB_RENDER_PASS_MASKED, LAB_RGBX(006622));
         LAB_BlockFull_Init(assets, &LAB_BLOCK_SPRUCE_WOOD, tex_birch_log, LAB_RGBX(332211), LAB_RENDER_PASS_SOLID); // LAB_RGBX(664422)
     }
 
@@ -202,13 +229,13 @@ bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
 
         LAB_Assets_NewTexture(assets, tex, "tall_grass");
         LAB_BlockCross_Init(assets, &LAB_BLOCK_TALLGRASS, tex, LAB_COLOR_GRASS, LAB_RENDER_PASS_MASKED);
-        LAB_BLOCK_TALLGRASS.dia = LAB_RGBX(dddddd);
-        LAB_AABB3_Assign(LAB_BLOCK_TALLGRASS.bounds,   0.125, 0, 0.125,   0.875, 0.375, 0.875);
+        LAB_BlockP(LAB_BLOCK_TALLGRASS)->dia = LAB_RGBX(dddddd);
+        LAB_AABB3_Assign(LAB_BlockP(LAB_BLOCK_TALLGRASS)->bounds,   0.125, 0, 0.125,   0.875, 0.375, 0.875);
 
         LAB_Assets_NewTexture(assets, tex, "taller_grass");
         LAB_BlockCross_Init(assets, &LAB_BLOCK_TALLERGRASS, tex, LAB_COLOR_GRASS, LAB_RENDER_PASS_MASKED);
-        LAB_BLOCK_TALLERGRASS.dia = LAB_RGBX(dddddd);
-        LAB_AABB3_Assign(LAB_BLOCK_TALLERGRASS.bounds,   0.125, 0, 0.125,   0.875, 0.75, 0.875);
+        LAB_BlockP(LAB_BLOCK_TALLERGRASS)->dia = LAB_RGBX(dddddd);
+        LAB_AABB3_Assign(LAB_BlockP(LAB_BLOCK_TALLERGRASS)->bounds,   0.125, 0, 0.125,   0.875, 0.75, 0.875);
 
 
 
@@ -227,8 +254,8 @@ bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
             {0}
         });
         LAB_BlockCross_Init(assets, &LAB_BLOCK_RED_TULIP, tex, LAB_COLOR_WHITE, LAB_RENDER_PASS_MASKED);
-        LAB_BLOCK_RED_TULIP.dia = LAB_RGBX(dddddd);
-        LAB_AABB3_Assign(LAB_BLOCK_RED_TULIP.bounds,   0.25, 0, 0.25,   0.75, 0.875, 0.75);
+        LAB_BlockP(LAB_BLOCK_RED_TULIP)->dia = LAB_RGBX(dddddd);
+        LAB_AABB3_Assign(LAB_BlockP(LAB_BLOCK_RED_TULIP)->bounds,   0.25, 0, 0.25,   0.75, 0.875, 0.75);
 
         
         
@@ -239,8 +266,8 @@ bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
             {0}
         });
         LAB_BlockCross_Init(assets, &LAB_BLOCK_YELLOW_TULIP, tex, LAB_COLOR_WHITE, LAB_RENDER_PASS_MASKED);
-        LAB_BLOCK_YELLOW_TULIP.dia = LAB_RGBX(dddddd);
-        LAB_AABB3_Assign(LAB_BLOCK_YELLOW_TULIP.bounds,   0.25, 0, 0.25,   0.75, 0.875, 0.75);
+        LAB_BlockP(LAB_BLOCK_YELLOW_TULIP)->dia = LAB_RGBX(dddddd);
+        LAB_AABB3_Assign(LAB_BlockP(LAB_BLOCK_YELLOW_TULIP)->bounds,   0.25, 0, 0.25,   0.75, 0.875, 0.75);
 
 
 
@@ -258,13 +285,13 @@ bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
             m->render_pass = LAB_RENDER_PASS_MASKED;
             LAB_Builtin_AddQuad(m, (const float(*)[5])vert, LAB_COLOR_BIRCH_LEAVES, LAB_DIR_ALL, 0, LAB_DIR_UP);
             
-            LAB_BLOCK_FALLEN_LEAVES.flags = (LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL|LAB_BLOCK_FLAT_SHADE);
-            LAB_BLOCK_FALLEN_LEAVES.dia = LAB_RGBX(ffffff);
-            LAB_BLOCK_FALLEN_LEAVES.model = m;
-            LAB_BLOCK_FALLEN_LEAVES.item_texture = LAB_Assets_RenderItem(assets, (const size_t(*)[2])tex, LAB_COLOR_BIRCH_LEAVES);
-            LAB_AABB3_Assign(LAB_BLOCK_FALLEN_LEAVES.bounds,   0, 0, 0,   1, 0.0625, 1);
-
-            LAB_RegisterBlock(&LAB_BLOCK_FALLEN_LEAVES);
+            if(!LAB_InitItemBlock(&LAB_BLOCK_FALLEN_LEAVES, (LAB_Block) {
+                .flags = (LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL|LAB_BLOCK_FLAT_SHADE),
+                .dia = LAB_RGBX(ffffff),
+                .model = m,
+                .item_texture = LAB_Assets_RenderItem(assets, (const size_t(*)[2])tex, LAB_COLOR_BIRCH_LEAVES),
+                .bounds = {{0, 0, 0}, {1, 0.0625, 1}},
+            })) return false;
         }
     }
 
@@ -279,7 +306,6 @@ bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
 
     ///// FLUIDS /////
     {
-        LAB_Block* b = &LAB_BLOCK_WATER;
         size_t tex[2][2];
         LAB_Assets_NewTintedTexture(assets, tex, "water", 0, LAB_COLOR_WATER);
         LAB_Color tint = LAB_COLOR_WHITE;
@@ -295,18 +321,15 @@ bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
         LAB_Builtin_ModelAddCubeInvertedAll(m,
             LAB_full_aabb,
             tex_f, LAB_cube_color_shade, tint);
-            
-        b->model = m;
-        //LAB_ObjCopy(&b->bounds, &LAB_full_aabb);
-        //b->item_texture = LAB_Assets_LoadTexture(assets, "stone");
-        b->item_texture = LAB_Assets_RenderItem(assets, (const size_t(*)[2])tex, tint);
 
-        LAB_RegisterBlock(b);
 
-        b->flags = LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL|LAB_BLOCK_OPAQUE_SELF;
-        b->tags  = LAB_BLOCK_TAG_REPLACEABLE;
-        b->dia   = LAB_COLOR_WATER_DIA;
-
+        if(!LAB_InitItemBlock(&LAB_BLOCK_WATER, (LAB_Block) {
+            .model = m,
+            .item_texture = LAB_Assets_RenderItem(assets, (const size_t(*)[2])tex, tint),
+            .flags = LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL|LAB_BLOCK_OPAQUE_SELF,
+            .tags  = LAB_BLOCK_TAG_REPLACEABLE,
+            .dia   = LAB_COLOR_WATER_DIA
+        })) return false;
     }
 
 
@@ -349,7 +372,7 @@ bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
             m->render_pass = LAB_RENDER_PASS_MASKED;
             LAB_Builtin_ModelAddCube(m, aabb, (const float (*)[2][2])uv, LAB_cube_color_flat, LAB_COLOR_WHITE);
 
-            LAB_BLOCK_TORCH = (LAB_Block) {
+            if(!LAB_InitItemBlock(&LAB_BLOCK_TORCH, (LAB_Block) {
                 .flags = (LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL|LAB_BLOCK_FLAT_SHADE|LAB_BLOCK_GLOWING|LAB_BLOCK_NOSHADE),
                 .dia = LAB_RGB(255, 255, 255),
                 //.lum = LAB_RGB(220, 210, 180),
@@ -358,8 +381,7 @@ bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
                 .model = m,
                 //.bounds = {{0.375, 0, 0.375}, {0.625, 0.75, 0.625}},
                 .bounds = {{7/16., 0, 7/16.}, {9/16., 10/16., 9/16.}}, // aabb
-            };
-            LAB_RegisterBlock(&LAB_BLOCK_TORCH);
+            })) return false;
         }
     }
 
@@ -416,23 +438,21 @@ bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
         size_t tex[2][2];
 
         LAB_Assets_NewTexture(assets, tex, "light_item");
-        LAB_BLOCK_INVISIBLE_LIGHT = (LAB_Block){
+        if(!LAB_InitItemBlock(&LAB_BLOCK_INVISIBLE_LIGHT, (LAB_Block) {
             .flags = LAB_BLOCK_INTERACTABLE | LAB_BLOCK_EMISSIVE,
             .lum = LAB_RGB(255, 255, 255),
             .dia = LAB_RGB(255, 255, 255),
             .item_texture = LAB_Assets_RenderItem(assets, (const size_t(*)[2])tex, LAB_COLOR_WHITE),
             .bounds = LAB_AABB_FULL_CUBE,
-        };
-        LAB_RegisterBlock(&LAB_BLOCK_INVISIBLE_LIGHT);
+        })) return false;
 
         LAB_Assets_NewTexture(assets, tex, "barrier_item");
-        LAB_BLOCK_BARRIER = (LAB_Block){
+        if(!LAB_InitItemBlock(&LAB_BLOCK_BARRIER, (LAB_Block) {
             .flags = LAB_BLOCK_INTERACTABLE | LAB_BLOCK_MASSIVE,
             .dia = LAB_RGB(255, 255, 255),
             .item_texture = LAB_Assets_RenderItem(assets, (const size_t(*)[2])tex, LAB_COLOR_WHITE),
             .bounds = LAB_AABB_FULL_CUBE,
-        };
-        LAB_RegisterBlock(&LAB_BLOCK_BARRIER);
+        })) return false;
     }
 
     return true;

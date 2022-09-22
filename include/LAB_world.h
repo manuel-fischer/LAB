@@ -121,10 +121,11 @@ void LAB_UpdateChunk(LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LA
 //void LAB_NotifyChunkLater(LAB_World* world, int x, int y, int z/*, LAB_ChunkPeekType flags*/);
 void LAB_UpdateChunkLater(LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update);
 
-LAB_Block* LAB_GetBlock(LAB_World* world, int x, int y, int z);
-bool LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_Block* block); // return false on failure
-bool LAB_FillBlocks(LAB_World* world, int x0, int y0, int z0, int x1, int y1, int z1, LAB_Block* block); // return false on failure
+LAB_BlockID LAB_GetBlock(LAB_World* world, int x, int y, int z);
+bool LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_BlockID block); // return false on failure
+bool LAB_FillBlocks(LAB_World* world, int x0, int y0, int z0, int x1, int y1, int z1, LAB_BlockID block); // return false on failure
 
+#define LAB_GetBlockP(world, x, y, z) LAB_BlockP(LAB_GetBlock(world, x, y, z))
 
 // dir should be an unit vector
 int LAB_TraceBlock(LAB_World* world, int max_distance, float vpos[3], float dir[3], unsigned block_flags,

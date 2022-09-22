@@ -269,4 +269,4 @@ void LAB_ViewCoordInfo_Destroy(LAB_ViewCoordInfo* info);
 
 
 void LAB_View_ShowGuiMenu(LAB_View* view);
-void LAB_View_ShowGuiInventory(LAB_View* view, LAB_Block** block);
+void LAB_View_ShowGuiInventory(LAB_View* view, LAB_BlockID* block);

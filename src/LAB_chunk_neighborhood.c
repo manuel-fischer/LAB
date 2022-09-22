@@ -66,8 +66,8 @@ void LAB_GetChunkNeighbors(LAB_Chunk* center_chunk, LAB_Chunk* chunks[27])
 
     #ifndef NDEBUG
 
-        for(int k = 0; k < 27; ++k)
-            if(chunks[k]) LAB_ASSERT(LAB_Chunk_Access(chunks[k]));
+        //for(int k = 0; k < 27; ++k)
+            //if(chunks[k]) LAB_ASSERT(LAB_Chunk_Access(chunks[k]));
 
     #endif
 

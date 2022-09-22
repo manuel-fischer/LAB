@@ -4,6 +4,7 @@
 #include "LAB_sdl.h"
 #include "LAB_attr.h"
 #include "LAB/gui/util.h"
+#include "LAB_blocks.h"
 
 LAB_STATIC
 void LAB_GuiInventoryList_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf, int x, int y);
@@ -60,8 +61,9 @@ void LAB_GuiInventoryList_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SD
         cy = y+yi*LAB_SLOT_SIZE;
         int tx = cself->selected_slot == i ? 1 : 0;
         LAB_RenderRect(surf, s, s*cx, s*cy, s*LAB_SLOT_SIZE, s*LAB_SLOT_SIZE, tx, 2);
-        LAB_Block* b = cself->inventory->get_slot(cself->inventory_user, i);
-        SDL_Surface* bsurf = b->item_texture;
+        LAB_BlockID b = cself->inventory->get_slot(cself->inventory_user, i);
+        LAB_ASSERT(b != LAB_BID_INVALID);
+        SDL_Surface* bsurf = LAB_BlockP(b)->item_texture;
 
         if(bsurf)
         {

@@ -36,21 +36,21 @@ void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk_Blocks* chunk_blocks
 
                 int yi = 16*y|yy;
 
-                const LAB_Block* b = &LAB_BLOCK_AIR;
-                if(yi < 0) b = &LAB_BLOCK_WATER;
+                LAB_BlockID b = LAB_BID_AIR;
+                if(yi < 0) b = LAB_BLOCK_WATER;
 
                 //if(sheight < (int)(LAB_NextRandom(&random)&15) + 20)
                 if(sheight < (int)(LAB_NextRandom(&random)&31) + LAB_ROCKY_ALTITUDE)
                 {
                     if(yi == sheight && yi >= -1)
-                        b = biome->surface_block;
+                        b = *biome->surface_block;
                     else if(yi <= sheight)
                     {
                         //uint64_t fact = 0x100000000ll/(32+16);
                         //if((~LAB_NextRandom(&random)>>32) >= (2u*(-yi)-(-sheight))*fact)
                         if(yi >= sheight-(int)(LAB_NextRandom(&random)&7)-1)
                         //if(yi >= sheight-2)
-                            b = biome->ground_block;
+                            b = *biome->ground_block;
                         else
                             continue; // keep stone
                     }
@@ -59,9 +59,9 @@ void LAB_Gen_Surface_Shape(LAB_GenOverworld* gen, LAB_Chunk_Blocks* chunk_blocks
                     //b = &LAB_BLOCK_CLAY.layered;
                     continue; // keep stone
 
-                if(river && b != &LAB_BLOCK_AIR) b = &LAB_BLOCK_LAPIZ.raw;
+                if(river && b != LAB_BID_AIR) b = LAB_BLOCK_LAPIZ.raw;
 
-                chunk_blocks->blocks[LAB_CHUNK_OFFSET(xx, yy, zz)] = (LAB_Block* /*TODO make this all const*/)b;
+                chunk_blocks->blocks[LAB_CHUNK_OFFSET(xx, yy, zz)] = b;
             }
         }
     }
@@ -254,7 +254,7 @@ void LAB_Gen_Cave_Carve(LAB_GenOverworld* gen, LAB_Chunk_Blocks* chunk_blocks, i
                 if(yt < 0 && yi > yt-floor_depth) break;
                 if(LAB_Gen_Cave_Carve_Func(gen, xi, yi, zi))
                 //if(LAB_Gen_Cave_Carve_Func(gen, xi, yi, zi)||LAB_Gen_Cave_Carve_Func(gen, xi, yi-1, zi))
-                    chunk_blocks->blocks[xx|yy<<4|zz<<8] = &LAB_BLOCK_AIR;
+                    chunk_blocks->blocks[xx|yy<<4|zz<<8] = LAB_BID_AIR;
             }
         }
     }
@@ -270,7 +270,7 @@ void LAB_Gen_Cave_Carve(LAB_GenOverworld* gen, LAB_Chunk_Blocks* chunk_blocks, i
             double zi = z*16|zz;
             if(LAB_Gen_Cave_Carve_Func(gen, xi, yi, zi))
             //if(LAB_Gen_Cave_Carve_Func(gen, xi, yi, zi)||LAB_Gen_Cave_Carve_Func(gen, xi, yi-1, zi))
-                chunk_blocks->blocks[xx|yy<<4|zz<<8] = &LAB_BLOCK_AIR;
+                chunk_blocks->blocks[xx|yy<<4|zz<<8] = LAB_BID_AIR;
         }
     }
 }

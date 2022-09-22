@@ -6,8 +6,8 @@
 typedef struct LAB_Gen_Biome
 {
     uint64_t tags;
-    const LAB_Block* surface_block;
-    const LAB_Block* ground_block;
+    const LAB_BlockID* surface_block;
+    const LAB_BlockID* ground_block;
 
 } LAB_Gen_Biome;
 

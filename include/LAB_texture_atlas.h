@@ -28,7 +28,10 @@ typedef union LAB_TexAlloc_Node
 
 typedef struct LAB_TexAlloc
 {
-    LAB_ARRAY(LAB_TexAlloc_Node) nodes;
+    LAB_TexAlloc_Node* nodes;
+    size_t nodes_size;
+    #define LAB_TexAlloc_Nodes(texalloc) (LAB_TexAlloc_Node, (texalloc)->nodes, (texalloc)->nodes_size)
+
     size_t root_node;
     size_t root_size; // unit: cells
 

@@ -18,7 +18,7 @@ typedef struct LAB_Input
     unsigned state;
     float speed;
     unsigned brushsize;
-    LAB_Block* selected_block;
+    LAB_BlockID selected_block;
 
     bool space_pressed;
     bool graph_selected;

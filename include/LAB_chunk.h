@@ -47,7 +47,7 @@ typedef struct LAB_Chunk_Head
 
 typedef struct LAB_Chunk_Blocks
 {
-    LAB_Block* _Atomic blocks[LAB_CHUNK_LENGTH];
+    LAB_BlockID _Atomic blocks[LAB_CHUNK_LENGTH];
 } LAB_Chunk_Blocks;
 
 typedef struct LAB_Chunk_Light
@@ -155,10 +155,10 @@ void LAB_DestroyChunk(LAB_Chunk* chunk);
 void LAB_UnlinkChunk(LAB_Chunk* chunk);
 void LAB_DestroyChunk_Unlinked(LAB_Chunk* chunk);
 
-void LAB_Chunk_Blocks_Fill(LAB_Chunk_Blocks* blocks, LAB_Block* fill_block);
+void LAB_Chunk_Blocks_Fill(LAB_Chunk_Blocks* blocks, LAB_BlockID fill_block);
 
 LAB_INLINE
-void LAB_Chunk_FillGenerate(LAB_Chunk* chunk, LAB_Block* fill_block)
+void LAB_Chunk_FillGenerate(LAB_Chunk* chunk, LAB_BlockID fill_block)
 {
     LAB_ASSERT(!chunk->generated);
     LAB_ASSERT(chunk->buf_blocks);
