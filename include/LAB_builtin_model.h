@@ -24,6 +24,15 @@ bool LAB_Builtin_ModelAddCube(LAB_Model* m,
 bool LAB_Builtin_ModelAddCubeAll(LAB_Model* m,
                                  const float aabb[2][3], const float tex[2][2],
                                  const LAB_Color cs[6], LAB_Color c);
+                              
+
+bool LAB_Builtin_ModelAddCubeInverted(LAB_Model* m,
+                                      const float aabb[2][3], const float tex[6][2][2],
+                                      const LAB_Color cs[6], LAB_Color c);
+
+bool LAB_Builtin_ModelAddCubeInvertedAll(LAB_Model* m,
+                                         const float aabb[2][3], const float tex[2][2],
+                                        const LAB_Color cs[6], LAB_Color c);
 
 extern const float LAB_cross_aabb[2][3];
 

@@ -43,12 +43,12 @@ static const LAB_Gen_BuildingPalette stone_palette = {
     .floor   = &LAB_BLOCK_STONE.cobble,
     .ceiling = &LAB_BLOCK_WOOD_PLANKS_DARK,
 };
-/*static const LAB_Gen_BuildingPalette basalt_palette = {
+static const LAB_Gen_BuildingPalette basalt_palette = {
     .corner  = &LAB_BLOCK_BASALT.smooth,
     .wall    = &LAB_BLOCK_BASALT.bricks,
     .floor   = &LAB_BLOCK_BASALT.cobble,
     .ceiling = &LAB_BLOCK_WOOD_PLANKS,
-};*/
+};
 static const LAB_Gen_BuildingPalette marble_palette = {
     .corner  = &LAB_BLOCK_MARBLE.smooth,
     .wall    = &LAB_BLOCK_MARBLE.bricks,
@@ -84,6 +84,7 @@ const LAB_StructureLayer overworld_layers[] =
     {0x7845fdf3,  F(1/512.),     1,   1,  -80+32,  10+32,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_RUINS,             &marble_palette              },
     {0xf89df80f,  F(1/128.),     1,   1,       0,  10+32,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_House,       LAB_GEN_TAG_RUINS,             &marble_palette              },
     {0x783f45df,  F(1/ 64.),     1,   1,  -80+32,  10+32,      1,    LAB_Gen_PlaceOnSurface,        LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_DESERT,            &desert_palette              },
+    {0x783f45df,  F(1/ 64.),     1,   1, INT_MIN,      0,      1,    LAB_Gen_PlaceOnCaveFloor,      LAB_Gen_Overworld_Tower,       LAB_GEN_TAG_CAVE,              &basalt_palette              },
 
     {0x21436587,  F(    1.),     0,   5, INT_MIN, -50+32,      1,    LAB_Gen_PlaceOnCaveCeiling,    LAB_Gen_Cave_CeilingCrystal,   LAB_GEN_TAG_CAVE,              NULL                         },
 

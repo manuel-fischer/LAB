@@ -22,7 +22,7 @@
 
 //#define LAB_COLOR_WATER     LAB_RGBAX(2244aa44)
 #define LAB_COLOR_WATER     LAB_RGBAX(2277ff44)
-#define LAB_COLOR_WATER_DIA LAB_RGBX(ccddee)
+#define LAB_COLOR_WATER_DIA LAB_RGBX(ccddff)
 
 
 
@@ -220,24 +220,24 @@ bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
 
 
 
-        static const LAB_TextureComposite red_tulip[] = {
+        LAB_Assets_NewComposedTexture(assets, tex, (const LAB_TextureComposite[])
+        {
             { "tulip_stem",                 0, LAB_COLOR_GRASS  },
             { "tulip_bloom", LAB_RGBX(400020), LAB_RGBX(ff2010) },
             {0}
-        };
-        LAB_Assets_NewComposedTexture(assets, tex, red_tulip);
+        });
         LAB_BlockCross_Init(assets, &LAB_BLOCK_RED_TULIP, tex, LAB_COLOR_WHITE, LAB_RENDER_PASS_MASKED);
         LAB_BLOCK_RED_TULIP.dia = LAB_RGBX(dddddd);
         LAB_AABB3_Assign(LAB_BLOCK_RED_TULIP.bounds,   0.25, 0, 0.25,   0.75, 0.875, 0.75);
 
         
         
-        static const LAB_TextureComposite yellow_tulip[] = {
+        LAB_Assets_NewComposedTexture(assets, tex, (const LAB_TextureComposite[])
+        {
             { "tulip_stem",                 0, LAB_COLOR_GRASS  },
             { "tulip_bloom", LAB_RGBX(805000), LAB_RGBX(ffff00) },
             {0}
-        };
-        LAB_Assets_NewComposedTexture(assets, tex, yellow_tulip);
+        });
         LAB_BlockCross_Init(assets, &LAB_BLOCK_YELLOW_TULIP, tex, LAB_COLOR_WHITE, LAB_RENDER_PASS_MASKED);
         LAB_BLOCK_YELLOW_TULIP.dia = LAB_RGBX(dddddd);
         LAB_AABB3_Assign(LAB_BLOCK_YELLOW_TULIP.bounds,   0.25, 0, 0.25,   0.75, 0.875, 0.75);
@@ -279,12 +279,33 @@ bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
 
     ///// FLUIDS /////
     {
+        LAB_Block* b = &LAB_BLOCK_WATER;
         size_t tex[2][2];
         LAB_Assets_NewTintedTexture(assets, tex, "water", 0, LAB_COLOR_WATER);
-        LAB_BlockFull_Init(assets, &LAB_BLOCK_WATER, tex, LAB_RGBA(255, 255, 255, 255), LAB_RENDER_PASS_ALPHA);
-        LAB_BLOCK_WATER.flags = LAB_BLOCK_MASSIVE|LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL|LAB_BLOCK_OPAQUE_SELF;
-        LAB_BLOCK_WATER.tags  = LAB_BLOCK_TAG_REPLACEABLE;
-        LAB_BLOCK_WATER.dia   = LAB_COLOR_WATER_DIA;
+        LAB_Color tint = LAB_COLOR_WHITE;
+
+        const float tex_f[2][2] = { { tex[0][0], tex[0][1] }, { tex[1][0], tex[1][1] } };
+
+        LAB_Model* m = LAB_Assets_NewModel(assets);
+        if(!m) return false;
+        m->render_pass = LAB_RENDER_PASS_ALPHA;
+        LAB_Builtin_ModelAddCubeAll(m,
+            LAB_full_aabb,
+            tex_f, LAB_cube_color_shade, tint);
+        LAB_Builtin_ModelAddCubeInvertedAll(m,
+            LAB_full_aabb,
+            tex_f, LAB_cube_color_shade, tint);
+            
+        b->model = m;
+        //LAB_ObjCopy(&b->bounds, &LAB_full_aabb);
+        //b->item_texture = LAB_Assets_LoadTexture(assets, "stone");
+        b->item_texture = LAB_Assets_RenderItem(assets, (const size_t(*)[2])tex, tint);
+
+        LAB_RegisterBlock(b);
+
+        b->flags = LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL|LAB_BLOCK_OPAQUE_SELF;
+        b->tags  = LAB_BLOCK_TAG_REPLACEABLE;
+        b->dia   = LAB_COLOR_WATER_DIA;
 
     }
 
@@ -293,12 +314,12 @@ bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
     {
         size_t tex[2][2];
         {
-            static const LAB_TextureComposite c[] = {
+            LAB_Assets_NewComposedTexture(assets, tex, (const LAB_TextureComposite[])
+            {
                 { "torch_stick", 0, LAB_RGB(120, 97, 80) },
                 { "torch_flame", 0, LAB_RGBX(ffffff) },
                 {0}
-            };
-            LAB_Assets_NewComposedTexture(assets, tex, c);
+            });
             
             #define X0 (7/16.)
             #define X1 (9/16.)

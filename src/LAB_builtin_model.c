@@ -142,6 +142,27 @@ void LAB_Builtin_WriteCube(LAB_Triangle tri[LAB_CUBE_SIZE],
     }
 }
 
+
+void LAB_Builtin_WriteCubeInverted(LAB_Triangle tri[LAB_CUBE_SIZE],
+                                   const float aabb[2][3], const float tex[6][2][2],
+                                   const LAB_Color cs[6], LAB_Color c)
+{
+    for(int face = 0; face < 6; ++face)
+    {
+        const uint8_t (*f)[3] = LAB_cube_vertices[face];
+        const float (*t)[2] = tex[face];
+        const float v[4][5] = {
+            { aabb[f[0][0]][0], aabb[f[0][1]][1], aabb[f[0][2]][2], t[0][0], t[0][1] },
+            { aabb[f[2][0]][0], aabb[f[2][1]][1], aabb[f[2][2]][2], t[0][0], t[1][1] },
+            { aabb[f[1][0]][0], aabb[f[1][1]][1], aabb[f[1][2]][2], t[1][0], t[0][1] },
+            { aabb[f[3][0]][0], aabb[f[3][1]][1], aabb[f[3][2]][2], t[1][0], t[1][1] },
+        };
+        int face_s = 1 << face;
+        int vis = LAB_APPROX_EQ(aabb[face&1][face>>1], (float)(face&1)) ? face_s : LAB_DIR_ALL;
+        LAB_Builtin_WriteQuad(LAB_TRI_ADDR(tri,LAB_QUAD_SIZE,face), v, LAB_MulColor(cs[face], c), vis, face_s, vis);
+    }
+}
+
 const LAB_Color LAB_cube_color_shade[6] = {
     LAB_RGBX(EBEBEB), LAB_RGBX(EBEBEB), // west east
     LAB_RGBX(C0C0C0), LAB_RGBX(FFFFFF), // down up
@@ -174,6 +195,27 @@ bool LAB_Builtin_ModelAddCubeAll(LAB_Model* m,
     float tex6[6][2][2];
     for(int i = 0; i < 6; ++i) memcpy(tex6[i], tex, sizeof(float[2][2]));
     return LAB_Builtin_ModelAddCube(m, aabb, (const float(*)[2][2])tex6, cs, c);
+}
+
+
+
+bool LAB_Builtin_ModelAddCubeInverted(LAB_Model* m,
+                                      const float aabb[2][3], const float tex[6][2][2],
+                                      const LAB_Color cs[6], LAB_Color c)
+{
+    LAB_Triangle* tris = LAB_Model_Extend(m, LAB_CUBE_SIZE);
+    if(tris == NULL) return false;
+    LAB_Builtin_WriteCubeInverted(tris, aabb, tex, cs, c);
+    return true;
+}
+
+bool LAB_Builtin_ModelAddCubeInvertedAll(LAB_Model* m,
+                                         const float aabb[2][3], const float tex[2][2],
+                                         const LAB_Color cs[6], LAB_Color c)
+{
+    float tex6[6][2][2];
+    for(int i = 0; i < 6; ++i) memcpy(tex6[i], tex, sizeof(float[2][2]));
+    return LAB_Builtin_ModelAddCubeInverted(m, aabb, (const float(*)[2][2])tex6, cs, c);
 }
 
 

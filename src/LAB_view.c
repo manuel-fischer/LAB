@@ -427,7 +427,7 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
 //    #define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?LAB_MulColor_Fast(~LAB_MulColor_Fast(~(x), ~(x)), ~LAB_MulColor_Fast(~(x), ~(x))):LAB_MulColor_Fast((x), (x)))
     #define MAP_LIGHT(x) (x)
 
-    if(block->flags&LAB_BLOCK_NOSHADE)
+    if(block->flags&LAB_BLOCK_NOSHADE) // TODO should be part of a triangle itself
     {
         const LAB_Model* model = block->model;
         if(!model) return;
