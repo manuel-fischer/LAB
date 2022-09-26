@@ -35,15 +35,21 @@ void LAB_DbgExit(void)
     SDL_DestroyMutex(LAB_dbg_out_mtx);
 }
 
-void LAB_DbgPrintf(const char* fmt, ...)
+
+void LAB_DbgVPrintf(const char* fmt, va_list args)
 {
     if(SDL_LockMutex(LAB_dbg_out_mtx)) abort();
-    va_list  ap;
-    va_start(ap, fmt);
-    vfprintf(stderr, fmt, ap);
+    vfprintf(stderr, fmt, args);
     fflush(stderr);
-    va_end(ap);
     if(SDL_UnlockMutex(LAB_dbg_out_mtx)) abort();
+}
+
+void LAB_DbgPrintf(const char* fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    LAB_DbgVPrintf(fmt, ap);
+    va_end(ap);
 }
 
 
@@ -125,6 +131,47 @@ void LAB_AssumptionFailed(const char* type,
         #endif
     }
 }
+
+
+void LAB_AssumptionFailedFmt(const char* type,
+                             const char* expr,
+                             const char* file,
+                             int line,
+                             const char* function,
+                             int trap,
+                             const char* format,
+                             ...)
+{
+    LAB_DbgDoHalt();
+
+    if(SDL_LockMutex(LAB_dbg_out_mtx)) abort();
+    // TODO: atomic printf
+    fprintf(stderr, "Checking %s failed at %s:%i%s%s:\n    %s\n    ",
+                    type, file, line, function?" in ":"", function, expr);
+    va_list ap;
+    va_start(ap, format);
+    vfprintf(stderr, format, ap);
+    va_end(ap);
+    fprintf(stderr, "\n");
+    fflush(stderr);
+    if(SDL_UnlockMutex(LAB_dbg_out_mtx)) abort();
+
+    //raise(SIGILL); // alt: SIGINT SIGBREAK SIGTRAP
+    #if !defined NDEBUG && defined __WINNT__ && !defined __GNUC__
+    LAB_PrintStackTrace();
+    #endif
+
+    if(trap)
+    {
+        #ifdef __GNUC__
+        __builtin_trap();
+        #else
+        while(1);
+        #endif
+    }
+}
+
+
 
 #ifndef NDEBUG
 #ifdef __WINNT__

@@ -15,14 +15,17 @@
 #ifdef __GNUC__
 
 // Count set bits
-#define LAB_PopCnt(intnum) __builtin_popcount(intnum)
+#define LAB_PopCnt(intnum) __builtin_popcountl(intnum)
 
 // Count leading zeros
 //#define LAB_Clz(intnum) __builtin_clz(intnum)
 
 // Count trailing zeros
 // UB if intnum is 0
-#define LAB_Ctz(intnum) __builtin_ctz(intnum)
+#define LAB_Ctz(intnum) __builtin_ctzl(intnum)
+
+
+#define LAB_Log2Floor(v) (8*sizeof(unsigned long) - 1 - __builtin_clzl((unsigned long)(v)))
 
 #else
 LAB_CONST
@@ -56,6 +59,29 @@ LAB_INLINE int LAB_Ctz(uint32_t v)
     if (v & 0x55555555) c -= 1;
     return c;
 }
+
+
+LAB_CONST
+LAB_INLINE int LAB_Log2Floor0(uint32_t v)
+{
+    int r, shift;
+
+    r =     (v > 0xFFFF) << 4; v >>= r;
+    shift = (v > 0xFF  ) << 3; v >>= shift; r |= shift;
+    shift = (v > 0xF   ) << 2; v >>= shift; r |= shift;
+    shift = (v > 0x3   ) << 1; v >>= shift; r |= shift;
+                                            r |= (v >> 1);
+
+    return v;
+}
+
+LAB_CONST
+LAB_INLINE int LAB_Log2Floor(uint32_t v)
+{
+    LAB_ASSERT(v != 0);
+    return LAB_Log2Floor0(v);
+}
+
 
 #endif
 

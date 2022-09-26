@@ -10,6 +10,7 @@
 #include "LAB_attr.h"
 #include "LAB_opt.h"
 #include <stdbool.h>
+#include <stdarg.h>
 
 #include <signal.h>
 
@@ -41,6 +42,7 @@ void LAB_DbgBreak(void);
 #  else
 #    define LAB_ASSUME2(type, cond, cond_str) (void)(0)
 #  endif
+#  define LAB_ASSUME2_FMT(type, cond, cond_str, ...) LAB_ASSUME2(type, cond, cond_str)
 #  define LAB_ASSUME_0(cond) (void)(0)
 #  define LAB_INIT_DBG(...)
 #  define LAB_ASSERT_OR_ABORT(cond) \
@@ -60,6 +62,8 @@ void LAB_DbgBreak(void);
     } while(0) */
 #  define LAB_ASSUME2(type, cond, cond_str) \
     ((!(cond)) ? (LAB_AssumptionFailed(type, cond_str, __FILE__, __LINE__, LAB_FUNCTION(), 0), LAB_DBG_BREAK()) : (void)0)
+#  define LAB_ASSUME2_FMT(type, cond, cond_str, ...) \
+    ((!(cond)) ? (LAB_AssumptionFailedFmt(type, cond_str, __FILE__, __LINE__, LAB_FUNCTION(), 0, __VA_ARGS__), LAB_DBG_BREAK()) : (void)0)
 #  define LAB_ASSUME_0 LAB_ASSUME // no parameter aliasing -> keep text replacement behavior
 #  define LAB_INIT_DBG(...) __VA_ARGS__
 
@@ -72,6 +76,8 @@ void LAB_DbgBreak(void);
 // TODO remove ASSUME
 #define LAB_ASSERT(cond) LAB_ASSUME2("assertion", cond, #cond)
 #define LAB_ASSERT_EQ(a, b) LAB_ASSUME2("assertion", (a) == (b), #a " == " #b)
+// LAB_ASSERT_MSG(x < y, "%i < %i", x, y)
+#define LAB_ASSERT_FMT(cond, ...) LAB_ASSUME2_FMT("assertion", cond, #cond, __VA_ARGS__)
 #define LAB_ASSUME(cond) LAB_ASSUME2("assumption", cond, #cond)
 #define LAB_ASSERT_FALSE(msg) (LAB_ASSUME2("assertion", false, msg), LAB_UNREACHABLE())
 #define LAB_PRECONDITION(cond) LAB_ASSUME2("precondition", cond, #cond)
@@ -106,9 +112,18 @@ void LAB_AssumptionFailed(const char* type,
                           const char* function,
                           int trap);
 
+void LAB_AssumptionFailedFmt(const char* type,
+                             const char* expr,
+                             const char* file,
+                             int line,
+                             const char* function,
+                             int trap,
+                             const char* format,
+                             ...);
 
 void LAB_DbgInitOrAbort(void);
 void LAB_DbgExit(void);
+void LAB_DbgVPrintf(const char* fmt, va_list args);
 void LAB_DbgPrintf(const char* fmt, ...);
 bool LAB_DbgAtHalt(void(*handler)(void* user), void* user);
 void LAB_DbgRemoveHalt(void(*handler)(void* user), void* user);

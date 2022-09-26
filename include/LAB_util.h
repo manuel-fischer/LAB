@@ -128,3 +128,48 @@ bool LAB_MakeTrue(void) { return true; }
 
 #define LAB_EPSILON (1e-5)
 #define LAB_APPROX_EQ(a, b) (fabs((a) - (b)) < LAB_EPSILON)
+
+// Branchless conditionals, only use with integral types
+
+// LAB_SELECT(cond, a, b) cond ? a : b, but branchless
+// GCC: switches between cmov* and imul,
+// imul is pretty optimized in current cpus, it is not as a problem, compared
+// to a pipeline flush
+//#define LAB_SELECT(cond, a, b) ((b) + (!!(cond))*((a)-(b)))
+#define LAB_SELECT(cond, a, b) ((b) ^ (!!(cond))*((a)^(b)))
+//#define LAB_SELECT(cond, a, b) ((!!(cond))*(a) | (!(cond))*(b))
+//#define LAB_SELECT(cond, b, a) ((a) ^ (-!!(cond) & ((a) ^ (b))))
+//#define LAB_SELECT(cond, b, a) ((-!(cond) & (a)) | (-!!(cond) & (b)))
+//#define LAB_SELECT(cond, b, a) ((a) - (-!!(cond) & ((a) + (b))))
+
+#define LAB_SELECT0(cond, a) ((!!(cond))*(a))
+
+#define LAB_COND_MOVE(cond, dst, src) ((dst) = LAB_SELECT(cond, src, dst))
+
+// Branchless min/max, only use with integers
+#define LAB_MAX_BL(a, b) LAB_SELECT((a) > (b), a, b)
+#define LAB_MIN_BL(a, b) LAB_SELECT((a) < (b), a, b)
+
+#define LAB_MAX3_BL(a, b, c) LAB_MAX_BL(LAB_MAX_BL(a, b), c)
+#define LAB_MIN3_BL(a, b, c) LAB_MIN_BL(LAB_MIN_BL(a, b), c)
+
+#if 0
+#undef LAB_MAX
+#undef LAB_MIN
+#undef LAB_MAX_EQ
+#undef LAB_MIN_EQ
+#define LAB_MAX LAB_MAX_BL
+#define LAB_MIN LAB_MIN_BL
+#define LAB_MAX_EQ(a, b) ((a) = LAB_MAX_BL(a, b))
+#define LAB_MIN_EQ(a, b) ((a) = LAB_MIN_BL(a, b))
+#endif
+
+#define LAB_BOUND0(x) LAB_SELECT0((x) >= 0, x)
+
+
+
+#define LAB_COND_SWAP_T(type, cond, a, b) do { \
+    type LAB_COND_SWAP_delta = LAB_SELECT0(cond, (a)^(b)); \
+    (a) ^= LAB_COND_SWAP_delta; \
+    (b) ^= LAB_COND_SWAP_delta; \
+} while(0)

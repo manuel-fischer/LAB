@@ -94,6 +94,7 @@ LAB_CCPS LAB_TickLight_ProcessQuadrant(
 
         int zi, yi, xi;
         int x, y, z;
+        zi = yi = xi = 0; // TODO: hide warning
 
         // Hide uninitialized warning message
         zi=yi=xi = x=y=z = 0;

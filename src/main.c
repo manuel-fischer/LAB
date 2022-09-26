@@ -32,6 +32,9 @@
 
 #include "LAB_text_renderer.h"
 
+#include "LABtestcases.h"
+
+
 LAB_INLINE bool LAB_DoTests()
 {
 #if 0
@@ -126,6 +129,10 @@ static bool LAB_Client_Obj(bool destroy)
 int main(int argc, char** argv)
 {
     LAB_DbgInitOrAbort();
+
+    #ifndef NDEBUG
+    LAB_DoTestCases();
+    #endif
 
     #define CHECK_INIT(expr) if(expr); else { init_msg = #expr; goto INIT_ERROR; }
 
