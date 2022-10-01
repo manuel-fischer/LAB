@@ -319,8 +319,16 @@ int LAB_Input_OnEvent_Proc(void* user, LAB_Window* window, SDL_Event* event)
                 case SDLK_F6:
                 {
                     LAB_GameServer_Lock(view->server);
-                    view->cfg.flags ^= LAB_VIEW_BRIGHTER;
-                    view->cfg.gamma_map = view->cfg.flags & LAB_VIEW_BRIGHTER ? &LAB_gamma_light : &LAB_gamma_dark;
+                    //view->cfg.flags ^= LAB_VIEW_BRIGHTER;
+                    //view->cfg.gamma_map = view->cfg.flags & LAB_VIEW_BRIGHTER ? &LAB_gamma_light : &LAB_gamma_dark;
+                    const float factor = 1.25f;
+                    SDL_Keymod mods = SDL_GetModState();
+                    if(mods & KMOD_CTRL)
+                        view->cfg.exposure = 1;
+                    else if(mods & KMOD_SHIFT)
+                        view->cfg.exposure *= 1.0f/factor;
+                    else
+                        view->cfg.exposure *= factor;
                     LAB_ViewInvalidateEverything(view, /*free_buffers*/0);
                     LAB_GameServer_Unlock(view->server);
 

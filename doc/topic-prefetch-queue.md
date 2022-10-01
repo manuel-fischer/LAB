@@ -1,4 +1,4 @@
-[&#8592; Spatial Cache-efficient Linked Lists](topic-cache-efficient-linked-lists.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8593; Table](table.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8594; Template Headers/Template sources](topic-template-headers.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/topic-prefetch-queue.xmd#L1)</small>
+[&#8592; Cellular Light Propagation](topic-cellular-light-propagation.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8593; Table](table.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8594; Template Headers/Template sources](topic-template-headers.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/topic-prefetch-queue.xmd#L1)</small>
 ***
 
 # Prefetch Queue

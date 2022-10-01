@@ -18,14 +18,33 @@
 //#define LAB_LIGHT_FALL_OFF(lum) ((lum) - ((lum)>>3 & 0x1f1f1f)-((lum)>>4 & 0x0f0f0f))
 //#define LAB_LIGHT_FALL_OFF(lum) ((lum) - ((lum)>>3 & 0x1f1f1f))
 //#define LAB_LIGHT_FALL_OFF(lum) ((lum) - ((((lum)&0xf8f8f8)+0x070707) >> 3 & 0xf8f8f8))
-#define LAB_LIGHT_FALL_OFF(lum) ((lum) - (((lum)+(~((lum)>>5) & 0x070707)) >> 3 & 0x1f1f1f) - ((lum)>>4 & 0x0f0f0f))
 
+//#define LAB_LIGHT_FALL_OFF(lum) ((lum) - (((lum)+(~((lum)>>5) & 0x070707)) >> 3 & 0x1f1f1f) - ((lum)>>4 & 0x0f0f0f))
+#define LAB_LIGHT_FALL_OFF(lum) LAB_MulColorHDR_RoundUp(lum, LAB_LIGHT_ALPHA)
+
+//#define LAB_LIGHT_ALPHA LAB_HDR_RGB_F(0.8125,0.8125,0.8125)
+////#define LAB_LIGHT_ALPHA LAB_HDR_RGB_F(0.95,0.95,0.95)
+
+#define LAB_LIGHT_BETA LAB_HDR_RGB_F(0.1875,0.1875,0.1875)
+//#define LAB_LIGHT_BETA LAB_HDR_RGB_F(0.5,0.5,0.5)
+
+
+//#define LAB_IS_SKYLIGHT(is_down, cf) ((is_down) && ((cf)&LAB_COL_MASK) != LAB_COL_MASK)
+#define LAB_IS_SKYLIGHT(is_down, cf) 0
+
+// TODO remove
+// light conversion
+#define LAB_LCV(color) LAB_Color_To_ColorHDR(color)
+
+//#define LAB_LNORM(c) ((c) | LAB_ALP_MASK)
+#define LAB_LNORM(c) (c)
+//#define LAB_LNORM(c) LAB_MaxColorHDR(c, LAB_HDR_RGB_F(0.01, 0.01, 0.01))
 
 // return blocks that changed
 LAB_STATIC LAB_HOT
 LAB_CCPS LAB_TickLight_ProcessQuadrant(
     LAB_Chunk_Blocks* blocks_ctr, LAB_LightNbHood_Mut* light_chunks,
-    int quadrant, bool init, LAB_Color default_color, 
+    int quadrant, bool init, 
     int faces_changed, LAB_CCPS update_blocks)
 {
 
@@ -35,30 +54,57 @@ LAB_CCPS LAB_TickLight_ProcessQuadrant(
 
     LAB_ASSERT(blocks_ctr);
 
+    #define LAB_DEBUG_INFO_HERE(fmt, ...) \
+        "c=%8x, q=%i, dia=%8x, lum=%8x\n    "\
+        "primary={%8x, %8x, %8x}, secondary={%8x, %8x, %8x}" fmt, \
+        \
+        c, quadrant, LAB_LCV(b->dia), LAB_LCV(b->lum),\
+        primary[0], primary[1], primary[2], secondary[0], secondary[1], secondary[2] __VA_ARGS__
+            
+
     #define LAB_TickLight_ProcessBlock(getLightAt) do \
     { \
         int block_index = LAB_XADD3(x, y<<4, z<<8); \
         \
         LAB_Block* b = LAB_BlockP(blocks_ctr->blocks[block_index]); \
-        LAB_Color c = 0; \
+        LAB_ColorHDR c = 0; \
+        LAB_ColorHDR primary[3]; \
+        primary[0] = getLightAt(light_chunks, x-dd[0], y, z, quadrant); \
+        primary[1] = getLightAt(light_chunks, x, y-dd[1], z, quadrant); \
+        primary[2] = getLightAt(light_chunks, x, y, z-dd[2], quadrant); \
+        LAB_ColorHDR secondary[3]; \
+        secondary[0] = getLightAt(light_chunks, x, y-dd[1], z-dd[2], quadrant); \
+        secondary[1] = getLightAt(light_chunks, x-dd[0], y, z-dd[2], quadrant); \
+        secondary[2] = getLightAt(light_chunks, x-dd[0], y-dd[1], z, quadrant); \
+        LAB_ColorHDR secondary_mixed[3]; /* each sums of lsj*/ \
+        secondary_mixed[0] = LAB_MixColorHDR50(secondary[1], secondary[2]); \
+        secondary_mixed[1] = LAB_MixColorHDR50(secondary[0], secondary[2]); \
+        secondary_mixed[2] = LAB_MixColorHDR50(secondary[0], secondary[1]); \
         LAB_UNROLL(3) \
         for(int i = 0; i < 3; ++i) \
         { \
-            int xyz[3] = {x, y, z}; \
-            xyz[i] -= dd[i]; \
+            LAB_ColorHDR prm = primary[i]; \
+            LAB_ColorHDR sec = secondary_mixed[i]; \
+            LAB_ColorHDR dpi = prm; /* TODO... */ \
+            LAB_ColorHDR prm_beta = LAB_MulColorHDR(prm, LAB_LIGHT_BETA); \
+            /*LAB_ColorHDR prm_alpha = LAB_SubColorHDR(prm, prm_beta);*/ \
+            LAB_ColorHDR sec_beta = LAB_MulColorHDR(LAB_MinColorHDR(sec, dpi), LAB_LIGHT_BETA); \
+            /*LAB_ColorHDR cf = LAB_AddColorHDR(prm_alpha, sec_beta);*/ \
+            LAB_ColorHDR cf = LAB_AddSubColorHDR(prm, sec_beta, prm_beta); \
             \
-            bool is_down = i==1 && !(quadrant&2); \
-            \
-            LAB_Color cf = getLightAt(light_chunks, xyz[0], xyz[1], xyz[2], quadrant); \
-            if(!is_down || (cf&LAB_COL_MASK) != LAB_COL_MASK) \
-                cf = LAB_LIGHT_FALL_OFF(cf); \
-            c = LAB_MaxColor(c, cf); \
+            c = LAB_MaxColorHDR(c, cf); \
+            LAB_ASSERT_FMT(LAB_HDR_EXP_VALUE(c) < 10, \
+                LAB_DEBUG_INFO_HERE("\n    i=%i, prm_beta=%8x, sec_beta=%8x, cf=%8x, min(%8x, %8x)=%8x",, \
+                i, prm_beta, sec_beta, cf, sec, dpi, LAB_MinColorHDR(sec, dpi))); \
+            /*LAB_DBG_PRINTF("prm=%8x, sec=%8x, cf=%8x\n",prm, sec, cf);*/ \
         } \
         \
-        c = LAB_MaxColor(LAB_MulColor_Fast(c, b->dia), b->lum); \
-        c |= LAB_ALP_MASK; \
+        /*c = LAB_MulColorHDR_RoundUp(c, LAB_RGBE_HDR_N(86, 86, 86, 0x80));*/ \
+        c = LAB_MaxColorHDR(LAB_MulColorHDR(c, LAB_LCV(b->dia)), LAB_LCV(b->lum)); \
+        c = LAB_LNORM(c); \
         \
         bool relit = c_init || light_ctr->light[block_index].quadrants[quadrant] != c; \
+        LAB_ASSERT_FMT(LAB_HDR_EXP_VALUE(c) < 10, LAB_DEBUG_INFO_HERE(,)); \
         \
         /*if(relit)*/ \
         { \
@@ -183,14 +229,20 @@ LAB_CCPS LAB_TickLight_ProcessQuadrant(
         y_loop(1, false)
         x_loop(1, false)
         {
-            #define LAB_GETLIGHTAT(light_chunks, x, y, z, quadrant) \
-                (light_ctr->light[LAB_XADD3((x), (y)<<4, (z)<<8)].quadrants[quadrant])
+            #define LAB_GETLIGHTAT(light_chunks, x, y, z, quadrant) ( \
+                LAB_ASSERT_FMT(0 <= (x) && (x) < 16, "x=%d", x), \
+                LAB_ASSERT_FMT(0 <= (y) && (y) < 16, "y=%d", y), \
+                LAB_ASSERT_FMT(0 <= (z) && (z) < 16, "z=%d", z), \
+                (light_ctr->light[LAB_XADD3((x), (y)<<4, (z)<<8)].quadrants[quadrant])\
+            )
 
             LAB_TickLight_ProcessBlock(LAB_GETLIGHTAT);
             #undef LAB_GETLIGHTAT
         }
     }
     return relit_blocks;
+
+    #undef LAB_DEBUG_INFO_HERE
 }
 
 
@@ -207,8 +259,6 @@ LAB_CCPS LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27],
             LAB_ASSERT(!chunks[i] || chunks[i]->light_generated);
     }
 
-    LAB_Color default_color_above = chunk->pos.y < 0 ? LAB_RGB(0, 0, 0) : LAB_RGB(255, 255, 255);
-    LAB_Color default_color = LAB_RGB(0, 0, 0); //chunk->pos.y < 0 ? LAB_RGB(16, 16, 16) : LAB_RGB(255, 255, 255);
 
     LAB_CCPS relit_blocks = 0;
 
@@ -254,56 +304,24 @@ LAB_CCPS LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27],
     if(!chunk->light_generated || blocks_changed)
         relit_quads = 255;
 
-    /*if(!chunk->light_generated)
-        blocks_changed = 0xffffffffffffffff;*/
-    //blocks_changed |= boundary_blocks;
 
-    //blocks_changed = 0xffffffffffffffff;
-    /*if(chunk->empty)
+
+    LAB_Chunk_Blocks* ctr_blocks = LAB_Chunk_Blocks_Read(chunk);
+    if(!ctr_blocks) return 0; // TODO: correct error handling
+
+    LAB_LightNbHood_Mut light_chunks;
+    if(!LAB_LightNbHood_GetWrite(chunks, &light_chunks)) return 0; // TODO: correct error handling
+    
+
+    for(int i = 0; i < 8; ++i, relit_quads>>=1)
     {
-        chunk->relit_blocks = 0;
-
-        if(chunk->light_generated) return 0;
-        
-        LAB_Color quads[8];
-        for(int i = 0; i < 8; ++i)
-        {
-            quads[i] = i & 2 ? default_color : default_color_above;
-        }
-
-        for(int j = 0; j < 16*16*16; ++j)
-        {
-            //LAB_UNROLL(8)
-            for(int i = 0; i < 8; ++i)
-            {
-                //LAB_Color default_c = i & 2 ? default_color : default_color_above;
-                chunk->light[j].quadrants[i] = quads[i]; //default_c;
-            }
-        }
-
-        chunk->sky_light = true;
-        chunk->light_generated = true;
+        if(relit_quads&1)
+            relit_blocks |= LAB_TickLight_ProcessQuadrant(
+                ctr_blocks, &light_chunks, i, 
+                !chunk->light_generated, faces_changed, blocks_changed);
     }
-    else*/
-    {
-        LAB_Chunk_Blocks* ctr_blocks = LAB_Chunk_Blocks_Read(chunk);
-        if(!ctr_blocks) return 0; // TODO: correct error handling
 
-        LAB_LightNbHood_Mut light_chunks;
-        if(!LAB_LightNbHood_GetWrite(chunks, &light_chunks)) return 0; // TODO: correct error handling
-        
-
-        for(int i = 0; i < 8; ++i, relit_quads>>=1)
-        {
-            if(relit_quads&1)
-            {
-                LAB_Color default_c = i & 2 ? default_color : default_color_above;
-                relit_blocks |= LAB_TickLight_ProcessQuadrant(ctr_blocks, &light_chunks, i, !chunk->light_generated, default_c, faces_changed, blocks_changed);
-            }
-        }
-
-        LAB_Chunk_Light_Optimize(chunk);
-    }
+    LAB_Chunk_Light_Optimize(chunk);
     
     chunk->light_generated = true;
     return relit_blocks;

@@ -65,29 +65,3 @@ LAB_LightNode* LAB_LightNbHood_RefLightNode(LAB_LightNbHood* n, int x, int y, in
     LAB_Neighborhood_Index(x, y, z, &chunk, &block);
     return &n->bufs[chunk]->light[block];
 }
-
-
-LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
-LAB_Color LAB_GetVisualNeighborhoodLight(LAB_LightNbHood* n, int x, int y, int z, LAB_Dir face)
-{
-    LAB_LightNode* ln = LAB_LightNbHood_RefLightNode(n, x, y, z);
-
-    LAB_Color c = 0;
-    LAB_Color max = 0;
-
-    int mask =        1  << (face>>1);
-    int bit  = !(face&1) << (face>>1);
-    LAB_UNROLL(8)
-    for(int i = 0; i < 8; ++i)
-    {
-        LAB_Color cf = ln->quadrants[i];
-        if((i & mask) != bit)
-        {
-            cf = LAB_MixColor50(cf, 0);
-        }
-        max = LAB_MaxColor(max, cf);
-        c = LAB_AddColor(c, cf >> 2 & 0x3f3f3f3f);
-    }
-
-    return max;
-}

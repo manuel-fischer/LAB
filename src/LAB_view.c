@@ -38,6 +38,7 @@
 #include "LAB_loop.h"
 
 #include "LAB_chunk_neighborhood.h" // TODO remove
+#include "LAB_light_shading.h"
 
 #include "LAB_game_server.h" // TODO remove
 
@@ -89,8 +90,8 @@ LAB_STATIC int  LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass);
 LAB_STATIC bool LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_RenderPass pass);
 
 //LAB_STATIC bool LAB_View_HasChunkEntryVisibleNeighbors(LAB_View* view, LAB_ViewChunkEntry* e);
-LAB_STATIC bool LAB_View_IsLocalChunk(LAB_View* view, int cx, int cy, int cz);
-LAB_STATIC unsigned LAB_View_ChunkVisibility(LAB_View* view, int cx, int cy, int cz);         // inclusive for same coordinates
+//LAB_STATIC bool LAB_View_IsLocalChunk(LAB_View* view, int cx, int cy, int cz);
+//LAB_STATIC unsigned LAB_View_ChunkVisibility(LAB_View* view, int cx, int cy, int cz);         // inclusive for same coordinates
 //LAB_STATIC unsigned LAB_View_ChunkNeighborVisibility(LAB_View* view, int cx, int cy, int cz); // exclusive for same coordinates
 LAB_STATIC void LAB_View_UpdateChunkSeethrough(LAB_View* view, LAB_ViewChunkEntry* e); // exclusive for same coordinates
 #if LAB_VIEW_ENABLE_QUERY
@@ -116,8 +117,8 @@ LAB_STATIC void LAB_View_UploadChunks(LAB_View* view);
 LAB_STATIC void LAB_RenderBox(LAB_View* view, float x, float y, float z, float w, float h, float d);
 LAB_STATIC void LAB_View_RenderBlockSelection(LAB_View* view);
 
-LAB_STATIC int LAB_View_CompareChunksIndirect(const void* a, const void* b);
-LAB_STATIC void LAB_View_SortChunks(LAB_View* view, uint32_t delta_ms);
+//LAB_STATIC int LAB_View_CompareChunksIndirect(const void* a, const void* b);
+//LAB_STATIC void LAB_View_SortChunks(LAB_View* view, uint32_t delta_ms);
 
 LAB_STATIC LAB_Triangle* LAB_ViewMeshAlloc(LAB_View_Mesh* mesh, size_t add_size, size_t extra_size);
 
@@ -392,8 +393,10 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
         LAB_MinColor(LAB_View_GammaMap_MapColor(view->cfg.gamma_map, LAB_GetVisualNeighborhoodLight(lightnbh, x, y, z, face, default_color)), \
                      GET_LIT_COLOR(x, y, z))*/
 
+    /*#define GET_LIGHT(x, y, z, face, default_color) \
+        LAB_View_GammaMap_MapColor(view->cfg.gamma_map, LAB_GetVisualNeighborhoodLight(lightnbh, x, y, z, face, default_color))*/
     #define GET_LIGHT(x, y, z, face, default_color) \
-        LAB_View_GammaMap_MapColor(view->cfg.gamma_map, LAB_GetVisualNeighborhoodLight(lightnbh, x, y, z, face/*, default_color*/))
+        LAB_GetVisualNeighborhoodLight(lightnbh, x, y, z, face, view->cfg.exposure)
             
 
     LAB_BlockID bid = blocknbh->bufs[1+3+9]->blocks[LAB_CHUNK_OFFSET(x, y, z)];

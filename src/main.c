@@ -161,7 +161,8 @@ int main(int argc, char** argv)
         .load_amount = INT_MAX,//100,
         .empty_load_amount = 5,
 
-        .gamma_map = &LAB_gamma_dark,
+        //.gamma_map = &LAB_gamma_dark,
+        .exposure = 1,
     };
 
     LAB_WorldConfig world_cfg = {
@@ -192,7 +193,7 @@ int main(int argc, char** argv)
 
     CHECK_INIT(LAB_World_Create(&the_world));
     #if GEN_FLAT
-    gen.flat.block = &LAB_BLOCK_STONE;
+    gen.flat.block = LAB_BLOCK_MARBLE.raw;
     the_world.chunkgen      = &LAB_GenFlatProc;
     the_world.chunkgen_user = &gen.flat;
     #else

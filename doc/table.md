@@ -5,6 +5,7 @@
 ## Topics
 **[Spatial Cache-efficient Hash Map](topic-cache-efficient-hash-map.md)**  
 **[Spatial Cache-efficient Linked Lists](topic-cache-efficient-linked-lists.md)**  
+**[Cellular Light Propagation](topic-cellular-light-propagation.md)**  
 **[Prefetch Queue](topic-prefetch-queue.md)**  
 **[Template Headers/Template sources](topic-template-headers.md)**  
 ## Directory

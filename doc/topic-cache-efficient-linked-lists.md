@@ -1,4 +1,4 @@
-[&#8592; Spatial Cache-efficient Hash Map](topic-cache-efficient-hash-map.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8593; Table](table.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8594; Prefetch Queue](topic-prefetch-queue.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/topic-cache-efficient-linked-lists.xmd#L1)</small>
+[&#8592; Spatial Cache-efficient Hash Map](topic-cache-efficient-hash-map.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8593; Table](table.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[&#8594; Cellular Light Propagation](topic-cellular-light-propagation.md)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small>[\* xdoc](../xdoc/topic-cache-efficient-linked-lists.xmd#L1)</small>
 ***
 
 # Spatial Cache-efficient Linked Lists

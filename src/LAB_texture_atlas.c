@@ -456,7 +456,9 @@ bool LAB_TexAtlas_Upload2GL(LAB_TexAtlas* atlas)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, num_mipmaps);
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas->w, atlas->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, atlas->data);
+        #ifndef NDEBUG
         LAB_ImageSave(atlas->w, atlas->h, atlas->data, "dbg_terrain_0.png");
+        #endif
 
         // upload mipmaplevels
         {
@@ -470,7 +472,9 @@ bool LAB_TexAtlas_Upload2GL(LAB_TexAtlas* atlas)
                 w /= 2; h /= 2;
 
                 glTexImage2D(GL_TEXTURE_2D, i, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+                #ifndef NDEBUG
                 LAB_ImageSave_Fmt(w, h, data, "dbg_terrain_%i.png", i);
+                #endif
             }
         }
 

@@ -49,7 +49,7 @@ typedef struct LAB_Block
     LAB_BlockFlags flags;
     uint32_t tags;
     LAB_Color lum;
-    LAB_Color dia; // diaphanety/transparency color of the block, the incoming light gets multiplied with this color,
+    LAB_Color dia; // diaphaneity/transparency color of the block, the incoming light gets multiplied with this color,
                    // should be #ffffff for completely transparent blocks.
 
     LAB_Model const* model;

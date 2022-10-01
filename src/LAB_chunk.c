@@ -15,6 +15,8 @@
 #include "LAB_image.h"
 #endif
 
+#include "LAB_world_light_defs.h"
+
 #if 0
 // Allocate 
 #define LAB_PAGE_SIZE 0x1000
@@ -78,7 +80,7 @@ LAB_Chunk_Light  LAB_chunk_empty_light_sunlight = {0};
 LAB_STATIC LAB_CONST
 LAB_Color LAB_Chunk_Light_Sunlight(LAB_Dir dir)
 {
-    return dir & 2 ? LAB_RGB(0, 0, 0) : LAB_RGB(255, 255, 255);
+    return dir & 2 ? LAB_LIGHTNESS_DARK : LAB_HDR_UNIT_WHITE;
 }
 
 LAB_STATIC
@@ -86,7 +88,7 @@ void LAB_Chunk_Light_MakeDark(LAB_Chunk_Light* l)
 {
     for(int i = 0; i < LAB_CHUNK_LENGTH; ++i)
         for(int j = 0; j < 8; ++j)
-            l->light[i].quadrants[j] = LAB_RGB(0, 0, 0);
+            l->light[i].quadrants[j] = LAB_LIGHTNESS_DARK;
 }
 
 LAB_STATIC
@@ -331,7 +333,7 @@ void LAB_Chunk_Light_Optimize(LAB_Chunk* chunk)
     
     // Decide between sunlight and darkness
     LAB_Chunk_Light* l;
-    if(chunk->buf_light->light[0].quadrants[0] == LAB_RGB(255, 255, 255)) // sunlight
+    if(chunk->buf_light->light[0].quadrants[0] == LAB_HDR_UNIT_WHITE) // sunlight
     {
         for(int i = 0; i < 16*16*16; ++i)
             for(int j = 0; j < 8; ++j)
@@ -342,7 +344,7 @@ void LAB_Chunk_Light_Optimize(LAB_Chunk* chunk)
     {
         for(int i = 0; i < 16*16*16; ++i)
             for(int j = 0; j < 8; ++j)
-                if(chunk->buf_light->light[i].quadrants[j] != LAB_RGB(0, 0, 0)) return;
+                if(chunk->buf_light->light[i].quadrants[j] != LAB_LIGHTNESS_DARK) return;
         l = &LAB_chunk_empty_light_dark;
     }
     

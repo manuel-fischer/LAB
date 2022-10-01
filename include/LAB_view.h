@@ -96,7 +96,7 @@ LAB_INLINE LAB_ChunkPos LAB_MakeChunkPos(int x, int y, int z)
 #define LAB_VIEW_SHOW_HUD          2u
 #define LAB_VIEW_SHOW_FPS_GRAPH    4u
 #define LAB_VIEW_FLAT_SHADE        8u
-#define LAB_VIEW_BRIGHTER         16u
+//#define LAB_VIEW_BRIGHTER         16u
 
 #define LAB_VIEW_SHOW_CHUNK_GRID  32u
 
@@ -131,7 +131,8 @@ typedef struct LAB_ViewConfig
     uint32_t load_amount;
     uint32_t empty_load_amount;
 
-    const LAB_View_GammaMap* gamma_map;
+    //const LAB_View_GammaMap* gamma_map;
+    float exposure;
 } LAB_ViewConfig;
 
 
