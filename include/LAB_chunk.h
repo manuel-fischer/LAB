@@ -227,3 +227,6 @@ LAB_INLINE LAB_LightFill LAB_Chunk_GetLightFill(LAB_Chunk* chunk)
          : l == &LAB_chunk_empty_light_sunlight ? LAB_LIGHT_FILL_SUNLIGHT
          : LAB_LIGHT_FILL_DATA;
 }
+
+// light: either &LAB_chunk_empty_* or allocated
+void LAB_Chunk_SetLightBuf(LAB_Chunk* chunk, LAB_Chunk_Light* light);

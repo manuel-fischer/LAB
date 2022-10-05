@@ -10,11 +10,13 @@
 The lighting algorithm changed multiple times during the developement to be more realistic and efficient.
 Some algorithms were not implemented but are also described here.
 
-1 is currently implemented, 2-3 were implemented, 4-7 either were implemented partially or are just drafts
+0 in the working, 1 is currently implemented, 2-3 were implemented, 4-7 either were implemented partially or are just drafts.
+3 is the most basic lighting model, 2 extends this model by using octants.
 
 **Overview**
 
-1. [Vector Octant Lighting](#1-vector-octant-lighting)
+0. [Vector Octant Lighting](#0-vector-octant-lighting)
+1. [HDR Octant Manhattan Distance Lighting](#1-hdr-octant-manhattan-distance-lighting)
 2. [Manhattan Distance Lighting](#2-manhattan-distance-lighting)
 3. [Octant Manhattan Distance Lighting](#3-octant-manhattan-distance-lighting)
 4. [Directional Kernel Lighting](#4-directional-kernel-lighting)
@@ -24,10 +26,51 @@ Some algorithms were not implemented but are also described here.
 
 
 
-## 1. Vector Octant Lighting
+## 0. Vector Octant Lighting
+
+Instead of just storing luminance values per lit up cell, an additional
+direction vector and a diffusion factor might be stored. The diffusion factor
+affects the decay and distribution over distance of the light. If it is low,
+then it would propagate further along the direction. If it is higher, it would
+be distributed among the other directions.
+
+The values are stored per octant similarily to manhattan octant distance lighting.
+By the structure of the octants, components of vectors are each either never
+negative or never positive for a given octant. This would mean that it is
+sufficient to store the absolute value of the component.
+
+The components of the vector correspond to weights, in which the light propagates
+to the neighbors. More specifically it corresponds to the offset from the light
+source
+
+
+The direction vector of a node is computed 
+
+If there are multiple neighbors with light shining into a light node,
+
+For sunlight the direction vector would be downwards and the diffusion factor
+is minimal.
 
 
 
+$$d' = d - \alpha d^2$$
+*Diffusion propagation*
+
+The diffusion propagation in a sequence with a behavior similar to the geometric
+sequence proportional ($\frac 1 x$),
+because the diffusion is proportional to the angle or radius of diffusion,
+it results in the inverse square law, when applied to two dimensions.
+
+## 1. HDR Octant Manhattan Distance Lighting
+
+
+This technique is based on
+[Manhattan Distance Lighting](#2-manhattan-distance-lighting), with the
+addition of hdr color values. The difference is that light can propagate much
+further, that can be made visible, when increasing the gamma. To avoid too many
+updates and allow for light data optimizations, the accuracy is limited to a
+minimal hdr-exponent, any light values under this treshold are converted to
+complete darkness.
 
 
 

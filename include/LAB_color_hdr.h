@@ -446,7 +446,7 @@ LAB_INLINE LAB_ColorHDR LAB_ColorHDR_MaxChannelGray(LAB_ColorHDR c)
 LAB_CONST
 LAB_INLINE LAB_Color LAB_ColorHDR_To_Color_Overflow(LAB_ColorHDR c, LAB_ColorHDR overflow_color)
 {
-    #define LAB_ColorHDR_R_HERE(retval) LAB_ColorHDR_R_FMT(retval, "c=%8x, oc=%8x", c, overflow_color)
+    #define LAB_ColorHDR_R_HERE(retval) (retval) //LAB_ColorHDR_R_FMT(retval, "c=%8x, oc=%8x", c, overflow_color)
     if(c < 0x81000000u) // up to exp = 128
     {
         c = LAB_ColorHDR_ShiftRightTo(c, 128);

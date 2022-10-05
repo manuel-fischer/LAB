@@ -353,6 +353,16 @@ void LAB_Chunk_Light_Optimize(LAB_Chunk* chunk)
 }
 
 
+void LAB_Chunk_SetLightBuf(LAB_Chunk* chunk, LAB_Chunk_Light* light)
+{
+    if(LAB_Chunk_Light_IsAllocated(chunk->buf_light))
+    {
+        LAB_ASSERT(chunk->buf_light != light);
+        LAB_Free(chunk->buf_light);
+    }
+    chunk->buf_light = light;
+}
+
 
 LAB_Chunk_Light* LAB_Chunk_Light_Read_ByY(int y)
 {

@@ -972,6 +972,35 @@ LAB_STATIC void LAB_ViewRenderChunkGrids(LAB_View* view)
         if((e->x-px)*(e->x-px) + (e->y-py)*(e->y-py) + (e->z-pz)*(e->z-pz) <= dist_sq
            && e->sight_visible) // && LAB_View_IsChunkCompletelyInFrustum(view, e->x, e->y, e->z))
         {
+            if(!e->world_chunk) continue;
+            LAB_Chunk* c = e->world_chunk;
+            
+            if(0)
+            {
+                bool blocks_opt = !c->buf_blocks;
+                bool light_opt = LAB_Chunk_GetLightFill(c) != LAB_LIGHT_FILL_DATA;
+                if(blocks_opt || light_opt)
+                {
+                    size_t index = (blocks_opt | light_opt << 1) - 1;
+                    static const float colors[3][3] = {
+                        { 0.0f, 0.7f, 1.0f},
+                        { 1.0f, 0.0f, 0.0f},
+                        { 0.0f, 1.0f, 0.0f},
+                    };
+                    glColor3fv(colors[index]);
+
+                    float dx = LAB_CHUNK_SIZE*e->x + 0.5f;//-view->x;
+                    float dy = LAB_CHUNK_SIZE*e->y + 0.5f;//-view->y;
+                    float dz = LAB_CHUNK_SIZE*e->z + 0.5f;//-view->z;
+                    //glPushMatrix();
+                    glEnable(GL_LINE_STIPPLE);
+                    glLineStipple(2, 0x1010u);
+                    LAB_RenderBox(view, dx, dy, dz, 15, 15, 15);
+                    //glLineStipple(1, 0xffffu);
+                    glDisable(GL_LINE_STIPPLE);
+                }
+            }
+
             //if(view->sorted_chunks[i].distance > 0.5)
             {
                 //continue;

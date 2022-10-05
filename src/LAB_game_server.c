@@ -279,6 +279,7 @@ void LAB_GameServer_GetStats(LAB_GameServer* srv, LAB_GameServerStats* out)
     srv->stats.overriden_task_count = 0;
     srv->stats.update_cycles = 0;
     srv->stats.unload_cycles = 0;
+    srv->stats.unload_count = 0;
     srv->stats.view_update_cycles = 0;
     srv->stats.gen_queue_size = 0;
     memset(srv->stats.update_counts, 0, sizeof srv->stats.update_counts);
@@ -444,6 +445,7 @@ void LAB_GameServer_UnloadChunks(LAB_GameServer* srv)
                         LAB_UnlinkChunk(chunk);
                         LAB_GameServer_Locked_UnlockChunk(srv, neighbors);
                         LAB_DestroyChunk_Unlinked(chunk);
+                        srv->stats.unload_count++;
                         --i; // repeat index
                     }
                     LAB_SDL_UnlockMutex(srv->mutex);

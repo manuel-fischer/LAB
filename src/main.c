@@ -383,6 +383,7 @@ int main(int argc, char** argv)
             //LAB_TextRenderer_Printfln(&r, "WPointer:%9i", game_server.update_pointer);
             LAB_TextRenderer_Printfln(&r, "WCycles:%10i", server_stats.update_cycles);
             LAB_TextRenderer_Printfln(&r, "UnloadCycles:%5i", server_stats.unload_cycles);
+            LAB_TextRenderer_Printfln(&r, "UnloadCount:%6i", server_stats.unload_count);
             LAB_TextRenderer_Printfln(&r, "VCycles:%10i", server_stats.view_update_cycles);
             LAB_TextRenderer_Printfln(&r, "MaxUpdates:%7i", server_stats.max_chunk_updates);
             LAB_TextRenderer_Printfln(&r, "AvgUpdates:%7i", (int)(server_stats.avg_chunk_updates));

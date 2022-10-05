@@ -88,6 +88,7 @@ typedef struct LAB_GameServerStats
 
     size_t update_cycles;
     size_t unload_cycles;
+    size_t unload_count;
 
     size_t view_update_cycles;
 

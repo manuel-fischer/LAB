@@ -1,3 +1,3 @@
 #pragma once
 
-int LAB_Main();
+int LAB_Main(void);

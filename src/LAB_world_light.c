@@ -10,6 +10,8 @@
 
 #include <stdio.h> // DBG
 
+#define LAB_LIGHT_PRECISION 32
+
 // minimum light level for completely unlit block with that dia
 //#define LAB_DARK_LIGHT(dia) ((((dia)>>4) & 0x0f0f0fu) | 0xff000000u)
 //#define LAB_DARK_LIGHT(dia) (0)
@@ -22,15 +24,17 @@
 //#define LAB_LIGHT_FALL_OFF(lum) ((lum) - (((lum)+(~((lum)>>5) & 0x070707)) >> 3 & 0x1f1f1f) - ((lum)>>4 & 0x0f0f0f))
 #define LAB_LIGHT_FALL_OFF(lum) LAB_MulColorHDR_RoundUp(lum, LAB_LIGHT_ALPHA)
 
-//#define LAB_LIGHT_ALPHA LAB_HDR_RGB_F(0.8125,0.8125,0.8125)
+#define LAB_LIGHT_ALPHA LAB_HDR_RGB_F(0.8125,0.8125,0.8125)
 ////#define LAB_LIGHT_ALPHA LAB_HDR_RGB_F(0.95,0.95,0.95)
 
 #define LAB_LIGHT_BETA LAB_HDR_RGB_F(0.1875,0.1875,0.1875)
 //#define LAB_LIGHT_BETA LAB_HDR_RGB_F(0.5,0.5,0.5)
 
 
-//#define LAB_IS_SKYLIGHT(is_down, cf) ((is_down) && ((cf)&LAB_COL_MASK) != LAB_COL_MASK)
-#define LAB_IS_SKYLIGHT(is_down, cf) 0
+//#define LAB_IS_SKYLIGHT(is_down, cf) ((is_down) && ((cf)&LAB_COL_MASK) == LAB_COL_MASK)
+//#define LAB_IS_SKYLIGHT(is_down, cf) ((is_down))
+#define LAB_IS_SKYLIGHT(is_down, cf) ((is_down) && ((cf) == LAB_HDR_UNIT_WHITE))
+//#define LAB_IS_SKYLIGHT(is_down, cf) 0
 
 // TODO remove
 // light conversion
@@ -83,25 +87,22 @@ LAB_CCPS LAB_TickLight_ProcessQuadrant(
         LAB_UNROLL(3) \
         for(int i = 0; i < 3; ++i) \
         { \
+            bool is_down = i==1 && !(quadrant&2); \
             LAB_ColorHDR prm = primary[i]; \
-            LAB_ColorHDR sec = secondary_mixed[i]; \
-            LAB_ColorHDR dpi = prm; /* TODO... */ \
-            LAB_ColorHDR prm_beta = LAB_MulColorHDR(prm, LAB_LIGHT_BETA); \
-            /*LAB_ColorHDR prm_alpha = LAB_SubColorHDR(prm, prm_beta);*/ \
-            LAB_ColorHDR sec_beta = LAB_MulColorHDR(LAB_MinColorHDR(sec, dpi), LAB_LIGHT_BETA); \
-            /*LAB_ColorHDR cf = LAB_AddColorHDR(prm_alpha, sec_beta);*/ \
-            LAB_ColorHDR cf = LAB_AddSubColorHDR(prm, sec_beta, prm_beta); \
-            \
+            LAB_ColorHDR sec = secondary[i]; \
+            LAB_ColorHDR cf = prm; \
+            if(!LAB_IS_SKYLIGHT(is_down, cf)) \
+                cf = LAB_LIGHT_FALL_OFF(cf); \
             c = LAB_MaxColorHDR(c, cf); \
             LAB_ASSERT_FMT(LAB_HDR_EXP_VALUE(c) < 10, \
-                LAB_DEBUG_INFO_HERE("\n    i=%i, prm_beta=%8x, sec_beta=%8x, cf=%8x, min(%8x, %8x)=%8x",, \
-                i, prm_beta, sec_beta, cf, sec, dpi, LAB_MinColorHDR(sec, dpi))); \
-            /*LAB_DBG_PRINTF("prm=%8x, sec=%8x, cf=%8x\n",prm, sec, cf);*/ \
+                LAB_DEBUG_INFO_HERE("\n    i=%i, cf=%8x",, i, cf)); \
+            if(0) LAB_DBG_PRINTF("prm=%8x, sec=%8x, cf=%8x\n",prm, sec, cf); \
         } \
         \
         /*c = LAB_MulColorHDR_RoundUp(c, LAB_RGBE_HDR_N(86, 86, 86, 0x80));*/ \
         c = LAB_MaxColorHDR(LAB_MulColorHDR(c, LAB_LCV(b->dia)), LAB_LCV(b->lum)); \
         c = LAB_LNORM(c); \
+        c = LAB_SELECT0(LAB_HDR_EXP(c) >= 128-LAB_LIGHT_PRECISION, c); \
         \
         bool relit = c_init || light_ctr->light[block_index].quadrants[quadrant] != c; \
         LAB_ASSERT_FMT(LAB_HDR_EXP_VALUE(c) < 10, LAB_DEBUG_INFO_HERE(,)); \
@@ -305,13 +306,35 @@ LAB_CCPS LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27],
         relit_quads = 255;
 
 
+    if(chunk->buf_blocks == 0) // Optimization: all neighboring chunks are sky
+    {
+        LAB_Chunk_Light* l = LAB_Chunk_Light_Read_ByY(chunk->pos.y);
+
+        bool opt_light = true;
+
+        for(int f = 0; f < 6; ++f)
+        {
+            int i = LAB_OX(f)+1 + (LAB_OY(f)+1)*3 + (LAB_OZ(f)+1)*9;
+            if(chunks[i] == NULL || chunks[i]->buf_light == l) continue;
+
+            opt_light = false;
+            break;
+        }
+
+        if(opt_light)
+        {
+            LAB_Chunk_SetLightBuf(chunk, l);
+            chunk->light_generated = true;
+            return 0; // 0 ok here
+        }
+    }
+
 
     LAB_Chunk_Blocks* ctr_blocks = LAB_Chunk_Blocks_Read(chunk);
     if(!ctr_blocks) return 0; // TODO: correct error handling
 
     LAB_LightNbHood_Mut light_chunks;
     if(!LAB_LightNbHood_GetWrite(chunks, &light_chunks)) return 0; // TODO: correct error handling
-    
 
     for(int i = 0; i < 8; ++i, relit_quads>>=1)
     {
