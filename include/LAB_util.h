@@ -153,6 +153,8 @@ bool LAB_MakeTrue(void) { return true; }
 #define LAB_MAX3_BL(a, b, c) LAB_MAX_BL(LAB_MAX_BL(a, b), c)
 #define LAB_MIN3_BL(a, b, c) LAB_MIN_BL(LAB_MIN_BL(a, b), c)
 
+#define LAB_CLAMP_BL(x, a, b) ((a) ^ LAB_SELECT0((x) >= (a), (x)^(a)) ^ LAB_SELECT0((b) <= (x), (b)^(x)))
+
 #if 0
 #undef LAB_MAX
 #undef LAB_MIN
@@ -173,3 +175,6 @@ bool LAB_MakeTrue(void) { return true; }
     (a) ^= LAB_COND_SWAP_delta; \
     (b) ^= LAB_COND_SWAP_delta; \
 } while(0)
+
+
+#define LAB_LEN(array) (sizeof(array) / sizeof(array[0]))

@@ -35,8 +35,13 @@ LAB_BlockID LAB_BLOCK_IRON_ORE,
             LAB_BLOCK_TALLGRASS,
             LAB_BLOCK_TALLERGRASS,
             LAB_BLOCK_GRASS,
+
             LAB_BLOCK_RED_TULIP,
+            LAB_BLOCK_ORANGE_TULIP,
             LAB_BLOCK_YELLOW_TULIP,
+            LAB_BLOCK_BLUE_TULIP,
+            LAB_BLOCK_WHITE_TULIP,
+
             LAB_BLOCK_FALLEN_LEAVES,
             //LAB_BLOCK_GRASS_PLAINS,
             LAB_BLOCK_DIRT,

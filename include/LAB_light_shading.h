@@ -33,7 +33,7 @@ LAB_Color LAB_LightToColor(LAB_ColorHDR c, float exposure)
 
 
 LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
-LAB_Color LAB_GetVisualNeighborhoodLight(LAB_LightNbHood* n, int x, int y, int z, LAB_Dir face, float exposure)
+LAB_Color LAB_GetVisualNeighborhoodLight(LAB_LightNbHood* n, int x, int y, int z, LAB_Dir face, float exposure, float saturation)
 {
     LAB_LightNode* ln = LAB_LightNbHood_RefLightNode(n, x, y, z);
 
@@ -59,6 +59,8 @@ LAB_Color LAB_GetVisualNeighborhoodLight(LAB_LightNbHood* n, int x, int y, int z
 
     c = LAB_LightToColor(c, exposure);
     max = LAB_LightToColor(max, exposure);
+
+    max = LAB_ColorSaturation(max, saturation);
 
     return max;
 }

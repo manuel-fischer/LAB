@@ -205,6 +205,12 @@ LAB_INLINE LAB_Color LAB_MulColor(LAB_Color a, LAB_Color b)
                     LAB_ALP(a)*LAB_ALP(b)/255);
 }
 
+LAB_CONST
+LAB_INLINE LAB_Color LAB_MulColorInv(LAB_Color a, LAB_Color b)
+{
+    return ~LAB_MulColor(~a, ~b);
+}
+
 #if 0
 LAB_PURE
 LAB_INLINE LAB_Color LAB_MulColor_Fast(LAB_Color a, LAB_Color b)
@@ -463,4 +469,26 @@ LAB_INLINE LAB_Color LAB_ColorHI4(LAB_Color c)
     a &= (LAB_CompMask(c, a)&0xff00ff00)^0xff00ff00;
     b &= (LAB_CompMask(c, b)&0x00ff00ff)^0x00ff00ff;
     return a|b;
+}
+
+LAB_CONST
+LAB_INLINE LAB_Color LAB_ColorSaturation(LAB_Color c, float factor)
+{
+    int r = LAB_RED(c);
+    int g = LAB_GRN(c);
+    int b = LAB_BLU(c);
+
+    float avg = (float)(r+g+b) / 3.f;
+
+    float f = factor;
+
+    r = (int)((float)(r-avg)*f+avg);
+    g = (int)((float)(g-avg)*f+avg);
+    b = (int)((float)(b-avg)*f+avg);
+
+    r = LAB_CLAMP_BL(r, 0, 255);
+    g = LAB_CLAMP_BL(g, 0, 255);
+    b = LAB_CLAMP_BL(b, 0, 255);
+
+    return LAB_RGBA(r, g, b, LAB_ALP(c));
 }

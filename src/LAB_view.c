@@ -396,7 +396,7 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
     /*#define GET_LIGHT(x, y, z, face, default_color) \
         LAB_View_GammaMap_MapColor(view->cfg.gamma_map, LAB_GetVisualNeighborhoodLight(lightnbh, x, y, z, face, default_color))*/
     #define GET_LIGHT(x, y, z, face, default_color) \
-        LAB_GetVisualNeighborhoodLight(lightnbh, x, y, z, face, view->cfg.exposure)
+        LAB_GetVisualNeighborhoodLight(lightnbh, x, y, z, face, view->cfg.exposure, view->cfg.saturation)
             
 
     LAB_BlockID bid = blocknbh->bufs[1+3+9]->blocks[LAB_CHUNK_OFFSET(x, y, z)];

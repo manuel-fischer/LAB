@@ -132,7 +132,7 @@ typedef struct LAB_ViewConfig
     uint32_t empty_load_amount;
 
     //const LAB_View_GammaMap* gamma_map;
-    float exposure;
+    float exposure, saturation;
 } LAB_ViewConfig;
 
 

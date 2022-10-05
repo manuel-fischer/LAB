@@ -163,6 +163,7 @@ int main(int argc, char** argv)
 
         //.gamma_map = &LAB_gamma_dark,
         .exposure = 1,
+        .saturation = 1,
     };
 
     LAB_WorldConfig world_cfg = {
