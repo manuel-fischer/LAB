@@ -16,8 +16,8 @@ The documentation can be found [here](doc/table.md).
 
 ### Topics
 [Spatial Cache-efficient Hash Map](doc/topic-cache-efficient-hash-map.md)  
-[Spatial Cache-efficient Linked Lists](topic-cache-efficient-linked-lists.md)  
-[Prefetch Queue](topic-prefetch-queue.md)  
+[Spatial Cache-efficient Linked Lists](doc/topic-cache-efficient-linked-lists.md)  
+[Prefetch Queue](doc/topic-prefetch-queue.md)  
 [Template Headers](doc/topic-template-headers.md)
 
 ## The language choice: C
