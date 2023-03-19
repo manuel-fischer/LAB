@@ -8,10 +8,10 @@
 
 bool LAB_TexAlloc_Create(LAB_TexAlloc* alloc)
 {
-    LAB_ARRAY_CREATE(LAB_TexAlloc_Nodes(alloc));
+    LAB_ARRAY_CREATE_EMPTY(LAB_TexAlloc_Nodes(alloc));
 
     /*LAB_TexAlloc_Node* node;
-    LAB_ARRAY_APPEND(LAB_TexAlloc_Nodes(alloc), 1, node);
+    LAB_ARRAY_APPEND(LAB_TexAlloc_Nodes(alloc), 1, &node);
     if(!node) return false;
     memset(node[0].states, LAB_TexAlloc_EMPTY, sizeof(node.childs[0]));
     node[0].parent = LAB_TexAlloc_Node_NULL;
@@ -46,7 +46,7 @@ LAB_STATIC size_t LAB_TexAlloc_NewNode_Alloc(LAB_TexAlloc* alloc)
     {
         // Allocate new node
         LAB_TexAlloc_Node* node_p;
-        LAB_ARRAY_APPEND(LAB_TexAlloc_Nodes(alloc), 1, node_p);
+        LAB_ARRAY_APPEND(LAB_TexAlloc_Nodes(alloc), 1, &node_p);
         if(!node_p) return LAB_TexAlloc_Node_NULL;
         node = node_p - alloc->nodes;
     }

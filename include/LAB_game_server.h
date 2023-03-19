@@ -6,6 +6,7 @@
 #include "LAB_htl_config.h"
 #include "LAB_world.h"
 #include "LAB_chunk_lock.h"
+#include "LAB_game_server_stats.h"
 
 /*enum LAB_Action
 {
@@ -56,7 +57,7 @@ int LAB_ChunkPriority(LAB_World* w, LAB_Chunk* chunk)
 struct LAB_GameServer;
 
 typedef void(*LAB_ChunkCallback)(struct LAB_GameServer* srv,
-                                 LAB_Chunk* chunk, LAB_ChunkPos pos,
+                                 LAB_Chunk* chunks[27], LAB_ChunkPos pos,
                                  void* uparam);
 
 #define LAB_CHUNK_QUEUE_NAME LAB_ChunkQueue
@@ -69,41 +70,6 @@ typedef void(*LAB_ChunkCallback)(struct LAB_GameServer* srv,
 #undef HTL_PARAM
 
 #define LAB_GameServerChunkQueue_Empty(q) ((q)->first == NULL)
-
-typedef struct LAB_GameServerStats
-{
-    size_t completed_mainthread;
-
-    size_t noop_spins;
-    size_t spins;
-
-    size_t timestamp;
-    size_t max_age; // maximum age of chunks currently in the queue
-
-    size_t completed_task_count;
-    size_t waiting_task_count;
-    size_t requeued_count;
-    size_t new_task_count;
-    size_t overriden_task_count;
-
-    size_t update_cycles;
-    size_t unload_cycles;
-    size_t unload_count;
-
-    size_t view_update_cycles;
-
-    LAB_Nanos runtime;
-    LAB_Nanos runtime_computed;
-
-    size_t max_chunk_updates;
-    float  avg_chunk_updates;
-
-    size_t gen_queue_size;
-
-    size_t update_counts[LAB_CHUNK_STAGE_COUNT];
-    LAB_Nanos update_runtimes[LAB_CHUNK_STAGE_COUNT];
-
-} LAB_GameServerStats;
 
 typedef struct LAB_GameServer
 {

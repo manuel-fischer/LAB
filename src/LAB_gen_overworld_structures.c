@@ -6,6 +6,7 @@
 #include "LAB_gen_overworld_shape.h"
 #include "LAB_simplex_noise.h"
 #include "LAB_gen_tags.h"
+#include "LAB_builtin_blocks.h"
 
 LAB_STATIC void LAB_Gen_Overworld_DirtPatch(LAB_Placer* p, LAB_Random* rnd, const void* param);
 LAB_STATIC void LAB_Gen_Overworld_Plant(LAB_Placer* p, LAB_Random* rnd, const void* param);

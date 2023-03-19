@@ -4,6 +4,8 @@
 #include "LAB_math.h"
 #include "LAB_random.h"
 #include "LAB_gen_overworld_biomes.h"
+#include "LAB_builtin_blocks.h"
+#include "LAB_simplex_noise_chord.h"
 
 #define LAB_GEN_DIRT_SALT        0x12345
 #define LAB_GEN_UNDERGROUND_SALT 0x54321

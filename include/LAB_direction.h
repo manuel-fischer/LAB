@@ -1,7 +1,12 @@
 #pragma once
 
 typedef int LAB_Dir;
+typedef int LAB_DirIndex;
 
+#define LAB_Dir_IsValid(dir) ((unsigned)(dir) < 64)
+#define LAB_DirIndex_IsValid(dir) ((unsigned)(dir) < 6)
+
+// bitset
 #define LAB_DIR_WEST   1
 #define LAB_DIR_EAST   2
 #define LAB_DIR_DOWN   4
@@ -16,6 +21,14 @@ typedef int LAB_Dir;
 #define LAB_DIR_N 16
 #define LAB_DIR_S 32
 
+// index
+#define LAB_I_WEST  0
+#define LAB_I_EAST  1
+#define LAB_I_DOWN  2
+#define LAB_I_UP    3
+#define LAB_I_NORTH 4
+#define LAB_I_SOUTH 5
+
 #define LAB_I_W  0
 #define LAB_I_E  1
 #define LAB_I_D  2
@@ -25,7 +38,11 @@ typedef int LAB_Dir;
 
 #define LAB_DIR_ALL 63
 
-
+// return direction either facing positive or negative in corresponding axis.
+// if positive is true, then the positive direction is returned
+#define LAB_DIR_X(positive) ((0<<1) + !!(positive))
+#define LAB_DIR_Y(positive) ((1<<1) + !!(positive))
+#define LAB_DIR_Z(positive) ((2<<1) + !!(positive))
 
 /**
  *  {-1, 0, 0},

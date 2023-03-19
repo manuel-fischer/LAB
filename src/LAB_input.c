@@ -231,10 +231,13 @@ int LAB_Input_OnEvent_Proc(void* user, LAB_Window* window, SDL_Event* event)
                     if(key == SDLK_m) input->speed+=0.02;
                     if(input->speed < 0.02) input->speed = 0.02;
                     if(input->speed > 16)  input->speed = 16;*/
-                    if(key == SDLK_n) input->speed-=1;
-                    if(key == SDLK_m) input->speed+=1;
+                    if(key == SDLK_n) input->speed *= 0.5;
+                    if(key == SDLK_m) input->speed *= 2.0;
                     if(input->speed < 1) input->speed = 1;
                     if(input->speed > 100)  input->speed = 100;
+                    SDL_Keymod mods = SDL_GetModState();
+                    if(mods & KMOD_CTRL)
+                        input->speed = 3.0f;
                 } break;
 
 

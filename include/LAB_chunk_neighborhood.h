@@ -13,6 +13,15 @@ typedef struct LAB_LightNbHood
     LAB_Chunk_Light* bufs[27];
 } LAB_LightNbHood, LAB_LightNbHood_Mut;
 
+#define LAB_NB_CENTER (1+3+9)
+LAB_INLINE
+int LAB_NB_I0(size_t x0, size_t y0, size_t z0)
+{
+    LAB_ASSERT(x0 < 3);
+    LAB_ASSERT(y0 < 3);
+    LAB_ASSERT(z0 < 3);
+    return x0 + 3*y0 + 9*z0;
+}
 
 void LAB_GetChunkNeighborsNone(LAB_Chunk* center_chunk, LAB_Chunk* chunks[27]);
 void LAB_GetChunkNeighbors(LAB_Chunk* center_chunk, LAB_Chunk* chunks[27]);
@@ -64,4 +73,16 @@ LAB_LightNode* LAB_LightNbHood_RefLightNode(LAB_LightNbHood* n, int x, int y, in
     int chunk, block;
     LAB_Neighborhood_Index(x, y, z, &chunk, &block);
     return &n->bufs[chunk]->light[block];
+}
+
+
+// return offset from center chunk in neighborhood
+LAB_INLINE
+LAB_Pos16 LAB_NbHood_DeltaPos(int index)
+{
+    int z = index / 9 - 1; index %= 9;
+    int y = index / 3 - 1; index %= 3;
+    int x = index - 1;
+
+    return (LAB_Pos16) {x, y, z};
 }

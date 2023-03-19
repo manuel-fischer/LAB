@@ -8,7 +8,7 @@
 
 #include "LAB_blocks.h"
 #include "LAB_chunk.h" // LAB_Init_Chunks
-#include "LAB_builtin_blocks.h"
+#include "LAB_game.h"
 
 
 // MAIN
@@ -50,8 +50,8 @@ bool LAB_Init()
     LAB_OBJ(LAB_InitSDL(),
             LAB_QuitSDL(),
     
-    LAB_OBJ(LAB_Blocks_Init(),
-            LAB_Blocks_Quit(),
+    LAB_OBJ(LAB_Game_Init(),
+            LAB_Game_Quit(),
             
         return true;
     ););
@@ -60,6 +60,6 @@ bool LAB_Init()
 
 void LAB_Quit()
 {
-    LAB_Blocks_Quit();
+    LAB_Game_Quit();
     LAB_QuitSDL();
 }

@@ -3,6 +3,7 @@
 #include "LAB_block.h"
 #include "LAB_gen_overworld.h"
 
+// TODO: remove this type
 typedef struct LAB_Gen_Biome
 {
     uint64_t tags;

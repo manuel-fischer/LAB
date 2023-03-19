@@ -1,6 +1,15 @@
 # Screenshots
 More recent screenshots are at the top, so if you want to see the developement stages from early on, you can start at the bottom and scroll up.
 
+## New World generation
+![](032.png)
+![](031.png)
+![](030.png)
+![](029.png)
+![](028.png)
+![](027.png)
+![](026.png)
+
 ## Spruce forest
 ![](025.png)
 

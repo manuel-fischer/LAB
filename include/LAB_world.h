@@ -10,7 +10,7 @@
 #include "LAB_perf_info.h"
 #include "LAB_htl_config.h"
 
-#include "LAB_builtin_blocks.h"
+#include "LAB_blocks.h"
 
 #include "LAB_world_chunk_table.h"
 
@@ -37,7 +37,7 @@
 typedef struct LAB_World LAB_World;
 
 typedef void(LAB_IView_ChunkViewer)(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update);
-typedef void(LAB_IView_ChunkMesh)(void* user, LAB_World* world, LAB_Chunk* chunk);
+typedef void(LAB_IView_ChunkMesh)(void* user, LAB_World* world, LAB_Chunk* chunks[27]);
 typedef bool(LAB_IView_ChunkKeeper)(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z);
 typedef void(LAB_IView_ChunkUnlinker)(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z);
 typedef void(LAB_IView_Position)(void* user, LAB_World* world, LAB_OUT double xyz[3]);

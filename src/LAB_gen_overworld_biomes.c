@@ -4,6 +4,7 @@
 #include "LAB_simplex_noise.h"
 #include "LAB_block.h"
 #include "LAB_random.h"
+#include "LAB_builtin_blocks.h"
 
 const LAB_Gen_Biome LAB_biome_forest =
 {

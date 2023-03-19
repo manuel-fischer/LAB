@@ -10,6 +10,7 @@
 #include "LAB_gen_overworld_structures.h"
 #include "LAB_gen_overworld_biomes.h"
 
+#include "LAB_builtin_blocks.h"
 
 
 

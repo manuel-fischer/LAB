@@ -45,6 +45,7 @@ LAB_BlockID LAB_BLOCK_IRON_ORE,
             LAB_BLOCK_FALLEN_LEAVES,
             //LAB_BLOCK_GRASS_PLAINS,
             LAB_BLOCK_DIRT,
+            LAB_BLOCK_FOREST_SOIL,
             LAB_BLOCK_METAL,
 
             LAB_BLOCK_WATER,

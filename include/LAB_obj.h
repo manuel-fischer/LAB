@@ -3,6 +3,19 @@
 #include "LAB_error.h"
 #include "LAB_sdl.h"
 
+typedef int LAB_OBJ_Action;
+#define LAB_OBJ_CREATE 0
+#define LAB_OBJ_DESTROY 1
+
+#define LAB_BEGIN_OBJ(action) do { \
+    if((action) == LAB_OBJ_DESTROY) goto lbl_obj_destroy; \
+} while(0)
+#define LAB_END_OBJ(value) return (value)
+#define LAB_YIELD_OBJ(value) do { \
+    return (value); \
+    lbl_obj_destroy:; \
+} while(0)
+
 // ... -- on success
 #define LAB_OBJ(init, defer, ...) do \
 { \

@@ -250,6 +250,15 @@ bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
         LAB_Assets_NewTexture(assets, tex, "dirt");
         LAB_BlockFull_Init(assets, &LAB_BLOCK_DIRT, tex, LAB_RGB(120, 80, 50), LAB_RENDER_PASS_SOLID);
 
+        LAB_Assets_NewComposedTexture(assets, tex, (const LAB_TextureComposite[])
+        {
+            { "dirt",    0, LAB_RGBX(785032) }, // LAB_RGBX(785032)
+            { "needle_leaves",  0, LAB_RGBX(704828) }, // LAB_RGBX(886440)
+            { "leaves",  0, LAB_RGBAX(70482880) }, // LAB_RGBX(886440)
+            {0}
+        });
+        LAB_BlockFull_Init(assets, &LAB_BLOCK_FOREST_SOIL, tex, LAB_COLOR_WHITE, LAB_RENDER_PASS_SOLID);
+
 
 
         static const struct { LAB_BlockID* id; LAB_Color bloom_colors[2]; }

@@ -6,17 +6,17 @@
 
 LAB_STATIC
 void LAB_GameServer_ChunkGenerate_CB(LAB_GameServer* srv,
-                                      LAB_Chunk* chunk, LAB_ChunkPos pos,
+                                      LAB_Chunk* chunks[27], LAB_ChunkPos pos,
                                       void* uparam);
 
 LAB_STATIC
 void LAB_GameServer_ChunkUpdateLight_CB(LAB_GameServer* srv,
-                                         LAB_Chunk* chunk, LAB_ChunkPos pos,
+                                         LAB_Chunk* chunks[27], LAB_ChunkPos pos,
                                          void* uparam);
 
 LAB_STATIC
 void LAB_GameServer_ChunkViewMesh_CB(LAB_GameServer* srv,
-                                      LAB_Chunk* chunk, LAB_ChunkPos pos,
+                                      LAB_Chunk* chunks[27], LAB_ChunkPos pos,
                                       void* uparam);
 
 
@@ -50,9 +50,10 @@ void LAB_ChunkStageNeighbors(int update, LAB_Chunk* chunk, LAB_Chunk* chunks[27]
 
 LAB_STATIC
 void LAB_GameServer_ChunkGenerate_CB(LAB_GameServer* srv,
-                                      LAB_Chunk* chunk, LAB_ChunkPos pos,
+                                      LAB_Chunk* chunks[27], LAB_ChunkPos pos,
                                       void* uparam)
 {
+    LAB_Chunk* chunk = chunks[LAB_NB_CENTER];
     LAB_ASSERT(!chunk->generated);
 
     bool success = srv->world->chunkgen(
@@ -75,13 +76,11 @@ void LAB_GameServer_ChunkGenerate_CB(LAB_GameServer* srv,
 
 LAB_STATIC
 void LAB_GameServer_ChunkUpdateLight_CB(LAB_GameServer* srv,
-                                         LAB_Chunk* chunk, LAB_ChunkPos pos,
+                                         LAB_Chunk* chunks[27], LAB_ChunkPos pos,
                                          void* uparam)
 {
+    LAB_Chunk* chunk = chunks[LAB_NB_CENTER];
     LAB_ASSERT(LAB_Chunk_Access(chunk));
-
-    LAB_Chunk* chunks[27];
-    LAB_GetChunkNeighbors(chunk, chunks);
 
     LAB_CCPS dirty_blocks = atomic_exchange(&chunk->dirty_blocks, 0);
     //LAB_CCPS relit_blocks = atomic_exchange(&chunk->relit_blocks, 0); // used by next stage
@@ -92,7 +91,7 @@ void LAB_GameServer_ChunkUpdateLight_CB(LAB_GameServer* srv,
     chunk->relit_blocks = 0;
 
     for(int i = 0; i < 27; ++i)
-        if((i != 1+3+9 && chunks[i] && !chunks[i]->light_generated))
+        if((i != LAB_NB_CENTER && chunks[i] && !chunks[i]->light_generated))
             chunks[i] = NULL;
 
     LAB_CCPS relit_blocks = LAB_TickLight(srv->world, chunks, dirty_neighbors|relit_neighbors, dirty_blocks);
@@ -119,7 +118,7 @@ void LAB_GameServer_ChunkUpdateLight_CB(LAB_GameServer* srv,
     for(int yy = -1; yy < 2; ++yy)
     for(int xx = -1; xx < 2; ++xx, ++i)
     {
-        if(i != 1+3+9 &&
+        if(i != LAB_NB_CENTER &&
             chunks[i] && 
             chunks[i]->light_generated)
         {
@@ -138,11 +137,12 @@ void LAB_GameServer_ChunkUpdateLight_CB(LAB_GameServer* srv,
 
 LAB_STATIC
 void LAB_GameServer_ChunkViewMesh_CB(LAB_GameServer* srv,
-                                      LAB_Chunk* chunk, LAB_ChunkPos pos,
+                                      LAB_Chunk* chunks[27], LAB_ChunkPos pos,
                                       void* uparam)
 {
+    LAB_Chunk* chunk = chunks[LAB_NB_CENTER];
     LAB_ASSERT(chunk->generated);
     LAB_ASSERT(chunk->light_generated);
 
-    (*srv->world->view->chunkmesh)(srv->world->view_user, srv->world, chunk);
+    (*srv->world->view->chunkmesh)(srv->world->view_user, srv->world, chunks);
 }

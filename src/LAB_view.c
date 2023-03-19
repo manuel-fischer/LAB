@@ -69,7 +69,7 @@
 LAB_STATIC void LAB_ViewChunkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update);
 LAB_STATIC bool LAB_ViewChunkKeepProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z);
 LAB_STATIC void LAB_ViewChunkUnlinkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z);
-LAB_STATIC void LAB_ViewChunkMeshProc(void* user, LAB_World* world, LAB_Chunk* chunk);
+LAB_STATIC void LAB_ViewChunkMeshProc(void* user, LAB_World* world, LAB_Chunk* chunks[27]);
 LAB_STATIC void LAB_View_Position_Proc(void* user, LAB_World* world, LAB_OUT double xyz[3]);
 const LAB_IView LAB_view_interface = 
 {
@@ -293,9 +293,10 @@ void LAB_View_Position_Proc(void* user, LAB_World* world, double pos[3])
 
 
 LAB_STATIC
-void LAB_ViewChunkMeshProc(void* vview, LAB_World* world, LAB_Chunk* chunk)
+void LAB_ViewChunkMeshProc(void* vview, LAB_World* world, LAB_Chunk* chunks[27])
 {
     LAB_View* view = vview;
+    LAB_Chunk* chunk = chunks[LAB_NB_CENTER];
     LAB_ViewChunkEntry* e = chunk->view_user;
     if(!e) return;
 
@@ -352,7 +353,7 @@ LAB_STATIC void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* 
     for(size_t y = 0; y < LAB_CHUNK_SIZE; ++y)
     for(size_t x = 0; x < LAB_CHUNK_SIZE; ++x)
     {
-        LAB_BlockID bid = blocknbh->bufs[1+3+9]->blocks[LAB_CHUNK_OFFSET(x, y, z)];
+        LAB_BlockID bid = blocknbh->bufs[LAB_NB_CENTER]->blocks[LAB_CHUNK_OFFSET(x, y, z)];
         if(LAB_BlockP(bid)->flags & LAB_BLOCK_VISUAL)
             LAB_ViewBuildMeshBlock(view, chunk_entry, blocknbh, lightnbh, x, y, z, visibility);
     }
@@ -399,7 +400,7 @@ LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk
         LAB_GetVisualNeighborhoodLight(lightnbh, x, y, z, face, view->cfg.exposure, view->cfg.saturation)
             
 
-    LAB_BlockID bid = blocknbh->bufs[1+3+9]->blocks[LAB_CHUNK_OFFSET(x, y, z)];
+    LAB_BlockID bid = blocknbh->bufs[LAB_NB_CENTER]->blocks[LAB_CHUNK_OFFSET(x, y, z)];
     LAB_Block* block = LAB_BlockP(bid);
     if(block->model == NULL) return;
 

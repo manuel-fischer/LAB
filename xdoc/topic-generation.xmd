@@ -1,0 +1,109 @@
+@@topic Generation
+
+# Isolated Chunk Generation
+
+Each chunk is generated independently from its neighboring chunks.
+Effectively a chunk is generated in a functional and isolated way, that depends on
+no state other than the generation seed and the actual chunk coordinates.
+This allows for parallelizability.
+The world however seems seamless. Especially structures seem to be placed
+as if there were no chunk boundaries. How this is achieved in detail
+efficiently is described down below.
+
+@topic Structures
+
+    @topic Seamless Overlapping between Chunks
+
+        A structure is likely to overlap with multiple chunks.
+        In this case the structure generation algorithm must be called on these chunks
+        multiple times.
+
+        Basically the structure placement algorithm chooses a random point in a given
+        neighborhood cell, usually of the size of a chunk. Then the structure is placed with its
+        origin at this random point. Parts of the structure that do not overlap with the actually
+        generated chunk are discarded, which could also mean that the whole structure is
+        discarded.
+
+        The predictive behavior of pseudo random generators plays an important role when
+        generating parts of the same structure in different chunks. A pseudo random generator is
+        initialized with the same seed for the same neighborhood chunk. Resulting in the same
+        absolute structure coordinates when a different chunk is generated. This produces a
+        seamless generation of structures among chunk borders.
+
+        @topic Block Placer
+            A block placer represents the interface to set blocks in the currently generated
+            chunk. A block placer is relative, that means it works on coordinates local to
+            the structure origin. The block placer refers to the generated chunk and stores the
+            relative offset of the structure origin to the chunk origin. An attempt to set blocks
+            outside of the current chunk is simply ignored. This is the key allowing isolated
+            generation of chunks.
+
+        @topic Structure Function
+            A structure function is the actual code that determines the shape and blocks of the
+            generated structure. A structure function only depends on a random number generator,
+            as varying state. A structure function places blocks into the block placer relative
+            to the structure origin, independently of actual world coordinates. When a structure
+            is generated in multiple chunks, only the block placer changes. The structure function
+            itself does not need to care about the actual chunk that is associated with the block
+            placer. But for optimization reasons it might do.
+
+        @topic Improving Performance
+            @topic Structure Boundary Optimization
+                A structure can vary randomly in its size, such that the placement algorithm
+                is not able to know on its own, if the structure really overlaps with the
+                currently generated chunk. There are two ways to optimize the structure generation
+                in the structure function.
+
+                **Simple Check**
+
+                So the actual structure function itself could check the block placer if it would
+                place blocks into the currently generated chunk, if not it could quit directly.
+
+                **For loop optimization**
+
+                For loops contained in the structure function could also be bounded to the region
+                that corresponds to the currently generated chunk determined by the block placer.
+                If in the for loops random numbers are generated for each block coordinates,
+                then the same random number might be generated for multiple blocks like the
+                first blocks that are generated in the for loop. This can be solved by using
+                a random sequence for the block coordinates that is dependent on the varying state
+                of the block placer. Note that when reseeding the random number generator,
+                all randomized attributes that are shared among all the blocks of the structure
+                need to be generated before it is reseeded. An example might be the size of the
+                structure. If this size would be randomized after the random number generator
+                is reseeded, the structure would often not be generated seamlessly, because
+                the size might then be different in the different chunks.
+
+
+            @topic Placement Cell Optimization
+                When generating large structures on a chunk basis, a performance problem arises.
+                Namely for a large structure, a large chunk neighborhood would need to be checked,
+                if there are structures, that potentially overlap with the currently generated chunk.
+                To avoid this problem of a larger neighborhood to check, the placement is
+                calculated per placement cell, that might be larger than just a chunk.
+
+
+    @topic Biome Resolution
+    
+        @topic Biome Interpolation and SDFs
+
+            Computing the biome for every block might be very flexible in the
+            shape of the biomes, but it is not the most efficient way. It is the
+            case that biomes are often larger than single chunks. A good approximation
+            would be to just sample the corresponding temperature and humidity values
+            at the corners of a chunk and then interpolate those values. This results
+            in reasonable borders between the chunks. This works because we actually
+            have computed something that is similar to a signed distance field.
+
+        @topic Biome Probing
+
+            To allow for an efficient structure generation algorithm, the structure
+            placement should basically be independent of the number of different
+            biomes. When placing structures in placement cells only the contained
+            biomes should be checked, if those would contain a structure. A difficulty
+            arises to determine the contained biomes in a region. If the biome probing
+            should be accurate, all blocks/chunks in a placement cell must be checked.
+            But this would be really inefficient. Instead we can assume that inside
+            a placement cell usually the biomes do not change as much. We can sample
+            the biome temperature and humidity values at the corners of the placement
+            cell and then interpolate between those values.

@@ -1,6 +1,7 @@
 #include "LAB_chunk.h"
 
-#include "LAB_builtin_blocks.h"
+#include "LAB_blocks.h"
+#include "LAB_direction.h"
 
 #include "LAB_memory.h"
 #include "LAB_error.h"
@@ -250,7 +251,7 @@ void LAB_Chunk_LockNeighbors(LAB_Chunk* chunks[27])
     {
         if(chunks[i]) 
         {
-            if(i == 1+3+9)
+            if(i == LAB_NB_CENTER)
                 LAB_Chunk_LockRead(chunks[i]);
             else
                 LAB_Chunk_LockWrite(chunks[i]);
@@ -264,7 +265,7 @@ void LAB_Chunk_UnlockNeighbors(LAB_Chunk* chunks[27])
     {
         if(chunks[i]) 
         {
-            if(i == 1+3+9)
+            if(i == LAB_NB_CENTER)
                 LAB_Chunk_UnlockRead(chunks[i]);
             else
                 LAB_Chunk_UnlockWrite(chunks[i]);

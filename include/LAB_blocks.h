@@ -30,8 +30,8 @@ extern LAB_BlockID* LAB_item_blocks;
 extern size_t LAB_item_block_count;
 #define LAB_item_blocks_array (LAB_BlockID, LAB_item_blocks, LAB_item_block_count)
 
-bool LAB_Blocks_Init();
-void LAB_Blocks_Quit();
+bool LAB_Blocks_Init(void);
+void LAB_Blocks_Quit(void);
 
 // return id of first block
 LAB_BlockID LAB_RegisterBlocks(size_t count);

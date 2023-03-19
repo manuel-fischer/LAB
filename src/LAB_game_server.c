@@ -215,7 +215,9 @@ int LAB_GameServer_ThreadRoutine(void* vsrv)
         LAB_Nanos start = LAB_NanoSeconds();
 
         LAB_ChunkCallback cb = LAB_ChunkStageCallback(update_stage);
-        cb(srv, chunk, chunk->pos, NULL);
+        LAB_Chunk* neighbors_copy[27];
+        memcpy(neighbors_copy, neighbors, sizeof neighbors_copy);
+        cb(srv, neighbors_copy, chunk->pos, NULL);
 
         LAB_Nanos end = LAB_NanoSeconds();
         LAB_Nanos comp = end-start;
@@ -591,7 +593,7 @@ bool LAB_GameServer_Locked_TryLockChunk(LAB_GameServer* srv, LAB_Chunk* chunks[2
     {
         if(!chunks[i]) continue;
 
-        if(i == 1+3+9)
+        if(i == LAB_NB_CENTER)
         {
             if(chunks[i]->access_mode != 0) break;
             chunks[i]->access_mode = -1;
@@ -607,7 +609,7 @@ bool LAB_GameServer_Locked_TryLockChunk(LAB_GameServer* srv, LAB_Chunk* chunks[2
     {
         if(!chunks[i]) continue;
 
-        if(i == 1+3+9)
+        if(i == LAB_NB_CENTER)
             chunks[i]->access_mode = 0;
         else
             chunks[i]->access_mode--;
@@ -624,7 +626,7 @@ void LAB_GameServer_Locked_UnlockChunk(LAB_GameServer* srv, LAB_Chunk* chunks[27
     {
         if(!chunks[i]) continue;
 
-        if(i == 1+3+9)
+        if(i == LAB_NB_CENTER)
             chunks[i]->access_mode = 0;
         else
             chunks[i]->access_mode--;

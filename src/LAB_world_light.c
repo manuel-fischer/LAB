@@ -54,7 +54,7 @@ LAB_CCPS LAB_TickLight_ProcessQuadrant(
 
     LAB_CCPS relit_blocks = 0;
 
-    LAB_Chunk_Light* light_ctr = light_chunks->bufs[1+3+9];
+    LAB_Chunk_Light* light_ctr = light_chunks->bufs[LAB_NB_CENTER];
 
     LAB_ASSERT(blocks_ctr);
 
@@ -251,12 +251,12 @@ LAB_HOT
 LAB_CCPS LAB_TickLight(LAB_World* world, LAB_Chunk*const chunks[27],
                        int neighbors_changed, LAB_CCPS blocks_changed)
 {
-    LAB_Chunk* chunk = chunks[1+3+9];
+    LAB_Chunk* chunk = chunks[LAB_NB_CENTER];
     LAB_ASSERT(chunk);
 
     for(int i = 0; i < 27; ++i)
     {
-        if(i != 1+3+9)
+        if(i != LAB_NB_CENTER)
             LAB_ASSERT(!chunks[i] || chunks[i]->light_generated);
     }
 
