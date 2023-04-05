@@ -236,7 +236,7 @@ int main(int argc, char** argv)
 
 
 
-    LAB_client.view.x = LAB_client.view.z = 0.5;
+    LAB_client.view.pos = (LAB_Vec3D) { 0.5, 1.5, 0.5 };
     //LAB_client.view.x = -524288+3.5;
     #if GEN_FLAT
     LAB_client.view.y = 2;
@@ -244,9 +244,9 @@ int main(int argc, char** argv)
     LAB_client.view.y = LAB_Gen_Surface_Shape_Func(&gen.overworld, LAB_FastFloorD2I(LAB_client.view.x), LAB_FastFloorD2I(LAB_client.view.z)) + 3;
     #else
     gen.dimension.dim.spawn_point(gen.dimension.dim.ctx, gen.dimension.world_seed,
-        &LAB_client.view.x,
-        &LAB_client.view.y,
-        &LAB_client.view.z
+        &LAB_client.view.pos.x,
+        &LAB_client.view.pos.y,
+        &LAB_client.view.pos.z
     );
     #endif
 

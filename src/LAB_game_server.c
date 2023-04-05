@@ -36,16 +36,6 @@ int LAB_ChunkQueues_NextQueue(LAB_ChunkQueue qs[LAB_CHUNK_PRIORITIES])
     LAB_ASSERT_FALSE("All queues empty");
 }
 
-LAB_STATIC
-LAB_Chunk* LAB_ChunkQueues_PopFront(LAB_ChunkQueue qs[LAB_CHUNK_PRIORITIES])
-{
-    for(size_t i = 0; i < LAB_CHUNK_PRIORITIES; ++i)
-        if(!LAB_ChunkQueue_IsEmpty(&qs[i]))
-            return LAB_ChunkQueue_PopFront(&qs[i]);
-
-    LAB_ASSERT_FALSE("All queues empty");
-}
-
 
 
 LAB_STATIC

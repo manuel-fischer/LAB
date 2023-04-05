@@ -80,6 +80,7 @@ doxygen/*
 # CBake files
 .cbake-dependencies.txt
 .cbake-dependencies-dbg.txt
+build_stats.csv
 
 
 # Libraries, backup if libs/.gitignore gets deleted accidentally

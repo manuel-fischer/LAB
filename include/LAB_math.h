@@ -1,6 +1,7 @@
 #pragma once
 
 #include "LAB_attr.h"
+#include "LAB_opt.h"
 #include <math.h>
 
 #define LAB_PI 3.14159265359

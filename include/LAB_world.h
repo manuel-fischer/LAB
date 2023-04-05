@@ -40,7 +40,7 @@ typedef void(LAB_IView_ChunkViewer)(void* user, LAB_World* world, LAB_Chunk* chu
 typedef void(LAB_IView_ChunkMesh)(void* user, LAB_World* world, LAB_Chunk* chunks[27]);
 typedef bool(LAB_IView_ChunkKeeper)(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z);
 typedef void(LAB_IView_ChunkUnlinker)(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z);
-typedef void(LAB_IView_Position)(void* user, LAB_World* world, LAB_OUT double xyz[3]);
+typedef LAB_Vec3D(LAB_IView_Position)(void* user, LAB_World* world);
 
 typedef struct LAB_IView
 {
@@ -123,12 +123,22 @@ void LAB_UpdateChunkLater(LAB_World* world, LAB_Chunk* chunk, int x, int y, int 
 
 LAB_BlockID LAB_GetBlock(LAB_World* world, int x, int y, int z);
 bool LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_BlockID block); // return false on failure
-bool LAB_FillBlocks(LAB_World* world, int x0, int y0, int z0, int x1, int y1, int z1, LAB_BlockID block); // return false on failure
+//bool LAB_FillBlocks(LAB_World* world, int x0, int y0, int z0, int x1, int y1, int z1, LAB_BlockID block); // return false on failure
 
 #define LAB_GetBlockP(world, x, y, z) LAB_BlockP(LAB_GetBlock(world, x, y, z))
 
 // dir should be an unit vector
-int LAB_TraceBlock(LAB_World* world, int max_distance, float vpos[3], float dir[3], unsigned block_flags,
-                   LAB_OUT int target[3], LAB_OUT int prev[3], LAB_OUT float hit[3]);
+
+typedef struct LAB_TraceBlock_Result
+{
+    LAB_Vec3I hit_block;
+    LAB_Vec3I prev_block;
+    LAB_Vec3F hit_point; // absolute hit position
+
+    bool has_hit;
+} LAB_TraceBlock_Result;
+
+
+LAB_TraceBlock_Result LAB_TraceBlock(LAB_World* world, float max_distance, LAB_Vec3F vpos, LAB_Vec3F dir, unsigned block_flags);
 
 void LAB_WorldTick(LAB_World* world);

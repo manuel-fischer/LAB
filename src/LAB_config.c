@@ -1,7 +1,8 @@
 #include "LAB_config.h"
 
 #ifdef __WINNT__
-#include <windows.h>
+//#include <windows.h> // < longer build times
+#include <sysinfoapi.h>
 #else
 #include <unistd.h>
 #endif

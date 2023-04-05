@@ -1,5 +1,6 @@
 {
 	"program": "lab.exe",
+	"build-stats-file": "build_stats.csv",
 	"c-flags": [
 		"-std=c17",
 		"-D_POSIX_C_SOURCE=200101L",

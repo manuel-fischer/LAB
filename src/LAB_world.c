@@ -108,31 +108,44 @@ LAB_Chunk* LAB_GenerateChunk(LAB_World* world, int x, int y, int z)
 }
 
 
+LAB_STATIC
+LAB_Chunk* LAB_GetChunk_AtPos(LAB_World* world, int x, int y, int z)
+{
+    LAB_ASSERT(LAB_IsMainThread());
+    int cx, cy, cz;
+    cx = x>>LAB_CHUNK_SHIFT; cy = y>>LAB_CHUNK_SHIFT; cz = z>>LAB_CHUNK_SHIFT;
+    return LAB_GetChunk(world, cx, cy, cz);
+}
+
 
 LAB_BlockID LAB_GetBlock(LAB_World* world, int x, int y, int z)
 {
-    int cx, cy, cz;
-    cx = x>>LAB_CHUNK_SHIFT; cy = y>>LAB_CHUNK_SHIFT; cz = z>>LAB_CHUNK_SHIFT;
-
-    LAB_Chunk* chunk = LAB_GetChunk(world, cx, cy, cz);
+    // TODO: more efficient multithreading
+    LAB_Chunk* chunk = LAB_GetChunk_AtPos(world, x, y, z);
     if(chunk == NULL) return LAB_BID_OUTSIDE;
-    if(chunk->buf_blocks == NULL) return LAB_BID_AIR;
-    return chunk->buf_blocks->blocks[LAB_CHUNK_OFFSET(x&LAB_CHUNK_MASK, y&LAB_CHUNK_MASK, z&LAB_CHUNK_MASK)];
+
+
+    LAB_BlockID b = LAB_BID_AIR;
+    size_t index = LAB_CHUNK_OFFSET(x&LAB_CHUNK_MASK, y&LAB_CHUNK_MASK, z&LAB_CHUNK_MASK);
+
+    LAB_GameServer_Lock1Chunk(world->server, chunk);
+    if(chunk->buf_blocks != NULL)
+        b = chunk->buf_blocks->blocks[index];
+    LAB_GameServer_Unlock1Chunk(world->server, chunk);
+
+
+    return b;
 }
 
-bool LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_BlockID block)
+LAB_STATIC
+bool LAB_SetBlockIndex_Locked(LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_BlockID block)
 {
-    // TODO: fix multithreading
-    int cx, cy, cz;
-    cx = x>>LAB_CHUNK_SHIFT; cy = y>>LAB_CHUNK_SHIFT; cz = z>>LAB_CHUNK_SHIFT;
-
-    LAB_Chunk* chunk = LAB_GetChunk(world, cx, cy, cz);
-    if(chunk == NULL) return false;
-
     LAB_Chunk_Blocks* blocks = LAB_Chunk_Blocks_Write(chunk);
     if(!blocks) return false;
 
-    blocks->blocks[LAB_CHUNK_OFFSET(x&LAB_CHUNK_MASK, y&LAB_CHUNK_MASK, z&LAB_CHUNK_MASK)] = block;
+    size_t index = LAB_CHUNK_OFFSET(x&LAB_CHUNK_MASK, y&LAB_CHUNK_MASK, z&LAB_CHUNK_MASK);
+
+    blocks->blocks[index] = block;
     //LAB_NotifyChunkLater(world, cx, cy, cz);
     chunk->modified = 1;
     chunk->dirty_blocks |= LAB_CCPS_Pos(x&LAB_CHUNK_MASK, y&LAB_CHUNK_MASK, z&LAB_CHUNK_MASK);
@@ -140,11 +153,24 @@ bool LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_BlockID block)
     chunk->dirty = true; // TODO remove
 
     LAB_GameServer_PushChunkTask(world->server, chunk, LAB_CHUNK_STAGE_LIGHT);
-
     return true;
 }
 
-bool LAB_FillBlocks(LAB_World* world, int x0, int y0, int z0, int x1, int y1, int z1, LAB_BlockID block)
+bool LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_BlockID block)
+{
+    // TODO: more efficient multithreading
+    LAB_Chunk* chunk = LAB_GetChunk_AtPos(world, x, y, z);
+    if(chunk == NULL) return false;
+
+
+    LAB_GameServer_Lock1Chunk(world->server, chunk);
+    bool success = LAB_SetBlockIndex_Locked(world, chunk, x, y, z, block);
+    LAB_GameServer_Unlock1Chunk(world->server, chunk);
+
+    return success;
+}
+
+/*bool LAB_FillBlocks(LAB_World* world, int x0, int y0, int z0, int x1, int y1, int z1, LAB_BlockID block)
 {
     // TODO optimize without repeeking chunks
     //      and effectively change chunk->dirty_blocks
@@ -156,112 +182,78 @@ bool LAB_FillBlocks(LAB_World* world, int x0, int y0, int z0, int x1, int y1, in
         success &= LAB_SetBlock(world, x, y, z, block);
     }
     return success;
-}
+}*/
 
+// TODO: write routine per chunk
+// new routine that traces chunks, with similar overall behavior
 // hit currently not written
-int LAB_TraceBlock(LAB_World* world, int max_distance, float vpos[3], float dir[3], unsigned block_flags,
-                   /*out*/ int target[3],/*out*/ int prev[3],/*out*/ float hit[3])
+LAB_TraceBlock_Result LAB_TraceBlock(LAB_World* world, float max_distance, LAB_Vec3F vpos, LAB_Vec3F dir, unsigned block_flags)
 {
-    int x, y, z;
-    x = LAB_FastFloorF2I(vpos[0]);
-    y = LAB_FastFloorF2I(vpos[1]);
-    z = LAB_FastFloorF2I(vpos[2]);
+    LAB_TraceBlock_Result result;
 
-    int stepX, stepY, stepZ; // -1 or +1
-    stepX = dir[0]<0?-1:+1;
-    stepY = dir[1]<0?-1:+1;
-    stepZ = dir[2]<0?-1:+1;
+    LAB_Vec3I ipos = LAB_Vec3F2I_FastFloor(vpos);
+
+    LAB_Vec3I step; // -1 or +1
+    step.x = dir.x<0?-1:+1;
+    step.y = dir.y<0?-1:+1;
+    step.z = dir.z<0?-1:+1;
 
     float ivX, ivY, ivZ;
-    ivX = fabsf(dir[0]) < 0.00001 ? 100000.f : 1.f / fabsf(dir[0]);
-    ivY = fabsf(dir[1]) < 0.00001 ? 100000.f : 1.f / fabsf(dir[1]);
-    ivZ = fabsf(dir[2]) < 0.00001 ? 100000.f : 1.f / fabsf(dir[2]);
+    ivX = fabsf(dir.x) < 0.00001 ? 100000.f : 1.f / fabsf(dir.x);
+    ivY = fabsf(dir.y) < 0.00001 ? 100000.f : 1.f / fabsf(dir.y);
+    ivZ = fabsf(dir.z) < 0.00001 ? 100000.f : 1.f / fabsf(dir.z);
 
     // NOTE: same floor rounding behavior as above!
     //       the values x y z could be reused here
     // TODO: possible problem, because number is converted to int and back to float again
     #define MOD1(v) ((v)-LAB_FastFloorF2I(v))
-    float tMaxX, tMaxY, tMaxZ;
-    if(fabsf(dir[0]) < 0.00001) tMaxX = max_distance; else { tMaxX = MOD1(vpos[0]); { if(dir[0]>0) tMaxX = 1.f-tMaxX; } tMaxX = fabsf(tMaxX * ivX); }
-    if(fabsf(dir[1]) < 0.00001) tMaxY = max_distance; else { tMaxY = MOD1(vpos[1]); { if(dir[1]>0) tMaxY = 1.f-tMaxY; } tMaxY = fabsf(tMaxY * ivY); }
-    if(fabsf(dir[2]) < 0.00001) tMaxZ = max_distance; else { tMaxZ = MOD1(vpos[2]); { if(dir[2]>0) tMaxZ = 1.f-tMaxZ; } tMaxZ = fabsf(tMaxZ * ivZ); }
+
+    LAB_Vec3F tMax;
+    if(fabsf(dir.x) < 0.00001) tMax.x = max_distance; else { tMax.x = MOD1(vpos.x); { if(dir.x>0) tMax.x = 1.f-tMax.x; } tMax.x = fabsf(tMax.x * ivX); }
+    if(fabsf(dir.y) < 0.00001) tMax.y = max_distance; else { tMax.y = MOD1(vpos.y); { if(dir.y>0) tMax.y = 1.f-tMax.y; } tMax.y = fabsf(tMax.y * ivY); }
+    if(fabsf(dir.z) < 0.00001) tMax.z = max_distance; else { tMax.z = MOD1(vpos.z); { if(dir.z>0) tMax.z = 1.f-tMax.z; } tMax.z = fabsf(tMax.z * ivZ); }
 
     // TODO:
-    float tDeltaX, tDeltaY, tDeltaZ;
-    tDeltaX = ivX;
-    tDeltaY = ivY;
-    tDeltaZ = ivZ;
-
-
-    target[0] = x;
-    target[1] = y;
-    target[2] = z;
-
-    //     LAB_Vec3Algo_RayVsRect()
-//    if(LAB_GetBlock(world, x, y, z, flags)->flags&block_flags
-//       /* TODO */)
-//    {
-//        prev[0] = x;
-//        prev[1] = y;
-//        prev[2] = z;
-//        return 1;
-//    }
+    LAB_Vec3F tDelta = { ivX, ivY, ivZ };
 
     // loop
     do
     {
-        LAB_Block* b = LAB_GetBlockP(world, x, y, z);
+        LAB_Block* b = LAB_GetBlockP(world, ipos.x, ipos.y, ipos.z);
         if(b->flags&block_flags)
         {
-            float rect1[3], rect2[3];
-            LAB_Vec3_Add(rect1, target, b->bounds[0]);
-            LAB_Vec3_Add(rect2, target, b->bounds[1]);
+            LAB_Box3F b_box = (LAB_Box3F) {
+                LAB_Vec3F_FromArray(b->bounds[0]),
+                LAB_Vec3F_FromArray(b->bounds[1]),
+            };
+            LAB_Box3F box = LAB_Box3F_Add(b_box, LAB_Vec3I2F(ipos));
 
-            if(   rect1[0] <= vpos[0] && vpos[0] <= rect2[0]
-               && rect1[1] <= vpos[1] && vpos[1] <= rect2[1]
-               && rect1[2] <= vpos[2] && vpos[2] <= rect2[2])
+            if(LAB_Box3F_Contains_Inc(box, vpos)) // only for first block
             {
-                LAB_Vec3_Copy(prev, target);
-                return 1;
+                result.hit_block = ipos;
+                result.prev_block = ipos;
+                result.hit_point = vpos;
+                return (result.has_hit = true, result);
             }
 
-            float collision_point[3];
-            float collision_steps;
-            int   collision_face;
-            if(LAB_Vec3Algo_RayVsRect(collision_point, &collision_steps, &collision_face,
-                                      vpos, dir, rect1, rect2)
-               && collision_steps < max_distance)
+            LAB_Vec3Algo_RayVsBox_Hit hit;
+            if((hit = LAB_Vec3Algo_RayVsBox(vpos, dir, box)).has_hit
+               && hit.collision_steps < max_distance)
             {
-                prev[0] = target[0] + LAB_OX(collision_face);
-                prev[1] = target[1] + LAB_OY(collision_face);
-                prev[2] = target[2] + LAB_OZ(collision_face);
-                return 1;
+                result.hit_block = ipos;
+                result.prev_block = LAB_Vec3I_Add(ipos, LAB_Vec3I_FromDirIndex(hit.collision_face));
+                result.hit_point = hit.collision_point;
+                return (result.has_hit = true, result);
             }
         }
 
-
-        if(tMaxX < tMaxY)
-        {
-            if(tMaxX < tMaxZ)
-                x += stepX, tMaxX += tDeltaX;
-            else
-                z += stepZ, tMaxZ += tDeltaZ;
-        }
-        else
-        {
-            if(tMaxY < tMaxZ)
-                y += stepY, tMaxY += tDeltaY;
-            else
-                z += stepZ, tMaxZ += tDeltaZ;
-        }
-
-        target[0] = x;
-        target[1] = y;
-        target[2] = z;
+        int idx = LAB_Vec3F_MinIndex(tMax);
+        *LAB_Vec3I_Ref(&ipos, idx) += LAB_Vec3I_Get(step,   idx);
+        *LAB_Vec3F_Ref(&tMax, idx) += LAB_Vec3F_Get(tDelta, idx);
     }
-    while(tMaxX < max_distance || tMaxY < max_distance || tMaxZ < max_distance);
+    while(LAB_Vec3F_GetMin(tMax) < max_distance);
 
-    return 0;
+    return (result.has_hit = false, result);
 }
 
 
@@ -279,10 +271,8 @@ typedef struct LAB_UpdatePQ_Entry { int table_index; int distance; } LAB_UpdateP
 
 void LAB_WorldTick(LAB_World* world)
 {
-    double view_pos[3];
     LAB_ASSERT(world->view);
-    world->view->position(world->view_user, world, view_pos);
-    world->px = LAB_Sar(LAB_FastFloorF2I(view_pos[0]), LAB_CHUNK_SHIFT);
-    world->py = LAB_Sar(LAB_FastFloorF2I(view_pos[1]), LAB_CHUNK_SHIFT);
-    world->pz = LAB_Sar(LAB_FastFloorF2I(view_pos[2]), LAB_CHUNK_SHIFT);
+
+    LAB_Vec3D view_pos = world->view->position(world->view_user, world);
+    LAB_Vec3I_Unpack(&world->px, &world->py, &world->pz, LAB_Pos3D2Chunk(view_pos));
 }

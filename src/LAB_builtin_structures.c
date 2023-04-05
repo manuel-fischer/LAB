@@ -47,6 +47,7 @@ bool LAB_BuiltinStructures_Init(LAB_SurfaceDimension* dim)
         s.density = ProbAndCount(1, 0, 4);
         s.placement = PlaceOnSurface();
         //SetYRange(0, 92);
+        SetYRange(0, INT_MAX);
         REGISTER_IN_BIOME(LAB_SURFACE_BIOME_PLAINS);
         REGISTER_IN_BIOME(LAB_SURFACE_BIOME_FOREST);
         REGISTER_IN_BIOME(LAB_SURFACE_BIOME_BIRCH_FOREST);

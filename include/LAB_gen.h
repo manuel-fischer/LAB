@@ -141,7 +141,7 @@ LAB_INLINE void LAB_Placer_SetBlockIfBlock(LAB_Placer* p, int x, int y, int z, L
     size_t index;
     if(!LAB_Placer_Translate(p, x, y, z, &index)) return;
 
-    LAB_BlockID _Atomic* b = &p->chunk_blocks->blocks[index];
+    LAB_BlockID* b = &p->chunk_blocks->blocks[index];
     if(*b == replace)
         *b = block;
 }
@@ -151,7 +151,7 @@ LAB_INLINE void LAB_Placer_SetBlockIfAny(LAB_Placer* p, int x, int y, int z, LAB
     size_t index;
     if(!LAB_Placer_Translate(p, x, y, z, &index)) return;
 
-    LAB_BlockID _Atomic* b = &p->chunk_blocks->blocks[index];
+    LAB_BlockID* b = &p->chunk_blocks->blocks[index];
     if(LAB_BlockP(*b)->tags&tags)
         *b = block;
 }
@@ -161,7 +161,7 @@ LAB_INLINE void LAB_Placer_SetBlockIfAll(LAB_Placer* p, int x, int y, int z, LAB
     size_t index;
     if(!LAB_Placer_Translate(p, x, y, z, &index)) return;
 
-    LAB_BlockID _Atomic* b = &p->chunk_blocks->blocks[index];
+    LAB_BlockID* b = &p->chunk_blocks->blocks[index];
     if((LAB_BlockP(*b)->tags&tags) == tags)
         *b = block;
 }

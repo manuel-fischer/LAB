@@ -2,7 +2,7 @@
 #include "LAB_debug.h"
 #include "LAB_chunk_pseudo.h"
 #include "LAB_chunk_neighborhood.h"
-#include "LAB_blocks.h"
+#include "LAB_block.h"
 // TODO: use pseudo chunks instead of NULL chunks -> no branching required
 //       - build chunk neighborhood with these pseudo chunks
 // TODO: reduce range of searching for possibly changed block positions
@@ -60,10 +60,10 @@ LAB_CCPS LAB_TickLight_ProcessQuadrant(
 
     #define LAB_DEBUG_INFO_HERE(fmt, ...) \
         "c=%8x, q=%i, dia=%8x, lum=%8x\n    "\
-        "primary={%8x, %8x, %8x}, secondary={%8x, %8x, %8x}" fmt, \
+        "primary={%8x, %8x, %8x}" fmt, \
         \
         c, quadrant, LAB_LCV(b->dia), LAB_LCV(b->lum),\
-        primary[0], primary[1], primary[2], secondary[0], secondary[1], secondary[2] __VA_ARGS__
+        primary[0], primary[1], primary[2] __VA_ARGS__
             
 
     #define LAB_TickLight_ProcessBlock(getLightAt) do \
@@ -76,27 +76,18 @@ LAB_CCPS LAB_TickLight_ProcessQuadrant(
         primary[0] = getLightAt(light_chunks, x-dd[0], y, z, quadrant); \
         primary[1] = getLightAt(light_chunks, x, y-dd[1], z, quadrant); \
         primary[2] = getLightAt(light_chunks, x, y, z-dd[2], quadrant); \
-        LAB_ColorHDR secondary[3]; \
-        secondary[0] = getLightAt(light_chunks, x, y-dd[1], z-dd[2], quadrant); \
-        secondary[1] = getLightAt(light_chunks, x-dd[0], y, z-dd[2], quadrant); \
-        secondary[2] = getLightAt(light_chunks, x-dd[0], y-dd[1], z, quadrant); \
-        LAB_ColorHDR secondary_mixed[3]; /* each sums of lsj*/ \
-        secondary_mixed[0] = LAB_MixColorHDR50(secondary[1], secondary[2]); \
-        secondary_mixed[1] = LAB_MixColorHDR50(secondary[0], secondary[2]); \
-        secondary_mixed[2] = LAB_MixColorHDR50(secondary[0], secondary[1]); \
         LAB_UNROLL(3) \
         for(int i = 0; i < 3; ++i) \
         { \
             bool is_down = i==1 && !(quadrant&2); \
             LAB_ColorHDR prm = primary[i]; \
-            LAB_ColorHDR sec = secondary[i]; \
             LAB_ColorHDR cf = prm; \
             if(!LAB_IS_SKYLIGHT(is_down, cf)) \
                 cf = LAB_LIGHT_FALL_OFF(cf); \
             c = LAB_MaxColorHDR(c, cf); \
             LAB_ASSERT_FMT(LAB_HDR_EXP_VALUE(c) < 10, \
                 LAB_DEBUG_INFO_HERE("\n    i=%i, cf=%8x",, i, cf)); \
-            if(0) LAB_DBG_PRINTF("prm=%8x, sec=%8x, cf=%8x\n",prm, sec, cf); \
+            if(0) LAB_DBG_PRINTF("prm=%8x, sec=%8x, cf=%8x\n",prm, cf); \
         } \
         \
         /*c = LAB_MulColorHDR_RoundUp(c, LAB_RGBE_HDR_N(86, 86, 86, 0x80));*/ \

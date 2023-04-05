@@ -27,6 +27,7 @@
 
 #include "LAB_game_server.h"
 
+#include "LAB_player.h"
 #include "LAB_blocks.h" // for inventory
 
 LAB_STATIC int  LAB_Input_Interact(LAB_Input* input, int button);
@@ -137,9 +138,9 @@ int LAB_Input_OnEvent_Proc(void* user, LAB_Window* window, SDL_Event* event)
                 case SDLK_u:
                 case SDLK_i:
                 {
-                    view->az += key == SDLK_u ? -1 : 1;
+                    view->angle.z += key == SDLK_u ? -1 : 1;
                     int other_scancode = (key+(SDL_SCANCODE_U-SDLK_u))^(SDL_SCANCODE_U^SDL_SCANCODE_I);
-                    if(kbstate[other_scancode]) view->az = 0;
+                    if(kbstate[other_scancode]) view->angle.z = 0;
                 } break;
 
                 #if 1
@@ -151,7 +152,7 @@ int LAB_Input_OnEvent_Proc(void* user, LAB_Window* window, SDL_Event* event)
                         if(time-input->prev_space_down < 300/*ms*/)
                         {
                             input->flags ^= LAB_VIEWINPUT_NOCLIP;
-                            view->vx = view->vy = view->vz = 0;
+                            view->velocity = (LAB_Vec3D) {0};
                         }
 
                         input->space_pressed = true;
@@ -423,11 +424,9 @@ int LAB_Input_OnEvent_Proc(void* user, LAB_Window* window, SDL_Event* event)
                 mx = (float)(mmevent->xrel) * speed;
                 my = (float)(mmevent->yrel) * speed;
                 #if LAB_CLIP_AX
-                view->ay+=mx;
-                view->ax+=my;
-
-                if(view->ax < -90) view->ax = -90;
-                if(view->ax >  90) view->ax =  90;
+                view->angle.y+=mx;
+                view->angle.x+=my;
+                LAB_CLAMP_EQ(view->angle.x, -90, 90);
                 #else
 
                 float ax, ay, az;
@@ -472,43 +471,41 @@ LAB_STATIC int LAB_Input_Interact(LAB_Input* input, int button)
 {
     LAB_View* view = input->view;
 
-    int target[3]; // targeted block
-    int prev[3]; // previous block
-    float hit[3]; // hit pos
+    LAB_Vec3F vpos = LAB_Vec3D2F_Cast(view->pos);
+    LAB_Vec3F dir = LAB_View_GetDirection(view); // view-dir
 
-    // view-pos
-    float vpos[3];
-    // view-dir
-    float dir[3];
-
-    vpos[0] = view->x;
-    vpos[1] = view->y;
-    vpos[2] = view->z;
-    LAB_ViewGetDirection(view, dir);
-
-    if(LAB_TraceBlock(view->world, 10, vpos, dir, LAB_BLOCK_INTERACTABLE, target, prev, hit))
+    LAB_TraceBlock_Result trace;
+    if((trace = LAB_TraceBlock(view->world, 10, vpos, dir, LAB_BLOCK_INTERACTABLE)).has_hit)
     {
         switch(button)
         {
             case SDL_BUTTON_LEFT:
             {
                 //LAB_WorldServer_Lock(view->server);
-                LAB_SetBlock(view->world, target[0], target[1], target[2], LAB_BID_AIR);
+                LAB_SetBlock(view->world, trace.hit_block.x, trace.hit_block.y, trace.hit_block.z, LAB_BID_AIR);
                 //LAB_WorldServer_Unlock(view->server);
             } break;
 
             case SDL_BUTTON_RIGHT:
             {
-                if(!(input->flags&LAB_VIEWINPUT_NOCLIP) && (LAB_BlockP(input->selected_block)->flags&LAB_BLOCK_MASSIVE)
-                   &&  prev[0]==LAB_FastFloorF2I(view->x)
-                   && (prev[1]==LAB_FastFloorF2I(view->y) || prev[1]==LAB_FastFloorF2I(view->y)-1)
-                   &&  prev[2]==LAB_FastFloorF2I(view->z)) return 0;
-                LAB_SetBlock(view->world, prev[0], prev[1], prev[2], input->selected_block);
+                LAB_Vec3I block_pos = trace.prev_block;
+
+                // check if player is inside and the block should not be set
+                if(!(input->flags&LAB_VIEWINPUT_NOCLIP) && (LAB_BlockP(input->selected_block)->flags&LAB_BLOCK_MASSIVE))
+                {
+                    LAB_Box3F player_box = LAB_Box3F_Add(LAB_PLAYER_BOUNDS, vpos);
+                    LAB_Box3F block_box  = { {0, 0, 0}, {1, 1, 1} };
+                    block_box = LAB_Box3F_Add(block_box, LAB_Vec3I2F(block_pos));
+
+                    if(LAB_Box3F_Intersects(player_box, block_box)) return 0;
+                }
+
+                LAB_SetBlock(view->world, block_pos.x, block_pos.y, block_pos.z, input->selected_block);
             } break;
 
             default: // SDL_BUTTON_MIDDLE
             {
-                LAB_BlockID b = LAB_GetBlock(view->world, target[0], target[1], target[2]);
+                LAB_BlockID b = LAB_GetBlock(view->world, trace.hit_block.x, trace.hit_block.y, trace.hit_block.z);
                 if(b != LAB_BID_OUTSIDE)
                 {
                     input->selected_block = b;
@@ -525,7 +522,7 @@ void LAB_Input_Tick(LAB_Input* input, uint32_t delta_ms)
 {
 
     LAB_View* view = input->view;
-    float dx = 0, dy = 0, dz = 0;
+    LAB_Vec3D delta = {0};
 
     //if(view->az > 180) view->az -= 360;
     //view->az *= 0.95;
@@ -557,12 +554,9 @@ void LAB_Input_Tick(LAB_Input* input, uint32_t delta_ms)
             if(dir_set&(1|4))
             {
                 int bw = (dir_set&1) - !!(dir_set&4);
-                float dir[3];
-                LAB_ViewGetDirection(view, dir);
-                dx += dir[0]*speed*bw;
-                dy += dir[1]*speed*bw;
-                dz += dir[2]*speed*bw;
-                if(!(input->flags & LAB_VIEWINPUT_NOCLIP)) view->vy += pow((1+dir[1]*bw)*0.5, 0.7)*speed;
+                LAB_Vec3F dir = LAB_View_GetDirection(view);
+                delta = LAB_Vec3D_Add(delta, LAB_Vec3D_RMul(LAB_Vec3F2D(dir), speed*bw));
+                if(!(input->flags & LAB_VIEWINPUT_NOCLIP)) view->velocity.y += pow((1+dir.y*bw)*0.5, 0.7)*speed;
             }
             dir_set&=(2|8);
         }
@@ -577,13 +571,13 @@ void LAB_Input_Tick(LAB_Input* input, uint32_t delta_ms)
             int ang8th = (0xf4650f7623f4120full >> (dir_set*4)) & 0xf;
             if(ang8th != 0xf)
             {
-                float ang_rad = view->ay*LAB_PI/180.f - (float)ang8th*LAB_PI*2/8.f;
+                float ang_rad = view->angle.y*LAB_PI/180.f - (float)ang8th*LAB_PI*2/8.f;
 
                 float s = sin(ang_rad);
                 float c = cos(ang_rad);
 
-                dx += s*speed;
-                dz -= c*speed;
+                delta.x += s*speed;
+                delta.z -= c*speed;
             }
 
 
@@ -592,13 +586,13 @@ void LAB_Input_Tick(LAB_Input* input, uint32_t delta_ms)
                 if(!(input->flags&LAB_VIEWINPUT_NOCLIP))
                 {
                     if(view->on_ground)
-                        view->vy = 4.8*(1.4);
+                        view->velocity.y = 4.8*(1.4);
                 }
                 else
-                    dy+=speed;
+                    delta.y+=speed;
                 //if(view->vy < 0) view->vy = 0;
             }
-            if(kbstate[SDL_SCANCODE_LSHIFT]) dy-=speed;
+            if(kbstate[SDL_SCANCODE_LSHIFT]) delta.y-=speed;
         }
 
         if(kbstate[SDL_SCANCODE_LALT])
@@ -618,10 +612,9 @@ void LAB_Input_Tick(LAB_Input* input, uint32_t delta_ms)
     {
         LAB_BlockID block = input->flags & LAB_VIEWINPUT_CREATE ? input->selected_block : LAB_BID_AIR;
 
+        LAB_Vec3I bpos = LAB_Pos3D2Block(view->pos);
         int bx, by, bz;
-        bx = LAB_FastFloorF2I(view->x);
-        by = LAB_FastFloorF2I(view->y);
-        bz = LAB_FastFloorF2I(view->z);
+        LAB_Vec3I_Unpack(&bx, &by, &bz, bpos);
 
         int dist = input->brushsize;
         for(int zz = -dist; zz <= dist; ++zz)
@@ -641,19 +634,11 @@ void LAB_Input_Tick(LAB_Input* input, uint32_t delta_ms)
 
         float dt = (float)delta_ms*(1.f/1000.f);
         double m = pow(c, dt);
-        view->vx *= m;
-        view->vy *= m;
-        view->vz *= m;
-
-        view->vx += dx*(0.5*60)*dt;
-        view->vy += dy*(0.5*60)*dt;
-        view->vz += dz*(0.5*60)*dt;
-
-        view->x += view->vx;
-        view->y += view->vy;
-        view->z += view->vz;
-
-        //view->vy = 0;
+        view->velocity = LAB_Vec3D_RMul(view->velocity, m);
+        view->velocity = LAB_Vec3D_Add(view->velocity,
+                             LAB_Vec3D_RMul(delta, (0.5*60)*dt));
+        
+        view->pos = LAB_Vec3D_Add(view->pos, view->velocity);
     }
     else
     {
@@ -670,40 +655,34 @@ void LAB_Input_Tick(LAB_Input* input, uint32_t delta_ms)
         float dt = (float)delta_ms*(1.f/1000.f);
         const float accel = -9.81*2;
 
-        dy += accel*dt*dt*0.5 + view->vy*dt;
-        view->vy += accel*dt;
+        delta.y += accel*dt*dt*0.5 + view->velocity.y*dt;
+        view->velocity.y += accel*dt;
         //if(dy > 0) view->vy = dy;
 
         // TODO move this collision physics to the world itself
         // clipping
         const float maxstep = 0.0625f;
-        float fsteps = ceilf(LAB_MAX3(fabs(dx), fabs(dy), fabs(dz))/maxstep + 1);
+        float fsteps = ceilf(LAB_Vec3D_GetMax(LAB_Vec3D_Abs(delta))/maxstep + 1);
         LAB_ASSUME(fsteps<INT_MAX);
         int steps = (int)fsteps;
 
-        float ddx = dx/(float)steps, ddy = dy/(float)steps, ddz = dz/(float)steps;
-        LAB_ASSUME(ddx <= maxstep);
-        LAB_ASSUME(ddy <= maxstep);
-        LAB_ASSUME(ddz <= maxstep);
+        LAB_Vec3D ddelta = LAB_Vec3D_Div(delta, (float)steps);
+        LAB_ASSUME(ddelta.x <= maxstep);
+        LAB_ASSUME(ddelta.y <= maxstep);
+        LAB_ASSUME(ddelta.z <= maxstep);
 
         //LAB_DbgPrintf("steps=%i, %f|%f  %f|%f  %f|%f\n", steps, dx, ddx, dy, ddy, dz, ddz);
 
         for(int step = 0; step < steps; ++step)
         {
-            view->x += ddx;
-            view->y += ddy;
-            view->z += ddz;
+            view->pos = LAB_Vec3D_Add(view->pos, ddelta);
             //LAB_DbgPrintf("    %04i: %f %f %f\n", step, view->x, view->y, view->z);
 
-            int bx, by, bz;
-            bx = LAB_FastFloorF2I(view->x);
-            by = LAB_FastFloorF2I(view->y);
-            bz = LAB_FastFloorF2I(view->z);
+            LAB_Vec3I block_pos = LAB_Pos3D2Block(view->pos);
+            LAB_Vec3D frac_pos = LAB_Vec3D_Sub(view->pos, LAB_Vec3I2D(block_pos));
 
-            float fx, fy, fz;
-            fx = view->x-(float)bx;
-            fy = view->y-(float)by;
-            fz = view->z-(float)bz;
+            int bx, by, bz;
+            LAB_Vec3I_Unpack(&bx, &by, &bz, block_pos);
 
             static const int8_t xz[8][2] = {
                 { -1,  0 },
@@ -745,19 +724,16 @@ void LAB_Input_Tick(LAB_Input* input, uint32_t delta_ms)
                     if(block->flags&LAB_BLOCK_MASSIVE)
                     {
                         int collides = 1;
-                        collides &= (xx < 0 && fx < 0.2) || (xx > 0 && fx > 0.8) || xx == 0;
-                        collides &= (zz < 0 && fz < 0.2) || (zz > 0 && fz > 0.8) || zz == 0;
-                        collides &= (yy <-1 && fy < 0.4 && fy > 0.3) || (yy > 0 && fy > 0.8 && fy < 0.9) || yy ==-1 || yy == 0;
+                        collides &= (xx < 0 && frac_pos.x < 0.2) || (xx > 0 && frac_pos.x > 0.8) || xx == 0;
+                        collides &= (zz < 0 && frac_pos.z < 0.2) || (zz > 0 && frac_pos.z > 0.8) || zz == 0;
+                        collides &= (yy <-1 && frac_pos.y < 0.4 && frac_pos.y > 0.3) || (yy > 0 && frac_pos.y > 0.8 && frac_pos.y < 0.9) || yy ==-1 || yy == 0;
 
                         if(collides)
                         {
-                            /**/ if(yy < 0) { view->y = by+0.4+d; view->vy = LAB_MAX(view->vy, 0); view->on_ground = 1; }
-                            else if(yy > 0) { view->y = by+0.8-d; view->vy = LAB_MIN(view->vy, 0); }
+                            /**/ if(yy < 0) { view->pos.y = by+0.4+d; view->velocity.y = LAB_MAX(view->velocity.y, 0); view->on_ground = 1; }
+                            else if(yy > 0) { view->pos.y = by+0.8-d; view->velocity.y = LAB_MIN(view->velocity.y, 0); }
 
-
-                            fx = view->x-bx;
-                            fy = view->y-by;
-                            fz = view->z-bz;
+                            frac_pos = LAB_Vec3D_Sub(view->pos, LAB_Vec3I2D(block_pos));
                             goto exit_for_yy;
                         }
                     }
@@ -776,34 +752,32 @@ void LAB_Input_Tick(LAB_Input* input, uint32_t delta_ms)
                     if(block->flags&LAB_BLOCK_MASSIVE)
                     {
                         int collides = 1;
-                        collides &= (xx < 0 && fx < 0.2) || (xx > 0 && fx > 0.8) || xx == 0;
-                        collides &= (zz < 0 && fz < 0.2) || (zz > 0 && fz > 0.8) || zz == 0;
-                        collides &= (yy <-1 && fy < 0.4) || (yy > 0 && fy > 0.8) || yy ==-1 || yy == 0;
+                        collides &= (xx < 0 && frac_pos.x < 0.2) || (xx > 0 && frac_pos.x > 0.8) || xx == 0;
+                        collides &= (zz < 0 && frac_pos.z < 0.2) || (zz > 0 && frac_pos.z > 0.8) || zz == 0;
+                        collides &= (yy <-1 && frac_pos.y < 0.4) || (yy > 0 && frac_pos.y > 0.8) || yy ==-1 || yy == 0;
 
 
                         if(collides)
                         {
-                            if(fabs(fx-0.5f) < fabs(fz-0.5f))
+                            if(fabs(frac_pos.x-0.5f) < fabs(frac_pos.z-0.5f))
                             //if(abs(xx) > abs(zz))
                             //if(0)
                             {
-                              /**/ if(xx < 0) { view->x = bx+0.2+d; view->vx = 0; }
-                              else if(xx > 0) { view->x = bx+0.8-d; view->vx = 0; }
-                              else if(zz < 0) { view->z = bz+0.2+d; view->vz = 0; }
-                              else if(zz > 0) { view->z = bz+0.8-d; view->vz = 0; }
+                              /**/ if(xx < 0) { view->pos.x = bx+0.2+d; view->velocity.x = 0; }
+                              else if(xx > 0) { view->pos.x = bx+0.8-d; view->velocity.x = 0; }
+                              else if(zz < 0) { view->pos.z = bz+0.2+d; view->velocity.z = 0; }
+                              else if(zz > 0) { view->pos.z = bz+0.8-d; view->velocity.z = 0; }
                             }
                             else
                             {
-                                /**/ if(zz < 0) { view->z = bz+0.2+d; view->vz = 0; }
-                                else if(zz > 0) { view->z = bz+0.8-d; view->vz = 0; }
-                                else if(xx < 0) { view->x = bx+0.2+d; view->vx = 0; }
-                                else if(xx > 0) { view->x = bx+0.8-d; view->vx = 0; }
+                                /**/ if(zz < 0) { view->pos.z = bz+0.2+d; view->velocity.z = 0; }
+                                else if(zz > 0) { view->pos.z = bz+0.8-d; view->velocity.z = 0; }
+                                else if(xx < 0) { view->pos.x = bx+0.2+d; view->velocity.x = 0; }
+                                else if(xx > 0) { view->pos.x = bx+0.8-d; view->velocity.x = 0; }
                             }
                             //if(yy < 0) view->y = by+0.5;
                             //if(yy > 0) view->y = by+0.5;
-                            fx = view->x-bx;
-                            fy = view->y-by;
-                            fz = view->z-bz;
+                            frac_pos = LAB_Vec3D_Sub(view->pos, LAB_Vec3I2D(block_pos));
                             f = 1;
                         }
                     }

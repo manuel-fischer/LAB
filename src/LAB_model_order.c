@@ -17,7 +17,7 @@
 
 // fill `order` with distance data
 LAB_STATIC void LAB_PrepareSortModelOrder(LAB_TriangleOrder* order, LAB_Triangle const* mesh,
-                                      size_t triangle_count, float cam2[3])
+                                      size_t triangle_count, LAB_Vec3F cam2)
 {
     for(size_t i = 0; i < triangle_count; ++i, ++order)
     {
@@ -26,9 +26,9 @@ LAB_STATIC void LAB_PrepareSortModelOrder(LAB_TriangleOrder* order, LAB_Triangle
                                    // do not division followed by a multiplication by three
         int index = order->v[0]/3;
         float mx2, my2, mz2;
-        mx2 = (mesh[index].v[0].x+mesh[index].v[1].x)-cam2[0];
-        my2 = (mesh[index].v[0].y+mesh[index].v[1].y)-cam2[1];
-        mz2 = (mesh[index].v[0].z+mesh[index].v[1].z)-cam2[2];
+        mx2 = (mesh[index].v[0].x+mesh[index].v[1].x)-cam2.x;
+        my2 = (mesh[index].v[0].y+mesh[index].v[1].y)-cam2.y;
+        mz2 = (mesh[index].v[0].z+mesh[index].v[1].z)-cam2.z;
         float dist = mx2*mx2+my2*my2+mz2*mz2;
         // alternatively
         //order->v[1] = (uint32_t)(256*dist);
@@ -81,7 +81,7 @@ LAB_STATIC void LAB_FinishSortModelOrder(LAB_TriangleOrder* order, size_t triang
 }
 
 void LAB_SortModelOrder2(LAB_TriangleOrder* order, LAB_Triangle const* mesh,
-                        size_t triangle_count, float cam2[3])
+                        size_t triangle_count, LAB_Vec3F cam2)
 {
     // Radix sort with radix 2**8 -> 256 counters
     // it does not use additional memory by using

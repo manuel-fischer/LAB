@@ -2,60 +2,74 @@
 
 #include <stdbool.h>
 
+#include "LAB_direction.h"
 #include "LAB_vec.h"
 #include "LAB_opt.h" // -> LAB_IN, LAB_OUT
 
-LAB_INLINE
-bool LAB_Vec3Algo_RayVsRect(LAB_OUT float collision_point[LAB_RESTRICT 3],
-                            LAB_OUT LAB_NONULL float* LAB_RESTRICT collision_steps,
-                            LAB_OUT LAB_NONULL int*   LAB_RESTRICT collision_face,
-                            LAB_IN  const float ray_origin[3], LAB_IN  const float ray_dir[3],
-                            LAB_IN  const float rect1[3],      LAB_IN  const float rect2[3])
+typedef struct LAB_Vec3Algo_RayVsBox_Hit
 {
-    float t_1[3], t_2[3];
+    LAB_Vec3F collision_point;
+    float collision_steps;
+    LAB_DirIndex collision_face;
+
+    bool has_hit;
+} LAB_Vec3Algo_RayVsBox_Hit;
+
+LAB_INLINE
+LAB_Vec3Algo_RayVsBox_Hit LAB_Vec3Algo_RayVsBox(
+    LAB_Vec3F ray_origin, LAB_Vec3F ray_dir,
+    LAB_Box3F box)
+{
+    LAB_Vec3Algo_RayVsBox_Hit result;
+
+    // TODO div by 0? does it result in +-infty:
     // t_1 = (rect1 - ray_origin) (/) ray_dir
-    LAB_Vec3_Sub(t_1, rect1, ray_origin);
-    LAB_Vec3_HadmdDiv(t_1, t_1, ray_dir); // TODO 0? does it result in +-infty
-
+    LAB_Vec3F t_1 = LAB_Vec3F_HdDiv(LAB_Vec3F_Sub(box.a, ray_origin), ray_dir);
     // t_2 = (rect2 - ray_origin) (/) ray_dir
-    LAB_Vec3_Sub(t_2, rect2, ray_origin);
-    LAB_Vec3_HadmdDiv(t_2, t_2, ray_dir); // TODO 0? does it result in +-infty
+    LAB_Vec3F t_2 = LAB_Vec3F_HdDiv(LAB_Vec3F_Sub(box.b, ray_origin), ray_dir);
 
-    float t_min[3], t_max[3];
-    LAB_Vec3_HadmdMin(t_min, t_1, t_2);
-    LAB_Vec3_HadmdMax(t_max, t_1, t_2);
+    LAB_Vec3F t_min = LAB_Vec3F_HdMin(t_1, t_2);
+    LAB_Vec3F t_max = LAB_Vec3F_HdMax(t_1, t_2);
 
     /*if(t_min[0] > t_max[1] || t_min[0] > t_max[2] ||
        t_min[1] > t_max[0] || t_min[1] > t_max[2] ||
        t_min[2] > t_max[0] || t_min[2] > t_max[1]) return false;*/
 
-    int hit_min/*, hit_max*/;
-    hit_min = LAB_Vec3_GetMaxIndex(t_min);
-    //hit_max = LAB_Vec3_GetMinIndex(t_max);
+    int hit_min = LAB_Vec3F_MaxIndex(t_min);
+    int hit_max = LAB_Vec3F_MinIndex(t_max);
 
-    float t_hit_min, t_hit_max;
-    t_hit_min = LAB_Vec3_GetMax(t_min);
-    t_hit_max = LAB_Vec3_GetMin(t_max);
-    if(t_hit_max < 0) return false;
-    if(t_hit_max < t_hit_min) return false;
+    float t_hit_min = LAB_Vec3F_Get(t_min, hit_min);
+    float t_hit_max = LAB_Vec3F_Get(t_max, hit_max);
+
+    if(t_hit_max < 0)         return (result.has_hit=false, result);
+    if(t_hit_max < t_hit_min) return (result.has_hit=false, result);
 
 
     // collision_point = ray_origin + t_hit_min*ray_dir;
-    LAB_Vec3_SclMul(collision_point, ray_dir, t_hit_min);
-    LAB_Vec3_Add(collision_point, collision_point, ray_origin);
+    result.collision_point = LAB_Vec3F_Add(ray_origin, LAB_Vec3F_Mul(t_hit_min, ray_dir));
+    result.collision_steps = t_hit_min;
+    result.collision_face  = hit_min << 1 | (LAB_Vec3F_Get(ray_dir, hit_min) < 0);
 
-    *collision_steps = t_hit_min;
-    *collision_face = hit_min << 1 | (ray_dir[hit_min] < 0);
-    /*if(t_min[0] > t_min[1])
-        if(t_min[0] > t_min[2])
-            *collision_face = ray_dir[0] < 0 ? LAB_DIR_E : LAB_DIR_W;
-        else
-            *collision_face = ray_dir[2] < 0 ? LAB_DIR_S : LAB_DIR_N;
-    else
-        if(t_min[1] > t_min[2])
-            *collision_face = ray_dir[1] < 0 ? LAB_DIR_U : LAB_DIR_D;
-        else
-            *collision_face = ray_dir[2] < 0 ? LAB_DIR_S : LAB_DIR_N;*/
+    return (result.has_hit=true, result);
+}
 
-    return true;
+
+/**
+ * matrix: model projection matrix
+ */
+LAB_INLINE
+LAB_Vec3F LAB_ProjectPoint(double matrix[16], LAB_Vec3F pos)
+{
+    float proj_vec[3];
+    LAB_UNROLL(3)
+    for(int i = 0; i < 3; ++i)
+    {
+        proj_vec[i] = matrix[i+4*0]*pos.x+matrix[i+4*1]*pos.y+matrix[i+4*2]*pos.z
+                    + matrix[i+4*3];
+    }
+    return (LAB_Vec3F) {
+        .x = proj_vec[0] / proj_vec[2],
+        .y = proj_vec[1] / proj_vec[2],
+        .z = proj_vec[2],
+    };
 }

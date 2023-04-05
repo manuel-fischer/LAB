@@ -32,6 +32,7 @@ const char* LAB_Filename(const char* path);
 #define LAB_MAX3(a, b, c) (  (a)>(b) ? ( (a)>(c) ? (a) : (c) ) : ( (b)>(c) ? (b) : (c) )  )
 
 #define LAB_CLAMP(x, a, b) ((x) < (a) ? (a) : (x) > (b) ? (b) : (x))
+#define LAB_CLAMP_EQ(x, a, b) ((x) < (a) ? ((x)=(a)) : (x) > (b) ? ((x)=(b)) : (x))
 
 
 LAB_INLINE

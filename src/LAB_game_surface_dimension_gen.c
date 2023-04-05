@@ -141,7 +141,7 @@ void LAB_SurfaceDimension_PopulateStructures(const LAB_SurfaceDimension* dim, ui
     LAB_LandscapeMask mask;
     {
         size_t i;
-        LAB_LandscapeMask_Create_Expr(&mask, i, chunk_blocks->blocks[i] != LAB_BID_AIR);
+        LAB_LandscapeMask_Create_Expr(&mask, i, !(LAB_BlockP(chunk_blocks->blocks[i])->tags & LAB_BLOCK_TAG_REPLACEABLE));
     }
 
     LAB_SurfaceBiomeID biomes[64];
@@ -152,9 +152,6 @@ void LAB_SurfaceDimension_PopulateStructures(const LAB_SurfaceDimension* dim, ui
         int sx0 = LAB_FloorMultiplePow2(x, span.cx);
         int sy0 = LAB_FloorMultiplePow2(y, span.cy);
         int sz0 = LAB_FloorMultiplePow2(z, span.cz);
-        int xd = x-sx0;
-        int yd = y-sy0;
-        int zd = z-sz0;
 
         for(int dz = -1, sz = sz0-span.cz; dz <= 1; dz++, sz += span.cz)
         for(int dy = -1, sy = sy0-span.cy; dy <= 1; dy++, sy += span.cy)

@@ -8,20 +8,10 @@
 #include "LAB_crammed_chunk_pos_set.h"
 
 #include "LAB_chunk_update.h"
+#include "LAB_coords.h"
 
 typedef struct LAB_World LAB_World;
 
-
-#define LAB_CHUNK_SHIFT  4
-#define LAB_CHUNK_SIZE   (1 << LAB_CHUNK_SHIFT)
-#define LAB_CHUNK_LENGTH (LAB_CHUNK_SIZE*LAB_CHUNK_SIZE*LAB_CHUNK_SIZE)
-#define LAB_CHUNK_MASK   (LAB_CHUNK_SIZE - 1)
-
-
-#define LAB_CHUNK_X(x) (x)
-#define LAB_CHUNK_Y(y) (LAB_CHUNK_SIZE*(y))
-#define LAB_CHUNK_Z(z) (LAB_CHUNK_SIZE*LAB_CHUNK_SIZE*(z))
-#define LAB_CHUNK_OFFSET(x, y, z) ((x) + LAB_CHUNK_SIZE*((y) + LAB_CHUNK_SIZE*(z)))
 
 #ifdef NDEBUG
 #define LAB_FIELD(bits) :bits
@@ -47,7 +37,7 @@ typedef struct LAB_Chunk_Head
 
 typedef struct LAB_Chunk_Blocks
 {
-    LAB_BlockID _Atomic blocks[LAB_CHUNK_LENGTH];
+    LAB_BlockID blocks[LAB_CHUNK_LENGTH];
 } LAB_Chunk_Blocks;
 
 typedef struct LAB_Chunk_Light

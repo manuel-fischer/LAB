@@ -59,7 +59,7 @@ void LAB_Neighborhood_Index(int x, int y, int z, int* chunk, int* block)
 }
 
 LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
-LAB_BlockID _Atomic * LAB_BlockNbHood_RefBlock(LAB_BlockNbHood* n, int x, int y, int z)
+LAB_BlockID* LAB_BlockNbHood_RefBlock(LAB_BlockNbHood* n, int x, int y, int z)
 {
     int chunk, block;
     LAB_Neighborhood_Index(x, y, z, &chunk, &block);

@@ -29,6 +29,8 @@
 #include "LAB_util.h"
 #include "LAB_attr.h"
 
+#include "LAB_vec_algo.h"
+
 #include "LAB/gui.h"
 #include "LAB/gui/component.h"
 #include "LAB/gui/menu.h"
@@ -70,7 +72,7 @@ LAB_STATIC void LAB_ViewChunkProc(void* user, LAB_World* world, LAB_Chunk* chunk
 LAB_STATIC bool LAB_ViewChunkKeepProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z);
 LAB_STATIC void LAB_ViewChunkUnlinkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z);
 LAB_STATIC void LAB_ViewChunkMeshProc(void* user, LAB_World* world, LAB_Chunk* chunks[27]);
-LAB_STATIC void LAB_View_Position_Proc(void* user, LAB_World* world, LAB_OUT double xyz[3]);
+LAB_STATIC LAB_Vec3D LAB_View_Position_Proc(void* user, LAB_World* world);
 const LAB_IView LAB_view_interface = 
 {
     .chunkview    = &LAB_ViewChunkProc,
@@ -128,8 +130,6 @@ bool LAB_View_Create(LAB_View* view, LAB_World* world, LAB_TexAtlas* atlas)
 {
     memset(view, 0, sizeof *view);
     view->world = world;
-
-    view->y = 1.5;
 
     view->fov_factor = 1.0;
 
@@ -260,15 +260,10 @@ bool LAB_ViewChunkKeepProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x
 {
     LAB_View* view = (LAB_View*)user;
 
-    int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
-    int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
-    int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
+    LAB_Vec3I chunk_pos = (LAB_Vec3I) { x, y, z };
+    LAB_Vec3I viewer_pos = LAB_Pos3D2Chunk(view->pos);
 
-    int dx = x-px;
-    int dy = y-py;
-    int dz = z-pz;
-    unsigned int dist = dx*dx+dy*dy+dz*dz;
-    return dist <= view->cfg.keep_dist*view->cfg.keep_dist;//+3;
+    return (uint32_t)LAB_Vec3I_DistanceSq(chunk_pos, viewer_pos) <= view->cfg.keep_dist*view->cfg.keep_dist;//+3;
 }
 
 void LAB_ViewChunkUnlinkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int x, int y, int z)
@@ -281,13 +276,11 @@ void LAB_ViewChunkUnlinkProc(void* user, LAB_World* world, LAB_Chunk* chunk, int
 }
 
 
-void LAB_View_Position_Proc(void* user, LAB_World* world, double pos[3])
+LAB_Vec3D LAB_View_Position_Proc(void* user, LAB_World* world)
 {
     LAB_View* view = (LAB_View*)user;
 
-    pos[0] = view->x;
-    pos[1] = view->y;
-    pos[2] = view->z;
+    return view->pos;
 }
 
 
@@ -752,10 +745,9 @@ LAB_STATIC void LAB_View_UpdateModelOrder(LAB_View* view, LAB_ViewChunkEntry* e)
     // TODO lazy updating
     if(e->alpha_mesh_order)
     {
-        float cam[3];
-        cam[0] = view->x-e->x*16;
-        cam[1] = view->y-e->y*16;
-        cam[2] = view->z-e->z*16;
+        LAB_Vec3I chunk_pos = { e->x, e->y, e->z };
+
+        LAB_Vec3F cam = LAB_Vec3F_Sub(LAB_Vec3D2F_Cast(view->pos), LAB_Chunk2Pos3F(chunk_pos));
         LAB_SortModelOrder(e->alpha_mesh_order, alpha_pass->data, e->alpha_mesh_size, cam); // TODO: what if size!=vbo_size
     }
 }
@@ -874,7 +866,9 @@ LAB_STATIC bool LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_en
     glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
 
     glPushMatrix();
-    glTranslatef(LAB_CHUNK_SIZE*chunk_entry->x-view->x, LAB_CHUNK_SIZE*chunk_entry->y-view->y, LAB_CHUNK_SIZE*chunk_entry->z-view->z);
+    LAB_Vec3I chunk_pos = { chunk_entry->x, chunk_entry->y, chunk_entry->z };
+    LAB_Vec3F translate = LAB_Vec3F_Sub(LAB_Chunk2Pos3F(chunk_pos), LAB_Vec3D2F_Cast(view->pos));
+    glTranslatef(translate.x, translate.y, translate.z);
     glScalef(1.00001, 1.00001, 1.00001); // Reduces gaps/lines between chunks
     //glScalef(0.9990, 0.9990, 0.9990);
 
@@ -918,9 +912,7 @@ int LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass)
 
     int backwards = LAB_PrepareRenderPass(pass);
 
-    int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
-    int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
-    int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
+    LAB_Vec3I pc = LAB_Pos3D2Chunk(view->pos);
 
     int dist_sq = view->cfg.render_dist*view->cfg.render_dist + 3;
     LAB_ViewChunkEntry* e;
@@ -938,7 +930,9 @@ int LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass)
     // }
     LAB_ViewArray_EACH_NONEMPTY_SORTED(&view->chunk_array, LAB_LOOP_BACKWARD_IF(backwards), e,
     {
-        if((e->x-px)*(e->x-px) + (e->y-py)*(e->y-py) + (e->z-pz)*(e->z-pz) <= dist_sq
+        LAB_Vec3I chunk_pos = LAB_VEC3_FROM(LAB_Vec3I, e);
+
+        if(LAB_Vec3I_DistanceSq(chunk_pos, pc) <= dist_sq
            && e->sight_visible) // && LAB_View_IsChunkCompletelyInFrustum(view, e->x, e->y, e->z))
         {
             chunks_rendered += (int)LAB_ViewRenderChunk(view, e, pass);
@@ -961,16 +955,16 @@ int LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass)
 
 LAB_STATIC void LAB_ViewRenderChunkGrids(LAB_View* view)
 {
-    int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
-    int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
-    int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
+    LAB_Vec3I pc = LAB_Pos3D2Chunk(view->pos);
 
     int dist_sq = view->cfg.render_dist*view->cfg.render_dist + 3;
     LAB_ViewChunkEntry* e;
 
     LAB_ViewArray_EACH_SORTED(&view->chunk_array, LAB_LOOP_FORWARD, e,
     {
-        if((e->x-px)*(e->x-px) + (e->y-py)*(e->y-py) + (e->z-pz)*(e->z-pz) <= dist_sq
+        LAB_Vec3I chunk_pos = LAB_VEC3_FROM(LAB_Vec3I, e);
+
+        if(LAB_Vec3I_DistanceSq(chunk_pos, pc) <= dist_sq
            && e->sight_visible) // && LAB_View_IsChunkCompletelyInFrustum(view, e->x, e->y, e->z))
         {
             if(!e->world_chunk) continue;
@@ -1165,20 +1159,16 @@ LAB_STATIC void LAB_View_UploadChunks(LAB_View* view)
     LAB_GL_CHECK();
     view->current_upload_amount = 0;
 
-    int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
-    int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
-    int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
+    LAB_Vec3I pc = LAB_Pos3D2Chunk(view->pos);
 
     int dist_sq = view->cfg.render_dist*view->cfg.render_dist + 3;
     LAB_ViewChunkEntry* e;
     //HTL_HASHARRAY_EACH_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
     LAB_ViewArray_EACH_NONEMPTY_SORTED(&view->chunk_array, LAB_LOOP_FORWARD, e,
     {
-        int cx, cy, cz;
-        cx = e->x;
-        cy = e->y;
-        cz = e->z;
-        if((cx-px)*(cx-px) + (cy-py)*(cy-py) + (cz-pz)*(cz-pz) <= dist_sq
+        LAB_Vec3I chunk_pos = LAB_VEC3_FROM(LAB_Vec3I, e);
+
+        if(LAB_Vec3I_DistanceSq(chunk_pos, pc) <= dist_sq
            && e->visible) // NOTE: when also invisible chunks are updated, this should be removed
         {
             if(LAB_Access_TryLock(&e->is_accessed))
@@ -1452,7 +1442,7 @@ LAB_STATIC void LAB_RenderBox(LAB_View* view, float x, float y, float z, float w
 
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
-    glTranslatef(x-view->x, y-view->y, z-view->z);
+    glTranslatef(x-view->pos.x, y-view->pos.y, z-view->pos.z);
     glScalef(w, h, d);
     glDisable(GL_LINE_SMOOTH);
     glDisableClientState(GL_COLOR_ARRAY);
@@ -1468,21 +1458,11 @@ LAB_STATIC void LAB_RenderBox(LAB_View* view, float x, float y, float z, float w
 
 LAB_STATIC void LAB_View_RenderBlockSelection(LAB_View* view)
 {
-    int target[3]; // targeted block
-    int prev[3]; // previous block
-    float hit[3]; // hit pos
+    LAB_Vec3F vpos = LAB_Vec3D2F_Cast(view->pos); // view-pos
+    LAB_Vec3F dir = LAB_View_GetDirection(view); // view-dir
 
-    // view-pos
-    float vpos[3];
-    // view-dir
-    float dir[3];
-
-    vpos[0] = view->x;
-    vpos[1] = view->y;
-    vpos[2] = view->z;
-    LAB_ViewGetDirection(view, dir);
-
-    if(LAB_TraceBlock(view->world, 10, vpos, dir, LAB_BLOCK_INTERACTABLE, target, prev, hit))
+    LAB_TraceBlock_Result trace;
+    if((trace = LAB_TraceBlock(view->world, 10, vpos, dir, LAB_BLOCK_INTERACTABLE)).has_hit)
     {
         glEnable(GL_BLEND);
         //glEnable(GL_LINE_SMOOTH);
@@ -1494,13 +1474,15 @@ LAB_STATIC void LAB_View_RenderBlockSelection(LAB_View* view)
         glPushMatrix();
         glScalef(0.99, 0.99, 0.99);
 
-        if(memcmp(target, prev, sizeof target) != 0)
+        if(!LAB_Vec3I_Equals(trace.hit_block, trace.prev_block))
         {
-            LAB_Block* b = LAB_GetBlockP(view->world, target[0], target[1], target[2]);
-            float pos[3], size[3];
-            LAB_Vec3_Add(pos,  target,       b->bounds[0]);
-            LAB_Vec3_Sub(size, b->bounds[1], b->bounds[0]);
-            LAB_RenderBox(view, pos[0], pos[1], pos[2], size[0], size[1], size[2]);
+            LAB_Block* b = LAB_GetBlockP(view->world, trace.hit_block.x, trace.hit_block.y, trace.hit_block.z);
+
+            LAB_Vec3F pos, size;
+            pos = LAB_Vec3F_Add(LAB_Vec3I2F(trace.hit_block), LAB_Vec3F_FromArray(b->bounds[0]));
+            size = LAB_Vec3F_Sub(LAB_Vec3F_FromArray(b->bounds[1]), LAB_Vec3F_FromArray(b->bounds[0]));
+
+            LAB_RenderBox(view, pos.x, pos.y, pos.z, size.x, size.y, size.z);
         }
 
         glMatrixMode(GL_PROJECTION);
@@ -1593,9 +1575,7 @@ void LAB_ViewRenderHud(LAB_View* view)
 
         int rerender = 0;
         int px, py, pz;
-        px = LAB_FastFloorF2I(view->x);
-        py = LAB_FastFloorF2I(view->y);
-        pz = LAB_FastFloorF2I(view->z);
+        LAB_Vec3I_Unpack(&px, &py, &pz, LAB_Pos3D2Block(view->pos));
         if(view->info.surf == NULL)
         {
             //LAB_SDL_ALLOC(SDL_CreateRGBSurface, &view->info.surf, 0, INFO_WIDTH, INFO_HEIGHT, 32, 0, 0, 0, 0);
@@ -1682,7 +1662,7 @@ void LAB_ViewRender(LAB_View* view)
     glCullFace(GL_FRONT);
 
     // Sky color
-    float f = LAB_MIN(LAB_MAX((view->y+64+32)*(1./64.), 0), 1);
+    float f = LAB_MIN(LAB_MAX((view->pos.y+64+32)*(1./64.), 0), 1);
     f*=f;
     float sky_color[4] = {0.4*f, 0.7*f, 1.0*f, 1};
 
@@ -1723,9 +1703,9 @@ void LAB_ViewRender(LAB_View* view)
     // Setup world matrix
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    glRotatef(view->az, 0, 0, 1);
-    glRotatef(view->ax, 1, 0, 0);
-    glRotatef(view->ay, 0, 1, 0);
+    glRotatef(view->angle.z, 0, 0, 1);
+    glRotatef(view->angle.x, 1, 0, 0);
+    glRotatef(view->angle.y, 0, 1, 0);
     //glRotatef(view->az, 0, 0, 1);
     //glTranslatef(-view->x, -view->y, -view->z);
 
@@ -1905,9 +1885,7 @@ void LAB_ViewRemoveDistantChunks(LAB_View* view)
     //if(!LAB_WorldServer_LockTimeout(view->server, 100*1000)) return;
     //LAB_WorldServer_Lock(view->server);
 
-    int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
-    int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
-    int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
+    LAB_Vec3I pc = LAB_Pos3D2Chunk(view->pos);
 
     int dist_sq = view->cfg.keep_dist*view->cfg.keep_dist + 3;
 
@@ -1936,7 +1914,7 @@ void LAB_ViewRemoveDistantChunks(LAB_View* view)
     {
         LAB_ASSERT(i < v);
         e = view->chunk_array.entries[i];
-        if(e && (e->x-px)*(e->x-px) + (e->y-py)*(e->y-py) + (e->z-pz)*(e->z-pz) > dist_sq)
+        if(e && LAB_Vec3I_DistanceSq(LAB_VEC3_FROM(LAB_Vec3I, e), pc) > dist_sq)
         {
             LAB_Chunk* w_chunk = e->world_chunk;
             if(w_chunk) LAB_GameServer_Lock1Chunk(view->server, w_chunk);
@@ -2048,13 +2026,15 @@ void LAB_ViewInvalidateEverything(LAB_View* view, int free_buffers)
 
 
 
-void LAB_ViewGetDirection(LAB_View* view, LAB_OUT float dir[3])
+LAB_Vec3F LAB_View_GetDirection(LAB_View* view)
 {
+    LAB_Vec3F dir;
+
     float ax, ay;
     float sax, cax, say, cay;
 
-    ax = view->ax*LAB_PI/180.f;
-    ay = view->ay*LAB_PI/180.f;
+    ax = view->angle.x*LAB_PI/180.f;
+    ay = view->angle.y*LAB_PI/180.f;
 
     // ax = 0; //DBG
 
@@ -2064,9 +2044,9 @@ void LAB_ViewGetDirection(LAB_View* view, LAB_OUT float dir[3])
     cay = cos(ay);
 
     #if 1
-    dir[0] = cax*say;
-    dir[1] = -sax;
-    dir[2] = -cax*cay;
+    dir.x = cax*say;
+    dir.y = -sax;
+    dir.z = -cax*cay;
     #else
     float dx, dy, dz;
     dx = cax*say;
@@ -2081,19 +2061,19 @@ void LAB_ViewGetDirection(LAB_View* view, LAB_OUT float dir[3])
     saz = sin(az);
     caz = cos(az);
 
-    dir[0] =  dx*caz + dy*saz;
-    dir[1] = -dx*saz + dy*caz;
-    dir[2] =  dz;
+    dir.x =  dx*caz + dy*saz;
+    dir.y = -dx*saz + dy*caz;
+    dir.z =  dz;
     #endif
+
+    return dir;
 }
 
 
 void LAB_ViewTick(LAB_View* view, uint32_t delta_ms)
 {
-    int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
-    int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
-    int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
-    LAB_ChunkPos origin_chunk = { px, py, pz };
+    LAB_Vec3I pc = LAB_Pos3D2Chunk(view->pos);
+    LAB_ChunkPos origin_chunk = LAB_ChunkVec2ChunkPos(pc);
     LAB_ViewArray_SetOrigin(&view->chunk_array, origin_chunk);
     LAB_ViewArray_Resize(&view->chunk_array, view->cfg.keep_dist);
     LAB_ViewArray_Collect(&view->chunk_array);
@@ -2199,7 +2179,7 @@ bool LAB_View_IsChunkInSight(LAB_View* view, int cx, int cy, int cz)
     /*//if(cy < -2 || cy >= 0) return 0; // DBG
     // TODO: might be inaccurate for large coordinates
     float dir[3];
-    LAB_ViewGetDirection(view, dir);
+    LAB_Vec3F_ToArray(dir, LAB_View_GetDirection(view));
 
     float treshold = view->x*dir[0] + view->y*dir[1] + view->z*dir[2];
 
@@ -2221,22 +2201,6 @@ bool LAB_View_IsChunkInSight(LAB_View* view, int cx, int cy, int cz)
 }
 
 
-/**
- *  Project a point onto the screen in range [-1, 1]
- */
-LAB_STATIC void LAB_View_ProjectPoint(LAB_View* view, float x, float y, float z, float* ox, float* oy, float* oz)
-{
-    float proj_vec[3];
-    LAB_UNROLL(3)
-    for(int i = 0; i < 3; ++i)
-    {
-        proj_vec[i] = view->modlproj_mat[i+4*0]*x+view->modlproj_mat[i+4*1]*y+view->modlproj_mat[i+4*2]*z
-                    + view->modlproj_mat[i+4*3];
-    }
-    *ox = proj_vec[0] / proj_vec[2];
-    *oy = proj_vec[1] / proj_vec[2];
-    *oz = proj_vec[2];
-}
 
 bool LAB_View_IsChunkPartlyInFrustum(LAB_View* view, int cx, int cy, int cz)
 {
@@ -2246,24 +2210,24 @@ bool LAB_View_IsChunkPartlyInFrustum(LAB_View* view, int cx, int cy, int cz)
 
     for(int i = 0; i < 8; ++i)
     {
-        float scx, scy, scz;
+        LAB_Vec3I chunk_corner = { cx+!!(i&1), cy+!!(i&2), cz+!!(i&4) };
+        LAB_Vec3F offset = LAB_Vec3F_Sub(LAB_Chunk2Pos3F(chunk_corner), LAB_Vec3D2F_Cast(view->pos));
 
-        LAB_View_ProjectPoint(view, (cx+!!(i&1))*16-view->x,
-                                    (cy+!!(i&2))*16-view->y,
-                                    (cz+!!(i&4))*16-view->z,
-                                    &scx, &scy, &scz);
+        LAB_Vec3F screen_pos = LAB_ProjectPoint(view->modlproj_mat, offset);
 
-        /**/ if(scx < -1) bits_outside_inside |=  1;
-        else if(scx >  1) bits_outside_inside |=  2;
-        else              bits_outside_inside |=  4;
+        /**/ if(screen_pos.x < -1) bits_outside_inside |=  1;
+        else if(screen_pos.x >  1) bits_outside_inside |=  2;
+        else                       bits_outside_inside |=  4;
 
-        /**/ if(scy < -1) bits_outside_inside |=  8;
-        else if(scy >  1) bits_outside_inside |= 16;
-        else              bits_outside_inside |= 32;
+        /**/ if(screen_pos.y < -1) bits_outside_inside |=  8;
+        else if(screen_pos.y >  1) bits_outside_inside |= 16;
+        else                       bits_outside_inside |= 32;
 
-        if(scz > 0) bits_outside_inside |= 64;
+        if(screen_pos.z > 0) bits_outside_inside |= 64;
 
-        if(!(scz < 0 || scx < -1 || scx > 1 || scy < -1 || scy > 1)) return 1;
+        if(!(screen_pos.z <  0 ||
+             screen_pos.x < -1 || screen_pos.x > 1 ||
+             screen_pos.y < -1 || screen_pos.y > 1)) return 1;
     }
 
     if(bits_outside_inside
@@ -2277,14 +2241,14 @@ bool LAB_View_IsChunkCompletelyInFrustum(LAB_View* view, int cx, int cy, int cz)
 {
     for(int i = 0; i < 8; ++i)
     {
-        float scx, scy, scz;
+        LAB_Vec3I chunk_corner = { cx+!!(i&1), cy+!!(i&2), cz+!!(i&4) };
+        LAB_Vec3F offset = LAB_Vec3F_Sub(LAB_Chunk2Pos3F(chunk_corner), LAB_Vec3D2F_Cast(view->pos));
 
-        LAB_View_ProjectPoint(view, (cx+!!(i&1))*16-view->x,
-                                    (cy+!!(i&2))*16-view->y,
-                                    (cz+!!(i&4))*16-view->z,
-                                    &scx, &scy, &scz);
+        LAB_Vec3F screen_pos = LAB_ProjectPoint(view->modlproj_mat, offset);
 
-        if(scz < 0 || scx < -1 || scx > 1 || scy < -1 || scy > 1) return 0;
+        if(screen_pos.z <  0 ||
+           screen_pos.x < -1 || screen_pos.x > 1 ||
+           screen_pos.y < -1 || screen_pos.y > 1) return 0;
     }
     return 1;
 }
@@ -2388,10 +2352,7 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
 
     // TODO: check if gen-queue is full: quit
 
-    int px = LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT);
-    int py = LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT);
-    int pz = LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT);
-
+    LAB_Vec3I pc = LAB_Pos3D2Chunk(view->pos);
 
     // to be able to use view->sorded_chunks to check for nearest non-loaded chunks
     // we need to save the size here, otherwise it might be one to big by the loading of
@@ -2401,11 +2362,11 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
     // Always load local chunk
     // not counted to the load limit
     {
-        LAB_ViewChunkEntry* entry = LAB_ViewFindChunkEntry(view, px, py, pz);
+        LAB_ViewChunkEntry* entry = LAB_ViewFindChunkEntry(view, pc.x, pc.y, pc.z);
 
         if(entry == NULL)
         {
-            LAB_Chunk* chunk = LAB_GenerateChunk(view->world, px, py, pz);
+            LAB_Chunk* chunk = LAB_GenerateChunk(view->world, pc.x, pc.y, pc.z);
             if(chunk)
             {
                 if(chunk->view_user)
@@ -2416,7 +2377,7 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
                 }
                 else
                 {
-                    entry = LAB_ViewNewChunkEntry(view, px, py, pz);
+                    entry = LAB_ViewNewChunkEntry(view, pc.x, pc.y, pc.z);
                     if(entry == NULL) return; // NO MEMORY
                     entry->dirty = ~0;
                     LAB_ASSUME(!entry->world_chunk);
@@ -2434,7 +2395,8 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
 
     int load_amount = view->cfg.load_amount; // should be configurable
 
-    LAB_Block* b = LAB_GetBlockP(view->world, (int)floorf(view->x), (int)floorf(view->y), (int)floorf(view->z));
+    LAB_Vec3I block_pos = LAB_Pos3D2Block(view->pos);
+    LAB_Block* b = LAB_GetBlockP(view->world, block_pos.x, block_pos.y, block_pos.z);
     bool is_xray = !!(b->flags & LAB_BLOCK_OPAQUE);
 
     uint64_t stoptime = LAB_NanoSeconds() + 3000*1000; // 1 ms
@@ -2509,7 +2471,7 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
             if(!load_amount) break;
             if(stoptime < LAB_NanoSeconds()) break;
 
-            int faces = LAB_OUTWARDS_FACES(c->x, c->y, c->z, px, py, pz);
+            int faces = LAB_OUTWARDS_FACES(c->x, c->y, c->z, pc.x, pc.y, pc.z);
             faces &= c->seethrough_faces | xray_faces;
             int face;
             LAB_DIR_EACH(faces, face,
@@ -2524,9 +2486,9 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
                 if(!LAB_View_IsChunkPartlyInFrustum(view, xx, yy, zz))
                     continue;
 
-                int dx = xx-px;
-                int dy = yy-py;
-                int dz = zz-pz;
+                int dx = xx-pc.x;
+                int dy = yy-pc.y;
+                int dz = zz-pc.z;
                 unsigned int dist = dx*dx+dy*dy+dz*dz;
                 if(dist > view->cfg.preload_dist*view->cfg.preload_dist + 3)
                     continue;

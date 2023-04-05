@@ -139,13 +139,9 @@ typedef struct LAB_ViewConfig
 typedef struct LAB_View
 {
     // TODO move to entity class
-    // View position
-    double x, y, z;
-    // View angle
-    double ax, ay, az; // TODO cache view direction
-
-    // Velocity
-    double vx, vy, vz;
+    LAB_Vec3D pos;
+    LAB_Vec3D angle;
+    LAB_Vec3D velocity;
 
     double fov_factor;
 
@@ -232,7 +228,7 @@ void LAB_ViewRender(LAB_View* view);
 
 void LAB_ViewInvalidateEverything(LAB_View* view, int free_buffers);
 
-void LAB_ViewGetDirection(LAB_View* view, LAB_OUT float dir[3]);
+LAB_Vec3F LAB_View_GetDirection(LAB_View* view);
 
 void LAB_ViewTick(LAB_View* view, uint32_t delta_ms);
 void LAB_ViewLoadNearChunks(LAB_View* view);
