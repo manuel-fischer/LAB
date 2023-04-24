@@ -6,6 +6,7 @@
 
 #include <time.h>
 #include <stdio.h>
+#include <errno.h>
 
 const char* LAB_Filename(const char* path)
 {

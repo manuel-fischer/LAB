@@ -1,6 +1,7 @@
 #pragma once
 
 #include "LAB_vec.h"
+#include "LAB_math.h"
 
 #define LAB_MAT_DEF LAB_INLINE LAB_ALWAYS_INLINE LAB_VALUE_CONST
 
@@ -118,7 +119,7 @@ LAB_Mat4F LAB_Mat4F_Rotate3Rad(float angle, float x, float y, float z)
 LAB_MAT_DEF
 LAB_Mat4F LAB_Mat4F_Rotate3Deg(float angle, float x, float y, float z)
 {
-    return LAB_Mat4F_Rotate3Rad(angle * (float)(M_PI/180.f), x, y, z);
+    return LAB_Mat4F_Rotate3Rad(angle * (float)(LAB_PI/180.f), x, y, z);
 }
 
 

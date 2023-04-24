@@ -12,7 +12,9 @@
 
 		"@WIN: -Ilibs/include",
 
-		
+		"@WIN: -DLAB_USE_GLEW",
+
+
 		"-Wall",
 		"-Wextra",
 		"-pedantic",
@@ -45,12 +47,12 @@
 		"@WIN: -ldxguid",
 		"@WIN&32: -lRelease/Win32/glew32",
 		"@WIN&64: -lRelease/x64/glew32",
-		
+
 		"-lSDL2main",
 		"-lSDL2",
 		"-lSDL2_image",
 		"-lSDL2_ttf",
-		
+
 		"@WIN: -lopengl32",
 		"@!WIN: -lGL",
 		"@!WIN: -lGLU",

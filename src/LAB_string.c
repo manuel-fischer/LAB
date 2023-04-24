@@ -1,6 +1,7 @@
 #include "LAB_string.h"
 
 #include <stdio.h> // vsnprintf
+#include <string.h> // strnlen
 
 bool LAB_StringBuilder_Create(LAB_StringBuilder* s)
 {
@@ -91,7 +92,7 @@ bool LAB_StringBuilder_VHPrintF(LAB_StringBuilder* s, const char* format, va_lis
 
 bool LAB_StringBuilder_VPrintF(LAB_StringBuilder* s, const char* format, va_list ap)
 {
-    size_t hint = strnlen(format, 1024) + 1;
+    size_t hint = strlen(format)+1;
     return LAB_StringBuilder_VHPrintF(s, format, ap, hint);
 }
 

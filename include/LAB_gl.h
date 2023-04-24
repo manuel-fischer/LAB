@@ -1,6 +1,8 @@
 #pragma once
 
-#ifdef __WINNT__
+#define GL_GLEXT_PROTOTYPES
+
+#ifdef LAB_USE_GLEW
 #include <GL/glew.h>
 #define LAB_USES_GLEW
 //#define GL3_PROTOTYPES

@@ -14,6 +14,7 @@
 #include <stdbool.h> // bool, true, false
 #include <time.h>    // clock_gettime
 #include <stdalign.h>
+#include <limits.h>
 
 
 #ifdef __STDC_NO_ATOMICS__
