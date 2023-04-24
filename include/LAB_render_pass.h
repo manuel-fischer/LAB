@@ -2,6 +2,7 @@
 
 #include "LAB_attr.h"
 #include "LAB_debug_options.h"
+#include "LAB_stdinc.h"
 
 // Render passes         ALPHA_TEST           BLEND            MIPMAPPING       CHUNK_ORDER    CHUNK_SORTED  DEPTH_MASK  DEPTH_TEST  DEPTH_OFFSET  IMPLEMENTED
 // RENDER_PASS_SOLID         no                 no                yes             forward           no           yes        yes           no           yes
@@ -15,7 +16,7 @@
 
 
 
-typedef int LAB_RenderPass;
+typedef unsigned LAB_RenderPass;
 enum
 {
     LAB_RENDER_PASS_SOLID = 0,
@@ -27,48 +28,4 @@ enum
     LAB_RENDER_PASS_COUNT
 };
 
-#include "LAB_gl.h"
-
-// Assumption: for pass > SOLID: LAB_PrepareRenderPass called for pass-1
-// ASSUMPTION: LAB_PrepareRenderPass always called 6 times with increasing pass from 0 to 5
-// ASSUMPTION: terrain texture enabled
-// Return if chunks are rendered backwards and sorted
-LAB_INLINE bool LAB_PrepareRenderPass(LAB_RenderPass pass)
-{
-    #if LAB_DBG_SEETHROUGH_RENDER // DBG
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR); // REENABLE MIPMAPPING
-            glEnable(GL_ALPHA_TEST);
-        glAlphaFunc(GL_GEQUAL, 1/255.f);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_SRC_COLOR);
-        return 1; //pass == LAB_RENDER_PASS_ALPHA;
-    #else
-    switch(pass)
-    {
-        case LAB_RENDER_PASS_SOLID:
-            glDisable(GL_ALPHA_TEST);
-            glDisable(GL_BLEND);
-            return 0;
-
-        case LAB_RENDER_PASS_MASKED:
-            glEnable(GL_ALPHA_TEST);
-            glAlphaFunc(GL_GEQUAL, 32/255.f);
-            return 0;
-
-        case LAB_RENDER_PASS_BLIT:
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // DISABLE MIPMAPPING
-            return 0;
-
-        case LAB_RENDER_PASS_ALPHA:
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR); // REENABLE MIPMAPPING
-            glAlphaFunc(GL_GEQUAL, 1/255.f);
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            return 1; // SORT and render backwards
-
-        //...
-        default:
-            LAB_UNREACHABLE();
-    }
-    #endif
-}
+bool LAB_PrepareRenderPass(LAB_RenderPass pass);

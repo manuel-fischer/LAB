@@ -73,10 +73,7 @@ size_t LAB_ViewArray_Index(LAB_ViewArray* arr, LAB_ChunkPos p)
     size_t l = arr->cube_length;
     size_t mask = l - 1;
 
-    size_t index;
-    index =          p.z & mask;
-    index = LAB_XADD(p.y & mask, index * l);
-    index = LAB_XADD(p.x & mask, index * l);
+    size_t index = LAB_IntermangleBits3(p.x&mask, p.y&mask, p.z&mask);
 
     return index;
 }

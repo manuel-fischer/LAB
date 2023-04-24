@@ -5,6 +5,7 @@
 #include "LAB_model.h"
 
 #include "LAB_aabb.h"
+#include <SDL2/SDL_surface.h>
 
 //#include "IXO/IXO_classdef.h"
 

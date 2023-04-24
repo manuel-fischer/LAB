@@ -435,27 +435,34 @@ void LAB_TexAtlas_MakeMipmap(LAB_TexAtlas* atlas)
 
 bool LAB_TexAtlas_Upload2GL(LAB_TexAtlas* atlas)
 {
-    LAB_GL_REQUIRE(GL_TEXTURE_2D);
+    LAB_GL_DBG_CHECK();
 
     if(!atlas->gl_id)
     {
         LAB_GL_ALLOC(glGenTextures, 1, &atlas->gl_id);
 
-        //if(!atlas->gl_id) return false;
+        LAB_GL_DBG_CHECK();
     }
 
     glBindTexture(GL_TEXTURE_2D, atlas->gl_id);
+    LAB_GL_DBG_CHECK();
 
     if(atlas->cell_size > 1) // Mipmaps
     {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+        LAB_GL_DBG_CHECK();
+
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        LAB_GL_DBG_CHECK();
 
         const size_t num_mipmaps = LAB_Log2OfPow2(atlas->cell_size);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, num_mipmaps);
+        LAB_GL_DBG_CHECK();
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas->w, atlas->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, atlas->data);
+        LAB_GL_DBG_CHECK();
+
         #ifndef NDEBUG
         LAB_ImageSave(atlas->w, atlas->h, atlas->data, "dbg_terrain_0.png");
         #endif
@@ -472,6 +479,8 @@ bool LAB_TexAtlas_Upload2GL(LAB_TexAtlas* atlas)
                 w /= 2; h /= 2;
 
                 glTexImage2D(GL_TEXTURE_2D, i, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+                LAB_GL_DBG_CHECK();
+
                 #ifndef NDEBUG
                 LAB_ImageSave_Fmt(w, h, data, "dbg_terrain_%i.png", i);
                 #endif
@@ -482,7 +491,10 @@ bool LAB_TexAtlas_Upload2GL(LAB_TexAtlas* atlas)
     else
     {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        LAB_GL_DBG_CHECK();
+
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        LAB_GL_DBG_CHECK();
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas->w, atlas->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, atlas->data);
     }
@@ -491,16 +503,13 @@ bool LAB_TexAtlas_Upload2GL(LAB_TexAtlas* atlas)
     return true;
 }
 
-void LAB_TexAtlas_LoadTexMatrix(LAB_TexAtlas* atlas)
+LAB_Vec2F LAB_TexAtlas_ScaleFactor(LAB_TexAtlas* atlas)
 {
-    LAB_GL_REQUIRE(GL_TEXTURE_2D);
-
-    glMatrixMode(GL_TEXTURE);
-    glLoadIdentity();
     const float cell_size_f = atlas->cell_size;
-    glScalef((float)cell_size_f / (float)atlas->w, (float)cell_size_f / (float)atlas->h, 1);
-
-    LAB_GL_CHECK();
+    return (LAB_Vec2F) {
+        cell_size_f / (float)atlas->w,
+        cell_size_f / (float)atlas->h,
+    };
 }
 
 

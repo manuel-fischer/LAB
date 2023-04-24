@@ -7,23 +7,12 @@
 
 void LAB_Model_Destroy(LAB_Model* m)
 {
-    LAB_Free(m->data);
+    LAB_ARRAY_DESTROY(LAB_Model_QuadsArray(m));
 }
 
-LAB_Triangle* LAB_Model_Extend(LAB_Model* m, size_t num_tris)
+LAB_ModelQuad* LAB_Model_Extend(LAB_Model* m, size_t num_tris)
 {
-    if(m->size + num_tris > m->capacity)
-    {
-        size_t new_cap = 1;
-        while(m->size + num_tris > new_cap) new_cap <<= 1;
-        LAB_Triangle* n_data = LAB_ReallocN(m->data, new_cap, sizeof(*n_data));
-        if(n_data == NULL) return NULL;
-        m->data = n_data;
-        m->capacity = new_cap;
-    }
-    size_t off = m->size;
-    m->size += num_tris;
-    return &m->data[off];
+    return LAB_ARRAY_APPEND_SOME(LAB_Model_QuadsArray(m), num_tris);
 }
 
 
@@ -39,34 +28,80 @@ LAB_STATIC int LAB_FaceSetToLightIndex(int face)
     return LAB_Ctz(face|0x40);
 }
 
+LAB_INLINE LAB_ALWAYS_INLINE
+void LAB_ShiftTriangle_InPlace(LAB_Triangle* t, LAB_Vec3F pos)
+{
+    t->v[0].pos = LAB_Vec3F_Add(t->v[0].pos, pos);
+    t->v[1].pos = LAB_Vec3F_Add(t->v[1].pos, pos);
+    t->v[2].pos = LAB_Vec3F_Add(t->v[2].pos, pos);
+}
+
+LAB_HOT LAB_INLINE LAB_ALWAYS_INLINE
+void LAB_PutQuadAt(LAB_OUT LAB_Triangle dst[restrict 2], LAB_ModelQuad* quad, LAB_Vec3F pos)
+{
+    dst[0].v[0] = LAB_ModelQuad_MakeVertex(quad, 1, pos);
+    dst[0].v[1] = LAB_ModelQuad_MakeVertex(quad, 2, pos);
+    dst[0].v[2] = LAB_ModelQuad_MakeVertex(quad, 0, pos);
+
+    dst[1].v[0] = dst[0].v[1];
+    dst[1].v[1] = dst[0].v[0];
+    //dst[1].v[0] = LAB_ModelQuad_MakeVertex(quad, 2, pos);
+    //dst[1].v[1] = LAB_ModelQuad_MakeVertex(quad, 1, pos);
+    dst[1].v[2] = LAB_ModelQuad_MakeVertex(quad, 3, pos);
+}
+
+LAB_HOT LAB_INLINE LAB_ALWAYS_INLINE
+void LAB_PutQuadShadedAt(LAB_OUT LAB_Triangle dst[restrict 2], LAB_ModelQuad* quad, LAB_Vec3F pos, LAB_ColorHDR c)
+{
+    dst[0].v[0] = LAB_ModelQuad_MakeVertexShadedHDR(quad, 1, pos, c);
+    dst[0].v[1] = LAB_ModelQuad_MakeVertexShadedHDR(quad, 2, pos, c);
+    dst[0].v[2] = LAB_ModelQuad_MakeVertexShadedHDR(quad, 0, pos, c);
+
+    dst[1].v[0] = dst[0].v[1];
+    dst[1].v[1] = dst[0].v[0];
+    //dst[1].v[0] = LAB_ModelQuad_MakeVertexShadedHDR(quad, 2, pos, c);
+    //dst[1].v[1] = LAB_ModelQuad_MakeVertexShadedHDR(quad, 1, pos, c);
+    dst[1].v[2] = LAB_ModelQuad_MakeVertexShadedHDR(quad, 3, pos, c);
+}
+
+LAB_HOT LAB_INLINE LAB_ALWAYS_INLINE
+void LAB_PutQuadSmoothShadedAt(LAB_OUT LAB_Triangle dst[restrict 2], LAB_ModelQuad* quad, LAB_Vec3F pos, const LAB_ColorHDR c[restrict 4])
+{
+    LAB_ColorHDR_Comparable d03 = LAB_ColorHDR_MaxChannelComparable(LAB_AbsDiffColorHDR(c[0], c[3]));
+    LAB_ColorHDR_Comparable d12 = LAB_ColorHDR_MaxChannelComparable(LAB_AbsDiffColorHDR(c[1], c[2]));
+
+    int flip = d03 < d12;
+
+    // For sorting the vertices in a triangle at [0] and [1] need to correspond
+    // to opposing corners in the quad
+    dst[0].v[0^flip] = LAB_ModelQuad_MakeVertexShadedHDR(quad, 1^flip, pos, c[1^flip]);
+    dst[0].v[1^flip] = LAB_ModelQuad_MakeVertexShadedHDR(quad, 2^flip, pos, c[2^flip]);
+    dst[0].v[2     ] = LAB_ModelQuad_MakeVertexShadedHDR(quad, 0^flip, pos, c[0^flip]);
+
+    dst[1].v[0] = dst[0].v[1];
+    dst[1].v[1] = dst[0].v[0];
+    //dst[1].v[0^flip] = LAB_ModelQuad_MakeVertexShadedHDR(quad, 2^flip, pos, c[2^flip]);
+    //dst[1].v[1^flip] = LAB_ModelQuad_MakeVertexShadedHDR(quad, 1^flip, pos, c[1^flip]);
+    dst[1].v[2     ] = LAB_ModelQuad_MakeVertexShadedHDR(quad, 3^flip, pos, c[3^flip]);
+}
+
+
 LAB_HOT
 int LAB_PutModelAt(LAB_OUT LAB_Triangle*restrict dst, LAB_Model const* model,
-                   float x, float y, float z, unsigned faces, unsigned visibility)
+                   LAB_Vec3F pos, unsigned faces, unsigned visibility)
 {
     int count = 0;
-    LAB_Triangle* src = model->data;
-    LAB_Triangle* src_end = src + model->size;
+    LAB_ModelQuad* src = model->quads;
+    LAB_ModelQuad* src_end = src + model->quad_count;
 
+    LAB_UNROLL(6)
     for(; src < src_end; ++src)
     {
-        unsigned occlusion = LAB_TRIANGLE_CULL(*src);
-        unsigned tri_visibility = LAB_TRIANGLE_VISIBILITY(*src);
-        if((tri_visibility&visibility) && (occlusion&faces))
+        if((src->visibility&visibility) && (src->cull&faces))
         {
-            // main loop: 45 instructions
-            //memcpy(dst, src, sizeof *src);
-            *dst = *src;
-            dst->v[0].x += x; dst->v[0].y += y; dst->v[0].z += z;
-            dst->v[1].x += x; dst->v[1].y += y; dst->v[1].z += z;
-            dst->v[2].x += x; dst->v[2].y += y; dst->v[2].z += z;
-            // main loop: 48 instructions
-            //dst->v[0].x = src->v[0].x+x; dst->v[0].y = src->v[0].y+y; dst->v[0].z = dst->v[0].z+z;
-            //dst->v[1].x = src->v[1].x+x; dst->v[1].y = src->v[1].y+y; dst->v[1].z = dst->v[1].z+z;
-            //dst->v[2].x = src->v[2].x+x; dst->v[2].y = src->v[2].y+y; dst->v[2].z = dst->v[2].z+z;
-            //dst->v[0].color = src->v[0].color; dst->v[0].u = src->v[0].u; dst->v[0].v = src->v[0].v;
-            //dst->v[1].color = src->v[1].color; dst->v[1].u = src->v[1].u; dst->v[1].v = src->v[1].v;
-            //dst->v[2].color = src->v[2].color; dst->v[2].u = src->v[2].u; dst->v[2].v = src->v[2].v;
-            ++dst, ++count;
+            LAB_PutQuadAt(dst, src, pos);
+            dst += 2;
+            count += 2;
         }
     }
     return count;
@@ -74,30 +109,22 @@ int LAB_PutModelAt(LAB_OUT LAB_Triangle*restrict dst, LAB_Model const* model,
 
 LAB_HOT
 int LAB_PutModelShadedAt(LAB_OUT LAB_Triangle* dst, LAB_Model const* model,
-                         float x, float y, float z, unsigned faces, unsigned visibility,
-                         const LAB_Color light_sides[6])
+                         LAB_Vec3F pos, unsigned faces, unsigned visibility,
+                         const LAB_ColorHDR light_sides[6])
 {
     int count = 0;
-    LAB_Triangle* src = model->data;
-    LAB_Triangle* src_end = src + model->size;
+    LAB_ModelQuad* src = model->quads;
+    LAB_ModelQuad* src_end = src + model->quad_count;
 
+    LAB_UNROLL(6)
     for(; src < src_end; ++src)
     {
-        unsigned occlusion = LAB_TRIANGLE_CULL(*src);
-        unsigned tri_visibility = LAB_TRIANGLE_VISIBILITY(*src);
-        if((tri_visibility&visibility) && (occlusion&faces))
+        if((src->visibility&visibility) && (src->cull&faces))
         {
-            //memcpy(dst, src, sizeof *src);
-            *dst = *src;
-            dst->v[0].x += x; dst->v[0].y += y; dst->v[0].z += z;
-            dst->v[1].x += x; dst->v[1].y += y; dst->v[1].z += z;
-            dst->v[2].x += x; dst->v[2].y += y; dst->v[2].z += z;
-            unsigned light = LAB_FaceSetToLightIndex(LAB_TRIANGLE_LIGHT(*src));
-            // Nightvision: LAB_OversaturateColor light_sides[light]
-            dst->v[0].color = LAB_MulColor_Fast(dst->v[0].color, light_sides[light]);
-            dst->v[1].color = LAB_MulColor_Fast(dst->v[1].color, light_sides[light]);
-            dst->v[2].color = LAB_MulColor_Fast(dst->v[2].color, light_sides[light]);
-            ++dst, ++count;
+            unsigned light = LAB_FaceSetToLightIndex(src->light);
+            LAB_PutQuadShadedAt(dst, src, pos, light_sides[light]);
+            dst += 2;
+            count += 2;
         }
     }
     return count;
@@ -107,41 +134,40 @@ int LAB_PutModelShadedAt(LAB_OUT LAB_Triangle* dst, LAB_Model const* model,
 LAB_HOT
 int LAB_PutModelSmoothShadedAt(LAB_OUT LAB_Triangle* dst,
                                LAB_Model const* model,
-                               float x, float y, float z, unsigned faces, unsigned visibility,
-                               const LAB_Color light_sides[6][4])
+                               LAB_Vec3F pos, unsigned faces, unsigned visibility,
+                               const LAB_ColorHDR light_sides[6][8])
 {
     int count = 0;
-    LAB_Triangle* src = model->data;
-    LAB_Triangle* src_end = src + model->size;
+    LAB_ModelQuad* src = model->quads;
+    LAB_ModelQuad* src_end = src + model->quad_count;
 
+    LAB_UNROLL(6)
     for(; src < src_end; ++src)
     {
-        unsigned occlusion = LAB_TRIANGLE_CULL(*src);
-        unsigned tri_visibility = LAB_TRIANGLE_VISIBILITY(*src);
-        if((tri_visibility&visibility) && (occlusion&faces))
+        if((src->visibility&visibility) && (src->cull&faces))
         {
-            //memcpy(dst, src, sizeof *src);
-            *dst = *src;
-            dst->v[0].x += x; dst->v[0].y += y; dst->v[0].z += z;
-            dst->v[1].x += x; dst->v[1].y += y; dst->v[1].z += z;
-            dst->v[2].x += x; dst->v[2].y += y; dst->v[2].z += z;
-            unsigned light = LAB_FaceSetToLightIndex(LAB_TRIANGLE_LIGHT(*src));
-            // Nightvision: LAB_OversaturateColor light_sides[light]
-            for(int i = 0; i < 3; ++i)
+            unsigned light = LAB_FaceSetToLightIndex(src->light);
+
+            LAB_ColorHDR corners[4];
+            LAB_UNROLL(4)
+            for(int i = 0; i < 4; ++i)
             {
                 int u, v;
                 int li = light>>1;
                 static const uint8_t iota3[] = {0, 1, 2, 0, 1, 2};
                 int ui = iota3[li+1];
                 int vi = iota3[li+2];
-                u = (int)(256*(&src->v[i].x)[ui]);
-                v = (int)(256*(&src->v[i].x)[vi]);
+                u = (int)(256*LAB_Vec3F_Get(src->v[i].pos, ui));
+                v = (int)(256*LAB_Vec3F_Get(src->v[i].pos, vi));
 
-                const LAB_Color* l = light_sides[light];
-                LAB_Color lint = LAB_InterpolateColor4vi(l, u, v);
-                dst->v[i].color = LAB_MulColor_Fast(dst->v[i].color, lint);
+                const LAB_ColorHDR* l = light_sides[light];
+                LAB_ColorHDR lint = LAB_InterpolateColorHDR4vi(l, u, v);
+                corners[i] = lint;
             }
-            ++dst, ++count;
+
+            LAB_PutQuadSmoothShadedAt(dst, src, pos, corners);
+            dst += 2;
+            count += 2;
         }
     }
     return count;

@@ -122,10 +122,14 @@ void LAB_UpdateChunk(LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LA
 void LAB_UpdateChunkLater(LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_ChunkUpdate update);
 
 LAB_BlockID LAB_GetBlock(LAB_World* world, int x, int y, int z);
-bool LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_BlockID block); // return false on failure
+bool LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_BlockID block); // return false on failure, only allowed from main thread
 //bool LAB_FillBlocks(LAB_World* world, int x0, int y0, int z0, int x1, int y1, int z1, LAB_BlockID block); // return false on failure
 
 #define LAB_GetBlockP(world, x, y, z) LAB_BlockP(LAB_GetBlock(world, x, y, z))
+
+
+LAB_BlockID LAB_GetBlock_FromMainThread(LAB_World* world, int x, int y, int z);
+#define LAB_GetBlockP_FromMainThread(world, x, y, z) LAB_BlockP(LAB_GetBlock_FromMainThread(world, x, y, z))
 
 // dir should be an unit vector
 

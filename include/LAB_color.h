@@ -49,10 +49,28 @@ typedef uint32_t LAB_Color;
  *
  *  Syntax
  *  ```
+ *  LAB_RGBI(0xRRGGBB)
+ *  ```
+ */
+#define LAB_RGBI(ihex) LAB_RGB((ihex) >> 16 & 0xff, (ihex) >> 8 & 0xff, (ihex) & 0xff)
+/**
+ *  Create a color from red, green and blue channels
+ *
+ *  Syntax
+ *  ```
  *  LAB_RGBX(RRGGBBAA)
  *  ```
  */
 #define LAB_RGBAX(hex) LAB_RGBA((0x##hex) >> 24 & 0xff, (0x##hex) >> 16 & 0xff, (0x##hex) >> 8 & 0xff, (0x##hex) & 0xff)
+/**
+ *  Create a color from red, green and blue channels
+ *
+ *  Syntax
+ *  ```
+ *  LAB_RGBI(0xRRGGBBAA)
+ *  ```
+ */
+#define LAB_RGBAI(ihex) LAB_RGBA((ihex) >> 24 & 0xff, (ihex) >> 16 & 0xff, (ihex) >> 8 & 0xff, (ihex) & 0xff)
 /**
  *  Get the red channel of a color
  */
@@ -106,6 +124,25 @@ LAB_CONST
 LAB_INLINE LAB_Color LAB_SubColor(LAB_Color a, LAB_Color b)
 {
     return ~LAB_AddColor(~a, b);
+}
+
+LAB_CONST
+LAB_INLINE LAB_Color LAB_AbsDiffColor(LAB_Color a, LAB_Color b)
+{
+    return LAB_SubColor(a, b) | LAB_SubColor(b, a);
+}
+
+LAB_CONST
+LAB_INLINE uint8_t LAB_Color_GetMax(LAB_Color a)
+{
+    return LAB_MAX_BL(LAB_MAX_BL(LAB_RED(a), LAB_GRN(a)),
+                      LAB_MAX_BL(LAB_BLU(a), LAB_ALP(a)));
+}
+
+LAB_CONST
+LAB_INLINE uint8_t LAB_Color_GetMaxRGB(LAB_Color a)
+{
+    return LAB_MAX3_BL(LAB_RED(a), LAB_GRN(a), LAB_BLU(a));
 }
 
 
@@ -446,13 +483,24 @@ LAB_INLINE LAB_Color LAB_InterpolateColor2i(LAB_Color a, LAB_Color b, int m)
 }
 
 LAB_CONST
-LAB_INLINE LAB_Color LAB_InterpolateColor4vi(const LAB_Color* colors,
+LAB_INLINE LAB_Color LAB_InterpolateColor4vi(const LAB_Color colors[LAB_RESTRICT 4],
                                              int u, int v)
 {
     return LAB_InterpolateColor2i(
                 LAB_InterpolateColor2i(colors[0], colors[1], u),
                 LAB_InterpolateColor2i(colors[2], colors[3], u),
                 v
+    );
+}
+
+LAB_CONST
+LAB_INLINE LAB_Color LAB_InterpolateColor8vi(const LAB_Color colors[LAB_RESTRICT 8],
+                                             int u, int v, int w)
+{
+    return LAB_InterpolateColor2i(
+                LAB_InterpolateColor4vi(colors, u, v),
+                LAB_InterpolateColor4vi(colors+4, u, v),
+                w
     );
 }
 

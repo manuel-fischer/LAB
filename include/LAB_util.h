@@ -78,6 +78,7 @@ float LAB_fSmoothClamp(float x, float a, float b)
 #define LAB_SELECT_MAX3(a,va, b,vb, c,vc) (  (a)>(b) ? ( (a)>(c) ? (va) : (vc) ) : ( (b)>(c) ? (vb) : (vc) )  )
 
 #define LAB_PTR_OFFSET(ptr, index, size) ((void*)((char*)(ptr) + (index)*(size)))
+#define LAB_CPTR_OFFSET(ptr, index, size) ((const void*)((const char*)(ptr) + (index)*(size)))
 
 
 #define LAB_BITS_EACH(bits, lval_bit_index, ...) do \
@@ -171,6 +172,17 @@ LAB_POINTER_CONST
 size_t LAB_StrHash(const char* str);
 
 
+typedef struct LAB_FileContents
+{
+    char* data;
+    size_t size;
+    bool success;
+    #define LAB_FileContents_array(file_contents) (char, (file_contents)->data, (file_contents)->size)
+} LAB_FileContents;
+
+LAB_FileContents LAB_ReadFile(const char* filename, const char* mode);
+
+
 
 #define LAB_ObjCopy(dstp, srcp) LAB_CORRECT_IF( \
     sizeof(*(dstp)) == sizeof(*(srcp)), \
@@ -183,6 +195,7 @@ bool LAB_MakeTrue(void) { return true; }
 
 
 #define LAB_ObjClear(dstp) (memset(dstp, 0, sizeof(*(dstp))), LAB_MakeTrue())
+#define LAB_ArrayClear(dstp) (memset(dstp, 0, sizeof(dstp)), LAB_MakeTrue())
 
 
 #include <math.h>
@@ -239,3 +252,65 @@ bool LAB_MakeTrue(void) { return true; }
 
 
 #define LAB_LEN(array) (sizeof(array) / sizeof(array[0]))
+
+
+
+#define LAB_REDUCE_3(func, a, b, c) ( \
+    func(func(a, b), c) \
+)
+
+#define LAB_REDUCE_4(func, a, b, c, d) ( \
+    func(func(a, b), func(c, d)) \
+)
+
+#define LAB_REDUCE_5(func, a, b, c, d, e) ( \
+    func(func(func(a, b), func(c, d)), e) \
+)
+
+
+
+#define LAB_LREDUCE_3(func, a, b, c) ( \
+    func(func(a, b), c) \
+)
+
+#define LAB_LREDUCE_4(func, a, b, c, d) ( \
+    func(func(func(a, b), c), d) \
+)
+
+#define LAB_LREDUCE_5(func, a, b, c, d, e) ( \
+    func(func(func(func(a, b), c), d), e) \
+)
+
+
+
+#define LAB_RREDUCE_3(func, a, b, c) ( \
+    func(a, func(b, c)) \
+)
+
+#define LAB_RREDUCE_4(func, a, b, c, d) ( \
+    func(a, func(b, func(c, d))) \
+)
+
+#define LAB_RREDUCE_5(func, a, b, c, d, e) ( \
+    func(a, func(b, func(c, func(d, e)))) \
+)
+
+
+
+
+#define LAB_FOREACH(element_type, iterator, prefix) \
+    for(element_type* LAB_FOREACH_BEGIN = (prefix), \
+                    * LAB_FOREACH_END = LAB_FOREACH_BEGIN + (prefix ## _count), \
+                    * iterator = LAB_FOREACH_BEGIN; \
+        iterator != LAB_FOREACH_END; ++iterator)
+
+#define LAB_FOREACH_INDEX(element_type, index_name, iterator, prefix) \
+    LAB_FOREACH(element_type, iterator, prefix) \
+    for(size_t LAB_FOREACH_TMP=1, index_name = iterator-LAB_FOREACH_BEGIN;LAB_FOREACH_TMP;LAB_FOREACH_TMP=0)
+
+#define LAB_CFOREACH(element_type, iterator, prefix) \
+    LAB_FOREACH(element_type const, iterator, prefix)
+
+#define LAB_CFOREACH_INDEX(element_type, index_name, iterator, prefix) \
+    LAB_FOREACH_INDEX(element_type const, index_name, iterator, prefix)
+

@@ -25,11 +25,7 @@ LAB_STATIC void LAB_PrepareSortModelOrder(LAB_TriangleOrder* order, LAB_Triangle
         LAB_ASSUME(index3%3 == 0); // possible hint to the compiler to
                                    // do not division followed by a multiplication by three
         int index = order->v[0]/3;
-        float mx2, my2, mz2;
-        mx2 = (mesh[index].v[0].x+mesh[index].v[1].x)-cam2.x;
-        my2 = (mesh[index].v[0].y+mesh[index].v[1].y)-cam2.y;
-        mz2 = (mesh[index].v[0].z+mesh[index].v[1].z)-cam2.z;
-        float dist = mx2*mx2+my2*my2+mz2*mz2;
+        float dist = LAB_Vec3F_DistanceSq(LAB_Vec3F_Add(mesh[index].v[0].pos, mesh[index].v[1].pos), cam2);
         // alternatively
         //order->v[1] = (uint32_t)(256*dist);
 

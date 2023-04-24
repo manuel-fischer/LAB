@@ -33,7 +33,7 @@ void LAB_ModelSet_Destroy(LAB_ModelSet* s)
     while(p)
     {
         next = p->next;
-        LAB_Free(p->model.data);
+        LAB_ARRAY_DESTROY(LAB_Model_QuadsArray(&p->model));
         LAB_Free(p);
         p = next;
     }

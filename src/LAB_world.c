@@ -137,6 +137,22 @@ LAB_BlockID LAB_GetBlock(LAB_World* world, int x, int y, int z)
     return b;
 }
 
+LAB_BlockID LAB_GetBlock_FromMainThread(LAB_World* world, int x, int y, int z)
+{
+    // TODO: more efficient multithreading
+    LAB_Chunk* chunk = LAB_GetChunk_AtPos(world, x, y, z);
+    if(chunk == NULL) return LAB_BID_OUTSIDE;
+
+
+    LAB_BlockID b = LAB_BID_AIR;
+    size_t index = LAB_CHUNK_OFFSET(x&LAB_CHUNK_MASK, y&LAB_CHUNK_MASK, z&LAB_CHUNK_MASK);
+
+    if(chunk->buf_blocks != NULL)
+        b = chunk->buf_blocks->blocks[index];
+
+    return b;
+}
+
 LAB_STATIC
 bool LAB_SetBlockIndex_Locked(LAB_World* world, LAB_Chunk* chunk, int x, int y, int z, LAB_BlockID block)
 {
@@ -158,6 +174,8 @@ bool LAB_SetBlockIndex_Locked(LAB_World* world, LAB_Chunk* chunk, int x, int y, 
 
 bool LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_BlockID block)
 {
+    LAB_ASSERT(LAB_IsMainThread());
+
     // TODO: more efficient multithreading
     LAB_Chunk* chunk = LAB_GetChunk_AtPos(world, x, y, z);
     if(chunk == NULL) return false;
@@ -186,9 +204,10 @@ bool LAB_SetBlock(LAB_World* world, int x, int y, int z, LAB_BlockID block)
 
 // TODO: write routine per chunk
 // new routine that traces chunks, with similar overall behavior
-// hit currently not written
 LAB_TraceBlock_Result LAB_TraceBlock(LAB_World* world, float max_distance, LAB_Vec3F vpos, LAB_Vec3F dir, unsigned block_flags)
 {
+    LAB_ASSERT(LAB_IsMainThread());
+
     LAB_TraceBlock_Result result;
 
     LAB_Vec3I ipos = LAB_Vec3F2I_FastFloor(vpos);
@@ -219,7 +238,7 @@ LAB_TraceBlock_Result LAB_TraceBlock(LAB_World* world, float max_distance, LAB_V
     // loop
     do
     {
-        LAB_Block* b = LAB_GetBlockP(world, ipos.x, ipos.y, ipos.z);
+        LAB_Block* b = LAB_GetBlockP_FromMainThread(world, ipos.x, ipos.y, ipos.z);
         if(b->flags&block_flags)
         {
             LAB_Box3F b_box = (LAB_Box3F) {

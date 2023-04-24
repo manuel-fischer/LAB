@@ -3,6 +3,8 @@
 #include "LAB_light_node.h"
 #include "LAB_chunk_neighborhood.h"
 #include <math.h>
+#include "LAB_attr.h"
+#include "LAB_opt.h"
 
 
 /*#define LAB_LIGHT_HDR_TO_RGBA(c) \
@@ -10,6 +12,7 @@
 /*#define LAB_LightToColor(c, exposure) \
     LAB_ColorHDR_To_Color_Overflow((c), 0)*/
 
+// TODO: remove, implemented by shader now
 LAB_INLINE LAB_CONST
 LAB_Color LAB_LightToColor(LAB_ColorHDR c, float exposure)
 {
@@ -33,9 +36,9 @@ LAB_Color LAB_LightToColor(LAB_ColorHDR c, float exposure)
 
 
 LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
-LAB_Color LAB_GetVisualNeighborhoodLight(LAB_LightNbHood* n, int x, int y, int z, LAB_Dir face, float exposure, float saturation)
+LAB_ColorHDR LAB_GetVisualNeighborhoodLightHDR(const LAB_LightNbHood* LAB_RESTRICT n, LAB_Vec3I pos, LAB_DirIndex face)
 {
-    LAB_LightNode* ln = LAB_LightNbHood_RefLightNode(n, x, y, z);
+    const LAB_LightNode* ln = LAB_LightNbHood_RefLightNodeVC(n, pos);
 
     LAB_ColorHDR c = 0;
     LAB_ColorHDR max = 0;
@@ -54,13 +57,21 @@ LAB_Color LAB_GetVisualNeighborhoodLight(LAB_LightNbHood* n, int x, int y, int z
         c = LAB_AddColorHDR(c, LAB_MulColorHDRExp2(cf, 2));
     }
 
-    c = LAB_MulColorHDR_RoundUp(c, LAB_Float_To_ColorHDR(exposure));
-    max = LAB_MulColorHDR_RoundUp(max, LAB_Float_To_ColorHDR(exposure));
-
-    c = LAB_LightToColor(c, exposure);
-    max = LAB_LightToColor(max, exposure);
-
-    max = LAB_ColorSaturation(max, saturation);
-
     return max;
+}
+
+
+// TODO: remove
+LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
+LAB_Color LAB_GetVisualNeighborhoodLight(const LAB_LightNbHood* LAB_RESTRICT n, LAB_Vec3I pos, LAB_DirIndex face, float exposure, float saturation)
+{
+    LAB_ColorHDR hdr = LAB_GetVisualNeighborhoodLightHDR(n, pos, face);
+
+    hdr = LAB_MulColorHDR_RoundUp(hdr, LAB_Float_To_ColorHDR(exposure));
+
+    LAB_Color c = LAB_LightToColor(c, exposure);
+
+    c = LAB_ColorSaturation(c, saturation);
+
+    return c;
 }

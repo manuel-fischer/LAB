@@ -18,6 +18,8 @@ enum LAB_TimeGraph
 
     LAB_TG_VIEW_LOAD,
     LAB_TG_VIEW_UPDATE,
+
+    LAB_TG_BASELINE,
 // =====================
     LAB_TG_COUNT,
 
@@ -49,7 +51,7 @@ typedef struct LAB_PerfInfo
 
 int  LAB_PerfInfo_Create(LAB_PerfInfo* perf_info);
 void LAB_PerfInfo_Destroy(LAB_PerfInfo* perf_info);
-void LAB_PerfInfo_Render(LAB_PerfInfo* perf_info);
+void LAB_PerfInfo_Render(LAB_PerfInfo* perf_info, LAB_ViewRenderer* renderer);
 
 
 void LAB_PerfInfo_Tick(LAB_PerfInfo* perf_info);

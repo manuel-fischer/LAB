@@ -1,8 +1,9 @@
 #include "LAB_perf_info.h"
 
 #include "LAB_debug.h"
+#include "LAB_obj.h"
 
-static LAB_Color LAB_time_graph_colors[LAB_TG_COUNT] =
+static const LAB_Color LAB_time_graph_colors[LAB_TG_COUNT] =
 {
     [LAB_TG_WHOLE               ] = LAB_RGB(255, 255, 128),
     [LAB_TG_INPUT               ] = LAB_RGB(255, 128, 128),
@@ -18,38 +19,51 @@ static LAB_Color LAB_time_graph_colors[LAB_TG_COUNT] =
 
     [LAB_TG_VIEW_LOAD           ] = LAB_RGB(192, 192, 192),
     [LAB_TG_VIEW_UPDATE         ] = LAB_RGB( 64,  64,  64),
+    [LAB_TG_BASELINE            ] = LAB_RGB(  0, 128, 255),
 };
+
+
+bool LAB_PerfInfo_Obj(LAB_PerfInfo* perf_info, LAB_OBJ_Action action)
+{
+    LAB_BEGIN_OBJ(action);
+
+    LAB_OBJ_FOR(i, LAB_TG_COUNT,
+        LAB_FpsGraph_Create(&perf_info->fps_graphs[i], LAB_time_graph_colors[i]),
+        LAB_FpsGraph_Destroy(&perf_info->fps_graphs[i]),
+
+    {
+        LAB_FpsGraph_Fill(&perf_info->fps_graphs[LAB_TG_BASELINE], 1000.f/60.f);
+        perf_info->frame = 0;
+        perf_info->frames[0].current_graph = LAB_TG_NONE;
+        LAB_YIELD_OBJ(true);
+    });
+
+    LAB_END_OBJ(false);
+}
 
 
 int LAB_PerfInfo_Create(LAB_PerfInfo* perf_info)
 {
     LAB_PRECONDITION(LAB_PROPER(perf_info));
 
-    for(int i = 0; i < LAB_TG_COUNT; ++i)
-        LAB_FpsGraph_Create(&perf_info->fps_graphs[i], LAB_time_graph_colors[i]);
-
-    perf_info->frame = 0;
-    perf_info->frames[0].current_graph = LAB_TG_NONE;
-
-    return 1;
+    return LAB_PerfInfo_Obj(perf_info, LAB_OBJ_CREATE);
 }
 
 void LAB_PerfInfo_Destroy(LAB_PerfInfo* perf_info)
 {
     LAB_PRECONDITION(LAB_PROPER(perf_info));
 
-    for(int i = 0; i < LAB_TG_COUNT; ++i)
-        LAB_FpsGraph_Destroy(&perf_info->fps_graphs[i]);
+    LAB_PerfInfo_Obj(perf_info, LAB_OBJ_DESTROY);
 }
 
 
 
-void LAB_PerfInfo_Render(LAB_PerfInfo* perf_info)
+void LAB_PerfInfo_Render(LAB_PerfInfo* perf_info, LAB_ViewRenderer* renderer)
 {
     LAB_PRECONDITION(LAB_PROPER(perf_info));
 
-    LAB_FpsGraph_Render_Prepare();
-    LAB_FpsGraph_Render_Base();
+    LAB_FpsGraph_Render_Prepare(renderer);
+
     uint64_t enabled = perf_info->enabled;
     if(!enabled) enabled = ~0;
 
@@ -66,7 +80,8 @@ void LAB_PerfInfo_Tick(LAB_PerfInfo* perf_info)
     LAB_PRECONDITION(perf_info->frames[0].current_graph == LAB_TG_NONE);
 
     for(int i = 0; i < LAB_TG_COUNT; ++i)
-        LAB_FpsGraph_Shift(&perf_info->fps_graphs[i]);
+        if(i != LAB_TG_BASELINE)
+            LAB_FpsGraph_Shift(&perf_info->fps_graphs[i]);
 }
 
 void LAB_PerfInfo_Next(LAB_PerfInfo* perf_info, enum LAB_TimeGraph graph)
@@ -108,7 +123,7 @@ void LAB_PerfInfo_Push(LAB_PerfInfo* perf_info, enum LAB_TimeGraph graph)
     LAB_PRECONDITION(perf_info->frame < LAB_PERF_INFO_STACK_SIZE-1);
 
     LAB_PerfInfo_Frame* frame = &perf_info->frames[++perf_info->frame];
-    
+
     LAB_Nanos t = LAB_NanoSeconds();
 
     frame->current_graph = graph;

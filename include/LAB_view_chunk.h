@@ -64,9 +64,6 @@ typedef struct LAB_ViewChunkEntry
                                  // if a face does not contain nonculled faces, the chunk is not visible from that
                                  // direction.
 
-    #if 0
-    unsigned delay_ticks; // delaying ticks to do updates
-    #endif
     #if !LAB_VIEW_QUERY_IMMEDIATELY && LAB_VIEW_ENABLE_QUERY
     unsigned query_id; // 0 for no query done in the last frame
                        // gets generated in OrderQueryBlock

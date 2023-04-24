@@ -1,7 +1,6 @@
 #pragma once
 #include "LAB_stdinc.h"
 #include "LAB_opt.h"
-#include "LAB_fps_graph.h"
 #include "LAB/gui/manager.h"
 #include "LAB_model.h" // LAB_Triangle
 #include "LAB_model_order.h" // LAB_TriangleOrder
@@ -18,6 +17,10 @@
 #include "LAB_htl_config.h"
 
 #include "LAB_view_gamma.h"
+#include "LAB_view_renderer.h"
+#include "LAB_gl_types.h"
+#include "LAB_view_render_box.h"
+#include "LAB_view_render_surface.h"
 
 
 /*
@@ -104,7 +107,7 @@ LAB_INLINE LAB_ChunkPos LAB_MakeChunkPos(int x, int y, int z)
 typedef struct LAB_ViewCoordInfo
 {
     int x, y, z;
-    unsigned gl_texture;
+    LAB_GL_Texture tex;
     SDL_Surface* surf;
 } LAB_ViewCoordInfo;
 
@@ -165,7 +168,13 @@ typedef struct LAB_View
 
     struct
     {
-        unsigned gl_texture;
+        LAB_GL_Texture tex;
+        LAB_Vec2I size;
+    } crosshair;
+
+    struct
+    {
+        LAB_GL_Texture tex;
         bool reupload;
         SDL_Surface* surf;
     } stats_display;
@@ -178,11 +187,6 @@ typedef struct LAB_View
 
     int w, h; // window size
 
-    /*LAB_FpsGraph fps_graph;
-    LAB_FpsGraph fps_graph_input;
-    LAB_FpsGraph fps_graph_world;
-    LAB_FpsGraph fps_graph_view;
-    LAB_FpsGraph fps_graph_view_render;*/
     LAB_PerfInfo* perf_info;
     struct LAB_GameServer* server; // TODO remove
 
@@ -191,16 +195,19 @@ typedef struct LAB_View
 
     LAB_TexAtlas* atlas;
 
+    LAB_Mat4F projection_mat, modelview_mat, modlproj_mat;
 
-    GLdouble projection_mat[16], modelview_mat[16], modlproj_mat[16];
-
-    GLuint upload_time_query;
+    LAB_GL_UInt upload_time_query;
     LAB_Nanos upload_time;
     size_t upload_amount;
     size_t current_upload_amount;
 
     size_t update_pointer;
     size_t delete_index;
+
+    LAB_ViewRenderer renderer;
+    LAB_BoxRenderer box_renderer;
+    LAB_SurfaceRenderer surface_renderer;
 
 } LAB_View;
 

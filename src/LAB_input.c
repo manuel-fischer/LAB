@@ -320,12 +320,9 @@ int LAB_Input_OnEvent_Proc(void* user, LAB_Window* window, SDL_Event* event)
 
                 } break;
 
-                
+
                 case SDLK_F5:
                 {
-                    LAB_GameServer_Lock(view->server);
-                    //view->cfg.flags ^= LAB_VIEW_BRIGHTER;
-                    //view->cfg.gamma_map = view->cfg.flags & LAB_VIEW_BRIGHTER ? &LAB_gamma_light : &LAB_gamma_dark;
                     const float delta = 0.125f;
                     SDL_Keymod mods = SDL_GetModState();
                     if(mods & KMOD_CTRL)
@@ -334,15 +331,10 @@ int LAB_Input_OnEvent_Proc(void* user, LAB_Window* window, SDL_Event* event)
                         view->cfg.saturation -= delta;
                     else
                         view->cfg.saturation += delta;
-                    LAB_ViewInvalidateEverything(view, /*free_buffers*/0);
-                    LAB_GameServer_Unlock(view->server);
                 } break;
 
                 case SDLK_F6:
                 {
-                    LAB_GameServer_Lock(view->server);
-                    //view->cfg.flags ^= LAB_VIEW_BRIGHTER;
-                    //view->cfg.gamma_map = view->cfg.flags & LAB_VIEW_BRIGHTER ? &LAB_gamma_light : &LAB_gamma_dark;
                     const float factor = 1.25f;
                     SDL_Keymod mods = SDL_GetModState();
                     if(mods & KMOD_CTRL)
@@ -351,9 +343,6 @@ int LAB_Input_OnEvent_Proc(void* user, LAB_Window* window, SDL_Event* event)
                         view->cfg.exposure *= 1.0f/factor;
                     else
                         view->cfg.exposure *= factor;
-                    LAB_ViewInvalidateEverything(view, /*free_buffers*/0);
-                    LAB_GameServer_Unlock(view->server);
-
                 } break;
                 case SDLK_F7:
                 {
@@ -703,21 +692,21 @@ void LAB_Input_Tick(LAB_Input* input, uint32_t delta_ms)
                 for(int xx = -1; xx <= 1; ++xx)
                 for(int zz = -1; zz <= 1; ++zz)
                 {
-                    LAB_Block* block  = LAB_GetBlockP(view->world, bx+xx, by+yy, bz+zz);
+                    LAB_Block* block  = LAB_GetBlockP_FromMainThread(view->world, bx+xx, by+yy, bz+zz);
 
                     if(xx!=0||zz!=0)
                     {
                         // Blocks on the same axis
-                        LAB_Block* b1 = LAB_GetBlockP(view->world, bx+xx, by+0,  bz   );
-                        LAB_Block* b2 = LAB_GetBlockP(view->world, bx+xx, by-1,  bz   );
-                        LAB_Block* b3 = LAB_GetBlockP(view->world, bx,    by+0,  bz+zz);
-                        LAB_Block* b4 = LAB_GetBlockP(view->world, bx,    by-1,  bz+zz);
+                        LAB_Block* b1 = LAB_GetBlockP_FromMainThread(view->world, bx+xx, by+0,  bz   );
+                        LAB_Block* b2 = LAB_GetBlockP_FromMainThread(view->world, bx+xx, by-1,  bz   );
+                        LAB_Block* b3 = LAB_GetBlockP_FromMainThread(view->world, bx,    by+0,  bz+zz);
+                        LAB_Block* b4 = LAB_GetBlockP_FromMainThread(view->world, bx,    by-1,  bz+zz);
                         if(b1->flags&LAB_BLOCK_MASSIVE || b2->flags&LAB_BLOCK_MASSIVE) continue;
                         if(b3->flags&LAB_BLOCK_MASSIVE || b4->flags&LAB_BLOCK_MASSIVE) continue;
 
                         // Blocks possibly in the corners
-                        LAB_Block* b5 = LAB_GetBlockP(view->world, bx+xx, by+0,  bz+zz);
-                        LAB_Block* b6 = LAB_GetBlockP(view->world, bx+xx, by-1,  bz+zz);
+                        LAB_Block* b5 = LAB_GetBlockP_FromMainThread(view->world, bx+xx, by+0,  bz+zz);
+                        LAB_Block* b6 = LAB_GetBlockP_FromMainThread(view->world, bx+xx, by-1,  bz+zz);
                         if(b5->flags&LAB_BLOCK_MASSIVE || b6->flags&LAB_BLOCK_MASSIVE) continue;
                     }
 
@@ -748,7 +737,7 @@ void LAB_Input_Tick(LAB_Input* input, uint32_t delta_ms)
                 int zz = xz[i][1];
                 for(int yy = -2; yy <= 1; ++yy)
                 {
-                    LAB_Block* block = LAB_GetBlockP(view->world, bx+xx, by+yy, bz+zz);
+                    LAB_Block* block = LAB_GetBlockP_FromMainThread(view->world, bx+xx, by+yy, bz+zz);
                     if(block->flags&LAB_BLOCK_MASSIVE)
                     {
                         int collides = 1;

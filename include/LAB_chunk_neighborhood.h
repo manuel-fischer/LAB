@@ -1,6 +1,7 @@
 #pragma once
 #include "LAB_chunk.h"
 #include "LAB_direction.h"
+#include "LAB_vec.h"
 
 
 typedef struct LAB_BlockNbHood
@@ -34,22 +35,22 @@ bool LAB_LightNbHood_GetWrite(LAB_Chunk*const chunks[27], LAB_LightNbHood_Mut* o
 
 
 LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
-void LAB_Neighborhood_Index(int x, int y, int z, int* chunk, int* block)
+void LAB_Neighborhood_Index(int* chunk, int* block, LAB_Vec3I pos)
 {
-    LAB_ASSUME(x >= -16 && x < 32);
-    LAB_ASSUME(y >= -16 && y < 32);
-    LAB_ASSUME(z >= -16 && z < 32);
-    
+    LAB_ASSUME(pos.x >= -16 && pos.x < 32);
+    LAB_ASSUME(pos.y >= -16 && pos.y < 32);
+    LAB_ASSUME(pos.z >= -16 && pos.z < 32);
+
     int cx, cy, cz,  ix, iy, iz;
 
-    cx = (x+16) >> LAB_CHUNK_SHIFT;
-    ix = LAB_CHUNK_X(x & LAB_CHUNK_MASK);
+    cx = (pos.x+16) >> LAB_CHUNK_SHIFT;
+    ix = LAB_CHUNK_X(pos.x & LAB_CHUNK_MASK);
 
-    cy = 3*((y+16) >> LAB_CHUNK_SHIFT);
-    iy = LAB_CHUNK_Y(y & LAB_CHUNK_MASK);
+    cy = 3*((pos.y+16) >> LAB_CHUNK_SHIFT);
+    iy = LAB_CHUNK_Y(pos.y & LAB_CHUNK_MASK);
 
-    cz = 3*3*((z+16) >> LAB_CHUNK_SHIFT);
-    iz = LAB_CHUNK_Z(z & LAB_CHUNK_MASK);
+    cz = 3*3*((pos.z+16) >> LAB_CHUNK_SHIFT);
+    iz = LAB_CHUNK_Z(pos.z & LAB_CHUNK_MASK);
 
     *chunk = cx+cy+cz;
     *block = ix+iy+iz;
@@ -59,22 +60,51 @@ void LAB_Neighborhood_Index(int x, int y, int z, int* chunk, int* block)
 }
 
 LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
-LAB_BlockID* LAB_BlockNbHood_RefBlock(LAB_BlockNbHood* n, int x, int y, int z)
+LAB_BlockID* LAB_BlockNbHood_RefBlockV(LAB_BlockNbHood* n, LAB_Vec3I pos)
 {
     int chunk, block;
-    LAB_Neighborhood_Index(x, y, z, &chunk, &block);
+    LAB_Neighborhood_Index(&chunk, &block, pos);
+    return &n->bufs[chunk]->blocks[block];
+}
+LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
+const LAB_BlockID* LAB_BlockNbHood_RefBlockVC(const LAB_BlockNbHood* n, LAB_Vec3I pos)
+{
+    int chunk, block;
+    LAB_Neighborhood_Index(&chunk, &block, pos);
     return &n->bufs[chunk]->blocks[block];
 }
 
+LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
+LAB_BlockID* LAB_BlockNbHood_RefBlock(LAB_BlockNbHood* n, int x, int y, int z)
+{
+    return LAB_BlockNbHood_RefBlockV(n, (LAB_Vec3I) { x, y, z });
+}
+
+// requires LAB_blocks.h to be included!!
+#define LAB_BlockNbHood_GetBlockVP(n, pos) LAB_BlockP(*LAB_BlockNbHood_RefBlockVC(n, pos))
+
+
+LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
+LAB_LightNode* LAB_LightNbHood_RefLightNodeV(LAB_LightNbHood* n, LAB_Vec3I pos)
+{
+    int chunk, block;
+    LAB_Neighborhood_Index(&chunk, &block, pos);
+    return &n->bufs[chunk]->light[block];
+}
+
+LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
+const LAB_LightNode* LAB_LightNbHood_RefLightNodeVC(const LAB_LightNbHood* n, LAB_Vec3I pos)
+{
+    int chunk, block;
+    LAB_Neighborhood_Index(&chunk, &block, pos);
+    return &n->bufs[chunk]->light[block];
+}
 
 LAB_HOT LAB_ALWAYS_INLINE LAB_INLINE
 LAB_LightNode* LAB_LightNbHood_RefLightNode(LAB_LightNbHood* n, int x, int y, int z)
 {
-    int chunk, block;
-    LAB_Neighborhood_Index(x, y, z, &chunk, &block);
-    return &n->bufs[chunk]->light[block];
+    return LAB_LightNbHood_RefLightNodeV(n, (LAB_Vec3I) { x, y, z });
 }
-
 
 // return offset from center chunk in neighborhood
 LAB_INLINE

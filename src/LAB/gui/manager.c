@@ -5,6 +5,7 @@
 #include "LAB_debug.h"
 #include "LAB_sdl.h"
 #include "LAB/gui/util.h"
+#include "LAB_color_defs.h"
 
 #include <SDL2/SDL_ttf.h>
 
@@ -51,7 +52,7 @@ void LAB_GuiManager_Destroy(LAB_GuiManager* mgr)
     LAB_SDL_FREE(TTF_CloseFont, &mgr->mono_font);
     LAB_SDL_FREE(TTF_CloseFont, &mgr->mono_font_small);
 
-    LAB_GL_FREE(glDeleteTextures, 1, &mgr->gl_id);
+    LAB_GL_FREE(glDeleteTextures, 1, &mgr->gl_tex.id);
 }
 
 
@@ -88,7 +89,7 @@ void LAB_GuiManager_Tick(LAB_GuiManager* manager)
 }
 
 
-void LAB_GuiManager_Render(LAB_GuiManager* mgr, int sw, int sh)
+void LAB_GuiManager_Render(LAB_GuiManager* mgr, LAB_SurfaceRenderer* r, int sw, int sh)
 {
     if(mgr->component)
     {
@@ -128,16 +129,20 @@ void LAB_GuiManager_Render(LAB_GuiManager* mgr, int sw, int sh)
         {
             (*c->render)(c, mgr, mgr->surf, 0, 0);
             mgr->rerender = 0;
-            LAB_GL_ActivateTexture(&mgr->gl_id);
-            LAB_GL_UploadSurf(mgr->gl_id, mgr->surf);
+            LAB_GL_ActivateTexture(&mgr->gl_tex);
+            LAB_GL_UploadSurf(mgr->gl_tex, mgr->surf);
         }
         else
         {
-            LAB_GL_ActivateTexture(&mgr->gl_id);
+            LAB_GL_ActivateTexture(&mgr->gl_tex);
         }
 
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        LAB_GL_DrawSurf(mgr->gl_id, c->x*z*s, sh-c->y*z*s-c->h*z*s, c->w*z*s, c->h*z*s, sw, sh);
+
+        LAB_Vec2I screen_size = { sw, sh };
+        LAB_Vec2I pos = { c->x*z*s, sh-c->y*z*s-c->h*z*s };
+        LAB_Vec2I tex_size = { c->w, c->h };
+        LAB_RenderSurface_At(r, mgr->gl_tex, screen_size, pos, tex_size, z*s, LAB_COLOR_WHITE);
     }
 }
 

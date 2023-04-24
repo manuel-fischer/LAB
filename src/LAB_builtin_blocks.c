@@ -331,10 +331,10 @@ bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
         m->render_pass = LAB_RENDER_PASS_ALPHA;
         LAB_Builtin_ModelAddCubeAll(m,
             LAB_full_aabb,
-            tex_f, LAB_cube_color_shade, tint);
+            tex_f, LAB_BoxColors_Shaded(tint));
         LAB_Builtin_ModelAddCubeInvertedAll(m,
             LAB_full_aabb,
-            tex_f, LAB_cube_color_shade, tint);
+            tex_f, LAB_BoxColors_Shaded(tint));
 
 
         if(!LAB_InitItemBlock(&LAB_BLOCK_WATER, (LAB_Block) {
@@ -384,7 +384,7 @@ bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
             LAB_Model* m = LAB_Assets_NewModel(assets);
             LAB_ASSERT_OR_ABORT(m);
             m->render_pass = LAB_RENDER_PASS_MASKED;
-            LAB_Builtin_ModelAddCube(m, aabb, (const float (*)[2][2])uv, LAB_cube_color_flat, LAB_COLOR_WHITE);
+            LAB_Builtin_ModelAddCube(m, aabb, (const float (*)[2][2])uv, LAB_box_color_flat);
 
             if(!LAB_InitItemBlock(&LAB_BLOCK_TORCH, (LAB_Block) {
                 .flags = (LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL|LAB_BLOCK_FLAT_SHADE|LAB_BLOCK_GLOWING|LAB_BLOCK_NOSHADE),
@@ -409,10 +409,12 @@ bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
             { &LAB_BLOCK_COLD_LIGHT,   LAB_RGBX(c8e6ff), { LAB_RGBX(80ccff), LAB_RGBX(f0f8ff) } },
             { &LAB_BLOCK_BLUE_LIGHT,   LAB_RGBX(1040ff), { LAB_RGBX(1040ff), LAB_RGBX(a8d0ff) } },
             { &LAB_BLOCK_CYAN_LIGHT,   LAB_RGBX(1080ff), { LAB_RGBX(1080ff), LAB_RGBX(e0ffff) } },
-            { &LAB_BLOCK_YELLOW_LIGHT, LAB_RGBX(fff010), { LAB_RGBX(fff010), LAB_RGBX(ffffc0) } },
             { &LAB_BLOCK_GREEN_LIGHT,  LAB_RGBX(40ff10), { LAB_RGBX(40ff10), LAB_RGBX(f0ffc0) } },
-            { &LAB_BLOCK_RED_LIGHT,    LAB_RGBX(ff1410), { LAB_RGBX(ff0000), LAB_RGBX(ffc0a0) } },
+            { &LAB_BLOCK_URANIUM_LIGHT,LAB_RGBX(a0f010), { LAB_RGBX(a0f010), LAB_RGBX(ffffc0) } },
+            { &LAB_BLOCK_YELLOW_LIGHT, LAB_RGBX(fff010), { LAB_RGBX(fff010), LAB_RGBX(ffffc0) } },
             { &LAB_BLOCK_ORANGE_LIGHT, LAB_RGBX(ff8010), { LAB_RGBX(ff8010), LAB_RGBX(ffe0c0) } },
+            { &LAB_BLOCK_RED_LIGHT,    LAB_RGBX(ff1410), { LAB_RGBX(ff1410), LAB_RGBX(ffc0a0) } },
+            { &LAB_BLOCK_PURPLE_LIGHT, LAB_RGBX(8010ff), { LAB_RGBX(8010ff), LAB_RGBX(ffe0ff) } },
         };
 
         for(size_t i = 0; i < LAB_LEN(lights); ++i)
@@ -427,8 +429,8 @@ bool LAB_BuiltinBlocks_Init(LAB_Assets* assets)
         crystals[] =
         {
             { &LAB_BLOCK_BLUE_CRYSTAL,   LAB_RGBX(082080), { LAB_RGBX(2020ff), LAB_RGBX(2040ff) } },
-            { &LAB_BLOCK_YELLOW_CRYSTAL, LAB_RGBX(807808), { LAB_RGBX(fff010), LAB_RGBX(ffff40) } },
             { &LAB_BLOCK_GREEN_CRYSTAL,  LAB_RGBX(208008), { LAB_RGBX(28ff20), LAB_RGBX(80ff40) } },
+            { &LAB_BLOCK_YELLOW_CRYSTAL, LAB_RGBX(807808), { LAB_RGBX(fff010), LAB_RGBX(ffff40) } },
             { &LAB_BLOCK_RED_CRYSTAL,    LAB_RGBX(ff0a08), { LAB_RGBX(ff190f), LAB_RGBX(ff4020) } },
         };
         const LAB_Color crystal_shade = LAB_RGBX(eeeeee);

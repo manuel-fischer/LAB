@@ -81,7 +81,7 @@ bool LAB_GameServer_Create(LAB_GameServer* srv,
                                                    "LAB_GameServer_ThreadRoutine", srv),
                  LAB_GameServer_SendStop(srv),
                  SDL_WaitThread(srv->workers[i], NULL),
-                 
+
     {
             return true;
     });););););););

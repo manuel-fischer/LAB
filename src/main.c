@@ -56,16 +56,14 @@ static bool load_assets(LAB_TexAtlas* atlas, LAB_ModelSet* models, LAB_ItemTexSe
 {
     static LAB_Assets     assets = {0};
     LAB_Assets_Create(&assets, atlas, models, items);
-    
+
     LAB_Builtin_Init(&assets);
 
     LAB_Dimension_FinishInit();
-    
+
     LAB_TexAtlas_MakeMipmap(atlas);
 
-    glEnable(GL_TEXTURE_2D);
     LAB_TexAtlas_Upload2GL(atlas);
-    LAB_TexAtlas_LoadTexMatrix(atlas);
 
     LAB_Assets_Destroy(&assets);
 
@@ -98,7 +96,7 @@ static bool LAB_Client_Obj(bool destroy)
 
     LAB_OBJ(LAB_GuiInit(),
             LAB_GuiQuit(),
-        
+
     LAB_OBJ(LAB_Window_Create(&LAB_client.window, 1024, 576, sdl_window_flags),
             LAB_Window_Destroy(&LAB_client.window),
 
@@ -118,7 +116,7 @@ static bool LAB_Client_Obj(bool destroy)
 
     LAB_OBJ(LAB_ItemTexSet_Create(&LAB_client.items),
             LAB_ItemTexSet_Destroy(&LAB_client.items),
-            
+
 
     LAB_OBJ(load_assets(&LAB_client.atlas, &LAB_client.models, &LAB_client.items),
             (void)0,
@@ -161,7 +159,7 @@ int main(int argc, char** argv)
         .preload_dist = LAB_PRELOAD_CHUNK(12),
         .render_dist = 12, //5,
         .keep_dist = LAB_KEEP_CHUNK(12),
-        
+
         // Limits
         .max_update = INT_MAX,//100,
         .max_unload = 20,
@@ -185,12 +183,16 @@ int main(int argc, char** argv)
         LAB_GenOverworld overworld;
         LAB_GenDimensionWrapper_Ctx dimension;
     } gen = {0};
-    
+
     CHECK_INIT(LAB_Init());
     init = 1;
 
     CHECK_INIT(LAB_Client_Create());
     LAB_ObjCopy(&LAB_client.view.cfg, &view_cfg);
+
+    LAB_GL_SetupDebug();
+
+    LAB_GL_CHECK();
 
     CHECK_INIT(LAB_PerfInfo_Create(&perf_info));
     //SDL_SetWindowFullscreen(main_window->window, SDL_WINDOW_FULLSCREEN);
@@ -198,7 +200,7 @@ int main(int argc, char** argv)
 
 
     CHECK_INIT(LAB_InitThread());
-    
+
     CHECK_INIT(LAB_GameServer_Create(&game_server, &the_world, worker_count));
 
     CHECK_INIT(LAB_World_Create(&the_world));

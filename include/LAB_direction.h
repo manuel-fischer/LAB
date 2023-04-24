@@ -1,6 +1,8 @@
 #pragma once
 
 typedef int LAB_Dir;
+typedef LAB_Dir LAB_DirSet;
+
 typedef int LAB_DirIndex;
 
 #define LAB_Dir_IsValid(dir) ((unsigned)(dir) < 64)
@@ -37,6 +39,7 @@ typedef int LAB_DirIndex;
 #define LAB_I_S  5
 
 #define LAB_DIR_ALL 63
+#define LAB_DIR_SET_ALL 63
 
 // return direction either facing positive or negative in corresponding axis.
 // if positive is true, then the positive direction is returned

@@ -19,3 +19,4 @@ typedef struct LAB_View_Mesh
 
 
 void LAB_View_Mesh_Destroy(LAB_View_Mesh* mesh);
+LAB_Triangle* LAB_View_Mesh_Alloc(LAB_View_Mesh* mesh, size_t add_size);

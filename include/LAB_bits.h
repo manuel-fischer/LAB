@@ -157,6 +157,59 @@ LAB_INLINE size_t LAB_Capacity(size_t x)
     return x;
 }
 
+// only values up to 2**21-1 are allowed
+/*LAB_CONST
+LAB_INLINE uint64_t LAB_StretchBits3xNaive(uint32_t x)
+{
+    LAB_ASSERT(x < (1<<21));
+
+    uint64_t bits = 0;
+    uint64_t mask1 = 1;
+    uint64_t mask3 = 1;
+    for(int i = 0; i < 21; ++i, mask1<<=1, mask3<<=3)
+    {
+        bits |= LAB_SELECT0(x&mask1, mask3);
+    }
+    return bits;
+}*/
+
+// only values up to 2**21-1 are allowed
+LAB_CONST
+LAB_INLINE uint64_t LAB_StretchBits3x(uint32_t x)
+{
+    LAB_ASSERT(x < (1<<21));
+
+    // each byte of bit_array contains a value,
+    // where a subset ob bits is set as in 0b01001001,
+    // thus 00,01,08,09,40,41,48,49
+    uint64_t bit_array = 0x4948414009080100ull;
+
+    //uint64_t bits00 = ((bit_array >> ((x&000000007ul)<< 3)) & 0xffull)      ;
+    //uint64_t bits03 = ((bit_array >> ((x&000000070ul)    )) & 0xffull) <<  9;
+    //uint64_t bits06 = ((bit_array >> ((x&000000700ul)>> 3)) & 0xffull) << 18;
+    //uint64_t bits09 = ((bit_array >> ((x&000007000ul)>> 6)) & 0xffull) << 27;
+    //uint64_t bits12 = ((bit_array >> ((x&000070000ul)>> 9)) & 0xffull) << 36;
+    //uint64_t bits15 = ((bit_array >> ((x&000700000ul)>>12)) & 0xffull) << 45;
+    //uint64_t bits18 = ((bit_array >> ((x&007000000ul)>>15)) & 0xffull) << 54;
+
+    uint64_t bits00 = ((bit_array >> ((x<< 3) & 070)) & 0xffull)      ;
+    uint64_t bits03 = ((bit_array >> ((x    ) & 070)) & 0xffull) <<  9;
+    uint64_t bits06 = ((bit_array >> ((x>> 3) & 070)) & 0xffull) << 18;
+    uint64_t bits09 = ((bit_array >> ((x>> 6) & 070)) & 0xffull) << 27;
+    uint64_t bits12 = ((bit_array >> ((x>> 9) & 070)) & 0xffull) << 36;
+    uint64_t bits15 = ((bit_array >> ((x>>12) & 070)) & 0xffull) << 45;
+    uint64_t bits18 = ((bit_array >> ((x>>15) & 070)) & 0xffull) << 54;
+
+    return bits00 + bits03 + bits06 + bits09 + bits12 + bits15 + bits18;
+}
+
+// only values up to 2**21-1 are allowed
+LAB_CONST
+LAB_INLINE uint64_t LAB_IntermangleBits3(uint32_t x, uint32_t y, uint32_t z)
+{
+    return LAB_StretchBits3x(x) + LAB_StretchBits3x(y)*2 + LAB_StretchBits3x(z)*4;
+}
+
 #else /* DOXYGEN SECTION */
 
 

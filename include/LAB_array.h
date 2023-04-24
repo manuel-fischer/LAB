@@ -156,3 +156,94 @@
     } \
 } while(0)
 
+
+typedef struct LAB_Array_Resize_PointerMem
+{
+    void* array;
+    size_t pointer_size;
+} LAB_Array_Resize_Locals;
+
+typedef struct LAB_Array_Resize_Result
+{
+    void* new_data;
+    bool success;
+} LAB_Array_Resize_Result;
+
+
+// by only allowing new_size != 0, the function only returns NULL exactly on an error
+// padding should always be the same for the same allocation
+LAB_INLINE LAB_ALWAYS_INLINE
+void* LAB_Array_Resize_Realloc(void* data, size_t* old_size, size_t new_size, size_t element_size, size_t padding)
+{
+    LAB_ASSERT(new_size != 0);
+    size_t old_capacity, new_capacity;
+
+    if(LAB_IS_CONSTANT(padding) && padding == 0)
+    {
+        old_capacity = LAB_Capacity(*old_size);
+        new_capacity = LAB_Capacity(new_size);
+    }
+    else
+    {
+        old_capacity = LAB_SELECT0(data, LAB_Capacity(*old_size+padding));
+        new_capacity = LAB_Capacity(new_size+padding);
+    }
+
+    LAB_ASSERT(!data ? old_capacity == 0 : true);
+
+    void* new_data = data;
+
+    if(new_capacity != old_capacity)
+        new_data = LAB_ReallocN(data, new_capacity, element_size);
+    else
+        LAB_ASSERT(new_data != NULL);
+
+    if(new_data != NULL)
+        *old_size = new_size;
+
+    return new_data;
+}
+
+// Assigning the pointer, that avoids undefined assignment of eg int** through a void**
+LAB_INLINE LAB_ALWAYS_INLINE
+bool LAB_Array_Resize_Assign_Ptr(void*LAB_RESTRICT pdata, size_t pdata_size, void*LAB_RESTRICT pdata_new)
+{
+    bool success = memcmp(pdata_new, LAB_PTR_OFFSET(pdata_new, 1, pdata_size), pdata_size) != 0;
+
+    if(success)
+        memcpy(pdata, pdata_new, pdata_size);
+
+    return success;
+}
+
+
+#define LAB_ARRAY_RESIZE_SOME(array, new_size) \
+    LAB_Array_Resize_Assign_Ptr(&LAB_ARRAY_DATA(array), sizeof(LAB_ARRAY_DATA(array)), \
+        ((LAB_ARRAY_TYPE(array)*[2]) { (LAB_ARRAY_TYPE(array)*)LAB_Array_Resize_Realloc( \
+            LAB_ARRAY_DATA(array), &LAB_ARRAY_SIZE(array), new_size, sizeof(LAB_ARRAY_DATA(array)[0]), 0 \
+        ), NULL }) \
+    )
+
+#define LAB_ARRAY_RESIZE2(array, new_size) \
+    ((new_size) == 0) \
+      ? (LAB_ARRAY_SIZE(array) = 0, LAB_ARRAY_DATA(array) = NULL, true) \
+      : LAB_ARRAY_RESIZE2_SOME(array, new_size)
+
+#define LAB_ARRAY_APPEND_SOME(array, add_size) \
+    (LAB_ARRAY_RESIZE_SOME(array, LAB_ARRAY_SIZE(array) + (add_size)) ? LAB_ARRAY_DATA(array) + LAB_ARRAY_SIZE(array) - (add_size) : (LAB_ARRAY_TYPE(array)*)NULL)
+
+
+// padded allocation like for additional sentinel values.
+// The allocated buffer size is always a power of 2, thus the capacity is LAB_Capacity(size+padding).
+// padding should always be the same for the same allocation, should not be mixed with other allocation
+#define LAB_ARRAY_RESIZE_SOME_PAD(array, new_size, padding) \
+    LAB_Array_Resize_Assign_Ptr(&LAB_ARRAY_DATA(array), sizeof(LAB_ARRAY_DATA(array)), \
+        ((LAB_ARRAY_TYPE(array)*[2]) { (LAB_ARRAY_TYPE(array)*)LAB_Array_Resize_Realloc( \
+            LAB_ARRAY_DATA(array), &LAB_ARRAY_SIZE(array), new_size, sizeof(LAB_ARRAY_DATA(array)[0]), padding \
+        ), NULL }) \
+    )
+
+#define LAB_ARRAY_APPEND_SOME_PAD(array, add_size, padding) \
+    (LAB_ARRAY_RESIZE_SOME_PAD(array, LAB_ARRAY_SIZE(array) + (add_size), padding) ? LAB_ARRAY_DATA(array) + LAB_ARRAY_SIZE(array) - (add_size) : (LAB_ARRAY_TYPE(array)*)NULL)
+
+#define LAB_PaddedCapacity(size, padding) LAB_Capacity(size+padding)

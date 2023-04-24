@@ -3,6 +3,9 @@
 #include "LAB_opt.h"
 #include "LAB_render_pass.h"
 #include "LAB_color.h"
+#include "LAB_color_hdr.h"
+#include "LAB_vec.h"
+#include "LAB_array.h"
 
 // TODO setting to switch between triangle rendering and quad rendering
 
@@ -92,6 +95,23 @@
              LAB_BITOR_TRUE((bits)>>6 & 077, (selector)>>12 & 077) & \
              LAB_BITOR_TRUE((bits)>>6 & 077, (selector)>>18 & 077))
 
+typedef struct LAB_ModelQuadVertex
+{
+    LAB_Vec3F pos;
+    LAB_Vec2F tex;
+} LAB_ModelQuadVertex;
+typedef struct LAB_ModelQuad
+{
+    LAB_ModelQuadVertex v[4];
+    LAB_Color color;
+
+    uint64_t cull;
+    uint64_t visibility;
+    uint64_t light;
+    //LAB_Vec3F light_normal;
+} LAB_ModelQuad;
+
+
 /**
  *  the flags field of the first vertex of a triangle
  *  contains the faces to cull
@@ -99,13 +119,14 @@
  */
 typedef struct LAB_Vertex   //     Size       Align
 {                           //-----------------------
-    float x, y, z;          //   3*4 Bytes   4 Bytes  \_ could be used as 4 floats
-    LAB_Color color;        //     4 Bytes   4 Bytes  /  -> 16 Byte == 128 bit (vector intrinsics)
+    LAB_Vec3F pos;          //   3*4 Bytes   4 Bytes  \_ could be used as 4 floats
+    uint32_t  padding;      //     4 Bytes   4 Bytes  /  -> 16 Byte == 128 bit (vector intrinsics)
                             //
-    float u, v;             //   2*4 Bytes   4 Bytes
-    uint64_t flags;         //     8 Bytes   8 Bytes
+    LAB_Vec2F tex;          //   2*4 Bytes   4 Bytes
+    LAB_Color color;        //     4 Bytes   4 Bytes
+    LAB_ColorHDR light;     //     4 Bytes   4 Bytes
 }                           //-----------------------
-LAB_Vertex;                 //    32 Bytes   8 Bytes
+LAB_Vertex;                 //    32 Bytes   4 Bytes
 
 typedef struct LAB_Triangle //     Size
 {                           //-------------
@@ -115,14 +136,20 @@ LAB_Triangle;               //    96 Bytes
 // the midpoint between [0] and [1] is used
 // to compute the distance to the camera
 
-#define LAB_TRIANGLE_CULL(triangle)       ((triangle).v[0].flags)
-#define LAB_TRIANGLE_LIGHT(triangle)      ((triangle).v[1].flags)
-#define LAB_TRIANGLE_VISIBILITY(triangle) ((triangle).v[2].flags)
+#define LAB_ModelQuad_MakeVertex(pmq, i, shift_pos) \
+    ((LAB_Vertex) { .pos=LAB_Vec3F_Add((pmq)->v[i].pos, shift_pos), .padding=0, .tex=(pmq)->v[i].tex, .color=(pmq)->color, .light=0xffffffff })
+
+#define LAB_ModelQuad_MakeVertexShadedHDR(pmq, i, shift_pos, shade) \
+    ((LAB_Vertex) { .pos=LAB_Vec3F_Add((pmq)->v[i].pos, shift_pos), .padding=0, (pmq)->v[i].tex, .color=(pmq)->color, .light=(shade) })
+
 
 typedef struct LAB_Model
 {
-    size_t size, capacity;
-    LAB_Triangle* data;
+    size_t quad_count;
+    LAB_ModelQuad* quads;
+    #define LAB_Model_QuadsArray(pmodel) (LAB_ModelQuad, (pmodel)->quads, (pmodel)->quad_count)
+    #define LAB_Model_TriangleCount(pmodel) ((pmodel)->quad_count*2)
+
     LAB_RenderPass render_pass;
 } LAB_Model;
 
@@ -130,9 +157,10 @@ typedef struct LAB_Model
 
 
 
+
 #define LAB_Model_Create(model) (LAB_ObjClear(model), true)
 void LAB_Model_Destroy(LAB_Model* model);
-LAB_Triangle* LAB_Model_Extend(LAB_Model* model, size_t num_tris);
+LAB_ModelQuad* LAB_Model_Extend(LAB_Model* model, size_t num_tris);
 
 
 
@@ -146,13 +174,13 @@ LAB_Triangle* LAB_Model_Extend(LAB_Model* model, size_t num_tris);
  *  RETURN: the number of triangles written
  */
 int LAB_PutModelAt(LAB_OUT LAB_Triangle* dst, LAB_Model const* model,
-                   float x, float y, float z, unsigned faces, unsigned visibility);
+                   LAB_Vec3F pos, unsigned faces, unsigned visibility);
 
 int LAB_PutModelShadedAt(LAB_OUT LAB_Triangle* dst, LAB_Model const* model,
-                         float x, float y, float z, unsigned faces, unsigned visibility,
+                         LAB_Vec3F pos, unsigned faces, unsigned visibility,
                          const LAB_Color light_sides[6]);
 
 int LAB_PutModelSmoothShadedAt(LAB_OUT LAB_Triangle* dst,
                                LAB_Model const* model,
-                               float x, float y, float z, unsigned faces, unsigned visibility,
-                               const LAB_Color light_sides[6][4]);
+                               LAB_Vec3F pos, unsigned faces, unsigned visibility,
+                               const LAB_Color light_sides[6][8]);

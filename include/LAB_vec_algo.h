@@ -4,6 +4,7 @@
 
 #include "LAB_direction.h"
 #include "LAB_vec.h"
+#include "LAB_mat.h"
 #include "LAB_opt.h" // -> LAB_IN, LAB_OUT
 
 typedef struct LAB_Vec3Algo_RayVsBox_Hit
@@ -54,22 +55,26 @@ LAB_Vec3Algo_RayVsBox_Hit LAB_Vec3Algo_RayVsBox(
 }
 
 
+LAB_INLINE
+LAB_Vec4F LAB_Vec4F_FromPosition(LAB_Vec3F v)
+{
+    return (LAB_Vec4F) { v.x, v.y, v.z, 1 };
+}
+
+LAB_INLINE
+LAB_Vec4F LAB_Vec4F_FromDirection(LAB_Vec3F v)
+{
+    return (LAB_Vec4F) { v.x, v.y, v.z, 0 };
+}
+
 /**
  * matrix: model projection matrix
  */
 LAB_INLINE
-LAB_Vec3F LAB_ProjectPoint(double matrix[16], LAB_Vec3F pos)
+LAB_Vec3F LAB_ProjectPoint(LAB_Mat4F matrix, LAB_Vec3F pos)
 {
-    float proj_vec[3];
-    LAB_UNROLL(3)
-    for(int i = 0; i < 3; ++i)
-    {
-        proj_vec[i] = matrix[i+4*0]*pos.x+matrix[i+4*1]*pos.y+matrix[i+4*2]*pos.z
-                    + matrix[i+4*3];
-    }
-    return (LAB_Vec3F) {
-        .x = proj_vec[0] / proj_vec[2],
-        .y = proj_vec[1] / proj_vec[2],
-        .z = proj_vec[2],
-    };
+    LAB_Vec4F pos4 = LAB_Vec4F_FromPosition(pos);
+    LAB_Vec4F v = LAB_Mat4F_RMul(matrix, pos4);
+
+    return (LAB_Vec3F) { v.x/v.w, v.y/v.w, v.z/v.w };
 }

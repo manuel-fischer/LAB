@@ -27,8 +27,8 @@ bool LAB_BlockFull_Init_(LAB_Assets* assets, LAB_BlockID* bid,
     m->render_pass = render_pass;
     LAB_Builtin_ModelAddCubeAll(m,
         LAB_full_aabb,
-        tex_f, LAB_cube_color_shade, tint);
-        
+        tex_f, LAB_BoxColors_Shaded(tint));
+
     b->model = m;
     LAB_ObjCopy(&b->bounds, &LAB_full_aabb);
     //b->item_texture = LAB_Assets_LoadTexture(assets, "stone");
@@ -141,7 +141,7 @@ bool LAB_BlockCross_Init_(LAB_Assets* assets, LAB_BlockID* bid,
 
 #define LAB_BlockLight_Init(assets, bid, tex, lum) \
         LAB_BlockLight_Init_(assets, bid, (const size_t(*)[2])tex, lum)
-LAB_INLINE 
+LAB_INLINE
 bool LAB_BlockLight_Init_(LAB_Assets* assets, LAB_BlockID* bid,
                           const size_t tex[2][2], LAB_Color lum)
 {
@@ -150,7 +150,7 @@ bool LAB_BlockLight_Init_(LAB_Assets* assets, LAB_BlockID* bid,
 
     LAB_Model* m = LAB_Assets_NewModel(assets);
     const float tex_f[2][2] = { { tex[0][0], tex[0][1] }, { tex[1][0], tex[1][1] } };
-    LAB_Builtin_ModelAddCubeAll(m, LAB_full_aabb, tex_f, LAB_cube_color_flat, LAB_COLOR_WHITE);
+    LAB_Builtin_ModelAddCubeAll(m, LAB_full_aabb, tex_f, LAB_box_color_flat);
     *b = (LAB_Block) {
         .flags = LAB_BLOCK_SOLID | LAB_BLOCK_GLOWING | LAB_BLOCK_NOSHADE,
         //.lum = LAB_RGB(255, 64, 16),

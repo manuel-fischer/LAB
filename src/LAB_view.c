@@ -1,5 +1,7 @@
 #include "LAB_view.h"
 
+#include "LAB_view_mesh_build.h"
+
 #include "LAB_debug_options.h"
 
 #include "LAB_memory.h"
@@ -37,10 +39,14 @@
 #include "LAB/gui/inventory.h"
 #include "LAB_inventory.h"
 
+#include "LAB_image.h"
+#include "LAB_color_defs.h"
+
+#include "LAB_view_render_box.h"
+
 #include "LAB_loop.h"
 
 #include "LAB_chunk_neighborhood.h" // TODO remove
-#include "LAB_light_shading.h"
 
 #include "LAB_game_server.h" // TODO remove
 
@@ -84,8 +90,6 @@ const LAB_IView LAB_view_interface =
 
 
 LAB_STATIC bool LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_World* world, unsigned visibility);
-LAB_STATIC void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_IN LAB_BlockNbHood* blocknbh, LAB_IN LAB_LightNbHood* lightnbh, unsigned visibility);
-LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_IN LAB_BlockNbHood* blocknbh, LAB_IN LAB_LightNbHood* lightnbh, int x, int y, int z, unsigned visibility);
 LAB_STATIC int  LAB_ViewUpdateChunks(LAB_View* view); // return updated chunks
 LAB_STATIC bool LAB_ViewUpdateChunk(LAB_View* view, LAB_ViewChunkEntry* e);
 LAB_STATIC int  LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass);
@@ -116,15 +120,27 @@ LAB_STATIC bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_ent
 LAB_STATIC void LAB_View_UploadChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry);
 LAB_STATIC void LAB_View_UploadChunks(LAB_View* view);
 
-LAB_STATIC void LAB_RenderBox(LAB_View* view, float x, float y, float z, float w, float h, float d);
 LAB_STATIC void LAB_View_RenderBlockSelection(LAB_View* view);
 
 //LAB_STATIC int LAB_View_CompareChunksIndirect(const void* a, const void* b);
 //LAB_STATIC void LAB_View_SortChunks(LAB_View* view, uint32_t delta_ms);
 
-LAB_STATIC LAB_Triangle* LAB_ViewMeshAlloc(LAB_View_Mesh* mesh, size_t add_size, size_t extra_size);
-
 LAB_STATIC void LAB_ViewRenderInit(LAB_View* view);
+
+
+LAB_STATIC bool LAB_View_SetupCrosshair(LAB_View* view)
+{
+    SDL_Surface* s = LAB_ImageLoad("assets/crosshair.png");
+    if(!s) return false;
+
+    LAB_GL_ActivateTexture(&view->crosshair.tex);
+    LAB_GL_UploadSurf(view->crosshair.tex, s);
+    view->crosshair.size = (LAB_Vec2I) {s->w, s->h};
+
+    LAB_SDL_FREE(SDL_FreeSurface, &s);
+
+    return true;
+}
 
 bool LAB_View_Create(LAB_View* view, LAB_World* world, LAB_TexAtlas* atlas)
 {
@@ -140,16 +156,30 @@ bool LAB_View_Create(LAB_View* view, LAB_World* world, LAB_TexAtlas* atlas)
 
     LAB_GuiManager_Create(&view->gui_mgr);
 
+    LAB_GL_DBG_CHECK();
+
     /*LAB_OBJ_SDL(view->tbl_mutex = SDL_CreateMutex(),
                 SDL_DestroyMutex(view->tbl_mutex),*/
     LAB_OBJ(LAB_ViewArray_Create(&view->chunk_array, 5),
             LAB_ViewArray_Destroy(&view->chunk_array),
+    LAB_OBJ((LAB_GL_DBG_CHECK(), LAB_ViewRenderer_Create(&view->renderer)),
+            LAB_ViewRenderer_Destroy(&view->renderer),
+    LAB_OBJ((LAB_GL_DBG_CHECK(), LAB_BoxRenderer_Create(&view->box_renderer)),
+            LAB_BoxRenderer_Destroy(&view->box_renderer),
+    LAB_OBJ((LAB_GL_DBG_CHECK(), LAB_SurfaceRenderer_Create(&view->surface_renderer)),
+            LAB_SurfaceRenderer_Destroy(&view->surface_renderer),
+
+    LAB_OBJ((view->crosshair.tex.id = 0, true),
+            LAB_GL_OBJ_FREE(glDeleteTextures, &view->crosshair.tex),
+    LAB_OBJ(LAB_View_SetupCrosshair(view),
+            (void)0,
     {
+
         glGenQueries(1, &view->upload_time_query);
 
         return 1;
-    });
-    
+    }););););););
+
     return 0;
 }
 
@@ -175,12 +205,14 @@ void LAB_View_Destroy(LAB_View* view)
 
     LAB_View_Clear(view);
     //LAB_View_ChunkTBL_Destroy(&view->chunks);
+    LAB_ViewRenderer_Destroy(&view->renderer);
     LAB_ViewArray_Destroy(&view->chunk_array);
 
     LAB_ViewCoordInfo_Destroy(&view->info);
 
     LAB_SDL_FREE(SDL_FreeSurface, &view->stats_display.surf);
-    LAB_GL_FREE(glDeleteTextures, 1, &view->stats_display.gl_texture);
+    LAB_GL_FREE(glDeleteTextures, 1, &view->stats_display.tex.id);
+    LAB_GL_FREE(glDeleteTextures, 1, &view->crosshair.tex.id);
 }
 
 
@@ -331,235 +363,21 @@ LAB_STATIC bool LAB_ViewBuildMesh(LAB_View* view, LAB_ViewChunkEntry* chunk_entr
     LAB_LightNbHood_GetRead(chunk_neighborhood, &lightnbh);
 
     chunk_entry->visible_faces = visibility;
-    LAB_ViewBuildMeshNeighbored(view, chunk_entry, &blocknbh, &lightnbh, visibility);
-    return 1;
+
+    bool success = LAB_View_Mesh_BuildChunk((LAB_View_Mesh_BuildArgs)
+    {
+        .cfg = {
+            .flat_shade = !!(view->cfg.flags&LAB_VIEW_FLAT_SHADE)
+        },
+        .render_passes = chunk_entry->render_passes,
+        .blocknbh = &blocknbh,
+        .lightnbh = &lightnbh,
+        .visibility = visibility,
+    });
+    (void)success;
+    return true;
 }
 
-
-LAB_HOT
-LAB_STATIC void LAB_ViewBuildMeshNeighbored(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_IN LAB_BlockNbHood* blocknbh, LAB_IN LAB_LightNbHood* lightnbh, unsigned visibility)
-{
-    for(int i = 0; i < LAB_RENDER_PASS_COUNT; ++i)
-        LAB_ASSERT(chunk_entry->render_passes[i].m_size == 0);
-
-    for(size_t z = 0; z < LAB_CHUNK_SIZE; ++z)
-    for(size_t y = 0; y < LAB_CHUNK_SIZE; ++y)
-    for(size_t x = 0; x < LAB_CHUNK_SIZE; ++x)
-    {
-        LAB_BlockID bid = blocknbh->bufs[LAB_NB_CENTER]->blocks[LAB_CHUNK_OFFSET(x, y, z)];
-        if(LAB_BlockP(bid)->flags & LAB_BLOCK_VISUAL)
-            LAB_ViewBuildMeshBlock(view, chunk_entry, blocknbh, lightnbh, x, y, z, visibility);
-    }
-}
-
-
-LAB_HOT
-LAB_STATIC void LAB_ViewBuildMeshBlock(LAB_View* view, LAB_ViewChunkEntry* chunk_entry, LAB_IN LAB_BlockNbHood* blocknbh, LAB_IN LAB_LightNbHood* lightnbh, int x, int y, int z, unsigned visibility)
-{
-
-#define GET_BLOCK(bx, by, bz) LAB_BlockP(*LAB_BlockNbHood_RefBlock(blocknbh, x+(bx), y+(by), z+(bz)))
-#define GET_BLOCK_FLAGS(bx, by, bz) (GET_BLOCK(bx, by, bz)->flags)
-
-    LAB_Block* tmp_block;
-#define IS_BLOCK_OPAQUE(bx, by, bz) ( \
-    tmp_block=GET_BLOCK(bx, by, bz), \
-    (!!(tmp_block->flags&LAB_BLOCK_OPAQUE)) \
-       | ((tmp_block==block) & (!!(tmp_block->flags&LAB_BLOCK_OPAQUE_SELF))) \
-)
-
-    #define GET_LIT_COLOR(x, y, z) LAB_MaxColor( \
-        GET_BLOCK(x, y, z)->dia, \
-        GET_BLOCK(x, y, z)->lum)
-
-    //#define GET_LIGHT LAB_GetVisualNeighborhoodLight
-    /*#define GET_LIGHT(x, y, z, face, default_color) \
-        (view->cfg.flags&LAB_VIEW_BRIGHTER \
-            ?LAB_MixColor50(LAB_GetVisualNeighborhoodLight(lightnbh, x, y, z, face, default_color), GET_LIT_COLOR(x, y, z)) \
-            :LAB_GetVisualNeighborhoodLight(lightnbh, x, y, z, face, default_color))*/
-
-    #define POW_COLOR4(x) (~LAB_MulColor_Fast(LAB_MulColor_Fast(~(x), ~(x)), LAB_MulColor_Fast(~(x), ~(x))))
-    /*#define GET_LIGHT(x, y, z, face, default_color) \
-        (view->cfg.flags&LAB_VIEW_BRIGHTER \
-            ?LAB_MinColor(POW_COLOR4(LAB_GetVisualNeighborhoodLight(lightnbh, x, y, z, face, default_color)), GET_LIT_COLOR(x, y, z)) \
-            :LAB_GetVisualNeighborhoodLight(lightnbh, x, y, z, face, default_color))*/
-            
-    /*#define GET_LIGHT(x, y, z, face, default_color) \
-        LAB_MinColor(LAB_View_GammaMap_MapColor(view->cfg.gamma_map, LAB_GetVisualNeighborhoodLight(lightnbh, x, y, z, face, default_color)), \
-                     GET_LIT_COLOR(x, y, z))*/
-
-    /*#define GET_LIGHT(x, y, z, face, default_color) \
-        LAB_View_GammaMap_MapColor(view->cfg.gamma_map, LAB_GetVisualNeighborhoodLight(lightnbh, x, y, z, face, default_color))*/
-    #define GET_LIGHT(x, y, z, face, default_color) \
-        LAB_GetVisualNeighborhoodLight(lightnbh, x, y, z, face, view->cfg.exposure, view->cfg.saturation)
-            
-
-    LAB_BlockID bid = blocknbh->bufs[LAB_NB_CENTER]->blocks[LAB_CHUNK_OFFSET(x, y, z)];
-    LAB_Block* block = LAB_BlockP(bid);
-    if(block->model == NULL) return;
-
-    int faces = 0;
-    faces |=  1*(!(IS_BLOCK_OPAQUE(-1, 0, 0)));
-    faces |=  2*(!(IS_BLOCK_OPAQUE( 1, 0, 0)));
-    faces |=  4*(!(IS_BLOCK_OPAQUE( 0,-1, 0)));
-    faces |=  8*(!(IS_BLOCK_OPAQUE( 0, 1, 0)));
-    faces |= 16*(!(IS_BLOCK_OPAQUE( 0, 0,-1)));
-    faces |= 32*(!(IS_BLOCK_OPAQUE( 0, 0, 1)));
-    if(faces == 0) return;
-
-    int lum_faces = 63; // all
-
-
-    LAB_View_Mesh* mesh = &chunk_entry->render_passes[block->model->render_pass];
-
-    //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?LAB_HighColor2(x):(x))
-    //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?LAB_MixColor50(x, ~0):(x))
-    //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor(LAB_MulColor(~(x), ~(x)), LAB_MulColor(~(x), ~(x))):(x))
-    // before mixing
-    //#define MAP_LIGHT_0(x) LAB_ColorHI4(x)
-    #define MAP_LIGHT_0(x) (x)
-    //#define MAP_LIGHT(x) (view->cfg.flags&LAB_VIEW_BRIGHTER?~LAB_MulColor_Fast(LAB_MulColor_Fast(~(x), ~(x)), LAB_MulColor_Fast(~(x), ~(x))):(x))
-    //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor_Fast(~(x), ~(x)):(x))
-    //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor_Fast(~(x), ~(x)):LAB_MulColor_Fast((x), (x)))
-    //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor_Fast(~(x), ~(x)):LAB_AddColor(LAB_MulColor_Fast((x), (x)), LAB_MulColor_Fast((x), (x))))
-    //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor_Fast(~(x), ~(x)):LAB_AddColor(LAB_SubColor((x), LAB_RGBAX(10101000)), LAB_SubColor((x), LAB_RGBAX(10101000))))
-    //#define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?~LAB_MulColor_Fast(~(LAB_MulColor_Fast((x), (x))), ~(x)):LAB_MulColor_Fast((x), (x)))
-//    #define MAP_LIGHT(x) (view->flags&LAB_VIEW_BRIGHTER?LAB_MulColor_Fast(~LAB_MulColor_Fast(~(x), ~(x)), ~LAB_MulColor_Fast(~(x), ~(x))):LAB_MulColor_Fast((x), (x)))
-    #define MAP_LIGHT(x) (x)
-
-    if(block->flags&LAB_BLOCK_NOSHADE) // TODO should be part of a triangle itself
-    {
-        const LAB_Model* model = block->model;
-        if(!model) return;
-        LAB_Triangle* tri;
-        tri = LAB_ViewMeshAlloc(mesh, model->size, 0);
-        if(LAB_UNLIKELY(tri == NULL)) return;
-        int count = LAB_PutModelAt(tri, model, x, y, z, faces, visibility);
-        mesh->m_size -= model->size-count;
-    }
-    else if((view->cfg.flags&LAB_VIEW_FLAT_SHADE)||(block->flags&LAB_BLOCK_FLAT_SHADE))
-    {
-        LAB_Color light_sides[7];
-
-        int face;
-        LAB_DIR_EACH(lum_faces, face,
-        {
-            light_sides[face] = MAP_LIGHT(MAP_LIGHT_0(GET_LIGHT(x+LAB_OX(face), y+LAB_OY(face), z+LAB_OZ(face), face, LAB_RGB(255, 255, 255))));
-        });
-
-        light_sides[6] = MAP_LIGHT(MAP_LIGHT_0(GET_LIGHT(x, y, z, LAB_I_U, LAB_RGB(255, 255, 255))));
-
-
-        const LAB_Model* model = block->model;
-        if(!model) return;
-        LAB_Triangle* tri;
-        tri = LAB_ViewMeshAlloc(mesh, model->size, 0);
-        if(LAB_UNLIKELY(tri == NULL)) return;
-        int count = LAB_PutModelShadedAt(tri, model, x, y, z, faces, visibility, light_sides);
-        mesh->m_size -= model->size-count;
-    }
-    else
-    {
-        //LAB_Color default_color = chunk_entry->y<-2 ? LAB_RGB(15, 15, 15) : LAB_RGB(255, 255, 255);
-        LAB_Color light_sides[7][4];
-
-        #define XX(xd, yd, zd) GET_LIGHT(x+ox+(xd), y+oy+(yd), z+oz+(zd), face, default_color)
-        int face;
-        LAB_DIR_EACH(lum_faces, face,
-        {
-            int ox = LAB_OX(face);
-            int oy = LAB_OY(face);
-            int oz = LAB_OZ(face);
-
-            int ax = LAB_AXF(face);
-            int ay = LAB_AYF(face);
-            int az = LAB_AZF(face);
-            int bx = LAB_BXF(face);
-            int by = LAB_BYF(face);
-            int bz = LAB_BZF(face);
-
-            LAB_Color tmp[9];
-            for(int v = -1; v <= 1; ++v)
-            for(int u = -1; u <= 1; ++u)
-            {
-                int index = 3*(1+v) + 1+u;
-                if(v && u && (GET_BLOCK_FLAGS(     v*bx+ox,      v*by+oy,      v*bz+oz)&LAB_BLOCK_OPAQUE)
-                          && (GET_BLOCK_FLAGS(u*ax     +ox, u*ay     +oy, u*az     +oz)&LAB_BLOCK_OPAQUE))
-                {
-                    //tmp[index] = LAB_MinColor(LAB_MaxColor(
-                    //                XX(     v*bx,      v*by,      v*bz),
-                    //                XX(u*ax     , u*ay     , u*az     )),
-                    //                XX(u*ax+v*bx, u*ay+v*by, u*az+v*bz));
-                    tmp[index] = MAP_LIGHT_0(LAB_MaxColor(
-                                    XX(     v*bx,      v*by,      v*bz),
-                                    XX(u*ax     , u*ay     , u*az     )));
-                }
-                else
-                    tmp[index] = MAP_LIGHT_0(XX(u*ax+v*bx, u*ay+v*by, u*az+v*bz));
-            }
-
-            /*light_sides[face][0] = XX(    0,     0,     0);
-            light_sides[face][1] = XX(   ax,    ay,    az);
-            light_sides[face][2] = XX(bx   , by   , bz   );
-            light_sides[face][3] = XX(bx+ax, by+ay, bz+az);*/
-
-            light_sides[face][0] = MAP_LIGHT(LAB_MixColor4x25(tmp[0], tmp[1], tmp[3], tmp[4]));
-            light_sides[face][1] = MAP_LIGHT(LAB_MixColor4x25(tmp[1], tmp[2], tmp[4], tmp[5]));
-            light_sides[face][2] = MAP_LIGHT(LAB_MixColor4x25(tmp[3], tmp[4], tmp[6], tmp[7]));
-            light_sides[face][3] = MAP_LIGHT(LAB_MixColor4x25(tmp[4], tmp[5], tmp[7], tmp[8]));
-
-        });
-        #undef XX
-
-        // TODO
-        #define FACE_CENTER 0
-
-        light_sides[6][0] =
-        light_sides[6][1] =
-        light_sides[6][2] =
-        light_sides[6][3] = MAP_LIGHT(GET_LIGHT(x, y, z, FACE_CENTER, LAB_RGB(255, 255, 255)));
-
-
-        const LAB_Model* model = block->model;
-        if(!model) return;
-        LAB_Triangle* tri;
-        tri = LAB_ViewMeshAlloc(mesh, model->size, 0);
-        if(LAB_UNLIKELY(tri == NULL)) return;
-        int count = LAB_PutModelSmoothShadedAt(tri, model, x, y, z, faces, visibility, (const LAB_Color(*)[4])light_sides);
-        mesh->m_size -= model->size-count;
-    }
-
-
-#undef GET_BLOCK_FLAGS
-#undef GET_BLOCK
-
-}
-
-
-LAB_STATIC LAB_Triangle* LAB_ViewMeshAlloc(LAB_View_Mesh* mesh, size_t add_size, size_t extra_size)
-{
-    size_t mesh_count, new_mesh_count, mesh_capacity;
-
-    mesh_count = mesh->m_size;
-    new_mesh_count = mesh_count+add_size;
-    mesh_capacity = mesh->capacity;
-
-    //if(LAB_UNLIKELY(new_mesh_count+extra_size > mesh_capacity))
-    if(new_mesh_count+extra_size > mesh_capacity)
-    {
-        if(mesh_capacity == 0) mesh_capacity = 1<<3;
-        while(new_mesh_count+extra_size > mesh_capacity) mesh_capacity <<= 1;
-        //if(mesh_capacity > (1<<9)) return NULL; else mesh_capacity = 1<<9;// TEST ---
-        LAB_Triangle* mesh_data = LAB_ReallocN(mesh->data, mesh_capacity, sizeof *mesh_data);
-        if(!mesh_data) {
-            return NULL;
-        }
-        mesh->data = mesh_data;
-        mesh->capacity = mesh_capacity;
-    }
-    mesh->m_size=new_mesh_count;
-
-    return &mesh->data[mesh_count];
-}
 
 LAB_STATIC void LAB_ViewUploadVBO(LAB_View* view, LAB_View_Mesh* mesh)
 {
@@ -567,14 +385,18 @@ LAB_STATIC void LAB_ViewUploadVBO(LAB_View* view, LAB_View_Mesh* mesh)
 
     if(!mesh->vbo)
     {
-        LAB_GL_ALLOC(glGenBuffers, 1, &mesh->vbo);
+        LAB_GL_CHECK();
+        LAB_GL_ALLOC(glCreateBuffers, 1, &mesh->vbo);
         LAB_GL_CHECK();
     }
 
     mesh->vbo_size = mesh->m_size;
 
-    glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
-    glBufferData(GL_ARRAY_BUFFER, mesh->vbo_size*sizeof *mesh_data, mesh_data, GL_STATIC_DRAW);
+    LAB_GL_CHECK();
+    LAB_GL_IgnoreInfo(131185);
+    //glNamedBufferStorage(mesh->vbo, mesh->vbo_size*sizeof *mesh_data, mesh_data, 0);
+    glNamedBufferData(mesh->vbo, mesh->vbo_size*sizeof *mesh_data, mesh_data, GL_DYNAMIC_DRAW);
+    LAB_GL_ResetIgnoreInfo();
     LAB_GL_CHECK();
 
     view->current_upload_amount += mesh->vbo_size*sizeof *mesh_data;
@@ -601,63 +423,24 @@ LAB_STATIC bool LAB_View_ChunkNeedsUpdate(LAB_View* view, LAB_ViewChunkEntry* ch
 
 LAB_STATIC bool LAB_ViewBuildChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_entry)
 {
-    // TODO: do optimization: when blocks at the chunk-border from an other chunk
-    //                        changed, only update the neighboring 16x16 blocks --> possibly a 16x speedup
-
-    #if 0
-    unsigned required_ticks = abs(LAB_Sar(LAB_FastFloorF2I(view->x), LAB_CHUNK_SHIFT)-chunk_entry->x)
-                            + abs(LAB_Sar(LAB_FastFloorF2I(view->y), LAB_CHUNK_SHIFT)-chunk_entry->y)
-                            + abs(LAB_Sar(LAB_FastFloorF2I(view->z), LAB_CHUNK_SHIFT)-chunk_entry->z);
-
-    if(chunk_entry->delay_ticks < 60)// && chunk_entry->delay_ticks+2 < 10*required_ticks)
+    // TODO:
+    // - Optimizations
+    //   - when blocks at the chunk-border from an other chunk
+    //     changed, only update the neighboring 16x16 blocks --> possibly a 16x speedup
+    //   - only build chunk if all neighbors are generated
+    //   - only mesh faces, that are visible
+    bool chunk_available = LAB_ViewBuildMesh(view, chunk_entry, view->world, 077);
+    if(!chunk_available)
     {
-        chunk_entry->delay_ticks++;
-        return 0;
+        //chunk_entry->dirty = ~0;
+        //chunk_entry->exist =  0;
+        //printf("FAILED to build mesh for %i %i %i\n", chunk_entry->x, chunk_entry->y, chunk_entry->z);
+        return false;
     }
-    #endif
+    chunk_entry->dirty = 0;
+    chunk_entry->upload_vbo = 1;
 
-    #if 0
-    // TODO: only build chunk if all neighbors are generated
-    if(!LAB_View_IsChunkInSight(view, chunk_entry->x, chunk_entry->y, chunk_entry->z))
-        return 0;
-
-
-    // TODO update this when cam moved.
-    unsigned visibility = LAB_View_ChunkVisibility(view, chunk_entry->x, chunk_entry->y, chunk_entry->z);
-    visibility = 077; // TODO
-
-    // TODO: enshure light update after at most 1 sec
-    if(     (chunk_entry->dirty&LAB_CHUNK_UPDATE_LOCAL)
-        || ((chunk_entry->dirty&LAB_CHUNK_UPDATE_LIGHT) && (rand()&0xf)==0) // TODO parameterize probability
-        || ((chunk_entry->visible_faces&visibility) != visibility) // some faces not visible
-        //|| ( chunk_entry->visible_faces!=visibility && (rand()&0x1f)==0) // some faces not hidden -> TODO: free memory
-    )
-    {
-    #endif
-        bool chunk_available = LAB_ViewBuildMesh(view, chunk_entry, view->world, 077);
-        if(!chunk_available)
-        {
-            //chunk_entry->dirty = ~0;
-            //chunk_entry->exist =  0;
-            //printf("FAILED to build mesh for %i %i %i\n", chunk_entry->x, chunk_entry->y, chunk_entry->z);
-            return 0;
-        }
-        chunk_entry->dirty = 0;
-        chunk_entry->upload_vbo = 1;
-
-        #if 0
-        chunk_entry->delay_ticks = 0;
-        #endif
-
-        //if(view->flags & LAB_VIEW_USE_VBO)
-            ////LAB_ViewUploadVBO(view, chunk_entry);
-            //LAB_ViewUpdateChunk(view, chunk_entry);
-
-        return 1;
-    #if 0
-    }
-    return 0;
-    #endif
+    return true;
 }
 
 
@@ -700,7 +483,7 @@ LAB_STATIC void LAB_View_UpdateModelOrder(LAB_View* view, LAB_ViewChunkEntry* e)
 
             LAB_BuildModelOrder(e->mesh_order, e->alpha_mesh_size);*/
         }
-        
+
         if(e->alpha_mesh_size != alpha_pass->vbo_size)
         {
             if(e->alpha_mesh_size < alpha_pass->vbo_size) // add additional indices
@@ -863,29 +646,21 @@ LAB_STATIC bool LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_en
     }*/
 
     if(!mesh->vbo) return 0;
-    glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
+    LAB_GL_CHECK();
+    LAB_ViewRenderer_Blocks_SetCurrentBuffer(&view->renderer, (LAB_GL_Buffer){mesh->vbo});
+    LAB_GL_CHECK();
 
-    glPushMatrix();
     LAB_Vec3I chunk_pos = { chunk_entry->x, chunk_entry->y, chunk_entry->z };
     LAB_Vec3F translate = LAB_Vec3F_Sub(LAB_Chunk2Pos3F(chunk_pos), LAB_Vec3D2F_Cast(view->pos));
-    glTranslatef(translate.x, translate.y, translate.z);
-    glScalef(1.00001, 1.00001, 1.00001); // Reduces gaps/lines between chunks
-    //glScalef(0.9990, 0.9990, 0.9990);
 
-    LAB_GL_CHECK();
-    {
-        #define LAB_glPointer2(Name, type, vec_member, vec_dim, elemtype) \
-            gl##Name##Pointer(vec_dim, elemtype, sizeof(type), (void*)offsetof(type,vec_member))
-        #define LAB_glPointer(Name, type, vec_member, vec_dim) \
-            LAB_glPointer2(Name, type, vec_member, vec_dim, LAB_GL_TYPEOF_MEMBER(type,vec_member))
-
-        LAB_glPointer(Vertex, LAB_Vertex, x, 3);
-        LAB_GL_CHECK();
-        LAB_glPointer2(Color, LAB_Vertex, color, 4, GL_UNSIGNED_BYTE);
-        LAB_GL_CHECK();
-        LAB_glPointer(TexCoord, LAB_Vertex, u, 2);
-        LAB_GL_CHECK();
-    }
+    LAB_ViewRenderer_Blocks_SetCam(&view->renderer, pass,
+        LAB_Vec3F_Neg(translate),
+        LAB_REDUCE_3(LAB_Mat4F_Chain,
+            view->modlproj_mat,
+            LAB_Mat4F_Translate3V(translate),
+            LAB_Mat4F_Scale1(1.00001) // Reduces gaps/lines between chunks
+        )
+    );
 
     if(pass == LAB_RENDER_PASS_ALPHA && chunk_entry->alpha_mesh_order)
     {
@@ -894,14 +669,37 @@ LAB_STATIC bool LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_en
     }
     else
     {
+        LAB_GL_CHECK();
+
         glDrawArrays(GL_TRIANGLES, 0, 3*mesh->vbo_size);
+
+        LAB_GL_CHECK();
     }
-    glPopMatrix();
 
     return 1;
 }
 
 
+
+LAB_STATIC
+LAB_ColorHDR LAB_View_SkyColor(LAB_View* view)
+{
+    float f = LAB_MIN(LAB_MAX((view->pos.y+64+32)*(1./64.), 0), 1);
+    f*=f;
+
+    return LAB_ColorHDR_RGB_F(0.4*f, 0.7*f, 1.0*f);
+}
+
+LAB_STATIC
+LAB_FogAttrs LAB_View_FogAttrs(LAB_View* view)
+{
+    float d = LAB_MAX(view->cfg.render_dist*16, 48);
+    return (LAB_FogAttrs) {
+        .fog_start = (d-16)*0.5,//(d-16)*0.7,
+        .fog_end = d-16,
+        .fog_color = LAB_View_SkyColor(view),
+    };
+}
 
 
 int LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass)
@@ -910,7 +708,18 @@ int LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass)
 
     int chunks_rendered = 0;
 
+    LAB_GL_CHECK();
+
     int backwards = LAB_PrepareRenderPass(pass);
+
+    LAB_GL_CHECK();
+
+    LAB_ShadingAttrs shading = { .exposure=view->cfg.exposure, .saturation=view->cfg.saturation };
+    LAB_FogAttrs fog = LAB_View_FogAttrs(view);
+
+    LAB_ViewRenderer_Blocks_Prepare(&view->renderer, pass, view->atlas, shading, fog);
+
+    LAB_GL_CHECK();
 
     LAB_Vec3I pc = LAB_Pos3D2Chunk(view->pos);
 
@@ -939,6 +748,8 @@ int LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass)
         }
     });
 
+    LAB_ViewRenderer_Blocks_Finish(&view->renderer, pass);
+
 #if 0
     if(pass == 0)
         printf("chunks_rendered:");
@@ -955,6 +766,8 @@ int LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass)
 
 LAB_STATIC void LAB_ViewRenderChunkGrids(LAB_View* view)
 {
+    LAB_BoxRenderer_Prepare(&view->box_renderer, &view->renderer, view->modlproj_mat, view->pos);
+
     LAB_Vec3I pc = LAB_Pos3D2Chunk(view->pos);
 
     int dist_sq = view->cfg.render_dist*view->cfg.render_dist + 3;
@@ -969,115 +782,87 @@ LAB_STATIC void LAB_ViewRenderChunkGrids(LAB_View* view)
         {
             if(!e->world_chunk) continue;
             LAB_Chunk* c = e->world_chunk;
-            
-            if(0)
+
+            LAB_Color color = LAB_RGB(255, 255, 255);
+
+            int condition = 6; //2;
+            switch(condition)
             {
-                bool blocks_opt = !c->buf_blocks;
-                bool light_opt = LAB_Chunk_GetLightFill(c) != LAB_LIGHT_FILL_DATA;
-                if(blocks_opt || light_opt)
+                case 0:
                 {
-                    size_t index = (blocks_opt | light_opt << 1) - 1;
-                    static const float colors[3][3] = {
-                        { 0.0f, 0.7f, 1.0f},
-                        { 1.0f, 0.0f, 0.0f},
-                        { 0.0f, 1.0f, 0.0f},
-                    };
-                    glColor3fv(colors[index]);
+                    /*if(   e->neighbors[0] && e->neighbors[1]
+                        && e->neighbors[2] && e->neighbors[3]
+                        && e->neighbors[4] && e->neighbors[5]) continue;*/
+                } break;
 
-                    float dx = LAB_CHUNK_SIZE*e->x + 0.5f;//-view->x;
-                    float dy = LAB_CHUNK_SIZE*e->y + 0.5f;//-view->y;
-                    float dz = LAB_CHUNK_SIZE*e->z + 0.5f;//-view->z;
-                    //glPushMatrix();
-                    glEnable(GL_LINE_STIPPLE);
-                    glLineStipple(2, 0x1010u);
-                    LAB_RenderBox(view, dx, dy, dz, 15, 15, 15);
-                    //glLineStipple(1, 0xffffu);
-                    glDisable(GL_LINE_STIPPLE);
-                }
-            }
-
-            //if(view->sorted_chunks[i].distance > 0.5)
-            {
-                //continue;
-                int condition = 6; //2;
-                switch(condition)
+                case 1:
                 {
-                    case 0:
+                    bool has_mesh = false;
+                    for(int pass = 0; pass < LAB_RENDER_PASS_COUNT; ++pass)
                     {
-                        /*if(   e->neighbors[0] && e->neighbors[1]
-                           && e->neighbors[2] && e->neighbors[3]
-                           && e->neighbors[4] && e->neighbors[5]) continue;*/
-                    } break;
-
-                    case 1:
-                    {
-                        bool has_mesh = false;
-                        for(int pass = 0; pass < LAB_RENDER_PASS_COUNT; ++pass)
+                        if(e->render_passes[pass].vbo_size)
                         {
-                            if(e->render_passes[pass].vbo_size)
-                            {
-                                has_mesh = true;
-                                break;
-                            }
+                            has_mesh = true;
+                            break;
                         }
-                        if(!has_mesh) continue;
-                    } break;
+                    }
+                    if(!has_mesh) continue;
+                } break;
 
-                    case 2:
+                case 2:
+                {
+                    if(!e->dirty) continue;
+                } break;
+
+                case 3:
+                {
+                    if(c) continue;
+                } break;
+
+                case 4:
+                {
+                    if(c) continue;
+                } break;
+
+                case 5:
+                {
+                    // TODO: Note: unthreaded access, it could be changed non-atomically
+                    if(c && !c->queue_prev && !c->access_mode) continue;
+
+                    switch(c ? c->access_mode : 0)
                     {
-                        if(!e->dirty) continue;
-                    } break;
+                        case -1: color = LAB_RGB(255,   0,   0); break;
+                        case  0: color = LAB_RGB(255, 255, 255); break;
+                        default: color = LAB_RGB(  0, 255,   0); break;
+                    }
 
-                    case 3:
+                } break;
+
+                case 6:
+                {
+                    // TODO: Note: unthreaded access, it could be changed non-atomically
+                    if(c && !c->queue_prev) continue;
+
+                    switch(c ? c->update_stage : ~0u)
                     {
-                        if(e->world_chunk) continue;
-                    } break;
+                        case LAB_CHUNK_STAGE_GENERATE:  color = LAB_RGB(255,   0,   0); break;
+                        case LAB_CHUNK_STAGE_LIGHT:     color = LAB_RGB(  0, 255,   0); break;
+                        case LAB_CHUNK_STAGE_VIEW_MESH: color = LAB_RGB(  0,   0, 255); break;
 
-                    case 4:
-                    {
-                        if(e->world_chunk) continue;
-                    } break;
+                        default: color = LAB_RGB(255, 255, 255); break;
+                    }
 
-                    case 5:
-                    {
-                        // TODO: Note: unthreaded access, it could be changed non-atomically
-                        if(e->world_chunk && !e->world_chunk->queue_prev && !e->world_chunk->access_mode) continue;
-
-                        switch(e->world_chunk ? e->world_chunk->access_mode : 0)
-                        {
-                            case -1: glColor3f(1, 0, 0); break;
-                            case  0: glColor3f(1, 1, 1); break;
-                            default: glColor3f(0, 1, 0); break;
-                        }
-
-                    } break;
-
-                    case 6:
-                    {
-                        // TODO: Note: unthreaded access, it could be changed non-atomically
-                        if(e->world_chunk && !e->world_chunk->queue_prev) continue;
-
-                        switch(e->world_chunk ? e->world_chunk->update_stage : ~0u)
-                        {
-                            case LAB_CHUNK_STAGE_GENERATE: glColor3f(1, 0, 0); break;
-                            case LAB_CHUNK_STAGE_LIGHT: glColor3f(0, 1, 0); break;
-                            case LAB_CHUNK_STAGE_VIEW_MESH: glColor3f(0, 0, 1); break;
-
-                            default: glColor3f(1, 1, 1); break;
-                        }
-
-                    } break;
-                }
+                } break;
             }
 
             float dx = LAB_CHUNK_SIZE*e->x;//-view->x;
             float dy = LAB_CHUNK_SIZE*e->y;//-view->y;
             float dz = LAB_CHUNK_SIZE*e->z;//-view->z;
-            //glPushMatrix();
-            LAB_RenderBox(view, dx, dy, dz, 16, 16, 16);
+
+            LAB_GL_UniformColor(view->renderer.lines.uni_color, color);
+            LAB_RenderBox(&view->box_renderer, LAB_Box3F_FromOriginAndSize((LAB_Vec3F){dx, dy, dz}, (LAB_Vec3F){16, 16, 16}));
             //LAB_RenderBox(view, dx+0.5, dy+0.5, dz+0.5, 16-1.0, 16-1.0, 16-1.0);
             //LAB_RenderBox(view, dx+71.5, dy+7.5, dz+7.5, 1.0, 1.0, 1.0);
-            //glPopMatrix();
         }
     });
 }
@@ -1106,6 +891,7 @@ LAB_STATIC void LAB_View_UploadChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_e
         {
             if(mesh->vbo)
             {
+                LAB_GL_CHECK();
                 LAB_GL_FREE(glDeleteBuffers, 1, &mesh->vbo);
                 LAB_GL_CHECK();
                 mesh->vbo = 0;
@@ -1190,6 +976,8 @@ LAB_STATIC void LAB_View_UploadChunks(LAB_View* view)
             if(view->current_upload_amount*view->upload_time/view->upload_amount > 300*1000)
                 break;
     });
+
+    LAB_GL_CHECK();
 
     //glEndQuery(GL_TIME_ELAPSED);
 
@@ -1414,46 +1202,7 @@ LAB_STATIC void LAB_View_OrderQueryChunk(LAB_View* view, LAB_ViewChunkEntry* ent
 
 
 
-LAB_STATIC void LAB_RenderBox(LAB_View* view, float x, float y, float z, float w, float h, float d)
-{
-//#define O (-0.001f)
-//#define I ( 1.001f)
-#define O 0
-#define I 1
-    static const float box[] = {
-        O, O, O, /*--*/ I, O, O,
-        O, O, O, /*--*/ O, I, O,
-        O, O, O, /*--*/ O, O, I,
 
-        I, I, O, /*--*/ O, I, O,
-        I, I, O, /*--*/ I, O, O,
-        I, I, O, /*--*/ I, I, I,
-
-        O, I, I, /*--*/ I, I, I,
-        O, I, I, /*--*/ O, O, I,
-        O, I, I, /*--*/ O, I, O,
-
-        I, O, I, /*--*/ O, O, I,
-        I, O, I, /*--*/ I, I, I,
-        I, O, I, /*--*/ I, O, O,
-    };
-#undef I
-#undef O
-
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glTranslatef(x-view->pos.x, y-view->pos.y, z-view->pos.z);
-    glScalef(w, h, d);
-    glDisable(GL_LINE_SMOOTH);
-    glDisableClientState(GL_COLOR_ARRAY);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glVertexPointer(3, GL_FLOAT, 0, box);
-    glLineWidth(2);
-//    glDepthRange(0, 0.9999);
-    glDrawArrays(GL_LINES, 0, sizeof(box)/sizeof(*box)/3);
-    glDepthRange(0, 1);
-    glPopMatrix();
-}
 
 
 LAB_STATIC void LAB_View_RenderBlockSelection(LAB_View* view)
@@ -1464,110 +1213,57 @@ LAB_STATIC void LAB_View_RenderBlockSelection(LAB_View* view)
     LAB_TraceBlock_Result trace;
     if((trace = LAB_TraceBlock(view->world, 10, vpos, dir, LAB_BLOCK_INTERACTABLE)).has_hit)
     {
-        glEnable(GL_BLEND);
-        //glEnable(GL_LINE_SMOOTH);
-        //glHint(GL_LINE_SMOOTH, GL_NICEST);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glColor4f(0, 0, 0, 0.7);
-
-        glMatrixMode(GL_PROJECTION);
-        glPushMatrix();
-        glScalef(0.99, 0.99, 0.99);
-
         if(!LAB_Vec3I_Equals(trace.hit_block, trace.prev_block))
         {
-            LAB_Block* b = LAB_GetBlockP(view->world, trace.hit_block.x, trace.hit_block.y, trace.hit_block.z);
+            LAB_BoxRenderer_Prepare(&view->box_renderer, &view->renderer,
+                LAB_REDUCE_3(LAB_Mat4F_Chain,
+                    view->projection_mat,
+                    LAB_Mat4F_Scale1(0.99),
+                    view->modelview_mat
+                ),
+                view->pos
+            );
 
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+            LAB_Block* b;
             LAB_Vec3F pos, size;
+
+            b = LAB_GetBlockP_FromMainThread(view->world, trace.hit_block.x, trace.hit_block.y, trace.hit_block.z);
+            LAB_GL_UniformColor(view->renderer.lines.uni_color, LAB_RGBA(0, 0, 0, 180));
             pos = LAB_Vec3F_Add(LAB_Vec3I2F(trace.hit_block), LAB_Vec3F_FromArray(b->bounds[0]));
             size = LAB_Vec3F_Sub(LAB_Vec3F_FromArray(b->bounds[1]), LAB_Vec3F_FromArray(b->bounds[0]));
+            LAB_RenderBox(&view->box_renderer, LAB_Box3F_FromOriginAndSize(pos, size));
 
-            LAB_RenderBox(view, pos.x, pos.y, pos.z, size.x, size.y, size.z);
+            /*LAB_GL_UniformColor(view->renderer.lines.uni_color, LAB_RGBA(0, 0, 0, 64));
+            pos = LAB_Vec3I2F(trace.prev_block);
+            size = (LAB_Vec3F) {1, 1, 1};
+            LAB_RenderBox(&view->box_renderer, LAB_Box3F_FromOriginAndSize(pos, size));*/
         }
-
-        glMatrixMode(GL_PROJECTION);
-        glPopMatrix();
-        glMatrixMode(GL_MODELVIEW);
-        //glColor4f(0, 0, 0, 0.1);
-        //LAB_RenderBlockSelection(prev[0], prev[1], prev[2]);
     }
 }
 
 void LAB_ViewRenderHud(LAB_View* view)
 {
-    float pix = 1.f/(float)view->h;
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    glEnable(GL_BLEND);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_TEXTURE_2D);
-    //glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR);
-
-    #if 0
-    static const float crosshair[2*3*4] = {
-            0, -0.1,
-         0.05, -0.2,
-        -0.05, -0.2,
-        //
-         0.1,     0,
-         0.2,  0.05,
-         0.2, -0.05,
-        //
-            0,  0.1,
-        -0.05,  0.2,
-         0.05,  0.2,
-        //
-        -0.1,     0,
-        -0.2, -0.05,
-        -0.2,  0.05,
-    };
-    #else
-    #define A 0.2
-    #define B 0.01
-    static const float crosshair[] = {
-         B,  A,
-         B, -A,
-        -B, -A,
-        //
-        -B, -A,
-        -B,  A,
-         B,  A,
-        //
-        //
-        -B,  B,
-        -A, -B,
-        -A,  B,
-        //
-        -A, -B,
-        -B,  B,
-        -B, -B,
-        //
-         A,  B,
-         B, -B,
-         B,  B,
-        //
-         B, -B,
-         A,  B,
-         A, -B,
-    };
-    #endif
-
-    //glColor3f(1,1,1);
-    glTranslatef(0,0,-5);
-    //glTranslatef(0,0,-1);
-    //glScalef(1.f/5.f, 1/5.f, 1);
-    glVertexPointer(2, LAB_GL_TYPEOF(crosshair[0]), 0, crosshair);
     glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR);
-    glColor3f(1,1,1);
-    glDrawArrays(GL_TRIANGLES, 0, sizeof(crosshair)/(2*sizeof(crosshair[0])));
-    glTranslatef(2*5*pix, -2*5*pix, 0);
-    glBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
-    glColor3f(0.3,0.3,0.3);
-    glDrawArrays(GL_TRIANGLES, 0, sizeof(crosshair)/(2*sizeof(crosshair[0])));
+    LAB_SurfaceRenderer_Prepare(&view->surface_renderer, &view->renderer);
+    LAB_Vec2I screen_size = {view->w, view->h};
+
+
+    // Crosshair
+    {
+        glBindTexture(GL_TEXTURE_2D, view->crosshair.tex.id);
+        LAB_Vec2I tex_size = view->crosshair.size;
+        LAB_Vec2I pos = {(screen_size.x - tex_size.x) / 2, (screen_size.y - tex_size.y) / 2};
+        glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR);
+        LAB_RenderSurface_At(&view->surface_renderer, view->crosshair.tex, screen_size, pos, tex_size, 1, LAB_COLOR_WHITE);
+        glBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
+        LAB_Color c = LAB_RGB(77, 77, 77);
+        LAB_RenderSurface_At(&view->surface_renderer, view->crosshair.tex, screen_size, LAB_Vec2I_Add(pos, (LAB_Vec2I){1,-1}), tex_size, 1, c);
+    }
 
     glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR);
-    glColor3f(1,1,1);
     {
         TTF_Font* font = view->gui_mgr.mono_font;
         //TTF_Font* font = LAB_GuiMonospaceFont();
@@ -1591,7 +1287,7 @@ void LAB_ViewRenderHud(LAB_View* view)
         }
 
 
-        LAB_GL_ActivateTexture(&view->info.gl_texture);
+        LAB_GL_ActivateTexture(&view->info.tex);
         if(rerender)
         {
             char buf[64];
@@ -1604,28 +1300,26 @@ void LAB_ViewRenderHud(LAB_View* view)
             LAB_SDL_ALLOC(TTF_RenderUTF8_Shaded, &view->info.surf, font, buf, fg, bg);
             if(!view->info.surf) return;
 
-            LAB_GL_UploadSurf(view->info.gl_texture, view->info.surf);
+            LAB_GL_UploadSurf(view->info.tex, view->info.surf);
         }
-        //static unsigned scale_i = 0;
-        //scale_i++; scale_i &= 0xff;
-        //int scale = scale_i > 0x80 ? 2 : 1;
-        int scale = 1;
-        LAB_GL_DrawSurf(view->info.gl_texture, 0, view->h-scale*view->info.surf->h, scale*view->info.surf->w, scale*view->info.surf->h, view->w, view->h);
 
-
+        float scale = 1;
+        LAB_Vec2I pos = {0, view->h-scale*view->info.surf->h};
+        LAB_Vec2I tex_size = {view->info.surf->w, view->info.surf->h};
+        LAB_RenderSurface_At(&view->surface_renderer, view->info.tex, screen_size, pos, tex_size, scale, LAB_COLOR_WHITE);
 
         if(view->cfg.flags & LAB_VIEW_SHOW_FPS_GRAPH && view->stats_display.surf)
         {
-            LAB_GL_ActivateTexture(&view->stats_display.gl_texture);
+            LAB_GL_ActivateTexture(&view->stats_display.tex);
             if(view->stats_display.reupload)
             {
-                LAB_GL_UploadSurf(view->stats_display.gl_texture, view->stats_display.surf);
+                LAB_GL_UploadSurf(view->stats_display.tex, view->stats_display.surf);
                 view->stats_display.reupload = false;
             }
-            LAB_GL_DrawSurf(view->stats_display.gl_texture, 
-                            0, view->h-view->info.surf->h-view->stats_display.surf->h, 
-                            view->stats_display.surf->w, view->stats_display.surf->h,
-                            view->w, view->h);
+
+            LAB_Vec2I pos2 = {0, view->h-view->info.surf->h-view->stats_display.surf->h};
+            LAB_Vec2I tex_size2 = {view->stats_display.surf->w, view->stats_display.surf->h};
+            LAB_RenderSurface_At(&view->surface_renderer, view->stats_display.tex, screen_size, pos2, tex_size2, scale, LAB_COLOR_WHITE);
         }
     }
 }
@@ -1633,7 +1327,6 @@ void LAB_ViewRenderHud(LAB_View* view)
 void LAB_ViewRenderInit(LAB_View* view)
 {
     glShadeModel(GL_SMOOTH);
-    glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST); // TODO
 }
 
 void LAB_ViewRenderProc(void* user, LAB_Window* window)
@@ -1655,17 +1348,20 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
 
 void LAB_ViewRender(LAB_View* view)
 {
+    LAB_GL_CHECK();
+
     // NO access to world here -> world can update whilst rendering
 
     // Block rendering settings
     glEnable(GL_CULL_FACE);
     glCullFace(GL_FRONT);
 
-    // Sky color
-    float f = LAB_MIN(LAB_MAX((view->pos.y+64+32)*(1./64.), 0), 1);
-    f*=f;
-    float sky_color[4] = {0.4*f, 0.7*f, 1.0*f, 1};
+    LAB_GL_CHECK();
 
+    // Sky color
+    LAB_ColorHDR sky_color = LAB_View_SkyColor(view);
+
+#ifdef TODO
     glEnable(GL_FOG);
     glFogfv(GL_FOG_COLOR, sky_color);
     #if 1
@@ -1686,114 +1382,61 @@ void LAB_ViewRender(LAB_View* view)
         //glEnable(GL_EYE_RADIAL_NV);
         glFogi(GL_FOG_DISTANCE_MODE_NV, GL_EYE_RADIAL_NV);
     }
+#endif
 
-
-    glClearColor(sky_color[0], sky_color[1], sky_color[2], sky_color[3]);
+    LAB_GL_CHECK();
+    glUseProgram(0); // avoid recompilation
+    LAB_GL_CHECK();
+    glClearColor(LAB_HDR_RED_VAL(sky_color), LAB_HDR_GRN_VAL(sky_color), LAB_HDR_BLU_VAL(sky_color), 1);
+    LAB_GL_CHECK();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    LAB_GL_CHECK();
 
     // Setup projection matrix
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
+
     float ratio = view->h?(float)view->w/(float)view->h:1;
     float nearp = 0.075f;
     float fov = view->fov_factor;
     float far = view->cfg.render_dist*16+32;
-    glFrustum(-fov*nearp*ratio, fov*nearp*ratio, -fov*nearp, fov*nearp, nearp, far);
+    view->projection_mat = LAB_Mat4F_Frustum(-fov*nearp*ratio, fov*nearp*ratio, -fov*nearp, fov*nearp, nearp, far);
+
 
     // Setup world matrix
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    glRotatef(view->angle.z, 0, 0, 1);
-    glRotatef(view->angle.x, 1, 0, 0);
-    glRotatef(view->angle.y, 0, 1, 0);
-    //glRotatef(view->az, 0, 0, 1);
-    //glTranslatef(-view->x, -view->y, -view->z);
+    view->modelview_mat = LAB_REDUCE_3(LAB_Mat4F_Chain,
+        LAB_Mat4F_Rotate3Deg(view->angle.z, 0, 0, 1),
+        LAB_Mat4F_Rotate3Deg(view->angle.x, 1, 0, 0),
+        LAB_Mat4F_Rotate3Deg(view->angle.y, 0, 1, 0)
+    );
 
-    {
-        /**
-         *
-         *    m0  m4  m8  m12
-         *    m1  m5  m9  m13
-         *    m2  m6  m10 m14
-         *    m3  m7  m11 m15
-         *
-         */
-        glGetDoublev(GL_PROJECTION_MATRIX, view->projection_mat);
-        glGetDoublev(GL_MODELVIEW_MATRIX, view->modelview_mat);
+    view->modlproj_mat = LAB_Mat4F_Chain(view->projection_mat, view->modelview_mat);
 
-        // Compute projection_mat * modelview_mat
-        LAB_UNROLL(16)
-        for(int c = 0; c < 16; ++c)
-        {
-            view->modlproj_mat[c] = 0;
-            LAB_UNROLL(4)
-            for(int i = 0; i < 4; ++i)
-                view->modlproj_mat[c] += view->projection_mat[i*4+(c&3)]*view->modelview_mat[i+(c&0xC)];
-        }
-    }
-    glMatrixMode(GL_PROJECTION);
-    //glScalef(0.2, 0.2, 1);
-    glMatrixMode(GL_MODELVIEW);
 
+    LAB_GL_CHECK();
 
     if(view->cfg.flags&LAB_VIEW_SHOW_CHUNK_GRID)
     {
+        LAB_GL_CHECK();
         glEnable(GL_DEPTH_TEST);
-        glColor3f(1, 1, 1);
-        glDisable(GL_TEXTURE_2D);
         glDisable(GL_BLEND);
-
-        glMatrixMode(GL_PROJECTION);
-        glPushMatrix();
-        //glScalef(0.99, 0.99, 0.99);
-        glMatrixMode(GL_MODELVIEW);
-
-        /*float xx, yy, zz;
-        xx = LAB_FastFloorF2I(view->x)&~15;
-        yy = LAB_FastFloorF2I(view->y)&~15;
-        zz = LAB_FastFloorF2I(view->z)&~15;*/
-        //LAB_RenderBox(view, xx, yy, zz, 16, 16, 16);
-        glDisable(GL_FOG);
+        LAB_GL_CHECK();
         LAB_ViewRenderChunkGrids(view);
-        glEnable(GL_FOG);
-
-        glMatrixMode(GL_PROJECTION);
-        glPopMatrix();
-        glMatrixMode(GL_MODELVIEW);
     }
+
+    LAB_GL_CHECK();
 
     // Block rendering settings
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
-    glEnable(GL_TEXTURE_2D);
+    LAB_GL_CHECK();
+
     glBindTexture(GL_TEXTURE_2D, view->atlas->gl_id);
-
-    /*if(view->flags&)
-    {
-        glEnable(GL_POLYGON_OFFSET_EXT);
-        glEnable(GL_POLYGON_OFFSET_FILL);
-        glPolygonOffset(1, -1);
-    }
-    else
-    {
-        glDisable(GL_POLYGON_OFFSET_EXT);
-    }*/
-
-    glEnableClientState(GL_VERTEX_ARRAY); // TODO once
-    glEnableClientState(GL_COLOR_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
-    //glDisable(GL_BLEND);
-
-   // glEnable(GL_ALPHA_TEST);
-    //glAlphaFunc(GL_GEQUAL, 1/255.f);
-   // glAlphaFunc(GL_GEQUAL, 32/255.f);
-    //glAlphaFunc(GL_GEQUAL, 64/255.f);
 
 
     //LAB_Nanos upload_start = LAB_NanoSeconds();
+    LAB_GL_CHECK();
     LAB_View_UploadChunks(view);
+    LAB_GL_CHECK();
     //LAB_PerfInfo_FinishNS(view->perf_info, LAB_TG_VIEW_RENDER_UPLOAD, upload_start);
 
     int render_count = 0;
@@ -1829,49 +1472,31 @@ void LAB_ViewRender(LAB_View* view)
 
 
     render_count += LAB_ViewRenderChunks(view, LAB_RENDER_PASS_ALPHA);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     LAB_PerfInfo_Pop(view->perf_info);
     LAB_FpsGraph_SetSample(&view->perf_info->fps_graphs[LAB_TG_VIEW_RENDER_COUNT], 32+render_count/32.f);
 
-    // TODO: remove this
-    glDisable(GL_ALPHA_TEST);
-    glDisableClientState(GL_COLOR_ARRAY);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glDisable(GL_FOG);
-
     if(view->cfg.flags & LAB_VIEW_SHOW_HUD)
         LAB_View_RenderBlockSelection(view);
 
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glFrustum(-1*nearp*ratio, 1*nearp*ratio, -1*nearp, 1*nearp, nearp, far);
-    glMatrixMode(GL_MODELVIEW);
 
-    // Render Crosshair
+    // Render crosshair, coordinates and debug info
     if(view->cfg.flags & LAB_VIEW_SHOW_HUD)
         LAB_ViewRenderHud(view);
 
     // Gui rendering settings
+    LAB_SurfaceRenderer_Prepare(&view->surface_renderer, &view->renderer);
     glEnable(GL_BLEND);
-    glDisable(GL_DEPTH_TEST);
-    glColor4f(1,1,1,1);
-    LAB_GuiManager_Render(&view->gui_mgr, view->w, view->h);
+    LAB_GuiManager_Render(&view->gui_mgr, &view->surface_renderer, view->w, view->h);
 
     if(view->cfg.flags & LAB_VIEW_SHOW_FPS_GRAPH)
     {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glMatrixMode(GL_MODELVIEW);
-        glPushMatrix();
-        glLoadIdentity();
-        glScalef(2*(float)view->w/(float)view->h, 2, 1);
-        glTranslatef(-0.5,-0.5,-1);
+
         glLineWidth(2);
         glEnable(GL_LINE_SMOOTH);
-        LAB_PerfInfo_Render(view->perf_info);
-        glPopMatrix();
+        LAB_PerfInfo_Render(view->perf_info, &view->renderer);
     }
 
     LAB_GL_CHECK();
@@ -2396,7 +2021,7 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
     int load_amount = view->cfg.load_amount; // should be configurable
 
     LAB_Vec3I block_pos = LAB_Pos3D2Block(view->pos);
-    LAB_Block* b = LAB_GetBlockP(view->world, block_pos.x, block_pos.y, block_pos.z);
+    LAB_Block* b = LAB_GetBlockP_FromMainThread(view->world, block_pos.x, block_pos.y, block_pos.z);
     bool is_xray = !!(b->flags & LAB_BLOCK_OPAQUE);
 
     uint64_t stoptime = LAB_NanoSeconds() + 3000*1000; // 1 ms
@@ -2594,7 +2219,7 @@ void LAB_ViewCoordInfo_Create_Zero(LAB_ViewCoordInfo* info)
 
 void LAB_ViewCoordInfo_Destroy(LAB_ViewCoordInfo* info)
 {
-    LAB_GL_FREE(glDeleteTextures, 1, &info->gl_texture);
+    LAB_GL_FREE(glDeleteTextures, 1, &info->tex.id);
     LAB_SDL_FREE(SDL_FreeSurface, &info->surf);
 }
 

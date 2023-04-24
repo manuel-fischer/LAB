@@ -16,7 +16,16 @@ void LAB_ClearError(void);
 void LAB_SetError(const char* fmt, ...) __attribute__((format(printf, 1, 2)));
 void LAB_AppendError(const char* fmt, ...) __attribute__((format(printf, 1, 2)));
 void LAB_AddErrorContext(const char* filename, int line, const char* expression);
+void LAB_AddErrorContextFmt(const char* filename, int line, const char* fmt, ...);
 
+#define LAB_ADD_ERROR_MESSAGE(message) \
+    LAB_AddErrorContext(__FILE__, __LINE__, message)
+
+#define LAB_ADD_ERROR_MESSAGE_FMT(message, ...) \
+    LAB_AddErrorContextFmt(__FILE__, __LINE__, message, __VA_ARGS__)
+
+#define LAB_SetCurrentGLError() LAB_SetError("GL Error: %s", LAB_GL_GetCurrentError())
+#define LAB_SetCError() LAB_SetError("Error: %s", strerror(errno))
 
 // TODO
 #define LAB_CHECK_ALLOC(ptr, on_error)

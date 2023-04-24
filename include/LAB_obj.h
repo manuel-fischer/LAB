@@ -36,7 +36,7 @@ typedef int LAB_OBJ_Action;
     size_t index_var; \
     for(index_var = 0; index_var < (count); ++index_var) \
         if(!(init)) break; \
-    if(index_var == (count)) { __VA_ARGS__ } \
+    if(index_var == (count)) { { __VA_ARGS__ } index_var = (count); } \
     else \
     { \
         LAB_AddErrorContext(__FILE__, __LINE__, #init); \
@@ -54,7 +54,7 @@ typedef int LAB_OBJ_Action;
     size_t index_var; \
     for(index_var = 0; index_var < (count); ++index_var) \
         if(!(init)) break; \
-    if(index_var == (count)) { __VA_ARGS__ } \
+    if(index_var == (count)) { { __VA_ARGS__ } index_var = (count); } \
     else \
     { \
         LAB_AddErrorContext(__FILE__, __LINE__, #init); \
@@ -81,6 +81,21 @@ typedef int LAB_OBJ_Action;
     else \
     { \
         LAB_SetError("SDL Error: %s", SDL_GetError()); \
+        LAB_AddErrorContext(__FILE__, __LINE__, #init); \
+    } \
+} while(0)
+
+#define LAB_OBJ_GL(init, defer, ...) do \
+{ \
+    if((init)) \
+    { \
+        LAB_GL_DBG_CHECK(); \
+        { __VA_ARGS__ } \
+        { defer; } \
+    } \
+    else \
+    { \
+        LAB_SetError("GL Error: %s", LAB_GL_GetCurrentError()); \
         LAB_AddErrorContext(__FILE__, __LINE__, #init); \
     } \
 } while(0)

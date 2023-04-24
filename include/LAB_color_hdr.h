@@ -166,6 +166,14 @@ LAB_INLINE LAB_ColorHDR LAB_SubColorHDR(LAB_ColorHDR a, LAB_ColorHDR b)
     return LAB_ColorHDR_R(exp_bits | c << shift); // no masking nessecary, because bits shifted into larger channels are 0
 }
 
+
+LAB_CONST
+LAB_INLINE LAB_ColorHDR LAB_AbsDiffColorHDR(LAB_ColorHDR a, LAB_ColorHDR b)
+{
+    return LAB_AddColorHDR(LAB_SubColorHDR(a,b), LAB_SubColorHDR(b,a));
+}
+
+
 LAB_CONST
 LAB_INLINE LAB_ColorHDR LAB_AddSubColorHDR(LAB_ColorHDR a, LAB_ColorHDR b_pos, LAB_ColorHDR b_neg)
 {
@@ -209,6 +217,42 @@ LAB_INLINE LAB_ColorHDR LAB_AddSubColorHDR(LAB_ColorHDR a, LAB_ColorHDR b_pos, L
 }
 
 
+LAB_CONST
+LAB_INLINE LAB_ColorHDR LAB_ColorHDR_ImplCompose(uint32_t cr, uint32_t cg, uint32_t cb, int exp, LAB_ColorHDR a, LAB_ColorHDR b)
+{
+    // combine bits to one integer, such that the exponent can be calculated
+    uint32_t occupied = cr|cg|cb;
+    if(occupied == 0) return 0; // branch necessary here, because Log2Floor does not accept 0
+
+    int log2 = LAB_Log2Floor(occupied);
+    //LAB_HDR_ASSERT_FMT(log2 >= 7, "log2 = %i, a = %8x, b = %8x", log2, a, b);
+    LAB_HDR_ASSERT_FMT(log2 < 16, "log2 = %i, a = %8x, b = %8x", log2, a, b);
+    int shift = log2-7; // shift from 16 back to 8 bits
+    LAB_HDR_ASSERT_FMT(shift <= 8, "shift = %i, a = %8x, b = %8x", shift, a, b);
+
+    exp += shift;
+
+    shift -= LAB_SELECT0(exp < 0, exp); // increment: exp negative
+    shift = LAB_MIN_BL(shift, 16); // avoid UB: if shift=16, channels zero anyway
+    exp = LAB_SELECT0(exp >= 0, exp);
+
+    int shift_right = LAB_SELECT0(shift > 0, shift);
+    int shift_left = LAB_SELECT0(shift < 0, -shift);
+
+    // Case where left shift is necessary: a = 68b00500, b = 7a0001dd
+
+    cr >>= shift_right; cr <<= shift_left;
+    cg >>= shift_right; cg <<= shift_left;
+    cb >>= shift_right; cb <<= shift_left;
+
+    LAB_HDR_ASSERT_FMT(cr < 256u, "prod_r = %i", cr);
+    LAB_HDR_ASSERT_FMT(cg < 256u, "prod_g = %i", cg);
+    LAB_HDR_ASSERT_FMT(cb < 256u, "prod_b = %i", cb);
+
+    uint32_t c = cr | cg << 8 | cb << 16 | (uint32_t)exp << 24;
+    return LAB_ColorHDR_R_AB(c);
+}
+
 
 LAB_CONST
 LAB_INLINE LAB_ColorHDR LAB_MulColorHDR(LAB_ColorHDR a, LAB_ColorHDR b)
@@ -223,46 +267,17 @@ LAB_INLINE LAB_ColorHDR LAB_MulColorHDR(LAB_ColorHDR a, LAB_ColorHDR b)
     uint32_t prod_r = (a       & 0xffu)*(b       & 0xffu);
     uint32_t prod_g = (a >>  8 & 0xffu)*(b >>  8 & 0xffu);
     uint32_t prod_b = (a >> 16 & 0xffu)*(b >> 16 & 0xffu);
-    
-    // combine bits to one integer, such that the exponent can be calculated
-    uint32_t occupied = prod_r|prod_g|prod_b;
-    if(occupied == 0) return 0; // branch necessary here, because Log2Floor does not accept 0
-
-    int log2 = LAB_Log2Floor(occupied);
-    //LAB_HDR_ASSERT_FMT(log2 >= 7, "log2 = %i, a = %8x, b = %8x", log2, a, b);
-    LAB_HDR_ASSERT_FMT(log2 < 16, "log2 = %i, a = %8x, b = %8x", log2, a, b);
-    int shift = log2-7; // shift from 16 back to 8 bits
-    LAB_HDR_ASSERT_FMT(shift <= 8, "shift = %i, a = %8x, b = %8x", shift, a, b);
 
     // sub 128 once, because both have 128 added onto their exponent-value
-    int exp = (int)(LAB_HDR_EXP(a) + LAB_HDR_EXP(b)) - 128;
-    exp -= 8-shift;
+    int exp = (int)(LAB_HDR_EXP(a) + LAB_HDR_EXP(b)) - 128-8;
 
-    shift -= LAB_SELECT0(exp < 0, exp); // increment: exp negative
-    shift = LAB_MIN_BL(shift, 16); // avoid UB: if shift=16, channels zero anyway
-    exp = LAB_SELECT0(exp >= 0, exp);
-
-    int shift_right = LAB_SELECT0(shift > 0, shift);
-    int shift_left = LAB_SELECT0(shift < 0, -shift);
-
-    // Case where left shift is necessary: a = 68b00500, b = 7a0001dd
-
-    prod_r >>= shift_right; prod_r <<= shift_left;
-    prod_g >>= shift_right; prod_g <<= shift_left;
-    prod_b >>= shift_right; prod_b <<= shift_left;
-
-    LAB_HDR_ASSERT_FMT(prod_r < 256u, "prod_r = %i", prod_r);
-    LAB_HDR_ASSERT_FMT(prod_g < 256u, "prod_g = %i", prod_g);
-    LAB_HDR_ASSERT_FMT(prod_b < 256u, "prod_b = %i", prod_b);
-
-    uint32_t c = prod_r | prod_g << 8 | prod_b << 16 | (uint32_t)exp << 24;
-    return LAB_ColorHDR_R_AB(c);
+    return LAB_ColorHDR_ImplCompose(prod_r, prod_g, prod_b, exp, a, b);
 }
 
 
 
 LAB_CONST
-LAB_INLINE LAB_Color LAB_MulColorHDR_RoundUp(LAB_ColorHDR a, LAB_ColorHDR b)
+LAB_INLINE LAB_ColorHDR LAB_MulColorHDR_RoundUp(LAB_ColorHDR a, LAB_ColorHDR b)
 {
     // just round up to avoid 0 channel value
     LAB_ColorHDR c = LAB_MulColorHDR(a, b);
@@ -307,13 +322,13 @@ LAB_INLINE LAB_ColorHDR LAB_MinColorHDR(LAB_ColorHDR a, LAB_ColorHDR b)
 
     // ensure a < b
     LAB_COND_SWAP_T(LAB_ColorHDR, a > b, a, b);
-    
+
     // avoid UB of shift
     int shift = LAB_MIN_BL(LAB_HDR_EXP(b) - LAB_HDR_EXP(a), 8);
 
-    uint32_t ar_bits = a&0x000000ffu, br_bits = b&0x000000ffu << shift;
-    uint32_t ag_bits = a&0x0000ff00u, bg_bits = b&0x0000ff00u << shift;
-    uint32_t ab_bits = a&0x00ff0000u, bb_bits = b&0x00ff0000u << shift;
+    uint32_t ar_bits = a&0x000000ffu, br_bits = (b&0x000000ffu) << shift;
+    uint32_t ag_bits = a&0x0000ff00u, bg_bits = (b&0x0000ff00u) << shift;
+    uint32_t ab_bits = a&0x00ff0000u, bb_bits = (b&0x00ff0000u) << shift;
 
     uint32_t r_bits = LAB_MIN_BL(ar_bits, br_bits);
     uint32_t g_bits = LAB_MIN_BL(ag_bits, bg_bits);
@@ -387,7 +402,7 @@ LAB_INLINE LAB_ColorHDR LAB_ColorHDR_RGB_F(float r, float g, float b)
     LAB_ColorHDR c2 = LAB_Float_To_ColorHDR_Mask(b, 0x00010000u);
 
     //LAB_ColorHDR exp = LAB_LAB_MAX3_BL(rc, gc, bc);
-    
+
     // move largest to c2
     LAB_COND_SWAP_T(LAB_ColorHDR, c0 > c1, c0, c1);
     LAB_COND_SWAP_T(LAB_ColorHDR, c1 > c2, c1, c2);
@@ -403,7 +418,7 @@ LAB_INLINE LAB_ColorHDR LAB_ColorHDR_RGB_F(float r, float g, float b)
 LAB_CONST
 LAB_INLINE float LAB_ColorHDR_ChannelValueF(uint8_t mantissa, uint8_t exp)
 {
-    return exp2((float)((int)exp-8-128)) * (float)mantissa;
+    return ldexp((float)mantissa, (int)exp-8-128);
 }
 
 LAB_CONST
@@ -439,6 +454,15 @@ LAB_INLINE LAB_ColorHDR LAB_ColorHDR_MaxChannelGray(LAB_ColorHDR c)
 {
     uint32_t v = LAB_MAX3_BL(LAB_HDR_RED(c), LAB_HDR_GRN(c), LAB_HDR_BLU(c));
     return LAB_ColorHDR_R(0x00010101u*v | (c & 0xff000000u));
+}
+
+
+typedef uint32_t LAB_ColorHDR_Comparable;
+LAB_CONST
+LAB_INLINE LAB_ColorHDR_Comparable LAB_ColorHDR_MaxChannelComparable(LAB_ColorHDR c)
+{
+    uint32_t v = LAB_MAX3_BL(LAB_HDR_RED(c), LAB_HDR_GRN(c), LAB_HDR_BLU(c));
+    return v | (c & 0xff000000u);
 }
 
 
@@ -498,7 +522,7 @@ LAB_INLINE LAB_ColorHDR LAB_MulColorHDRExp2(LAB_ColorHDR c, int shift_left)
 {
     LAB_HDR_ASSERT_FMT(LAB_ColorHDR_IsNormal(c), "c = %8x", c);
 
-    int new_exp = LAB_HDR_EXP(c) + shift_left;
+    int new_exp = (int)LAB_HDR_EXP(c) + shift_left;
     int mantissa_shift = LAB_SELECT0(new_exp < 0, -new_exp);
     new_exp = LAB_SELECT0(new_exp >= 0, new_exp);
     new_exp = LAB_SELECT0(c, new_exp); // Special case: black
@@ -517,6 +541,56 @@ LAB_CONST
 LAB_INLINE LAB_ColorHDR LAB_MixColorHDR50(LAB_ColorHDR a, LAB_ColorHDR b)
 {
     return LAB_MulColorHDRExp2(LAB_AddColorHDR(a, b), -1);
+}
+
+LAB_CONST
+LAB_INLINE LAB_Color LAB_MixColorHDR4x25(LAB_Color a, LAB_Color b,
+                                      LAB_Color c, LAB_Color d)
+{
+    return LAB_MulColorHDRExp2(LAB_REDUCE_4(LAB_AddColorHDR, a, b, c, d), -2);
+}
+
+LAB_CONST
+LAB_INLINE LAB_ColorHDR LAB_InterpolateColorHDR2i(LAB_ColorHDR a, LAB_ColorHDR b, int m)
+{
+    // ensure a < b
+    // compute 256-m conditionally
+    m -= LAB_SELECT0(a > b, 1);
+    m ^= LAB_SELECT0(a > b, 0xff);
+    m &= 0x1ff;
+    LAB_COND_SWAP_T(LAB_ColorHDR, a > b, a, b);
+
+    a = LAB_ColorHDR_ShiftRightTo(a, LAB_HDR_EXP(b));
+
+    int cr = ((int)LAB_HDR_RED(a) << 8) + ((int)LAB_HDR_RED(b)-(int)LAB_HDR_RED(a))*m;
+    int cg = ((int)LAB_HDR_GRN(a) << 8) + ((int)LAB_HDR_GRN(b)-(int)LAB_HDR_GRN(a))*m;
+    int cb = ((int)LAB_HDR_BLU(a) << 8) + ((int)LAB_HDR_BLU(b)-(int)LAB_HDR_BLU(a))*m;
+
+    int exp = LAB_HDR_EXP(b)-8;
+
+    return LAB_ColorHDR_ImplCompose(cr, cg, cb, exp, a, b);
+}
+
+LAB_CONST
+LAB_INLINE LAB_ColorHDR LAB_InterpolateColorHDR4vi(const LAB_ColorHDR colors[LAB_RESTRICT 4],
+                                             int u, int v)
+{
+    return LAB_InterpolateColorHDR2i(
+                LAB_InterpolateColorHDR2i(colors[0], colors[1], u),
+                LAB_InterpolateColorHDR2i(colors[2], colors[3], u),
+                v
+    );
+}
+
+LAB_CONST
+LAB_INLINE LAB_ColorHDR LAB_InterpolateColorHDR8vi(const LAB_ColorHDR colors[LAB_RESTRICT 8],
+                                             int u, int v, int w)
+{
+    return LAB_InterpolateColor2i(
+                LAB_InterpolateColorHDR4vi(colors, u, v),
+                LAB_InterpolateColorHDR4vi(colors+4, u, v),
+                w
+    );
 }
 
 

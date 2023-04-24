@@ -1,7 +1,9 @@
+#define LAB_GL_NO_POISON
 #include "LAB_gl.h"
 #include "LAB_bits.h"
 #include "LAB_debug.h"
 #include "LAB_sdl.h"
+#include "LAB_color_hdr.h"
 
 #define LAB_GL_ERRORS_X(X) \
     X(GL_NO_ERROR, "No error") \
@@ -34,6 +36,137 @@ const char* LAB_GL_GetCurrentError(void)
     return LAB_GL_GetError(glGetError());
 }
 
+#ifndef NDEBUG
+static const char* last_file;
+static int last_line;
+static bool had_debug_message;
+static GLenum ignore_id;
+
+
+LAB_STATIC void LAB_GL_HandleDebugMessage(GLenum source, GLenum type, GLuint id,
+   GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
+{
+    if(ignore_id == id) return;
+
+    const char* s_severity;
+    const char* s_type;
+
+    switch (type) {
+        case GL_DEBUG_TYPE_ERROR: s_type = "ERROR"; break;
+        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: s_type = "DEPRECATED_BEHAVIOR"; break;
+        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: s_type = "UNDEFINED_BEHAVIOR"; break;
+        case GL_DEBUG_TYPE_PORTABILITY: s_type = "PORTABILITY"; break;
+        case GL_DEBUG_TYPE_PERFORMANCE: s_type = "PERFORMANCE"; break;
+        case GL_DEBUG_TYPE_OTHER: s_type = "OTHER"; break;
+        default: s_type = "UNKNOWN TYPE"; break;
+    }
+
+
+    switch(severity)
+    {
+        case GL_DEBUG_SEVERITY_HIGH: s_severity = "HIGH"; break;
+        case GL_DEBUG_SEVERITY_MEDIUM: s_severity = "MEDIUM"; break;
+        case GL_DEBUG_SEVERITY_LOW: s_severity = "LOW"; break;
+        case GL_DEBUG_SEVERITY_NOTIFICATION: s_severity = "NOTF"; break;
+        default: s_severity = "UNKNOWN SEVERITY"; break;
+    }
+
+    fprintf(stderr, "GL[%s/%s/%i]: %s\n", s_severity, s_type, id, message);
+    if(last_file != NULL)
+    {
+        fprintf(stderr, "Last Checkpoint: %s:%i\n", last_file, last_line);
+    }
+
+    had_debug_message = true;
+}
+
+void LAB_GL_CheckClear(void)
+{
+    last_file = NULL;
+    had_debug_message = false;
+}
+
+
+void LAB_GL_IgnoreInfo(GLenum id)
+{
+    ignore_id = id;
+}
+
+void LAB_GL_ResetIgnoreInfo(void)
+{
+    ignore_id = 0;
+}
+
+void LAB_GL_SetupDebug(void)
+{
+    glDebugMessageCallback(LAB_GL_HandleDebugMessage, NULL);
+    glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+}
+#endif
+
+
+void LAB_GL_Check(const char* file, int line)
+{
+    #ifndef NDEBUG
+    if(had_debug_message)
+    {
+        fprintf(stderr, "Next Checkpoint: %s:%i\n", file, line);
+        had_debug_message = false;
+    }
+
+    last_file = file;
+    last_line = line;
+    #endif
+
+    GLenum errorid = glGetError();
+    if(errorid != 0)
+    {
+        fprintf(stderr, "OpenGL Error occurred [%s:%i]:  %s\n", file, line, LAB_GL_GetError(errorid));
+       // LAB_ASSERT_FALSE("debug");
+    }
+}
+
+
+
+// TODO: replace legacy matrix function calls
+void LAB_GL_SetMatrix(GLenum mode, LAB_Mat4F matrix)
+{
+    glMatrixMode(mode);
+    glLoadMatrixf(LAB_Mat4F_AsCArray(&matrix));
+
+    LAB_GL_CHECK();
+}
+
+
+void LAB_GL_SetMatrix_Identity(GLenum mode)
+{
+    glMatrixMode(mode);
+    glLoadIdentity();
+
+    LAB_GL_CHECK();
+}
+
+
+void LAB_GL_UniformColor(LAB_GL_Uniform uniform, LAB_Color color)
+{
+    glUniform4f(uniform.id,
+        (float)LAB_RED(color)/255.f,
+        (float)LAB_GRN(color)/255.f,
+        (float)LAB_BLU(color)/255.f,
+        (float)LAB_ALP(color)/255.f);
+}
+
+void LAB_GL_UniformColorHDR(LAB_GL_Uniform uniform, LAB_ColorHDR color)
+{
+    glUniform4f(uniform.id,
+        (float)LAB_HDR_RED_VAL(color),
+        (float)LAB_HDR_GRN_VAL(color),
+        (float)LAB_HDR_BLU_VAL(color),
+        1.f);
+}
+
+
 int LAB_GL_GetInt(GLenum e)
 {
     int i;
@@ -41,25 +174,25 @@ int LAB_GL_GetInt(GLenum e)
     return i;
 }
 
-void LAB_GL_ActivateTexture(unsigned* gl_id)
+void LAB_GL_ActivateTexture(LAB_GL_Texture* tex)
 {
-    if(*gl_id == 0)
+    if(tex->id == 0)
     {
-        LAB_GL_ALLOC(glGenTextures, 1, gl_id);
-        glBindTexture(GL_TEXTURE_2D, *gl_id);
+        LAB_GL_ALLOC(glGenTextures, 1, &tex->id);
+        glBindTexture(GL_TEXTURE_2D, tex->id);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, INFO_WIDTH, INFO_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     }
     else
     {
-        glBindTexture(GL_TEXTURE_2D, *gl_id);
+        glBindTexture(GL_TEXTURE_2D, tex->id);
     }
 }
 
-void LAB_GL_UploadSurf(unsigned gl_id, SDL_Surface* surf)
+void LAB_GL_UploadSurf(LAB_GL_Texture tex, SDL_Surface* surf)
 {
-    LAB_ASSUME_0(LAB_GL_GetUInt(GL_TEXTURE_BINDING_2D)==gl_id);
+    LAB_ASSUME_0(LAB_GL_GetUInt(GL_TEXTURE_BINDING_2D)==tex.id);
 
     int info_width  = LAB_CeilPow2(surf->w);
     int info_height = LAB_CeilPow2(surf->h);
@@ -72,74 +205,16 @@ void LAB_GL_UploadSurf(unsigned gl_id, SDL_Surface* surf)
         if(nImg == NULL) return;
         surf = nImg;
         free_surf = 1;
-        //printf("Conv\n");
     }
 
-    /*for(int x = 0; x < 16; ++x)
-    {
-        printf("%08x\n", ((uint32_t*)surf->pixels)[x]);
-    }*/
-
+    LAB_GL_CHECK();
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, info_width, info_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    LAB_GL_CHECK();
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, surf->w, surf->h, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
+    LAB_GL_CHECK();
     if(free_surf) LAB_SDL_FREE(SDL_FreeSurface, &surf);
 }
 
-void LAB_GL_DrawSurf(unsigned gl_id, int x, int y, int w, int h, int sw, int sh)
-{
-    LAB_ASSUME_0(LAB_GL_GetUInt(GL_TEXTURE_BINDING_2D)==gl_id);
-
-    int rw, rh;
-    rw = LAB_CeilPow2(w);
-    rh = LAB_CeilPow2(h);
-
-
-    // partly const
-    static float info[5*3*2] = {
-          0, (0), -1,   0,   0,
-        (0),   0, -1, (1), (1),
-          0,   0, -1,   0, (1),
-        //
-          0, (0), -1,   0,   0,
-        (0), (0), -1, (1),   0,
-        (0),   0, -1, (1), (1),
-    };
-
-    info[5*1] = info[5*4] = info[5*5]   = w;
-    info[1] = info[5*3+1] = info[5*4+1] = h;
-
-    info[5*1+3] = info[5*4+3] = info[5*5+3] = (float)w/rw;
-    info[5*1+4] = info[5*2+4] = info[5*5+4] = (float)h/rh;
-
-
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
-    glEnable(GL_TEXTURE_2D);
-
-    glMatrixMode(GL_TEXTURE);
-    glPushMatrix();
-    glLoadIdentity();
-
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-
-    float f = 2.f/(float)sh;
-    glScalef(f, f, 1);
-    glTranslatef(-(float)sw/2+x, -(float)sh/2+y, 0);
-
-    glVertexPointer(3, LAB_GL_TYPEOF(*info), sizeof *info * 5, info);
-    glTexCoordPointer(2, LAB_GL_TYPEOF(*info), sizeof *info * 5, info+3);
-    glDrawArrays(GL_TRIANGLES, 0, 3*2);
-
-    LAB_GL_CHECK();
-
-    //glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-
-    glMatrixMode(GL_TEXTURE);
-    glPopMatrix();
-}
 
 
 
