@@ -30,13 +30,12 @@ void LAB_RenderRect(SDL_Surface* surf, int scale, int x, int y, int w, int h, in
 
     const int S = 16; // Size of cell
     const int B = 6;  // Size of border
-    const int dB = scale*B;
 
     const int Bx = LAB_MIN(B, w/2/scale);
     const int By = LAB_MIN(B, h/2/scale);
 
-    const int dBx = LAB_MIN(dB, w/2);
-    const int dBy = LAB_MIN(dB, h/2);
+    const int dBx = scale*Bx;
+    const int dBy = scale*By;
 
     for(int b = 0; b < 3; ++b)
     {
@@ -46,6 +45,8 @@ void LAB_RenderRect(SDL_Surface* surf, int scale, int x, int y, int w, int h, in
         dst.y = y + (b==0?0:b==1?dBy:h-dBy);
         dst.h = b==1?h-2*dBy:dBy;
 
+        if(dst.h == 0) continue;
+
         for(int a = 0; a < 3; ++a)
         {
             src.x = i*16 + (a==0?0:a==1?Bx:S-Bx);
@@ -54,6 +55,10 @@ void LAB_RenderRect(SDL_Surface* surf, int scale, int x, int y, int w, int h, in
             dst.x = x + (a==0?0:a==1?dBx:w-dBx);
             dst.w = a==1?w-2*dBx:dBx;
 
+            if(dst.w == 0) continue;
+
+            // NOTE: sdl changes the rectangles if nothing is drawn
+            //       therefore continue is needed above
             SDL_BlitScaled(gui, &src, surf, &dst);
         }
     }
