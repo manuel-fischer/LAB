@@ -2,9 +2,10 @@
 
 #include "LAB_stdinc.h"
 #include "LAB_color.h"
+#include "LAB_color_hdr.h"
 #include "LAB_model.h"
+#include "LAB_vec3.h"
 
-#include "LAB_aabb.h"
 #include <SDL2/SDL_surface.h>
 
 //#include "IXO/IXO_classdef.h"
@@ -49,13 +50,13 @@ typedef struct LAB_Block
 {
     LAB_BlockFlags flags;
     uint32_t tags;
-    LAB_Color lum;
+    LAB_ColorHDR lum;
     LAB_Color dia; // diaphaneity/transparency color of the block, the incoming light gets multiplied with this color,
                    // should be #ffffff for completely transparent blocks.
 
     LAB_Model const* model;
     SDL_Surface* item_texture;
-    float bounds[2][3];
+    LAB_Box3F bounds;
 } LAB_Block;
 
 //IXO_DECLARE_CLASS(LAB_Block);

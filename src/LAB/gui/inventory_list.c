@@ -25,11 +25,23 @@ void LAB_GuiInventoryList_Create(LAB_GuiInventoryList* lst,
     lst->render = &LAB_GuiInventoryList_Render;
     lst->destroy = &LAB_GuiComponent_Destroy_Ignore;
 
+    lst->topleft_slot = 0;
     lst->selected_slot = -1;
 
     lst->inventory = inventory;
     lst->inventory_user = inventory_user;
 }
+
+void LAB_GuiInventoryList_Create_Cells(LAB_GuiInventoryList* lst,
+                                 int x, int y, int columns, int rows,
+                                 LAB_IInventory const* inventory,
+                                 void* inventory_user)
+{
+    int w = columns*LAB_SLOT_SIZE;
+    int h = rows*LAB_SLOT_SIZE;
+    LAB_GuiInventoryList_Create(lst, x, y, w, h, inventory, inventory_user);
+}
+
 
 void LAB_GuiInventoryList_Create_Columns(LAB_GuiInventoryList* lst,
                                  int x, int y, int columns,
@@ -37,9 +49,7 @@ void LAB_GuiInventoryList_Create_Columns(LAB_GuiInventoryList* lst,
                                  void* inventory_user)
 {
     int rows = (inventory->get_size(inventory_user)+columns-1)/columns;
-    int w = columns*LAB_SLOT_SIZE;
-    int h = rows*LAB_SLOT_SIZE;
-    LAB_GuiInventoryList_Create(lst, x, y, w, h, inventory, inventory_user);
+    LAB_GuiInventoryList_Create_Cells(lst, x, y, columns, rows, inventory, inventory_user);
 }
 
 void LAB_GuiInventoryList_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf, int x, int y)
@@ -48,7 +58,7 @@ void LAB_GuiInventoryList_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SD
 
     int s = mgr->scale;
 
-    size_t i = 0;
+    size_t i = cself->topleft_slot;
     size_t inv_size = cself->inventory->get_size(cself->inventory_user);
     int cols = cself->w/LAB_SLOT_SIZE;
     int rows = cself->h/LAB_SLOT_SIZE;
@@ -59,7 +69,7 @@ void LAB_GuiInventoryList_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SD
         int cx, cy;
         cx = x+xi*LAB_SLOT_SIZE;
         cy = y+yi*LAB_SLOT_SIZE;
-        int tx = cself->selected_slot == i ? 1 : 0;
+        int tx = cself->selected_slot+cself->topleft_slot == i ? 1 : 0;
         LAB_RenderRect(surf, s, s*cx, s*cy, s*LAB_SLOT_SIZE, s*LAB_SLOT_SIZE, tx, 2);
         LAB_BlockID b = cself->inventory->get_slot(cself->inventory_user, i);
         LAB_ASSERT(b != LAB_BID_INVALID);
@@ -98,9 +108,10 @@ bool LAB_GuiInventoryList_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, S
     {
         case SDL_MOUSEBUTTONUP:
         {
-            if(slot < cself->inventory->get_size(cself->inventory_user))
+            int inv_slot = slot + cself->topleft_slot;
+            if(inv_slot < cself->inventory->get_size(cself->inventory_user))
             {
-                cself->inventory->take_slot(cself->inventory_user, slot);
+                cself->inventory->take_slot(cself->inventory_user, inv_slot);
                 LAB_GuiManager_Dismiss(mgr);
             }
             return 1;

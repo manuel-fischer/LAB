@@ -125,16 +125,13 @@ LAB_STATIC void LAB_View_RenderBlockSelection(LAB_View* view);
 //LAB_STATIC int LAB_View_CompareChunksIndirect(const void* a, const void* b);
 //LAB_STATIC void LAB_View_SortChunks(LAB_View* view, uint32_t delta_ms);
 
-LAB_STATIC void LAB_ViewRenderInit(LAB_View* view);
-
 
 LAB_STATIC bool LAB_View_SetupCrosshair(LAB_View* view)
 {
     SDL_Surface* s = LAB_ImageLoad("assets/crosshair.png");
     if(!s) return false;
 
-    LAB_GL_ActivateTexture(&view->crosshair.tex);
-    LAB_GL_UploadSurf(view->crosshair.tex, s);
+    LAB_GL_Texture_CreateFromSurface(&view->crosshair.tex, s);
     view->crosshair.size = (LAB_Vec2I) {s->w, s->h};
 
     LAB_SDL_FREE(SDL_FreeSurface, &s);
@@ -142,83 +139,74 @@ LAB_STATIC bool LAB_View_SetupCrosshair(LAB_View* view)
     return true;
 }
 
-bool LAB_View_Create(LAB_View* view, LAB_World* world, LAB_TexAtlas* atlas)
+LAB_STATIC
+bool LAB_View_Obj(LAB_View* view, LAB_OBJ_Action action)
 {
-    memset(view, 0, sizeof *view);
-    view->world = world;
+    LAB_BEGIN_OBJ(action);
 
-    view->fov_factor = 1.0;
+    LAB_ObjClear(view);
 
-    //LAB_View_ChunkTBL_Create(&view->entry); // not nessesary because already set to 0 above
+    LAB_OBJ(LAB_GuiManager_Create(&view->gui_mgr),
+            LAB_GuiManager_Destroy(&view->gui_mgr),
 
-    view->atlas = atlas;
-    LAB_ViewRenderInit(view);
-
-    LAB_GuiManager_Create(&view->gui_mgr);
-
-    LAB_GL_DBG_CHECK();
-
-    /*LAB_OBJ_SDL(view->tbl_mutex = SDL_CreateMutex(),
-                SDL_DestroyMutex(view->tbl_mutex),*/
     LAB_OBJ(LAB_ViewArray_Create(&view->chunk_array, 5),
             LAB_ViewArray_Destroy(&view->chunk_array),
-    LAB_OBJ((LAB_GL_DBG_CHECK(), LAB_ViewRenderer_Create(&view->renderer)),
+
+    LAB_OBJ(LAB_ViewRenderer_Create(&view->renderer),
             LAB_ViewRenderer_Destroy(&view->renderer),
-    LAB_OBJ((LAB_GL_DBG_CHECK(), LAB_BoxRenderer_Create(&view->box_renderer)),
+
+    LAB_OBJ(LAB_BoxRenderer_Create(&view->box_renderer),
             LAB_BoxRenderer_Destroy(&view->box_renderer),
-    LAB_OBJ((LAB_GL_DBG_CHECK(), LAB_SurfaceRenderer_Create(&view->surface_renderer)),
+
+    LAB_OBJ(LAB_SurfaceRenderer_Create(&view->surface_renderer),
             LAB_SurfaceRenderer_Destroy(&view->surface_renderer),
 
-    LAB_OBJ((view->crosshair.tex.id = 0, true),
-            LAB_GL_OBJ_FREE(glDeleteTextures, &view->crosshair.tex),
+    LAB_OBJ(LAB_View_PendingQueries_Create(&view->frames),
+            LAB_View_PendingQueries_Destroy(&view->frames),
+
     LAB_OBJ(LAB_View_SetupCrosshair(view),
-            (void)0,
-    {
+            LAB_GL_OBJ_FREE(glDeleteTextures, &view->crosshair.tex),
 
-        glGenQueries(1, &view->upload_time_query);
+        //glGenQueries(1, &view->upload_time_query);
+        //glDeleteQueries(1, &view->upload_time_query);
+        LAB_YIELD_OBJ(true);
 
-        return 1;
-    }););););););
+    );););););););
 
-    return 0;
+    LAB_END_OBJ(false);
+}
+
+
+bool LAB_View_Create(LAB_View* view, LAB_World* world, LAB_TexAtlas* atlas)
+{
+    if(!LAB_View_Obj(view, LAB_OBJ_CREATE)) return false;
+
+    view->world = world;
+    view->fov_factor = 1.0;
+    view->atlas = atlas;
+
+    return true;
 }
 
 void LAB_View_Destroy(LAB_View* view)
 {
-
-    //LAB_Free(view->sorted_chunks);
-
-    //SDL_DestroyMutex(view->tbl_mutex);
-    LAB_GuiManager_Destroy(&view->gui_mgr);
-
-    /*LAB_ViewChunkEntry* e;
-    HTL_HASHARRAY_EACH_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
-    {
-        // unlinking not nessesary
-        // but when the world gets destroyed all links to the world should be removed
-        LAB_ViewUnlinkChunk(view, e);
-        //LAB_ViewDestructFreeChunk(view, e);
-    });*/
     LAB_ASSERT(view->world == NULL);
-    
-    glDeleteQueries(1, &view->upload_time_query);
 
     LAB_View_Clear(view);
-    //LAB_View_ChunkTBL_Destroy(&view->chunks);
-    LAB_ViewRenderer_Destroy(&view->renderer);
-    LAB_ViewArray_Destroy(&view->chunk_array);
 
-    LAB_ViewCoordInfo_Destroy(&view->info);
+    // Allocated dynamically:
+    LAB_SDL_FREE(SDL_FreeSurface, &view->info.surf);
+    LAB_GL_FREE(glDeleteTextures, 1, &view->info.tex.id);
 
     LAB_SDL_FREE(SDL_FreeSurface, &view->stats_display.surf);
     LAB_GL_FREE(glDeleteTextures, 1, &view->stats_display.tex.id);
-    LAB_GL_FREE(glDeleteTextures, 1, &view->crosshair.tex.id);
+
+    LAB_View_Obj(view, LAB_OBJ_DESTROY);
 }
 
 
 void LAB_View_SetWorld(LAB_View* view, LAB_World* world)
 {
-    
     /*LAB_ViewChunkEntry* e;
     HTL_HASHARRAY_EACH_DEREF(LAB_View_ChunkTBL, &view->chunks, e,
     {
@@ -1232,8 +1220,8 @@ LAB_STATIC void LAB_View_RenderBlockSelection(LAB_View* view)
 
             b = LAB_GetBlockP_FromMainThread(view->world, trace.hit_block.x, trace.hit_block.y, trace.hit_block.z);
             LAB_GL_UniformColor(view->renderer.lines.uni_color, LAB_RGBA(0, 0, 0, 180));
-            pos = LAB_Vec3F_Add(LAB_Vec3I2F(trace.hit_block), LAB_Vec3F_FromArray(b->bounds[0]));
-            size = LAB_Vec3F_Sub(LAB_Vec3F_FromArray(b->bounds[1]), LAB_Vec3F_FromArray(b->bounds[0]));
+            pos = LAB_Vec3F_Add(LAB_Vec3I2F(trace.hit_block), b->bounds.a);
+            size = LAB_Box3F_Size(b->bounds);
             LAB_RenderBox(&view->box_renderer, LAB_Box3F_FromOriginAndSize(pos, size));
 
             /*LAB_GL_UniformColor(view->renderer.lines.uni_color, LAB_RGBA(0, 0, 0, 64));
@@ -1253,7 +1241,6 @@ void LAB_ViewRenderHud(LAB_View* view)
 
     // Crosshair
     {
-        glBindTexture(GL_TEXTURE_2D, view->crosshair.tex.id);
         LAB_Vec2I tex_size = view->crosshair.size;
         LAB_Vec2I pos = {(screen_size.x - tex_size.x) / 2, (screen_size.y - tex_size.y) / 2};
         glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR);
@@ -1287,7 +1274,6 @@ void LAB_ViewRenderHud(LAB_View* view)
         }
 
 
-        LAB_GL_ActivateTexture(&view->info.tex);
         if(rerender)
         {
             char buf[64];
@@ -1300,7 +1286,7 @@ void LAB_ViewRenderHud(LAB_View* view)
             LAB_SDL_ALLOC(TTF_RenderUTF8_Shaded, &view->info.surf, font, buf, fg, bg);
             if(!view->info.surf) return;
 
-            LAB_GL_UploadSurf(view->info.tex, view->info.surf);
+            LAB_GL_Texture_ResizeUpload(&view->info.tex, &view->info.tex_size, view->info.surf);
         }
 
         float scale = 1;
@@ -1310,10 +1296,9 @@ void LAB_ViewRenderHud(LAB_View* view)
 
         if(view->cfg.flags & LAB_VIEW_SHOW_FPS_GRAPH && view->stats_display.surf)
         {
-            LAB_GL_ActivateTexture(&view->stats_display.tex);
             if(view->stats_display.reupload)
             {
-                LAB_GL_UploadSurf(view->stats_display.tex, view->stats_display.surf);
+                LAB_GL_Texture_ResizeUpload(&view->stats_display.tex, &view->stats_display.tex_size, view->stats_display.surf);
                 view->stats_display.reupload = false;
             }
 
@@ -1324,9 +1309,15 @@ void LAB_ViewRenderHud(LAB_View* view)
     }
 }
 
-void LAB_ViewRenderInit(LAB_View* view)
+
+
+void LAB_View_HandleQueries(LAB_View* view)
 {
-    glShadeModel(GL_SMOOTH);
+    while(LAB_View_PendingQueries_HasAvailable(&view->frames))
+    {
+        LAB_View_QueryResult r = LAB_View_PendingQueries_Pop(&view->frames);
+        printf("Frame %zu: %u\n", r.param, r.result);
+    }
 }
 
 void LAB_ViewRenderProc(void* user, LAB_Window* window)
@@ -1339,7 +1330,18 @@ void LAB_ViewRenderProc(void* user, LAB_Window* window)
 
 
     uint64_t t0 = LAB_NanoSeconds();
+
+    //LAB_View_HandleQueries(view);
+
+    //static size_t frame_index = 0;
+    //frame_index++;
+    //printf("Begin frame %zu\n", frame_index);
+    //LAB_GL_Query render_query = LAB_View_PendingQueries_Push(&view->frames, GL_TIME_ELAPSED, frame_index);
+
+    //glBeginQuery(GL_TIME_ELAPSED, render_query.id);
     LAB_ViewRender(view);
+    //glEndQuery(GL_TIME_ELAPSED);
+
     uint64_t t1 = LAB_NanoSeconds();
     uint64_t d_01;
     d_01 = t1-t0;
@@ -1360,29 +1362,6 @@ void LAB_ViewRender(LAB_View* view)
 
     // Sky color
     LAB_ColorHDR sky_color = LAB_View_SkyColor(view);
-
-#ifdef TODO
-    glEnable(GL_FOG);
-    glFogfv(GL_FOG_COLOR, sky_color);
-    #if 1
-    glFogi(GL_FOG_MODE, GL_LINEAR);
-    float d = LAB_MAX(view->cfg.render_dist*16, 48);
-    glFogf(GL_FOG_START, d-32);
-    //glFogf(GL_FOG_START, (d-16)*0.8);
-    glFogf(GL_FOG_START, (d-16)*0.7);
-    glFogf(GL_FOG_END, d-16);
-    #elif 0
-    glFogf(GL_FOG_DENSITY, 0.05);
-    #else
-    glFogi(GL_FOG_MODE, GL_EXP2);
-    glFogf(GL_FOG_DENSITY, 0.1/view->render_dist);
-    #endif
-    if(1) // TODO: check if GL_NV_fog_distance is available
-    {
-        //glEnable(GL_EYE_RADIAL_NV);
-        glFogi(GL_FOG_DISTANCE_MODE_NV, GL_EYE_RADIAL_NV);
-    }
-#endif
 
     LAB_GL_CHECK();
     glUseProgram(0); // avoid recompilation
@@ -1413,24 +1392,15 @@ void LAB_ViewRender(LAB_View* view)
 
     LAB_GL_CHECK();
 
-    if(view->cfg.flags&LAB_VIEW_SHOW_CHUNK_GRID)
-    {
-        LAB_GL_CHECK();
-        glEnable(GL_DEPTH_TEST);
-        glDisable(GL_BLEND);
-        LAB_GL_CHECK();
-        LAB_ViewRenderChunkGrids(view);
-    }
-
-    LAB_GL_CHECK();
-
-    // Block rendering settings
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
-    LAB_GL_CHECK();
 
-    glBindTexture(GL_TEXTURE_2D, view->atlas->gl_id);
+    if(view->cfg.flags&LAB_VIEW_SHOW_CHUNK_GRID)
+    {
+        glDisable(GL_BLEND);
+        LAB_ViewRenderChunkGrids(view);
+    }
 
 
     //LAB_Nanos upload_start = LAB_NanoSeconds();
@@ -1442,9 +1412,11 @@ void LAB_ViewRender(LAB_View* view)
     int render_count = 0;
     LAB_PerfInfo_Push(view->perf_info, LAB_TG_VIEW_RENDER_CHUNKS);
 
+    glBindTexture(GL_TEXTURE_2D, view->atlas->tex.id);
     render_count += LAB_ViewRenderChunks(view, LAB_RENDER_PASS_SOLID);
     render_count += LAB_ViewRenderChunks(view, LAB_RENDER_PASS_MASKED);
     render_count += LAB_ViewRenderChunks(view, LAB_RENDER_PASS_BLIT);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
 //    LAB_Nanos query_start = LAB_NanoSeconds();
     #if LAB_VIEW_ENABLE_QUERY
@@ -1471,7 +1443,9 @@ void LAB_ViewRender(LAB_View* view)
 //    LAB_PerfInfo_FinishNS(view->perf_info, LAB_TG_VIEW_RENDER_QUERY, query_start);
 
 
+    glBindTexture(GL_TEXTURE_2D, view->atlas->tex.id);
     render_count += LAB_ViewRenderChunks(view, LAB_RENDER_PASS_ALPHA);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     LAB_PerfInfo_Pop(view->perf_info);
     LAB_FpsGraph_SetSample(&view->perf_info->fps_graphs[LAB_TG_VIEW_RENDER_COUNT], 32+render_count/32.f);
@@ -1974,6 +1948,11 @@ void LAB_ViewLoadNearChunks(LAB_View* view)
     //         - if some entry in the array has a query, load the chunk from the world
     //    OR - limit loading by time instead of a simple counter
     //         - empty chunks (above the surface) are faster to load
+
+    // TODO: rewrite more cache efficiently:
+    // - do not access chunk entries
+    // - store visibility in the view-array
+    //   - allows to load chunks dependent on a neighborhood kernel
 
     // TODO: check if gen-queue is full: quit
 

@@ -48,6 +48,8 @@ void LAB_DbgBreak(void);
 #  define LAB_ASSERT_OR_ABORT(cond) \
     ((!(cond)) ? abort() : (void)0)
 #  define LAB_ASSERT_OR_WARN(cond) (void)(0)
+
+#define LAB_ASSERT_LONG(cond) (void)(0)
 #else
 #  include <stdio.h> // -> fprintf
 #  define LAB_DBG_PRINTF(...) LAB_DbgPrintf(__VA_ARGS__)
@@ -70,6 +72,8 @@ void LAB_DbgBreak(void);
 #  define LAB_ASSERT_OR_ABORT LAB_ASSERT
 #  define LAB_ASSERT_OR_WARN(cond) \
     ((!(cond)) ? LAB_AssumptionFailed("warned assertion", #cond, __FILE__, __LINE__, LAB_FUNCTION(), 0) : (void)0)
+
+#define LAB_ASSERT_LONG(cond) LAB_ASSUME2("assertion", cond, #cond)
 #endif
 
 

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "LAB_opt.h"
+#include "LAB_attr.h"
+#include "LAB_debug.h"
 #include "LAB_stdinc.h"
 
 // xor-shift
@@ -57,3 +59,37 @@ void LAB_ChunkNoise2D(LAB_OUT uint64_t randoms[17*17], uint64_t world_seed, int 
  */
 void LAB_ChunkNoise3D(LAB_OUT uint64_t randoms[17*17*17], uint64_t world_seed, int x, int y, int z);
 #endif
+
+
+
+typedef struct LAB_RandomBits64
+{
+    uint64_t bits;
+    #ifndef NDEBUG
+    int remaining_bits;
+    #endif
+} LAB_RandomBits64;
+
+LAB_INLINE
+LAB_RandomBits64 LAB_RandomBits64_Make(LAB_Random* random)
+{
+    return (LAB_RandomBits64) {
+        .bits = LAB_GetRandom(random),
+        #ifndef NDEBUG
+        .remaining_bits = 64,
+        #endif
+    };
+}
+
+LAB_INLINE
+uint64_t LAB_RandomBits64_Next(LAB_RandomBits64* bits, int count)
+{
+    uint64_t mask = ((uint64_t)1u << count)-1u;
+    uint64_t result = bits->bits & mask;
+    bits->bits >>= count;
+    #ifndef NDEBUG
+    bits->remaining_bits -= count;
+    LAB_ASSERT(bits->remaining_bits >= 0);
+    #endif
+    return result;
+}

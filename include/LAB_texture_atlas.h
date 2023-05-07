@@ -4,6 +4,7 @@
 #include "LAB_array.h"
 #include "LAB_color.h"
 #include "LAB_vec2.h"
+#include "LAB_gl_types.h"
 #include <SDL2/SDL_surface.h>
 
 // With the help of a quadtree, the most optimal arrangement for
@@ -53,7 +54,7 @@ typedef struct LAB_TexAtlas
     size_t w, h;
     size_t cell_size;
     size_t capacity;
-    unsigned gl_id;
+    LAB_GL_Texture tex;
 } LAB_TexAtlas;
 
 
@@ -68,6 +69,10 @@ bool LAB_TexAtlas_ClearAlloc(LAB_TexAtlas* atlas, size_t x, size_t y, size_t siz
 bool LAB_TexAtlas_DrawAlloc(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size, LAB_Color* data);
 void LAB_TexAtlas_MakeMipmap(LAB_TexAtlas* atlas);
 bool LAB_TexAtlas_Upload2GL(LAB_TexAtlas* atlas);
+#define LAB_TexAtlas_Levels(atlas) (1 + LAB_Log2OfPow2((atlas)->cell_size))
+#ifndef NDEBUG
+bool LAB_TexAtlas_DbgDumpToFile(LAB_TexAtlas* atlas, const char* prefix);
+#endif
 LAB_Vec2F LAB_TexAtlas_ScaleFactor(LAB_TexAtlas* atlas);
 
 

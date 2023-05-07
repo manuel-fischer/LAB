@@ -67,10 +67,15 @@ void LAB_PutQuadShadedAt(LAB_OUT LAB_Triangle dst[restrict 2], LAB_ModelQuad* qu
 LAB_HOT LAB_INLINE LAB_ALWAYS_INLINE
 void LAB_PutQuadSmoothShadedAt(LAB_OUT LAB_Triangle dst[restrict 2], LAB_ModelQuad* quad, LAB_Vec3F pos, const LAB_ColorHDR c[restrict 4])
 {
-    LAB_ColorHDR_Comparable d03 = LAB_ColorHDR_MaxChannelComparable(LAB_AbsDiffColorHDR(c[0], c[3]));
-    LAB_ColorHDR_Comparable d12 = LAB_ColorHDR_MaxChannelComparable(LAB_AbsDiffColorHDR(c[1], c[2]));
-
+    LAB_ColorHDR_Comparable d03 = LAB_ColorHDR_LuminanceComparable(LAB_AbsDiffColorHDR(c[0], c[3]));
+    LAB_ColorHDR_Comparable d12 = LAB_ColorHDR_LuminanceComparable(LAB_AbsDiffColorHDR(c[1], c[2]));
     int flip = d03 < d12;
+
+    //float l0 = LAB_ColorHDR_Luminance(c[0]);
+    //float l1 = LAB_ColorHDR_Luminance(c[1]);
+    //float l2 = LAB_ColorHDR_Luminance(c[2]);
+    //float l3 = LAB_ColorHDR_Luminance(c[3]);
+    //int flip = fabsf(l0-l3) < fabsf(l1-l2);
 
     // For sorting the vertices in a triangle at [0] and [1] need to correspond
     // to opposing corners in the quad

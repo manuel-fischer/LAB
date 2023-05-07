@@ -16,8 +16,12 @@ void LAB_ItemTexSet_Destroy(LAB_ItemTexSet* s)
 }
 
 // Return NULL on failure
-static SDL_Surface* LAB_RenderBlockItem(LAB_TexAtlas* atlas, const size_t tex[2][2], LAB_Color tint)
+static SDL_Surface* LAB_RenderBlockItem(LAB_TexAtlas* atlas, LAB_Box2Z tex, LAB_Color tint)
 {
+    LAB_ASSERT_FMT(LAB_Vec2Z_Equals(LAB_Box2Z_Size(tex), (LAB_Vec2Z) {1, 1}),
+        "tex.w=%i, tex.h=%i", LAB_Box2Z_Size(tex).x, LAB_Box2Z_Size(tex).y
+    );
+
     SDL_Surface* surf;
     LAB_SDL_ALLOC(SDL_CreateRGBSurfaceWithFormat, &surf, 0, LAB_ITEM_SIZE, LAB_ITEM_SIZE, 32, SDL_PIXELFORMAT_RGBA32);
     if(!surf) return NULL;
@@ -31,7 +35,7 @@ static SDL_Surface* LAB_RenderBlockItem(LAB_TexAtlas* atlas, const size_t tex[2]
     //SDL_BlitScaled(atlas->data, &src_rect, surf, NULL);
     LAB_Color* dst = surf->pixels;
     size_t  stride = atlas->w;
-    LAB_Color* src = atlas->data + (stride*tex[0][1] + tex[0][0])*atlas->cell_size;
+    LAB_Color* src = atlas->data + (stride*tex.a.y + tex.a.x)*atlas->cell_size;
     for(size_t y = 0; y < atlas->cell_size; ++y, dst+=atlas->cell_size, src+=stride)
     {
         LAB_MemCpyColor(dst, src, atlas->cell_size);
@@ -52,7 +56,7 @@ static SDL_Surface* LAB_RenderBlockItem(LAB_TexAtlas* atlas, const size_t tex[2]
 }
 
 
-SDL_Surface* LAB_ItemTexSet_Render(LAB_ItemTexSet* s, LAB_TexAtlas* atlas, const size_t tex[2][2], LAB_Color tint)
+SDL_Surface* LAB_ItemTexSet_Render(LAB_ItemTexSet* s, LAB_TexAtlas* atlas, LAB_Box2Z tex, LAB_Color tint)
 {
     if(s->size == s->capacity)
     {

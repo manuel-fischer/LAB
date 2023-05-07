@@ -1,6 +1,8 @@
 #pragma once
 
 #include "LAB_stdinc.h"
+#include "LAB_attr.h"
+#include "LAB_vec2.h"
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
@@ -24,3 +26,15 @@ bool LAB_GuiInit(void);
 void LAB_GuiQuit(void);
 
 void LAB_RenderRect(SDL_Surface* surf, int scale, int x, int y, int w, int h, int i, int j);
+
+LAB_INLINE
+void LAB_RenderRect2(SDL_Surface* surf, int scale, LAB_Box2I rect, LAB_Vec2Z texture)
+{
+    LAB_RenderRect(surf, scale, rect.a.x, rect.a.y, LAB_Box2I_DX(rect), LAB_Box2I_DY(rect), texture.x, texture.y);
+}
+
+LAB_INLINE
+void LAB_RenderRect_Scaled(SDL_Surface* surf, int scale, LAB_Box2I rect, LAB_Vec2Z texture)
+{
+    LAB_RenderRect2(surf, scale, LAB_Box2I_Mul(scale, rect), texture);
+}

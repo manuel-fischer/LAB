@@ -117,6 +117,13 @@ int LAB_FloorDiv(int n, int d)
     return q;
 }
 
+LAB_INLINE
+LAB_VALUE_CONST
+int LAB_CeilDiv(int n, int d)
+{
+    return -LAB_FloorDiv(-n, d);
+}
+
 
 LAB_INLINE
 LAB_VALUE_CONST

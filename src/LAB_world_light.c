@@ -3,6 +3,8 @@
 #include "LAB_chunk_pseudo.h"
 #include "LAB_chunk_neighborhood.h"
 #include "LAB_block.h"
+#include "LAB_world_light_defs.h"
+
 // TODO: use pseudo chunks instead of NULL chunks -> no branching required
 //       - build chunk neighborhood with these pseudo chunks
 // TODO: reduce range of searching for possibly changed block positions
@@ -31,80 +33,97 @@
 //#define LAB_LIGHT_BETA LAB_HDR_RGB_F(0.5,0.5,0.5)
 
 
-//#define LAB_IS_SKYLIGHT(is_down, cf) ((is_down) && ((cf)&LAB_COL_MASK) == LAB_COL_MASK)
-//#define LAB_IS_SKYLIGHT(is_down, cf) ((is_down))
-#define LAB_IS_SKYLIGHT(is_down, cf) ((is_down) && ((cf) == LAB_HDR_UNIT_WHITE))
-//#define LAB_IS_SKYLIGHT(is_down, cf) 0
-
 // TODO remove
 // light conversion
-#define LAB_LCV(color) LAB_Color_To_ColorHDR(color)
+#define LAB_LCV(color) (color) // LAB_Color_To_ColorHDR(color)
+#define LAB_DCV(color) LAB_Color_To_ColorHDR(color)
 
 //#define LAB_LNORM(c) ((c) | LAB_ALP_MASK)
 #define LAB_LNORM(c) (c)
 //#define LAB_LNORM(c) LAB_MaxColorHDR(c, LAB_HDR_RGB_F(0.01, 0.01, 0.01))
 
-// return blocks that changed
-LAB_STATIC LAB_HOT
-LAB_CCPS LAB_TickLight_ProcessQuadrant(
-    LAB_Chunk_Blocks* blocks_ctr, LAB_LightNbHood_Mut* light_chunks,
-    int quadrant, bool init, 
-    int faces_changed, LAB_CCPS update_blocks)
+
+typedef struct LAB_TickLight_State
 {
+    LAB_CCPS relit_blocks;
+    LAB_CCPS update_blocks;
+} LAB_TickLight_State;
 
-    LAB_CCPS relit_blocks = 0;
-
+LAB_STATIC
+LAB_ALWAYS_INLINE LAB_HOT
+void LAB_TickLight_ProcessBlock(LAB_TickLight_State* s, const bool c_init, const int dd[3], LAB_Chunk_Blocks* blocks_ctr, LAB_LightNbHood_Mut* light_chunks, int x, int y, int z, int quadrant)
+{
     LAB_Chunk_Light* light_ctr = light_chunks->bufs[LAB_NB_CENTER];
-
-    LAB_ASSERT(blocks_ctr);
 
     #define LAB_DEBUG_INFO_HERE(fmt, ...) \
         "c=%8x, q=%i, dia=%8x, lum=%8x\n    "\
         "primary={%8x, %8x, %8x}" fmt, \
         \
-        c, quadrant, LAB_LCV(b->dia), LAB_LCV(b->lum),\
+        c, quadrant, LAB_DCV(b->dia), LAB_LCV(b->lum),\
         primary[0], primary[1], primary[2] __VA_ARGS__
-            
 
-    #define LAB_TickLight_ProcessBlock(getLightAt) do \
-    { \
-        int block_index = LAB_XADD3(x, y<<4, z<<8); \
-        \
-        LAB_Block* b = LAB_BlockP(blocks_ctr->blocks[block_index]); \
-        LAB_ColorHDR c = 0; \
-        LAB_ColorHDR primary[3]; \
-        primary[0] = getLightAt(light_chunks, x-dd[0], y, z, quadrant); \
-        primary[1] = getLightAt(light_chunks, x, y-dd[1], z, quadrant); \
-        primary[2] = getLightAt(light_chunks, x, y, z-dd[2], quadrant); \
-        LAB_UNROLL(3) \
-        for(int i = 0; i < 3; ++i) \
-        { \
-            bool is_down = i==1 && !(quadrant&2); \
-            LAB_ColorHDR prm = primary[i]; \
-            LAB_ColorHDR cf = prm; \
-            if(!LAB_IS_SKYLIGHT(is_down, cf)) \
-                cf = LAB_LIGHT_FALL_OFF(cf); \
-            c = LAB_MaxColorHDR(c, cf); \
-            LAB_ASSERT_FMT(LAB_HDR_EXP_VALUE(c) < 10, \
-                LAB_DEBUG_INFO_HERE("\n    i=%i, cf=%8x",, i, cf)); \
-            if(0) LAB_DBG_PRINTF("prm=%8x, sec=%8x, cf=%8x\n",prm, cf); \
-        } \
-        \
-        /*c = LAB_MulColorHDR_RoundUp(c, LAB_RGBE_HDR_N(86, 86, 86, 0x80));*/ \
-        c = LAB_MaxColorHDR(LAB_MulColorHDR(c, LAB_LCV(b->dia)), LAB_LCV(b->lum)); \
-        c = LAB_LNORM(c); \
-        c = LAB_SELECT0(LAB_HDR_EXP(c) >= 128-LAB_LIGHT_PRECISION, c); \
-        \
-        bool relit = c_init || light_ctr->light[block_index].quadrants[quadrant] != c; \
-        LAB_ASSERT_FMT(LAB_HDR_EXP_VALUE(c) < 10, LAB_DEBUG_INFO_HERE(,)); \
-        \
-        /*if(relit)*/ \
-        { \
-            light_ctr->light[block_index].quadrants[quadrant] = c; \
-            relit_blocks  |= LAB_CCPS_Pos(x, y, z)*relit; \
-            update_blocks |= LAB_CCPS_Pos(x, y, z)*relit; \
-        } \
-    } while(0)
+
+
+    #define LAB_GETLIGHTAT(light_chunks, x, y, z, quadrant) \
+        (LAB_LightNbHood_RefLightNode(light_chunks, x, y, z)->quadrants[quadrant])
+
+    int block_index = LAB_XADD3(x, y<<4, z<<8);
+
+    LAB_Block* b = LAB_BlockP(blocks_ctr->blocks[block_index]);
+    LAB_ColorHDR c = 0;
+    LAB_ColorHDR primary[3];
+    primary[0] = LAB_GETLIGHTAT(light_chunks, x-dd[0], y, z, quadrant);
+    primary[1] = LAB_GETLIGHTAT(light_chunks, x, y-dd[1], z, quadrant);
+    primary[2] = LAB_GETLIGHTAT(light_chunks, x, y, z-dd[2], quadrant);
+    LAB_UNROLL(3)
+    for(int i = 0; i < 3; ++i)
+    {
+        bool is_down = (i==1) & !(quadrant&2);
+        LAB_ColorHDR prm = primary[i];
+        LAB_ColorHDR cf = prm;
+        bool keep_full_brightness = false;
+        if(is_down)
+        {
+            keep_full_brightness = LAB_HDR_EXP(cf) >= LAB_HDR_EXP(LAB_LIGHTNESS_SUNLIGHT);
+        }
+        cf = LAB_SELECT(keep_full_brightness, cf, LAB_LIGHT_FALL_OFF(cf));
+        c = LAB_MaxColorHDR(c, cf);
+        LAB_ASSERT_FMT(LAB_HDR_EXP_VALUE(c) < 10,
+            LAB_DEBUG_INFO_HERE("\n    i=%i, cf=%8x",, i, cf));
+    }
+
+    /*c = LAB_MulColorHDR_RoundUp(c, LAB_RGBE_HDR_N(86, 86, 86, 0x80));*/
+    c = LAB_MaxColorHDR(LAB_MulColorHDR(c, LAB_DCV(b->dia)), LAB_LCV(b->lum));
+    c = LAB_LNORM(c);
+    c = LAB_SELECT0(LAB_HDR_EXP(c) >= 128-LAB_LIGHT_PRECISION, c);
+
+    bool relit = c_init || light_ctr->light[block_index].quadrants[quadrant] != c;
+    LAB_ASSERT_FMT(LAB_HDR_EXP_VALUE(c) < 10, LAB_DEBUG_INFO_HERE(,));
+
+    /*if(relit)*/
+    {
+        light_ctr->light[block_index].quadrants[quadrant] = c;
+        s->relit_blocks  |= LAB_CCPS_Pos(x, y, z)*relit;
+        s->update_blocks |= LAB_CCPS_Pos(x, y, z)*relit;
+    }
+
+}
+
+
+// return blocks that changed
+LAB_STATIC LAB_HOT
+LAB_CCPS LAB_TickLight_ProcessQuadrant(
+    LAB_Chunk_Blocks* blocks_ctr, LAB_LightNbHood_Mut* light_chunks,
+    int quadrant, bool init,
+    int faces_changed, LAB_CCPS update_blocks)
+{
+    LAB_TickLight_State s;
+    s.relit_blocks = 0;
+    s.update_blocks = update_blocks;
+
+
+    LAB_ASSERT(blocks_ctr);
+
 
 
 
@@ -112,127 +131,29 @@ LAB_CCPS LAB_TickLight_ProcessQuadrant(
     int dx, dy, dz; // delta index = sign
     int x0, y0, z0; // start index
     int xm, ym, zm; // scan kernel
-    
-    if(quadrant & 1) { dd[0] = dx =  1; x0 =  0; xm = 3; } 
+
+    if(quadrant & 1) { dd[0] = dx =  1; x0 =  0; xm = 3; }
     else             { dd[0] = dx = -1; x0 = 15; xm = 6; }
-    if(quadrant & 2) { dd[1] = dy =  1; y0 =  0; ym = 3; } 
+    if(quadrant & 2) { dd[1] = dy =  1; y0 =  0; ym = 3; }
     else             { dd[1] = dy = -1; y0 = 15; ym = 6; }
-    if(quadrant & 4) { dd[2] = dz =  1; z0 =  0; zm = 3; } 
+    if(quadrant & 4) { dd[2] = dz =  1; z0 =  0; zm = 3; }
     else             { dd[2] = dz = -1; z0 = 15; zm = 6; }
 
 
 
-    int axis_changed = (!!(faces_changed & ( (1|2)  ^  1<<!!(quadrant&1))))
-                     | (!!(faces_changed & ( (4|8)  ^  4<<!!(quadrant&2)))) << 1
-                     | (!!(faces_changed & ((16|32) ^ 16<<!!(quadrant&4)))) << 2;
+    //int axis_changed = (!!(faces_changed & ( (1|2)  ^  1<<!!(quadrant&1))))
+    //                 | (!!(faces_changed & ( (4|8)  ^  4<<!!(quadrant&2)))) << 1
+    //                 | (!!(faces_changed & ((16|32) ^ 16<<!!(quadrant&4)))) << 2;
 
 
-    LAB_PULL_CONST(int, c_init, 2, init)
-    {
+    int zi, yi, xi;
+    int x, y, z;
+    for(zi = 0, z = z0; zi < 16; ++zi, z += dz)
+    for(yi = 0, y = y0; yi < 16; ++yi, y += dy)
+    for(xi = 0, x = x0; xi < 16; ++xi, x += dx)
+        LAB_TickLight_ProcessBlock(&s, init, dd, blocks_ctr, light_chunks, x, y, z, quadrant);
 
-        int zi, yi, xi;
-        int x, y, z;
-        zi = yi = xi = 0; // TODO: hide warning
-
-        // Hide uninitialized warning message
-        zi=yi=xi = x=y=z = 0;
-
-        // if-condition: check if the previous or current column has changes
-        #define x_loop(start, all_if) \
-            for(xi = (start), x = x0 + (start)*dx; xi < 16; ++xi, x += dx) \
-            if(c_init || (all_if) || update_blocks <<  1 & (xm << x) & 0x1fffe)
-            
-        #define y_loop(start, all_if) \
-            for(yi = (start), y = y0 + (start)*dy; yi < 16; ++yi, y += dy) \
-            if(c_init || (all_if) || update_blocks >> 15 & (ym << y) & 0x1fffe)
-            
-        #define z_loop(start, all_if) \
-            for(zi = (start), z = z0 + (start)*dz; zi < 16; ++zi, z += dz) \
-            if(c_init || (all_if) || update_blocks >> 31 & (zm << z) & 0x1fffe)
-
-
-        {
-            int cur_loop = 0;
-
-
-
-            #define LOOP_YIELD(i) do \
-            { \
-                cur_loop = (i); \
-                goto process_block; \
-                case (i):; \
-            } while(0)
-
-            if(axis_changed || LAB_CCPS_HasPos(update_blocks, x0, y0, z0))
-            {
-                x = x0, y = y0; z = z0;
-        process_block:;
-                #define LAB_GETLIGHTAT(light_chunks, x, y, z, quadrant) \
-                    (LAB_LightNbHood_RefLightNode(light_chunks, x, y, z)->quadrants[quadrant])
-
-                LAB_TickLight_ProcessBlock(LAB_GETLIGHTAT);
-                #undef LAB_GETLIGHTAT
-            }
-
-            switch(cur_loop)
-            {
-                case 0:
-                
-
-                // x-axis:
-                z = z0; y = y0;
-                x_loop(1, axis_changed & (4|2))
-                    LOOP_YIELD(1);
-
-                // y-axis:
-                z = z0; x = x0;
-                y_loop(1, axis_changed & (4|1))
-                    LOOP_YIELD(2);
-
-                // z-axis:
-                y = y0; x = x0;
-                z_loop(1, axis_changed & (2|1))
-                    LOOP_YIELD(3);
-
-                        
-                // x-plane:
-                x = x0;
-                z_loop(1, axis_changed & (1))
-                y_loop(1, axis_changed & (1))
-                    LOOP_YIELD(4);
-  
-                // y-plane
-                y = y0;
-                z_loop(1, axis_changed & (2))
-                x_loop(1, axis_changed & (2))
-                    LOOP_YIELD(5);
-
-                // z-plane
-                z = z0;
-                y_loop(1, axis_changed & (4))
-                x_loop(1, axis_changed & (4))
-                    LOOP_YIELD(6);
-            }
-        }
-
-
-
-        z_loop(1, false)
-        y_loop(1, false)
-        x_loop(1, false)
-        {
-            #define LAB_GETLIGHTAT(light_chunks, x, y, z, quadrant) ( \
-                LAB_ASSERT_FMT(0 <= (x) && (x) < 16, "x=%d", x), \
-                LAB_ASSERT_FMT(0 <= (y) && (y) < 16, "y=%d", y), \
-                LAB_ASSERT_FMT(0 <= (z) && (z) < 16, "z=%d", z), \
-                (light_ctr->light[LAB_XADD3((x), (y)<<4, (z)<<8)].quadrants[quadrant])\
-            )
-
-            LAB_TickLight_ProcessBlock(LAB_GETLIGHTAT);
-            #undef LAB_GETLIGHTAT
-        }
-    }
-    return relit_blocks;
+    return s.relit_blocks;
 
     #undef LAB_DEBUG_INFO_HERE
 }

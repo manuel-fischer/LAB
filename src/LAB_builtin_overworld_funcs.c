@@ -82,27 +82,31 @@ float LAB_BuiltinOverworld_BiomeTemperature_Func(uint64_t world_seed, int x, int
     int xx = ((world_seed&0xffff)^0x1234)+x;
     int zz = ((world_seed&0xffff)^0x9876)+z;
 
-    return LAB_SimplexNoise2D(xx*0.05*0.01 , zz*0.05*0.01 ) * 0.7
-         + LAB_SimplexNoise2D(xx*0.05*0.002, zz*0.05*0.002) * 1
-         + LAB_SimplexNoise2D(xx*0.05*0.004, zz*0.05*0.004) * 0.3;
+    return LAB_SimplexNoiseChord2DS(0, xx*0.001, zz*0.001, 5)*0.5;
 }
 
 float LAB_BuiltinOverworld_BiomeHumidity_Func(uint64_t world_seed, int x, int z)
 {
-    int xx = ((world_seed&0xffff)^0x6543)+x;
-    int zz = ((world_seed&0xffff)^0x789a)+z;
+    int xx = ((world_seed>>16&0xffff)^0x6543)+x;
+    int zz = ((world_seed>>16&0xffff)^0x789a)+z;
 
-    return LAB_SimplexNoise2D(xx*0.05*0.03, zz*0.05*0.03);
+    return LAB_SimplexNoiseChord2DS(0, xx*0.0025, zz*0.0025, 5)*0.5;
 }
 
 
 
 LAB_SurfaceBiomeID LAB_BuiltinOverworld_SurfaceBiome_Func(uint64_t world_seed, int x, int z, LAB_Random* random)
 {
-    uint64_t r = LAB_NextRandom(random);
+    LAB_RandomBits64 r = LAB_RandomBits64_Make(random);
 
-    float temperature = LAB_BuiltinOverworld_BiomeTemperature_Func(world_seed, x+(r&0x3f), z+(r>>6&0x3f));
-    float humidity    = LAB_BuiltinOverworld_BiomeHumidity_Func(world_seed, x+(r>>12&0x3f), z+(r>>18&0x3f));
+    const int gradient_shift = 5;
+    int dx0 = LAB_RandomBits64_Next(&r, gradient_shift);
+    int dz0 = LAB_RandomBits64_Next(&r, gradient_shift);
+    int dx1 = LAB_RandomBits64_Next(&r, gradient_shift);
+    int dz1 = LAB_RandomBits64_Next(&r, gradient_shift);
+
+    float temperature = LAB_BuiltinOverworld_BiomeTemperature_Func(world_seed, x+dx0, z+dz0);
+    float humidity    = LAB_BuiltinOverworld_BiomeHumidity_Func(world_seed, x+dx1, z+dz1);
 
     int sheight = LAB_BuiltinOverworld_SurfaceHeight_Func(world_seed, x, z);
 

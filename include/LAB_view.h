@@ -21,6 +21,9 @@
 #include "LAB_gl_types.h"
 #include "LAB_view_render_box.h"
 #include "LAB_view_render_surface.h"
+#include "LAB_view_pending_queries.h"
+
+#include "LAB_vec2.h"
 
 
 /*
@@ -108,6 +111,7 @@ typedef struct LAB_ViewCoordInfo
 {
     int x, y, z;
     LAB_GL_Texture tex;
+    LAB_Vec2Z tex_size;
     SDL_Surface* surf;
 } LAB_ViewCoordInfo;
 
@@ -175,6 +179,7 @@ typedef struct LAB_View
     struct
     {
         LAB_GL_Texture tex;
+        LAB_Vec2Z tex_size;
         bool reupload;
         SDL_Surface* surf;
     } stats_display;
@@ -208,6 +213,8 @@ typedef struct LAB_View
     LAB_ViewRenderer renderer;
     LAB_BoxRenderer box_renderer;
     LAB_SurfaceRenderer surface_renderer;
+
+    LAB_View_PendingQueries frames;
 
 } LAB_View;
 

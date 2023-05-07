@@ -241,10 +241,7 @@ LAB_TraceBlock_Result LAB_TraceBlock(LAB_World* world, float max_distance, LAB_V
         LAB_Block* b = LAB_GetBlockP_FromMainThread(world, ipos.x, ipos.y, ipos.z);
         if(b->flags&block_flags)
         {
-            LAB_Box3F b_box = (LAB_Box3F) {
-                LAB_Vec3F_FromArray(b->bounds[0]),
-                LAB_Vec3F_FromArray(b->bounds[1]),
-            };
+            LAB_Box3F b_box = b->bounds;
             LAB_Box3F box = LAB_Box3F_Add(b_box, LAB_Vec3I2F(ipos));
 
             if(LAB_Box3F_Contains_Inc(box, vpos)) // only for first block

@@ -4,7 +4,6 @@
         "*.c": "c"
     },
     "C_Cpp.default.defines": [
-        "__WINNT__",
         "_POSIX_C_SOURCE=200101L",
         "HTL_PARAM"
     ],

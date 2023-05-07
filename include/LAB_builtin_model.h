@@ -1,7 +1,6 @@
 #pragma once
 
 #include "LAB_model.h"
-#include "LAB_aabb.h"
 #include <stdbool.h>
 
 
@@ -11,8 +10,6 @@ typedef struct LAB_BoxCull { uint64_t sides[6]; } LAB_BoxCull;
 
 extern const LAB_BoxColors LAB_box_color_shade;
 extern const LAB_BoxColors LAB_box_color_flat;
-
-extern const float LAB_full_aabb[2][3];
 
 
 LAB_INLINE LAB_VALUE_CONST
@@ -42,6 +39,14 @@ LAB_BoxTextures LAB_BoxTextures_All(LAB_Box2F b)
     return (LAB_BoxTextures) {{ b, b, b, b, b, b }};
 }
 
+LAB_INLINE
+LAB_BoxTextures LAB_BoxTextures_Map(LAB_BoxTextures box, LAB_BoxTextures fraction)
+{
+    LAB_BoxTextures new;
+    for(int i = 0; i < 6; ++i) new.a[i] = LAB_Box2F_Map(box.a[i], fraction.a[i]);
+    return new;
+}
+
 
 
 
@@ -55,25 +60,24 @@ bool LAB_Builtin_AddQuad(LAB_Model* m,
                          uint64_t cull, uint64_t light, uint64_t vis);
 
 bool LAB_Builtin_ModelAddCube(LAB_Model* m,
-                              const float aabb[2][3], const float tex[6][2][2],
+                              LAB_Box3F aabb, LAB_BoxTextures tex,
                               LAB_BoxColors colors);
 
 
 bool LAB_Builtin_ModelAddCubeAll(LAB_Model* m,
-                                 const float aabb[2][3], const float tex[2][2],
+                                 LAB_Box3F aabb, LAB_Box2F tex,
                                  LAB_BoxColors colors);
 
 
 bool LAB_Builtin_ModelAddCubeInverted(LAB_Model* m,
-                                      const float aabb[2][3], const float tex[6][2][2],
+                                      LAB_Box3F aabb, LAB_BoxTextures tex,
                                       LAB_BoxColors colors);
 
 bool LAB_Builtin_ModelAddCubeInvertedAll(LAB_Model* m,
-                                         const float aabb[2][3], const float tex[2][2],
+                                         LAB_Box3F aabb, LAB_Box2F tex,
                                          LAB_BoxColors colors);
 
-extern const float LAB_cross_aabb[2][3];
 
 bool LAB_Builtin_ModelAddCross(LAB_Model* m,
-                               const float aabb[2][3], const float tex[2][2],
+                               LAB_Box3F aabb, LAB_Box2F tex,
                                LAB_Color c);

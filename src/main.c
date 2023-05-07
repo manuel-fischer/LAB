@@ -65,6 +65,11 @@ static bool load_assets(LAB_TexAtlas* atlas, LAB_ModelSet* models, LAB_ItemTexSe
 
     LAB_TexAtlas_Upload2GL(atlas);
 
+    #ifndef NDEBUG
+    LAB_TexAtlas_DbgDumpToFile(atlas, "dbg_terrain");
+    #endif
+
+
     LAB_Assets_Destroy(&assets);
 
     return true;

@@ -15,10 +15,45 @@ typedef uint32_t LAB_ColorHDR;
 #define LAB_RGBE_HDR_N(r, g, b, e) LAB_ColorHDR_Normalize(LAB_RGBE_HDR(r, g, b, e))
 
 
+#define LAB_RGBI_IMPL_RGB(rgb) (((uint32_t)(rgb) << 16 & 0xff0000u) | ((uint32_t)(rgb) & 0xff00u) | ((uint32_t)(rgb) >> 16 & 0xffu))
+#define LAB_RGBI_HDR_DEN(rgb, exp_val) (LAB_RGBI_IMPL_RGB(rgb) | (uint32_t)((exp_val)+128) << 24)
+
+// only use in constants!
+// should not be subnormal
+#define LAB_COLOR_HDR_NORMALIZE(c) ((uint32_t)( \
+    (c) & 0xffffffu  \
+      ? ( \
+            (c) & 0xf0f0f0u \
+              ? (c) & 0xc0c0c0u \
+                  ? (c) & 0x808080u \
+                      ?  (c)      & 0xffffffu \
+                      : ((c) << 1 & 0xfefefeu) - 0x01000000u \
+                  : (c) & 0x202020u \
+                      ? ((c) << 2 & 0xfcfcfcu) - 0x02000000u \
+                      : ((c) << 3 & 0xf8f8f8u) - 0x03000000u \
+              : (c) & 0x0c0c0cu \
+                  ? (c) & 0x080808u \
+                      ? ((c) << 4 & 0xf0f0f0u) - 0x04000000u \
+                      : ((c) << 5 & 0xe0e0e0u) - 0x05000000u \
+                  : (c) & 0x020202u \
+                      ? ((c) << 6 & 0xc0c0c0u) - 0x06000000u \
+                      : ((c) << 7 & 0x808080u) - 0x07000000u \
+        ) + ((c) & 0xff000000u) \
+      : 0u \
+))
+
+//#define LAB_RGBI_HDR(rgb, exp_val) LAB_COLOR_HDR_NORMALIZE(LAB_RGBI_HDR_DEN(rgb, exp_val))
+
+#define LAB_COLOR_HDR_ENSURE_NORMALIZED(c) (((c) & 0xff000000u) == 0u || ((c) & 0x00808080u) != 0u ? (c) : 0u)
+
+
+#define LAB_RGBI_HDR(rgb, exp_val) LAB_COLOR_HDR_ENSURE_NORMALIZED(LAB_RGBI_HDR_DEN(rgb, exp_val))
+
+
 #define LAB_HDR_RED(col) ((col)       & 0xffu)
 #define LAB_HDR_GRN(col) ((col) >>  8 & 0xffu)
 #define LAB_HDR_BLU(col) ((col) >> 16 & 0xffu)
-#define LAB_HDR_EXP(col) ((col) >> 24)
+#define LAB_HDR_EXP(col) ((col) >> 24 & 0xffu)
 
 #define LAB_HDR_EXP_VALUE(col) ((int)LAB_HDR_EXP(col)-128)
 
@@ -465,6 +500,47 @@ LAB_INLINE LAB_ColorHDR_Comparable LAB_ColorHDR_MaxChannelComparable(LAB_ColorHD
     return v | (c & 0xff000000u);
 }
 
+LAB_CONST
+LAB_INLINE LAB_ColorHDR_Comparable LAB_ColorHDR_LuminanceComparable(LAB_ColorHDR c)
+{
+    uint32_t r = LAB_HDR_RED(c);
+    uint32_t g = LAB_HDR_GRN(c);
+    uint32_t b = LAB_HDR_BLU(c);
+
+    //uint32_t l = 2126*r + 7152*g + 722*b;
+    uint32_t l = 54*r + 183*g + 19*b; // ratios relative to 1<<8
+
+    int shift = 23-LAB_Log2Floor(l); // factor to shift left
+    int e = LAB_HDR_EXP(c)-shift;
+    shift = LAB_SELECT0(e > 0, shift);
+    e = LAB_SELECT0(e > 0, e);
+
+    int shift_l = LAB_SELECT0(shift > 0,  shift);
+    int shift_r = LAB_SELECT0(shift < 0, -shift);
+
+    l <<= shift_l; l >>= shift_r;
+
+    return l | e<<24;
+}
+
+
+LAB_CONST
+LAB_INLINE float LAB_ColorHDR_Luminance(LAB_ColorHDR c)
+{
+    uint32_t r = LAB_HDR_RED(c);
+    uint32_t g = LAB_HDR_GRN(c);
+    uint32_t b = LAB_HDR_BLU(c);
+    int exp = LAB_HDR_EXP(c);
+
+    //float l = (2126*r + 7152*g + 722*b)*0.0001;
+    //return ldexp((float)l, (int)exp-8-128);
+
+    //uint32_t l = 3483*r + 11718*g + 1183*b; // ratios relative to 1<<14
+    //return ldexp((float)l, exp-8-128-14);
+
+    uint32_t l = 54*r + 183*g + 19*b; // ratios relative to 1<<8
+    return ldexp((float)l, exp-8-128-8);
+}
 
 
 LAB_CONST

@@ -80,6 +80,7 @@ void LAB_RenderSurface(LAB_SurfaceRenderer* r, LAB_GL_Texture tex, LAB_Box2F sur
     LAB_Vec2F shifted_origin = LAB_Vec2F_Sub(LAB_Vec2F_Mul(2, surface_rect.a), (LAB_Vec2F) {1, 1});
     LAB_Vec2F shifted_size = LAB_Vec2F_Mul(2, size);
 
+    glBindTexture(GL_TEXTURE_2D, tex.id);
     glUniform2fv(r->uni_origin.id, 1, LAB_Vec2F_AsArray(&shifted_origin));
     glUniform2fv(r->uni_size.id, 1, LAB_Vec2F_AsArray(&shifted_size));
     glUniform2fv(r->uni_tex_size.id, 1, LAB_Vec2F_AsArray(&texture_size));

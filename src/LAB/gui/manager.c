@@ -129,12 +129,7 @@ void LAB_GuiManager_Render(LAB_GuiManager* mgr, LAB_SurfaceRenderer* r, int sw, 
         {
             (*c->render)(c, mgr, mgr->surf, 0, 0);
             mgr->rerender = 0;
-            LAB_GL_ActivateTexture(&mgr->gl_tex);
-            LAB_GL_UploadSurf(mgr->gl_tex, mgr->surf);
-        }
-        else
-        {
-            LAB_GL_ActivateTexture(&mgr->gl_tex);
+            LAB_GL_Texture_ResizeUpload(&mgr->gl_tex, &mgr->gl_tex_size, mgr->surf);
         }
 
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -169,7 +164,9 @@ bool LAB_GuiManager_HandleEvent(LAB_GuiManager* mgr, SDL_Event* event)
         {
             *x /= z*s;
             *y /= z*s;
-            if(!LAB_GuiHitTest(mgr->component, *x, *y))
+
+            bool is_drag = event->type == SDL_MOUSEMOTION && event->motion.state;
+            if(!is_drag && !LAB_GuiHitTest(mgr->component, *x, *y))
             {
                 if(event->type == SDL_MOUSEBUTTONDOWN)
                 {

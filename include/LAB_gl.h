@@ -177,29 +177,16 @@ extern int LAB_gl_debug_alloc_count;
 
 #define LAB_GL_MEMBER_ELEMENT_TYPE(tp, member) LAB_GL_ELEMENT_TYPE(((tp*)NULL)->member)
 
-void LAB_GL_ActivateTexture(LAB_GL_Texture* tex);
+bool LAB_GL_Texture_Create(LAB_GL_Texture* tex);
+bool LAB_GL_Texture_CreateSized(LAB_GL_Texture* tex, LAB_Vec2Z size);
+bool LAB_GL_Texture_CreateFromSurface(LAB_GL_Texture* tex, SDL_Surface* surf);
 
-void LAB_GL_UploadSurf(LAB_GL_Texture tex, SDL_Surface* surf);
-
-void LAB_GL_SetMatrix(GLenum mode, LAB_Mat4F matrix);
-void LAB_GL_SetMatrix_Identity(GLenum mode);
+void LAB_GL_Texture_ResizeCeilPow2(LAB_GL_Texture tex, LAB_Vec2Z size);
+bool LAB_GL_Texture_Upload(LAB_GL_Texture tex, SDL_Surface* surf);
+bool LAB_GL_Texture_ResizeUpload(LAB_GL_Texture* tex, LAB_Vec2Z* tex_size, SDL_Surface* surf);
 
 void LAB_GL_UniformColor(LAB_GL_Uniform uniform, LAB_Color color);
 void LAB_GL_UniformColorHDR(LAB_GL_Uniform uniform, LAB_ColorHDR color);
-
-#define LAB_GL_SetMatrix_0(mode) LAB_GL_SetMatrix_Identity(mode)
-#define LAB_GL_SetMatrix_1(mode, a) LAB_GL_SetMatrix(mode, a)
-#define LAB_GL_SetMatrix_2(mode, a, b) LAB_GL_SetMatrix(mode, LAB_Mat4F_Chain(a, b))
-#define LAB_GL_SetMatrix_3(mode, a, b, c) LAB_GL_SetMatrix(mode, LAB_REDUCE_3(LAB_Mat4F_Chain, a, b, c))
-#define LAB_GL_SetMatrix_4(mode, a, b, c, d) LAB_GL_SetMatrix(mode, LAB_REDUCE_4(LAB_Mat4F_Chain, a, b, c, d))
-#define LAB_GL_SetMatrix_5(mode, a, b, c, d, e) LAB_GL_SetMatrix(mode, LAB_REDUCE_5(LAB_Mat4F_Chain, a, b, c, d, e))
-
-#define LAB_GL_SetCurrentMatrix_0 LAB_GL_SetMatrix_0
-#define LAB_GL_SetCurrentMatrix_1 LAB_GL_SetMatrix_1
-#define LAB_GL_SetCurrentMatrix_2 LAB_GL_SetMatrix_2
-#define LAB_GL_SetCurrentMatrix_3 LAB_GL_SetMatrix_3
-#define LAB_GL_SetCurrentMatrix_4 LAB_GL_SetMatrix_4
-#define LAB_GL_SetCurrentMatrix_5 LAB_GL_SetMatrix_5
 
 int LAB_GL_GetInt(GLenum e);
 #define LAB_GL_GetUInt(e) (unsigned)LAB_GL_GetInt(e)

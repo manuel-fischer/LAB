@@ -17,4 +17,4 @@ typedef struct LAB_ItemTexSet
 #define LAB_ItemTexSet_Create(s) LAB_ObjClear(s)
 void LAB_ItemTexSet_Destroy(LAB_ItemTexSet* s);
 
-SDL_Surface* LAB_ItemTexSet_Render(LAB_ItemTexSet* s, LAB_TexAtlas* atlas, const size_t tex[2][2], LAB_Color tint);
+SDL_Surface* LAB_ItemTexSet_Render(LAB_ItemTexSet* s, LAB_TexAtlas* atlas, LAB_Box2Z tex, LAB_Color tint);

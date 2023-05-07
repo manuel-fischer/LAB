@@ -10,6 +10,7 @@ typedef struct LAB_GuiManager
     LAB_GuiComponent* component;
     LAB_GuiComponent* dismiss_component;
     LAB_GL_Texture gl_tex;
+    LAB_Vec2Z gl_tex_size;
     SDL_Surface* surf;
     bool rerender;
     unsigned scale;

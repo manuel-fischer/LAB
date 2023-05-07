@@ -4,18 +4,25 @@
 #include "LAB_debug.h"
 #include <stdio.h>
 
-bool LAB_GuiContainer_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Event* event)
+LAB_STATIC
+bool LAB_GuiContainer_OnEvent_Mouse(LAB_GuiContainer* cself, LAB_GuiManager* mgr, SDL_Event* event, int *x, int *y)
 {
-    LAB_GuiContainer* cself = (LAB_GuiContainer*)self;
-    LAB_GuiComponent** c;
-
-    int rerender = 0;
+    bool rerender = false;
 
     SDL_Event tmp_event;
 
-    int *x, *y;
-    if(LAB_GetMouseCoordPtr(event, &x, &y))
+    bool is_drag = event->type == SDL_MOUSEMOTION && event->motion.state;
+
+    if(is_drag && cself->current)
     {
+        *x -= cself->current->x;
+        *y -= cself->current->y;
+        LAB_ASSUME(cself->current->on_event);
+        return rerender | cself->current->on_event(cself->current, mgr, event);
+    }
+    else
+    {
+        LAB_GuiComponent** c;
         for(c = cself->components; *c; ++c)
         {
             if(LAB_GuiHitTest(*c, *x, *y))
@@ -37,12 +44,26 @@ bool LAB_GuiContainer_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_E
                 return rerender | (*c)->on_event(*c, mgr, event);
             }
         }
-        if(cself->current)
-        {
-            tmp_event.type = LAB_GUI_EVENT2SDL(LAB_GUI_EVENT_UNFOCUS);
-            rerender |= (cself->current)->on_event(cself->current, mgr, &tmp_event);
-            cself->current = NULL;
-        }
+    }
+    if(cself->current)
+    {
+        tmp_event.type = LAB_GUI_EVENT2SDL(LAB_GUI_EVENT_UNFOCUS);
+        rerender |= (cself->current)->on_event(cself->current, mgr, &tmp_event);
+        cself->current = NULL;
+    }
+    return rerender;
+}
+
+bool LAB_GuiContainer_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Event* event)
+{
+    LAB_GuiContainer* cself = (LAB_GuiContainer*)self;
+
+    bool rerender = false;
+
+    int *x, *y;
+    if(LAB_GetMouseCoordPtr(event, &x, &y))
+    {
+        rerender |= LAB_GuiContainer_OnEvent_Mouse(cself, mgr, event, x, y);
     }
     else if(event->type == LAB_GUI_EVENT2SDL(LAB_GUI_EVENT_UNFOCUS))
     {

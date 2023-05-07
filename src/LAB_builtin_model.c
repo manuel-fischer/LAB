@@ -77,42 +77,46 @@ static const uint8_t LAB_cube_vertices[6][4][3] = {
 };
 
 void LAB_Builtin_WriteCube(LAB_ModelQuad* quads6,
-                           const float aabb[2][3], const float tex[6][2][2],
+                           LAB_Box3F aabb, LAB_BoxTextures tex,
                            LAB_BoxColors colors)
 {
+    const LAB_Vec3F *a = LAB_Box3F_AsCArray(&aabb);
+    const float(*aa)[3] = LAB_Box3F_AsCMDArray(&aabb);
     for(int face = 0; face < 6; ++face)
     {
         const uint8_t (*f)[3] = LAB_cube_vertices[face];
-        const float (*t)[2] = tex[face];
+        LAB_Box2F t = tex.a[face];
         const float v[4][5] = {
-            { aabb[f[0][0]][0], aabb[f[0][1]][1], aabb[f[0][2]][2], t[0][0], t[0][1] },
-            { aabb[f[1][0]][0], aabb[f[1][1]][1], aabb[f[1][2]][2], t[1][0], t[0][1] },
-            { aabb[f[2][0]][0], aabb[f[2][1]][1], aabb[f[2][2]][2], t[0][0], t[1][1] },
-            { aabb[f[3][0]][0], aabb[f[3][1]][1], aabb[f[3][2]][2], t[1][0], t[1][1] },
+            { a[f[0][0]].x, a[f[0][1]].y, a[f[0][2]].z, t.a.x, t.a.y },
+            { a[f[1][0]].x, a[f[1][1]].y, a[f[1][2]].z, t.b.x, t.a.y },
+            { a[f[2][0]].x, a[f[2][1]].y, a[f[2][2]].z, t.a.x, t.b.y },
+            { a[f[3][0]].x, a[f[3][1]].y, a[f[3][2]].z, t.b.x, t.b.y },
         };
         int face_s = 1 << face;
-        int vis = LAB_APPROX_EQ(aabb[face&1][face>>1], (float)(face&1)) ? face_s : LAB_DIR_ALL;
+        int vis = LAB_APPROX_EQ(aa[face&1][face>>1], (float)(face&1)) ? face_s : LAB_DIR_ALL;
         LAB_Builtin_WriteQuad(&quads6[face], v, colors.sides[face], vis, face_s, vis);
     }
 }
 
 
 void LAB_Builtin_WriteCubeInverted(LAB_ModelQuad* quads6,
-                                   const float aabb[2][3], const float tex[6][2][2],
+                                   LAB_Box3F aabb, LAB_BoxTextures tex,
                                    LAB_BoxColors colors)
 {
+    const LAB_Vec3F *a = LAB_Box3F_AsCArray(&aabb);
+    const float(*aa)[3] = LAB_Box3F_AsCMDArray(&aabb);
     for(int face = 0; face < 6; ++face)
     {
         const uint8_t (*f)[3] = LAB_cube_vertices[face];
-        const float (*t)[2] = tex[face];
+        LAB_Box2F t = tex.a[face];
         const float v[4][5] = {
-            { aabb[f[0][0]][0], aabb[f[0][1]][1], aabb[f[0][2]][2], t[0][0], t[0][1] },
-            { aabb[f[2][0]][0], aabb[f[2][1]][1], aabb[f[2][2]][2], t[0][0], t[1][1] },
-            { aabb[f[1][0]][0], aabb[f[1][1]][1], aabb[f[1][2]][2], t[1][0], t[0][1] },
-            { aabb[f[3][0]][0], aabb[f[3][1]][1], aabb[f[3][2]][2], t[1][0], t[1][1] },
+            { a[f[0][0]].x, a[f[0][1]].y, a[f[0][2]].z, t.a.x, t.a.y },
+            { a[f[2][0]].x, a[f[2][1]].y, a[f[2][2]].z, t.a.x, t.b.y },
+            { a[f[1][0]].x, a[f[1][1]].y, a[f[1][2]].z, t.b.x, t.a.y },
+            { a[f[3][0]].x, a[f[3][1]].y, a[f[3][2]].z, t.b.x, t.b.y },
         };
         int face_s = 1 << face;
-        int vis = LAB_APPROX_EQ(aabb[face&1][face>>1], (float)(face&1)) ? face_s : LAB_DIR_ALL;
+        int vis = LAB_APPROX_EQ(aa[face&1][face>>1], (float)(face&1)) ? face_s : LAB_DIR_ALL;
         LAB_Builtin_WriteQuad(&quads6[face], v, colors.sides[face], vis, face_s, vis);
     }
 }
@@ -128,12 +132,10 @@ const LAB_BoxColors LAB_box_color_flat = {{
     LAB_RGBX(FFFFFF), LAB_RGBX(FFFFFF), // north south
 }};
 
-const float LAB_full_aabb[2][3] = { { 0, 0, 0 }, { 1, 1, 1 } };
-
 
 
 bool LAB_Builtin_ModelAddCube(LAB_Model* m,
-                              const float aabb[2][3], const float tex[6][2][2],
+                              LAB_Box3F aabb, LAB_BoxTextures tex,
                               LAB_BoxColors colors)
 {
     LAB_ModelQuad* quads = LAB_Model_Extend(m, 6);
@@ -143,18 +145,16 @@ bool LAB_Builtin_ModelAddCube(LAB_Model* m,
 }
 
 bool LAB_Builtin_ModelAddCubeAll(LAB_Model* m,
-                                 const float aabb[2][3], const float tex[2][2],
+                                 LAB_Box3F aabb, LAB_Box2F tex,
                                  LAB_BoxColors colors)
 {
-    float tex6[6][2][2];
-    for(int i = 0; i < 6; ++i) memcpy(tex6[i], tex, sizeof(float[2][2]));
-    return LAB_Builtin_ModelAddCube(m, aabb, (const float(*)[2][2])tex6, colors);
+    return LAB_Builtin_ModelAddCube(m, aabb, LAB_BoxTextures_All(tex), colors);
 }
 
 
 
 bool LAB_Builtin_ModelAddCubeInverted(LAB_Model* m,
-                                      const float aabb[2][3], const float tex[6][2][2],
+                                      LAB_Box3F aabb, LAB_BoxTextures tex,
                                       LAB_BoxColors colors)
 {
     LAB_ModelQuad* tris = LAB_Model_Extend(m, 6);
@@ -164,17 +164,13 @@ bool LAB_Builtin_ModelAddCubeInverted(LAB_Model* m,
 }
 
 bool LAB_Builtin_ModelAddCubeInvertedAll(LAB_Model* m,
-                                         const float aabb[2][3], const float tex[2][2],
+                                         LAB_Box3F aabb, LAB_Box2F tex,
                                          LAB_BoxColors colors)
 {
-    float tex6[6][2][2];
-    for(int i = 0; i < 6; ++i) memcpy(tex6[i], tex, sizeof(float[2][2]));
-    return LAB_Builtin_ModelAddCubeInverted(m, aabb, (const float(*)[2][2])tex6, colors);
+    return LAB_Builtin_ModelAddCubeInverted(m, aabb, LAB_BoxTextures_All(tex), colors);
 }
 
 
-
-const float LAB_cross_aabb[2][3] = { { 0.1, 0, 0.1 }, { 0.9, 1, 0.9 } };
 
 static const uint8_t LAB_cross_visibility[4] = {
     LAB_DIR_N|LAB_DIR_W,
@@ -209,17 +205,18 @@ static const uint8_t LAB_cross_vertices[4][4][3] = {
 };
 
 void LAB_Builtin_WriteCross(LAB_ModelQuad quads[4],
-                            const float aabb[2][3], const float tex[2][2],
+                            LAB_Box3F aabb, LAB_Box2F tex,
                             LAB_Color c)
 {
+    const LAB_Vec3F *a = LAB_Box3F_AsCArray(&aabb);
     for(int i = 0; i < 4; ++i)
     {
         const uint8_t (*f)[3] = LAB_cross_vertices[i];
         const float v[4][5] = {
-            { aabb[f[0][0]][0], aabb[f[0][1]][1], aabb[f[0][2]][2], tex[0][0], tex[0][1] },
-            { aabb[f[1][0]][0], aabb[f[1][1]][1], aabb[f[1][2]][2], tex[1][0], tex[0][1] },
-            { aabb[f[2][0]][0], aabb[f[2][1]][1], aabb[f[2][2]][2], tex[0][0], tex[1][1] },
-            { aabb[f[3][0]][0], aabb[f[3][1]][1], aabb[f[3][2]][2], tex[1][0], tex[1][1] },
+            { a[f[0][0]].x, a[f[0][1]].y, a[f[0][2]].z, tex.a.x, tex.a.y },
+            { a[f[1][0]].x, a[f[1][1]].y, a[f[1][2]].z, tex.b.x, tex.a.y },
+            { a[f[2][0]].x, a[f[2][1]].y, a[f[2][2]].z, tex.a.x, tex.b.y },
+            { a[f[3][0]].x, a[f[3][1]].y, a[f[3][2]].z, tex.b.x, tex.b.y },
         };
         int face_vis = LAB_cross_visibility[i];
         LAB_Builtin_WriteQuad(&quads[i], v, c, LAB_DIR_ALL, 0, face_vis);
@@ -228,7 +225,7 @@ void LAB_Builtin_WriteCross(LAB_ModelQuad quads[4],
 
 
 bool LAB_Builtin_ModelAddCross(LAB_Model* m,
-                               const float aabb[2][3], const float tex[2][2],
+                               LAB_Box3F aabb, LAB_Box2F tex,
                                LAB_Color c)
 {
     LAB_ModelQuad* tris = LAB_Model_Extend(m, 4);

@@ -81,7 +81,7 @@ LAB_Chunk_Light  LAB_chunk_empty_light_sunlight = {0};
 LAB_STATIC LAB_CONST
 LAB_Color LAB_Chunk_Light_Sunlight(LAB_Dir dir)
 {
-    return dir & 2 ? LAB_LIGHTNESS_DARK : LAB_HDR_UNIT_WHITE;
+    return dir & 2 ? LAB_LIGHTNESS_DARK : LAB_LIGHTNESS_SUNLIGHT_MARKER;
 }
 
 LAB_STATIC

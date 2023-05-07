@@ -304,14 +304,14 @@ bool LAB_TexAtlas_Create(LAB_TexAtlas* atlas, size_t cell_size)
 
     atlas->data = LAB_MallocN(atlas->capacity, sizeof(LAB_Color));
 
-    atlas->gl_id = 0;
+    atlas->tex.id = 0;
 
     return atlas->data != NULL;
 }
 
 void LAB_TexAtlas_Destroy(LAB_TexAtlas* atlas)
 {
-    if(atlas->gl_id) LAB_GL_FREE(glDeleteTextures, 1, &atlas->gl_id);
+    LAB_GL_OBJ_FREE(glDeleteTextures, &atlas->tex);
     LAB_Free(atlas->data);
 }
 
@@ -437,71 +437,60 @@ bool LAB_TexAtlas_Upload2GL(LAB_TexAtlas* atlas)
 {
     LAB_GL_DBG_CHECK();
 
-    if(!atlas->gl_id)
-    {
-        LAB_GL_ALLOC(glGenTextures, 1, &atlas->gl_id);
+    if(atlas->tex.id)
+        LAB_GL_OBJ_FREE(glDeleteTextures, &atlas->tex);
 
-        LAB_GL_DBG_CHECK();
-    }
-
-    glBindTexture(GL_TEXTURE_2D, atlas->gl_id);
+    LAB_GL_OBJ_ALLOC_TARGET(glCreateTextures, GL_TEXTURE_2D, &atlas->tex);
     LAB_GL_DBG_CHECK();
 
-    if(atlas->cell_size > 1) // Mipmaps
+    glTextureParameteri(atlas->tex.id, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+    glTextureParameteri(atlas->tex.id, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    LAB_GL_DBG_CHECK();
+
+    const size_t levels = LAB_TexAtlas_Levels(atlas);
+    glTextureStorage2D(atlas->tex.id, levels, GL_RGBA8, atlas->w, atlas->h);
+
+    // upload mipmaplevels
+    size_t w = atlas->w, h = atlas->h;
+    //size_t layer_size = atlas->cell_size/2;
+    LAB_Color* data = atlas->data;
+
+    for(size_t i = 0; i < levels; ++i)
     {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+        glTextureSubImage2D(atlas->tex.id, i, 0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, data);
         LAB_GL_DBG_CHECK();
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        LAB_GL_DBG_CHECK();
-
-        const size_t num_mipmaps = LAB_Log2OfPow2(atlas->cell_size);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, num_mipmaps);
-        LAB_GL_DBG_CHECK();
-
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas->w, atlas->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, atlas->data);
-        LAB_GL_DBG_CHECK();
-
-        #ifndef NDEBUG
-        LAB_ImageSave(atlas->w, atlas->h, atlas->data, "dbg_terrain_0.png");
-        #endif
-
-        // upload mipmaplevels
-        {
-            size_t w = atlas->w, h = atlas->h;
-            //size_t layer_size = atlas->cell_size/2;
-            LAB_Color* data = atlas->data;
-
-            for(size_t i = 1; i <= num_mipmaps; ++i)
-            {
-                data += w*h;
-                w /= 2; h /= 2;
-
-                glTexImage2D(GL_TEXTURE_2D, i, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-                LAB_GL_DBG_CHECK();
-
-                #ifndef NDEBUG
-                LAB_ImageSave_Fmt(w, h, data, "dbg_terrain_%i.png", i);
-                #endif
-            }
-        }
-
-    }
-    else
-    {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        LAB_GL_DBG_CHECK();
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        LAB_GL_DBG_CHECK();
-
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas->w, atlas->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, atlas->data);
+        data += w*h;
+        w /= 2; h /= 2;
     }
 
     LAB_GL_CHECK();
     return true;
 }
+
+#ifndef NDEBUG
+bool LAB_TexAtlas_DbgDumpToFile(LAB_TexAtlas* atlas, const char* prefix)
+{
+    const size_t levels = LAB_TexAtlas_Levels(atlas);
+
+    // upload mipmaplevels
+    size_t w = atlas->w, h = atlas->h;
+    //size_t layer_size = atlas->cell_size/2;
+    LAB_Color* data = atlas->data;
+
+    for(size_t i = 0; i < levels; ++i)
+    {
+        LAB_ImageSave_Fmt(w, h, data, "%s_%i.png", prefix, i);
+
+        data += w*h;
+        w /= 2; h /= 2;
+    }
+    return true;
+}
+#endif
+
+
+
 
 LAB_Vec2F LAB_TexAtlas_ScaleFactor(LAB_TexAtlas* atlas)
 {

@@ -116,12 +116,12 @@ bool LAB_ViewProgram_LinkLocations(LAB_ViewProgram* program, const LAB_ProgramSp
     {
         LAB_GL_Uniform uniform;
         uniform.id = glGetUniformLocation(program->program.id, e->name);
-        if(!LAB_GL_ID_OK(uniform))
+        /*if(!LAB_GL_ID_OK(uniform))
         {
             LAB_SetCurrentGLError();
             LAB_ADD_ERROR_MESSAGE_FMT("Uniform '%s' not found", e->name);
             return false;
-        }
+        }*/
         LAB_ASSERT(link_table != NULL);
         *(LAB_GL_Uniform*)LAB_PTR_OFFSET(link_table, e->uniform_offset, 1) = uniform;
     }
@@ -130,7 +130,7 @@ bool LAB_ViewProgram_LinkLocations(LAB_ViewProgram* program, const LAB_ProgramSp
     return true;
 }
 
-LAB_STATIC
+/*LAB_STATIC
 void LAB_ViewProgram_DumpShaderSource(LAB_GL_Shader shader)
 {
     char buf[1<<12];
@@ -139,7 +139,7 @@ void LAB_ViewProgram_DumpShaderSource(LAB_GL_Shader shader)
     glGetShaderSource(shader.id, sizeof(buf)-1, &length, buf);
     buf[length] = '\0';
     printf("<SHADER DUMP>%s</SHADER DUMP>\n", buf);
-}
+}*/
 
 
 LAB_STATIC

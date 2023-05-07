@@ -22,6 +22,7 @@ LAB_GL_ID_TYPE_I(LAB_GL_Uniform);
 LAB_GL_ID_TYPE_U(LAB_GL_Array);
 LAB_GL_ID_TYPE_U(LAB_GL_Buffer);
 LAB_GL_ID_TYPE_U(LAB_GL_Texture);
+LAB_GL_ID_TYPE_U(LAB_GL_Query);
 
 LAB_VALUE_CONST LAB_ALWAYS_INLINE LAB_INLINE
 bool LAB_GL_ID_OK_Unsigned(unsigned id) { return id != 0; }

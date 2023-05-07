@@ -25,4 +25,3 @@ typedef struct LAB_View_VertexSpec
 void LAB_View_VertexSpec_Realize(LAB_GL_Array vao, LAB_GL_Buffer vbo, const LAB_View_VertexSpec* spec);
 void LAB_View_VertexSpec_Realize_Format(LAB_GL_Array vao, const LAB_View_VertexSpec* spec);
 void LAB_View_VertexSpec_Realize_Buffer(LAB_GL_Array vao, LAB_GL_Buffer vbo, const LAB_View_VertexSpec* spec);
-void LAB_View_VertexSpec_Disable(LAB_GL_Array vao, const LAB_View_VertexSpec* spec);

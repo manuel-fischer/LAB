@@ -41,12 +41,3 @@ void LAB_View_VertexSpec_Realize_Buffer(LAB_GL_Array vao, LAB_GL_Buffer vbo, con
 {
     glVertexArrayVertexBuffer(vao.id, 0, vbo.id, 0, spec->vertex_size);
 }
-
-void LAB_View_VertexSpec_Disable(LAB_GL_Array vao, const LAB_View_VertexSpec* spec)
-{
-    glBindVertexArray(vao.id);
-    LAB_FOREACH_INDEX(const LAB_View_VertexElementSpec, i, e, spec->elements)
-    {
-        glDisableVertexAttribArray(i);
-    }
-}

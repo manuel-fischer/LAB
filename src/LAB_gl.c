@@ -1,4 +1,3 @@
-#define LAB_GL_NO_POISON
 #include "LAB_gl.h"
 #include "LAB_bits.h"
 #include "LAB_debug.h"
@@ -123,29 +122,12 @@ void LAB_GL_Check(const char* file, int line)
     if(errorid != 0)
     {
         fprintf(stderr, "OpenGL Error occurred [%s:%i]:  %s\n", file, line, LAB_GL_GetError(errorid));
-       // LAB_ASSERT_FALSE("debug");
+        //LAB_ASSERT_FALSE("debug");
+        __asm__ ("nop");
     }
 }
 
 
-
-// TODO: replace legacy matrix function calls
-void LAB_GL_SetMatrix(GLenum mode, LAB_Mat4F matrix)
-{
-    glMatrixMode(mode);
-    glLoadMatrixf(LAB_Mat4F_AsCArray(&matrix));
-
-    LAB_GL_CHECK();
-}
-
-
-void LAB_GL_SetMatrix_Identity(GLenum mode)
-{
-    glMatrixMode(mode);
-    glLoadIdentity();
-
-    LAB_GL_CHECK();
-}
 
 
 void LAB_GL_UniformColor(LAB_GL_Uniform uniform, LAB_Color color)
@@ -174,48 +156,110 @@ int LAB_GL_GetInt(GLenum e)
     return i;
 }
 
-void LAB_GL_ActivateTexture(LAB_GL_Texture* tex)
+
+bool LAB_GL_Texture_Create(LAB_GL_Texture* tex)
 {
-    if(tex->id == 0)
+    if(!LAB_GL_OBJ_ALLOC_TARGET(glCreateTextures, GL_TEXTURE_2D, tex)) return false;
+
+    LAB_GL_CHECK();
+    glTextureParameteri(tex->id, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    LAB_GL_CHECK();
+    glTextureParameteri(tex->id, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    LAB_GL_CHECK();
+
+    return true;
+}
+
+
+bool LAB_GL_Texture_CreateSized(LAB_GL_Texture* tex, LAB_Vec2Z size)
+{
+    if(!LAB_GL_Texture_Create(tex)) return false;
+
+    LAB_GL_Texture_ResizeCeilPow2(*tex, size);
+
+    return true;
+}
+
+bool LAB_GL_Texture_CreateFromSurface(LAB_GL_Texture* tex, SDL_Surface* surf)
+{
+    if(!LAB_GL_Texture_CreateSized(tex, (LAB_Vec2Z) {surf->w, surf->h})) return false;
+
+    if(!LAB_GL_Texture_Upload(*tex, surf))
     {
-        LAB_GL_ALLOC(glGenTextures, 1, &tex->id);
-        glBindTexture(GL_TEXTURE_2D, tex->id);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, INFO_WIDTH, INFO_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+        LAB_GL_OBJ_FREE(glDeleteTextures, tex);
+        return false;
+    }
+
+    return true;
+}
+
+void LAB_GL_Texture_ResizeCeilPow2(LAB_GL_Texture tex, LAB_Vec2Z size)
+{
+    LAB_ASSERT_LONG(glIsTexture(tex.id));
+
+    size_t width  = LAB_CeilPow2(size.x);
+    size_t height = LAB_CeilPow2(size.y);
+    LAB_GL_CHECK();
+    glTextureStorage2D(tex.id, /*levels*/1, GL_RGBA8, width, height);
+    LAB_GL_CHECK();
+
+    //int w=-1, h=-1;
+    //glGetTextureLevelParameteriv(tex.id, 0, GL_TEXTURE_WIDTH, &w);
+    //glGetTextureLevelParameteriv(tex.id, 0, GL_TEXTURE_HEIGHT, &h);
+    //LAB_ASSERT_FMT(w == width && h == height, "w=%i, h=%i, width=%i, height=%i", w, h, width, height);
+}
+
+
+LAB_STATIC
+void LAB_GL_Texture_UploadRGBA32(LAB_GL_Texture tex, SDL_Surface* surf)
+{
+    LAB_ASSERT_LONG(glIsTexture(tex.id));
+
+    //int w=-1, h=-1;
+    //glGetTextureLevelParameteriv(tex.id, 0, GL_TEXTURE_WIDTH, &w);
+    //glGetTextureLevelParameteriv(tex.id, 0, GL_TEXTURE_HEIGHT, &h);
+    //LAB_DBG_PRINTF("upload %ix%i surface @%p to %ix%i texture @%p\n", surf->w, surf->h, (void*)surf, w, h, (void*)tex.id);
+
+    LAB_GL_CHECK();
+    glTextureSubImage2D(tex.id, 0, 0, 0, surf->w, surf->h, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
+    LAB_GL_CHECK();
+}
+
+bool LAB_GL_Texture_Upload(LAB_GL_Texture tex, SDL_Surface* surf)
+{
+    if(surf->format->format != SDL_PIXELFORMAT_RGBA32)
+    {
+        SDL_Surface* rgba_surf;
+        LAB_SDL_ALLOC(SDL_ConvertSurfaceFormat, &rgba_surf, surf, SDL_PIXELFORMAT_RGBA32, 0);
+        if(rgba_surf == NULL) return false;
+        LAB_GL_Texture_UploadRGBA32(tex, rgba_surf);
+        LAB_SDL_FREE(SDL_FreeSurface, &rgba_surf);
     }
     else
     {
-        glBindTexture(GL_TEXTURE_2D, tex->id);
+        LAB_GL_Texture_UploadRGBA32(tex, surf);
     }
+    return true;
 }
 
-void LAB_GL_UploadSurf(LAB_GL_Texture tex, SDL_Surface* surf)
+bool LAB_GL_Texture_ResizeUpload(LAB_GL_Texture* tex, LAB_Vec2Z* tex_size, SDL_Surface* surf)
 {
-    LAB_ASSUME_0(LAB_GL_GetUInt(GL_TEXTURE_BINDING_2D)==tex.id);
-
-    int info_width  = LAB_CeilPow2(surf->w);
-    int info_height = LAB_CeilPow2(surf->h);
-
-    int free_surf = 0;
-    if(surf->format->format != SDL_PIXELFORMAT_RGBA32)
+    LAB_Vec2Z surf_size = { surf->w, surf->h };
+    LAB_Vec2Z surf_size2 = { LAB_CeilPow2(surf->w), LAB_CeilPow2(surf->h) };
+    if(!LAB_Vec2Z_Equals(*tex_size, surf_size2))
     {
-        SDL_Surface* nImg;
-        LAB_SDL_ALLOC(SDL_ConvertSurfaceFormat, &nImg, surf, SDL_PIXELFORMAT_RGBA32, 0);
-        if(nImg == NULL) return;
-        surf = nImg;
-        free_surf = 1;
+        if(tex->id == 0 || !LAB_Vec2Z_Equals(*tex_size, (LAB_Vec2Z){0, 0}))
+        {
+            LAB_GL_OBJ_FREE(glDeleteTextures, tex);
+            LAB_GL_Texture_Create(tex);
+        }
+
+        *tex_size = surf_size2;
+
+        LAB_GL_Texture_ResizeCeilPow2(*tex, surf_size);
     }
-
-    LAB_GL_CHECK();
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, info_width, info_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    LAB_GL_CHECK();
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, surf->w, surf->h, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
-    LAB_GL_CHECK();
-    if(free_surf) LAB_SDL_FREE(SDL_FreeSurface, &surf);
+    return LAB_GL_Texture_Upload(*tex, surf);
 }
-
-
 
 
 void LAB_GL_FixScreenImg(void* pixels, int w, int h)

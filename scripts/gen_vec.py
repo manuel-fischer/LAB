@@ -1,9 +1,13 @@
 import os
 from typing import Callable, Dict, List, Tuple
 from dataclasses import dataclass
+from itertools import product
 
 NameTok = str
 TypeTok = str
+
+# tuple -> #0 <name> #2
+ComplexType : type = 'TypeTok | Tuple[str, str]'
 
 UnaryTemplate = Callable
 BinaryTemplate = Callable
@@ -30,8 +34,12 @@ def funN(n : int, func : str) -> TernaryTemplate:
     fmt = f"{func}({', '.join(f'{{{i}}}'for i in range(n))})"
     return fmt.format
 
-def cast1(type : str) -> UnaryTemplate:
-    return lambda a: f"({type})({a})"
+def cast1(type : ComplexType) -> UnaryTemplate:
+    if isinstance(type, tuple):
+        t0, t1 = type
+        return lambda a: f"({t0}{t1})({a})"
+    else:
+        return lambda a: f"({type})({a})"
 
 def nary_reduce(func : BinaryTemplate) -> NaryTemplate:
     def fn(*e):
@@ -90,10 +98,30 @@ MAX_INDEX_NARY = overload(None, {
 
 ## Type Functions
 
+def const(type):
+    assert not isinstance(type, tuple)
+
+    if set(type) & set("*()[]"):
+        return f"{type} const"
+
+    return f"const {type}"
+
 def ptr(type):
+    if isinstance(type, tuple):
+        t0, t1 = type
+        return (f"{t0} (*", f"){t1}")
+
     return f"{type}*"
+
 def cptr(type):
-    return f"const {type}*"
+    return ptr(const(type))
+
+def array(type, len):
+    assert not isinstance(type, tuple)
+    return (type, f"[{len}]")
+
+def carray(type, len):
+    return array(const(type), len)
 
 ## End Type Functions
 
@@ -142,6 +170,7 @@ LAB_VEC_DECL_PURE = f"{LAB_VEC_DECL} {LAB_PURE}"
 
 ABS_OVERLOADS = {
     "int": "abs",
+    "size_t": "",
     "float": "fabsf",
     "double": "fabs",
 }
@@ -161,6 +190,7 @@ FILES = [
 # type suffix, ctype, is_integer
 TYPES = [
     ("I", "int", True),
+    ("Z", "size_t", True),
     ("F", "float", False),
     ("D", "double", False),
 ]
@@ -174,6 +204,11 @@ CONVERSIONS = [
     ("D", "F", "Cast", None),
     ("F", "I", "FastFloor", fun1("LAB_FastFloorF2I")),
     ("D", "I", "FastFloor", fun1("LAB_FastFloorD2I")),
+
+    ("I", "Z", None, None),
+    ("Z", "I", None, None),
+    ("Z", "F", None, None),
+    ("Z", "D", None, None),
 ]
 
 
@@ -193,24 +228,33 @@ class VecDefArgs(DefArgs):
     is_integer : bool
 
     @property
+    def is_float(self) -> bool: return not self.is_integer
+
+    @property
     def namespace(self): return self.vtype
 
 def call(v : DefArgs, opname : str, args : List[str]):
     return f"{v.namespace}_{opname}({', '.join(args)})"
 
 
-def def_global_proc(name : NameTok, args : List[Tuple[TypeTok, NameTok]], ret : TypeTok, content : str, attrs=LAB_VEC_DECL):
+def def_global_proc(name : NameTok, args : List[Tuple[TypeTok, NameTok]], ret : ComplexType, content : str, attrs=LAB_VEC_DECL):
     cargs = ", ".join(f"{type} {aname}" for type, aname in args)
-    yield f"{attrs} {ret} {name}({cargs}) {{ {content} }}"
 
-def def_global_func(name : NameTok, args : List[Tuple[TypeTok, NameTok]], ret : TypeTok, expr : str, attrs=LAB_VEC_DECL_CONST):
+    if isinstance(ret, tuple):
+        t0, t1 = ret
+        if t0[-1] not in "*()": t0 += " "
+        yield f"{attrs} {t0}{name}({cargs}){t1} {{ {content} }}"
+    else:
+        yield f"{attrs} {ret} {name}({cargs}) {{ {content} }}"
+
+def def_global_func(name : NameTok, args : List[Tuple[TypeTok, NameTok]], ret : ComplexType, expr : str, attrs=LAB_VEC_DECL_CONST):
     yield from def_global_proc(name, args, ret, content=f"return {expr};", attrs=attrs)
 
 
-def def_proc(v : DefArgs, name : NameTok, args : List[Tuple[TypeTok, NameTok]], ret : TypeTok, content : str, attrs=LAB_VEC_DECL):
+def def_proc(v : DefArgs, name : NameTok, args : List[Tuple[TypeTok, NameTok]], ret : ComplexType, content : str, attrs=LAB_VEC_DECL):
     yield from def_global_proc(f"{v.namespace}_{name}", args, ret, content, attrs)
 
-def def_func(v : DefArgs, name : NameTok, args : List[Tuple[TypeTok, NameTok]], ret : TypeTok, expr : str, attrs=LAB_VEC_DECL_CONST):
+def def_func(v : DefArgs, name : NameTok, args : List[Tuple[TypeTok, NameTok]], ret : ComplexType, expr : str, attrs=LAB_VEC_DECL_CONST):
     yield from def_global_func(f"{v.namespace}_{name}", args, ret, expr, attrs)
 
 
@@ -280,18 +324,18 @@ def vec_def_rscalar(v : VecDefArgs, name : str, op : BinaryTemplate):
     expr = nary_new(v.vtype)(*map_components(lambda a: op(a, "b"), v.fields, ["a"]))
     yield from def_func(v, name, [(v.vtype, "a"), (v.ctype, "b")], v.vtype, expr)
 
-def vec_def_reduced_binary(v : VecDefArgs, name : str, ret : TypeTok, reduceop : NaryTemplate, compop : BinaryTemplate):
+def vec_def_reduced_binary(v : VecDefArgs, name : str, ret : ComplexType, reduceop : NaryTemplate, compop : BinaryTemplate):
     expr = reduceop(*map_components(compop, v.fields, ["a", "b"]))
     yield from def_func(v, name, [(v.vtype, "a"), (v.vtype, "b")], ret, expr)
 
-def vec_def_reduced_unary(v : VecDefArgs, name : str, ret : TypeTok, reduceop : NaryTemplate, compop : UnaryTemplate):
+def vec_def_reduced_unary(v : VecDefArgs, name : str, ret : ComplexType, reduceop : NaryTemplate, compop : UnaryTemplate):
     expr = reduceop(*map_components(compop, v.fields, ["a"]))
     yield from def_func(v, name, [(v.vtype, "a")], ret, expr)
 
-def vec_def_self_adjoint(v : VecDefArgs, name : str, ret : TypeTok, reduceop : NaryTemplate, compop : BinaryTemplate):
+def vec_def_self_adjoint(v : VecDefArgs, name : str, ret : ComplexType, reduceop : NaryTemplate, compop : BinaryTemplate):
     yield from vec_def_reduced_unary(v, name, ret, reduceop, self_adjoint(compop))
 
-def vec_def_reduced(v : VecDefArgs, name : str, ret : TypeTok, reduceop : NaryTemplate):
+def vec_def_reduced(v : VecDefArgs, name : str, ret : ComplexType, reduceop : NaryTemplate):
     expr = reduceop(*components(v.fields, "a"))
     yield from def_func(v, name, [(v.vtype, "a")], ret, expr)
 
@@ -392,6 +436,8 @@ class BoxDefArgs(DefArgs):
     def vec_fields(self): return self.vec.fields
     @property
     def is_integer(self): return self.vec.is_integer
+    @property
+    def is_float(self): return self.vec.is_float
 
     @property
     def namespace(self): return self.btype
@@ -400,7 +446,14 @@ def box_def(b : BoxDefArgs):
     yield from def_global_struct(b.btype, [(b.vtype, ["a", "b"])])
 
     yield from box_def_box_vec(b, "Add", fun2(b.vec.name("Add")))
-    #yield from box_def_binary(b, "Expand", fun2(b.vec.name("Add")))
+    #yield from box_def_binary(b, "Expand", fun2(b.vec.name("Add"))) # TODO: expand by another box
+
+    expr = f"({b.btype}) {{ {b.vec.name('Sub')}(box.a, vec), {b.vec.name('Add')}(box.b, vec) }}"
+    yield from def_func(b, "Expand", [(b.btype, "box"), (b.vtype, "vec")], b.btype, expr)
+
+
+    expr = f"({b.btype}) {{ {b.vec.name('Mul')}(factor, box.a), {b.vec.name('Mul')}(factor, box.b) }}"
+    yield from def_func(b, "Mul", [(b.ctype, "factor"), (b.btype, "box")], b.btype, expr)
 
     expr = " && ".join(f"box.a.{f} <= v.{f} && v.{f} <= box.b.{f}" for f in b.vec_fields)
     yield from def_func(b, "Contains_Inc", [(b.btype, "box"), (b.vtype, "v")], "bool", expr)
@@ -416,8 +469,24 @@ def box_def(b : BoxDefArgs):
     expr = f"{b.vec.name('Sub')}(box.b, box.a)"
     yield from def_func(b, "Size", [(b.btype, "box")], b.vtype, expr)
 
+    if b.is_float:
+        coords = ", ".join(f"box.a.{f} + (box.b.{f} - box.a.{f}) * v.{f}" for f in b.vec_fields)
+        expr = f"({b.vtype}) {{ {coords} }}"
+        yield from def_func(b, "MapPoint", [(b.btype, "box"), (b.vtype, "v")], b.vtype, expr)
+
+        expr = f"({b.btype}) {{ {b.name('MapPoint')}(box, fraction.a), {b.name('MapPoint')}(box, fraction.b) }}"
+        yield from def_func(b, "Map", [(b.btype, "box"), (b.btype, "fraction")], b.btype, expr)
+
+
     expr = f"({b.btype}) {{ origin, {b.vec.name('Add')}(origin, size) }}"
     yield from def_func(b, "FromOriginAndSize", [(b.vtype, "origin"), (b.vtype, "size")], b.btype, expr)
+
+
+    yield from box_def_array_conversions(b)
+
+    for f in b.vec_fields:
+        expr = f"a.b.{f} - a.a.{f}"
+        yield from def_func(b, f"D{f.capitalize()}", [(b.btype, "a")], b.ctype, expr)
 
 
 
@@ -435,12 +504,45 @@ def box_def_binary(b : BoxDefArgs, name : str, op_a : BinaryTemplate, op_b : Bin
     yield from def_func(b, name, [(b.btype, "a"), (b.btype, "b")], b.btype, expr)
 
 
+def box_def_array_conversions(b : BoxDefArgs):
+    array_type = ptr(array(b.ctype, len(b.vec_fields)))
+    carray_type = ptr(carray(b.ctype, len(b.vec_fields)))
+    expr = cast1(array_type)(f"&a->a.{b.vec_fields[0]}")
+    cexpr = cast1(carray_type)(f"&a->a.{b.vec_fields[0]}")
+    yield from def_func(b, "AsMDArray", [(ptr(b.btype), "a")], array_type, expr, attrs=LAB_VEC_DECL)
+    yield from def_func(b, "AsCMDArray", [(cptr(b.btype), "a")], carray_type, cexpr, attrs=LAB_VEC_DECL)
 
+    expr = f"&a->a"
+    yield from def_func(b, "AsArray", [(ptr(b.btype), "a")], ptr(b.vtype), expr, attrs=LAB_VEC_DECL)
+    yield from def_func(b, "AsCArray", [(cptr(b.btype), "a")], cptr(b.vtype), expr, attrs=LAB_VEC_DECL)
+
+    stmt_assign = " ".join(f"*p{i}{f} = a.{i}.{f};" for i, f in product("ab", b.vec_fields))
+    ptr_args = [(ptr(b.ctype), f"p{i}{f}") for i, f in product("ab", b.vec_fields)]
+    yield from def_proc(b, "Unpack", [*ptr_args, (b.btype, "a")], "void", stmt_assign)
+
+    stmt_assign_a = " ".join(f"*p{f} = a.a.{f};" for f in b.vec_fields)
+    stmt_assign_b = " ".join(f"*pd{f} = a.b.{f}-a.a.{f};" for f in b.vec_fields)
+    stmt_assign = f"{stmt_assign_a} {stmt_assign_b}"
+    ptr_args = [(ptr(b.ctype), f"p{i}{f}") for i, f in product(["", "d"], b.vec_fields)]
+    yield from def_proc(b, "Unpack_Sized", [*ptr_args, (b.btype, "a")], "void", stmt_assign)
+
+    a_fields = ", ".join(f"{f}" for f in b.vec_fields)
+    b_fields = ", ".join(f"{f} + d{f}" for f in b.vec_fields)
+    expr = f"({b.btype}) {{ {{ {a_fields} }}, {{ {b_fields} }} }}"
+    args = [(b.ctype, f"{i}{f}") for i, f in product(["", "d"], b.vec_fields)]
+    yield from def_func(b, "New_Sized", args, b.btype, expr)
 
 
 
 def def_all(vec_fields : List[NameTok]):
     N = len(vec_fields)
+
+
+    def conv_func_name(prefix, src, dst, suffix):
+        if suffix is None:
+            return f"{prefix}{N}{src}2{dst}"
+        else:
+            return f"{prefix}{N}{src}2{dst}_{suffix}"
 
 
     vec_args = {}
@@ -457,10 +559,7 @@ def def_all(vec_fields : List[NameTok]):
         yield from def_global_func(name, [(src.vtype, "a")], dst.vtype, expr)
 
     for src, dst, suffix, fun in CONVERSIONS:
-        if suffix is None:
-            name = f"LAB_Vec{N}{src}2{dst}"
-        else:
-            name = f"LAB_Vec{N}{src}2{dst}_{suffix}"
+        name = conv_func_name("LAB_Vec", src, dst, suffix)
         asrc = vec_args[src]
         adst = vec_args[dst]
         if fun is None: fun = cast1(adst.ctype)
@@ -468,11 +567,24 @@ def def_all(vec_fields : List[NameTok]):
 
     yield ""
 
+    box_args = {}
     for t in TYPE_SUFFIXES:
-        box_args = BoxDefArgs(f"LAB_Box{N}{t}", vec_args[t])
-        yield from box_def(box_args)
+        box_args[t] = BoxDefArgs(f"LAB_Box{N}{t}", vec_args[t])
+
+    for t in TYPE_SUFFIXES:
+        yield from box_def(box_args[t])
         yield ""
 
+
+    for src, dst, suffix, fun in CONVERSIONS:
+        name = conv_func_name("LAB_Box", src, dst, suffix)
+        vname = conv_func_name("LAB_Vec", src, dst, suffix)
+        asrc = box_args[src]
+        adst = box_args[dst]
+        if fun is None: fun = cast1(adst.ctype)#
+
+        expr = f"({adst.btype}) {{ {vname}(a.a), {vname}(a.b) }}"
+        yield from def_global_func(name, [(asrc.btype, "a")], adst.btype, expr)
 
 
 

@@ -4,16 +4,18 @@
 #include "LAB/gui/label.h"
 #include "LAB/gui/button.h"
 #include "LAB/gui/inventory_list.h"
+#include "LAB/gui/vscroll.h"
 
 #include "LAB_i_inventory.h"
 
 typedef struct LAB_GuiInventory
 {
     LAB_GUI_CONTAINER_INHERIT;
-    LAB_GuiComponent* components_arr[2+1];
+    LAB_GuiComponent* components_arr[3+1];
 
     LAB_GuiLabel lblTitle;
     LAB_GuiInventoryList lstInventory;
+    LAB_GuiVScroll scrInventory;
 } LAB_GuiInventory;
 
 

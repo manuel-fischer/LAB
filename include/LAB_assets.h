@@ -27,17 +27,25 @@ typedef struct LAB_TextureComposite
     const char* resource_name;
     LAB_Color black_tint, white_tint;
 } LAB_TextureComposite;
-bool LAB_Assets_NewComposedTexture(LAB_Assets* assets, size_t tex[2][2],
-                                   const LAB_TextureComposite composite[/*NULLTERM*/]);
 
-bool LAB_Assets_NewTexture(LAB_Assets* assets, size_t tex[2][2],
-                           const char* resource_name);
+typedef LAB_Box2Z LAB_TexRect;
+LAB_INLINE bool LAB_TexRect_IsOk(LAB_TexRect a) { return a.a.x != a.b.x; }
 
-bool LAB_Assets_NewTintedTexture(LAB_Assets* assets, size_t tex[2][2],
-                                 const char* resource_name,
-                                 LAB_Color black_color, LAB_Color white_color);
+LAB_TexRect LAB_Assets_NewComposedTexture(LAB_Assets* assets,
+                                          const LAB_TextureComposite composite[/*NULLTERM*/]);
 
-                           
+LAB_TexRect LAB_Assets_NewTexture(LAB_Assets* assets,
+                                  const char* resource_name);
+
+LAB_TexRect LAB_Assets_NewTintedTexture(LAB_Assets* assets,
+                                        const char* resource_name,
+                                        LAB_Color black_color, LAB_Color white_color);
+
+
 LAB_Model* LAB_Assets_NewModel(LAB_Assets* assets);
 
-#define LAB_Assets_RenderItem(assets, tex, c) LAB_ItemTexSet_Render((assets)->items, (assets)->atlas, tex, c)
+LAB_INLINE
+SDL_Surface* LAB_Assets_RenderItem(LAB_Assets* assets, LAB_Box2Z tex, LAB_Color c)
+{
+    return LAB_ItemTexSet_Render(assets->items, assets->atlas, tex, c);
+}
