@@ -9,7 +9,7 @@
 
 vec3 LAB_ColorHDR_ToVec3(LAB_ColorHDR c)
 {
-    vec3 mantissa = vec3(LAB_HDR_RED(c), LAB_HDR_GRN(c), LAB_HDR_BLU(c));
+    vec3 mantissa = vec3(float(LAB_HDR_RED(c)), float(LAB_HDR_GRN(c)), float(LAB_HDR_BLU(c)));
     ivec3 exponent = ivec3(LAB_HDR_EXP_VALUE(c));
     return ldexp(mantissa, exponent);
 }

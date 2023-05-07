@@ -22,16 +22,16 @@ uniform float fogEnd = 120;
 
 void main()
 {
-    gl_Position = modelproj * vec4(pos, 1);
+    gl_Position = modelproj * vec4(pos, 1.0);
 
     float camDistance = distance(pos, camPos);
     FogFactor = LAB_FogGradient(camDistance, fogStart, fogEnd);
 
-    vec3 shade = light == 0xffffffffu ? vec3(1) : LAB_ColorHDR_ToVec3(light);
+    vec3 shade = light == 0xffffffffu ? vec3(1.0) : LAB_ColorHDR_ToVec3(light);
 
     shade *= exposure;
-    shade = clamp(shade, 0, 2.25);
+    shade = clamp(shade, 0.0, 2.25);
 
-    Color = color * LAB_ColorSaturation(vec4(shade, 1), saturation);
+    Color = color * LAB_ColorSaturation(vec4(shade, 1.0), saturation);
     TexCoord = textureScale * tex;
 }
