@@ -52,9 +52,11 @@ void LAB_GuiInventory_Create(LAB_GuiInventory* gui,
     gui->components_arr[2] = (LAB_GuiComponent*)&gui->scrInventory;
     gui->components_arr[3] = NULL;
 
-    LAB_GuiLabel_Create(&gui->lblTitle,
-                        10, 5, LAB_INVENTORY_COLUMNS*LAB_SLOT_SIZE, 25,
-                        "Inventory");
+    LAB_GuiLabel_Create(&gui->lblTitle, (LAB_GuiLabel_Spec)
+    {
+        .rect = LAB_Box2I_New_Sized(10, 5, LAB_INVENTORY_COLUMNS*LAB_SLOT_SIZE, 25),
+        .title = "Inventory",
+    });
 
     LAB_GuiInventoryList_Create_Cells(&gui->lstInventory,
                         10, 30, LAB_INVENTORY_COLUMNS, LAB_INVENTORY_ROWS,

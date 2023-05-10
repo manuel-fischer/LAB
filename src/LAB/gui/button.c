@@ -24,24 +24,19 @@ LAB_STATIC
 void LAB_GuiButton_Destroy(LAB_GuiComponent* self);
 
 
-void LAB_GuiButton_Create(LAB_GuiButton* button,
-                          int x, int y, int w, int h,
-                          const char* title,
-                          void(*on_click)(void* user, LAB_GuiManager* mgr),
-                          void* user)
+void LAB_GuiButton_Create(LAB_GuiButton* button, LAB_GuiButton_Spec spec)
 {
-    button->x = x; button->y = y;
-    button->w = w; button->h = h;
+    LAB_GuiComponent_SetRect(button, spec.rect);
 
     button->on_event = &LAB_GuiButton_OnEvent;
     button->render = &LAB_GuiButton_Render;
     button->destroy = &LAB_GuiButton_Destroy;
 
-    button->title = title;
+    button->title = spec.title;
     button->text_surf = NULL;
 
-    button->on_click = on_click;
-    button->user = user;
+    button->on_click = spec.on_click;
+    button->ctx = spec.ctx;
 
     button->state = LAB_GUI_BUTTON_NORMAL;
 }
@@ -91,7 +86,7 @@ bool LAB_GuiButton_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Even
         {
             if(cself->state == LAB_GUI_BUTTON_PRESSED)
             {
-                cself->on_click(cself->user, mgr);
+                cself->on_click(cself->ctx, mgr);
                 cself->state = LAB_GUI_BUTTON_FOCUSED;
                 return 1;
             }
@@ -111,7 +106,7 @@ bool LAB_GuiButton_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Even
             {
                 if(cself->state == LAB_GUI_BUTTON_PRESSED)
                 {
-                    cself->on_click(cself->user, mgr);
+                    cself->on_click(cself->ctx, mgr);
                     cself->state = LAB_GUI_BUTTON_FOCUSED;
                     return 1;
                 }

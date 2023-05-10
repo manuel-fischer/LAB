@@ -32,29 +32,51 @@ void LAB_GuiMenu_Create(LAB_GuiMenu* menu, LAB_World* world)
     menu->components_arr[6] = NULL;
 
 
-    LAB_GuiLabel_Create(&menu->lblTitle,
-                        10, 5, 100, 25,
-                        "Menu");
+    LAB_GuiLabel_Create(&menu->lblTitle, (LAB_GuiLabel_Spec)
+    {
+        .rect = LAB_Box2I_New_Sized(10, 5, 100, 25),
+        .title = "Menu",
+    });
 
-    LAB_GuiButton_Create(&menu->cmdResume,
-                         10, 30, 100, 25,
-                         "Resume", &LAB_GuiMenu_Resume, NULL);
+    LAB_GuiButton_Create(&menu->cmdResume, (LAB_GuiButton_Spec)
+    {
+        .rect = LAB_Box2I_New_Sized(10, 30, 100, 25),
+        .title = "Resume",
+        .on_click = &LAB_GuiMenu_Resume,
+        .ctx = NULL,
+    });
 
-    LAB_GuiButton_Create(&menu->cmdSave,
-                         10, 60, 100, 25,
-                         "Save", &LAB_GuiMenu_Save, world);
+    LAB_GuiButton_Create(&menu->cmdSave, (LAB_GuiButton_Spec)
+    {
+        .rect = LAB_Box2I_New_Sized(10, 60, 100, 25),
+        .title = "Save",
+        .on_click = &LAB_GuiMenu_Save,
+        .ctx = world,
+    });
 
-    LAB_GuiButton_Create(&menu->cmdSaveAs,
-                         10, 90, 100, 25,
-                         "Save As\u2026", &LAB_GuiMenu_SaveAs, world);
+    LAB_GuiButton_Create(&menu->cmdSaveAs, (LAB_GuiButton_Spec)
+    {
+        .rect = LAB_Box2I_New_Sized(10, 90, 100, 25),
+        .title = "Save As\u2026",
+        .on_click = &LAB_GuiMenu_SaveAs,
+        .ctx = world,
+    });
 
-    LAB_GuiButton_Create(&menu->cmdLoad,
-                         10, 120, 100, 25,
-                         "Load\u2026", &LAB_GuiMenu_Load, world);
+    LAB_GuiButton_Create(&menu->cmdLoad, (LAB_GuiButton_Spec)
+    {
+        .rect = LAB_Box2I_New_Sized(10, 120, 100, 25),
+        .title = "Load\u2026",
+        .on_click = &LAB_GuiMenu_Load,
+        .ctx = world,
+    });
 
-    LAB_GuiButton_Create(&menu->cmdQuit,
-                         10, 150, 100, 25,
-                         "Quit", &LAB_GuiMenu_Quit, NULL);
+    LAB_GuiButton_Create(&menu->cmdQuit, (LAB_GuiButton_Spec)
+    {
+        .rect = LAB_Box2I_New_Sized(10, 150, 100, 25),
+        .title = "Quit",
+        .on_click = &LAB_GuiMenu_Quit,
+        .ctx = NULL,
+    });
 }
 
 #include <stdio.h>

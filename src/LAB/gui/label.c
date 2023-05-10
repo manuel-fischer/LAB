@@ -12,18 +12,15 @@ LAB_INLINE
 void LAB_GuiLabel_Destroy(LAB_GuiComponent* self);
 
 
-void LAB_GuiLabel_Create(LAB_GuiLabel* label,
-                         int x, int y, int w, int h,
-                         const char* title)
+void LAB_GuiLabel_Create(LAB_GuiLabel* label, LAB_GuiLabel_Spec spec)
 {
-    label->x = x; label->y = y;
-    label->w = w; label->h = h;
+    LAB_GuiComponent_SetRect(label, spec.rect);
 
     label->on_event = &LAB_Gui_OnEvent_Ignore;
     label->render = &LAB_GuiLabel_Render;
     label->destroy = &LAB_GuiLabel_Destroy;
 
-    label->title = title;
+    label->title = spec.title;
     label->text_surf = NULL;
 }
 

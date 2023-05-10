@@ -9,15 +9,20 @@ typedef struct LAB_GuiButton
     const char* title;
     SDL_Surface* text_surf;
 
-    void(*on_click)(void* user, LAB_GuiManager* mgr);
-    void* user;
+    void(*on_click)(void* ctx, LAB_GuiManager* mgr);
+    void* ctx;
 
     int state;
 } LAB_GuiButton;
 
 
-void LAB_GuiButton_Create(LAB_GuiButton* button,
-                          int x, int y, int w, int h,
-                          const char* title,
-                          void(*on_click)(void* user, LAB_GuiManager* mgr),
-                          void* user);
+typedef struct LAB_GuiButton_Spec
+{
+    LAB_Box2I rect;
+    const char* title;
+    void(*on_click)(void* ctx, LAB_GuiManager* mgr);
+    void* ctx;
+} LAB_GuiButton_Spec;
+
+
+void LAB_GuiButton_Create(LAB_GuiButton* button, LAB_GuiButton_Spec spec);

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "LAB_vec2.h"
-#include "SDL2/SDL_rect.h"
+#include <SDL2/SDL_rect.h>
 
 LAB_INLINE LAB_ALWAYS_INLINE LAB_VALUE_CONST
 SDL_Point LAB_Vec2I2SDL(LAB_Vec2I a)

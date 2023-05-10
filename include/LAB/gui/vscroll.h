@@ -31,3 +31,4 @@ typedef struct LAB_GuiScroll_Spec
 
 void LAB_GuiVScroll_Create(LAB_GuiVScroll* cself, LAB_GuiScroll_Spec spec);
 bool LAB_GuiVScroll_SetScrollValue(LAB_GuiVScroll* cself, int new_scroll);
+bool LAB_GuiVScroll_ScrollTowards(LAB_GuiVScroll* cself, int index);

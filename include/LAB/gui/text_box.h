@@ -13,7 +13,11 @@ typedef struct LAB_GuiTextBox
     int state;
 } LAB_GuiTextBox;
 
-void LAB_GuiTextBox_Create(LAB_GuiTextBox* cself,
-                           int x, int y, int w, int h);
+typedef struct LAB_GuiTextBox_Spec
+{
+    LAB_Box2I rect;
+} LAB_GuiTextBox_Spec;
+
+void LAB_GuiTextBox_Create(LAB_GuiTextBox* cself, LAB_GuiTextBox_Spec spec);
 
 bool LAB_GuiTextBox_SetContent(LAB_GuiTextBox* cself, const char* txt);

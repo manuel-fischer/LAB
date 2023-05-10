@@ -36,18 +36,14 @@ int LAB_GuiVScroll_RowCount(LAB_GuiVScroll* cself)
 }
 
 LAB_STATIC
-int LAB_GuiVScroll_ButtonHeight(LAB_GuiVScroll* cself)
-{
-    return LAB_MIN(cself->h, LAB_MAX(cself->h*cself->viewport_height/cself->total_height, 10));
-}
-
-LAB_STATIC
 LAB_Box2I LAB_GuiVScroll_ButtonRect(LAB_GuiVScroll* cself, int x, int y)
 {
 
     int row_steps = LAB_GuiVScroll_RowCount(cself)+cself->viewport_height-1;
-    int button_height = LAB_GuiVScroll_ButtonHeight(cself);
     int button_pos = cself->h*cself->scroll_value/row_steps;
+    int button_stop = (cself->h*(cself->scroll_value+cself->viewport_height))/row_steps;
+    int button_height = button_stop - button_pos;
+    button_height = LAB_MIN(cself->h, LAB_MAX(button_height, 10));
 
     LAB_Box2I button_rect = LAB_Box2I_New_Sized(x, y+button_pos, cself->w, button_height);
     return button_rect;
@@ -66,6 +62,8 @@ void LAB_GuiVScroll_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surf
 
     LAB_Box2I border_rect = LAB_Box2I_New_Sized(x, y, self->w, self->h);
     LAB_RenderRect_Scaled(surf, s, border_rect, border);
+
+    if(cself->total_height <= cself->viewport_height) return;
 
     LAB_Box2I button_rect = LAB_GuiVScroll_ButtonRect(cself, x, y);
     button_rect = LAB_Box2I_Expand(button_rect, (LAB_Vec2I) { -1, -1 });
@@ -123,4 +121,14 @@ bool LAB_GuiVScroll_SetScrollValue(LAB_GuiVScroll* cself, int new_scroll)
     cself->on_scroll(cself->on_scroll_ctx, new_scroll);
 
     return true;
+}
+
+bool LAB_GuiVScroll_ScrollTowards(LAB_GuiVScroll* cself, int index)
+{
+    if(index < cself->scroll_value)
+        return LAB_GuiVScroll_SetScrollValue(cself, index);
+    if(index >= cself->scroll_value+cself->viewport_height)
+        return LAB_GuiVScroll_SetScrollValue(cself, index-cself->viewport_height+1);
+
+    return false;
 }

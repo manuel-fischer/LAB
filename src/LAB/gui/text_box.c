@@ -22,11 +22,9 @@ LAB_STATIC
 void LAB_GuiTextBox_Destroy(LAB_GuiComponent* self);
 
 
-void LAB_GuiTextBox_Create(LAB_GuiTextBox* cself,
-                          int x, int y, int w, int h)
+void LAB_GuiTextBox_Create(LAB_GuiTextBox* cself, LAB_GuiTextBox_Spec spec)
 {
-    cself->x = x; cself->y = y;
-    cself->w = w; cself->h = h;
+    LAB_GuiComponent_SetRect(cself, spec.rect);
 
     cself->on_event = &LAB_GuiTextBox_OnEvent;
     cself->render = &LAB_GuiTextBox_Render;
