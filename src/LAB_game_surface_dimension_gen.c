@@ -102,7 +102,6 @@ void LAB_SurfaceDimension_ShapeSurface(const LAB_SurfaceDimension* dim, uint64_t
 LAB_STATIC
 void LAB_SurfaceDimension_ShapeCave(const LAB_SurfaceDimension* dim, uint64_t world_seed, LAB_Chunk_Blocks* chunk_blocks, int x, int y, int z)
 {
-    
     if(y >= LAB_CAVE_ALTITUDE_C) return;
 
     const int floor_depth = 3;
@@ -134,7 +133,7 @@ void LAB_SurfaceDimension_PopulateStructures(const LAB_SurfaceDimension* dim, ui
     //   - go through 3x3x3 neighborhood of spans
     //     - enumerate biomes in span
     //     - try to place any structure in span
-    
+
     LAB_PlacementPriorityBuffer zbuf;
     LAB_PlacementPriorityBuffer_Create(&zbuf);
 
@@ -243,7 +242,7 @@ void LAB_SurfaceDimension_PopulateBiomeStructures(const LAB_SurfaceDimension* di
             if(LAB_FloorMultiplePow2(ax, 16*span.cx) != (sx<<4)) continue;
             if(LAB_FloorMultiplePow2(ay, 16*span.cy) != (sy<<4)) continue;
             if(LAB_FloorMultiplePow2(az, 16*span.cz) != (sz<<4)) continue;
-    
+
             LAB_Placer p2 = LAB_Placer_Offset(p, ax-(sx<<4), ay-(sy<<4), az-(sz<<4));
             LAB_CALL_FUNC(&dim->structure_args, (void)0, s->structure, /**/ &p2, &rnd);
         }

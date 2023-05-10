@@ -65,7 +65,7 @@ LAB_MUT_Game_Dimension
 LAB_SurfaceDimension* LAB_SurfaceDimension_CreateRegister(void)
 {
     LAB_SurfaceDimension* dim;
-    
+
     LAB_OBJ(dim = LAB_SurfaceDimension_Obj(LAB_OBJ_CREATE, NULL),
             LAB_SurfaceDimension_Obj(LAB_OBJ_DESTROY, dim),
     {
@@ -79,7 +79,7 @@ LAB_SurfaceDimension* LAB_SurfaceDimension_CreateRegister(void)
         }))
             return dim;
     });
-    
+
     return NULL;
 }
 

@@ -12,8 +12,6 @@
 #include "LAB_memory.h"
 
 #include "LAB_gen_flat.h"
-#include "LAB_gen_overworld.h"
-#include "LAB_gen_overworld_shape.h"
 #include "LAB_asset_manager.h"
 #include "LAB_gl.h"
 #include "LAB_sdl.h"
@@ -25,7 +23,6 @@
 #include "LAB_game_server.h"
 
 #define GEN_FLAT 0
-#define GEN_OLD 0
 
 #include "LAB_texture_atlas.h" // TODO remove from here
 #include "LAB_render_item.h"
@@ -185,7 +182,6 @@ int main(int argc, char** argv)
 
     static union {
         LAB_GenFlat flat;
-        LAB_GenOverworld overworld;
         LAB_GenDimensionWrapper_Ctx dimension;
     } gen = {0};
 
@@ -213,19 +209,6 @@ int main(int argc, char** argv)
     gen.flat.block = LAB_BLOCK_MARBLE.raw;
     the_world.chunkgen      = &LAB_GenFlatProc;
     the_world.chunkgen_user = &gen.flat;
-    #elif GEN_OLD
-    //gen.overworld.seed = 0x13579bdf;
-    //gen.overworld.seed = 2347818473829147;
-    gen.overworld.seed = 58925789342573489;
-    //gen.overworld.seed = 78434678123467586;
-    //gen.overworld.seed = 7823489034819884932;
-    gen.overworld.seed = 123456789;
-    gen.overworld.seed = 1234567890123456789;
-    gen.overworld.seed = 9876543210;
-    //gen.overworld.seed = 73489564378791825;
-    //gen.overworld.seed = 42;
-    the_world.chunkgen      = &LAB_GenOverworldProc;
-    the_world.chunkgen_user = &gen.overworld;
     #else
     gen.dimension.world_seed = 9876543210;
     gen.dimension.dim = *LAB_Dimension_GetDefault();
@@ -247,8 +230,6 @@ int main(int argc, char** argv)
     //LAB_client.view.x = -524288+3.5;
     #if GEN_FLAT
     LAB_client.view.y = 2;
-    #elif GEN_OLD
-    LAB_client.view.y = LAB_Gen_Surface_Shape_Func(&gen.overworld, LAB_FastFloorD2I(LAB_client.view.x), LAB_FastFloorD2I(LAB_client.view.z)) + 3;
     #else
     gen.dimension.dim.spawn_point(gen.dimension.dim.ctx, gen.dimension.world_seed,
         &LAB_client.view.pos.x,

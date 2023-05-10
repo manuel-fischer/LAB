@@ -36,7 +36,7 @@ bool LAB_SurfaceDimension_PlaceOnCaveWall_Func(const void* vctx, uint64_t world_
 
     int prev_pos[3];
     int pos[3] = {*x, *y, *z};
-    
+
     int* t = &pos[LAB_FACE_AXIS(f)];
     int* pt = &prev_pos[LAB_FACE_AXIS(f)];
     int dt = LAB_FACE_POSITIVE(f) ? +1 : -1;

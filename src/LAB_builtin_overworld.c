@@ -59,6 +59,13 @@ bool LAB_BuiltinOverworld_Init(void)
         .ocean_block = LAB_BLOCK_WATER,
     })) return false;
 
+    if(!LAB_SurfaceDimension_CreateBiome(dim, &LAB_SURFACE_BIOME_SNOWY_MOUNTAIN, (LAB_SurfaceBiome_Blocks) {
+        .surface_block = LAB_BLOCK_SNOW,
+        .ground_block = LAB_BLOCK_SNOW,
+        .rock_block = LAB_BLOCK_STONE.raw,
+        .ocean_block = LAB_BLOCK_WATER,
+    })) return false;
+
     if(!LAB_SurfaceDimension_CreateBiome(dim, &LAB_SURFACE_BIOME_MEADOW, (LAB_SurfaceBiome_Blocks) {
         .surface_block = LAB_BLOCK_GRASS,
         .ground_block = LAB_BLOCK_STONE.raw,
@@ -67,6 +74,6 @@ bool LAB_BuiltinOverworld_Init(void)
     })) return false;
 
     if(!LAB_BuiltinStructures_Init(dim)) return false;
-    
+
     return true;
 }

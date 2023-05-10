@@ -186,7 +186,7 @@ size_t LAB_RoundUpAlign(size_t i, size_t align)
 #define LAB_NANOS_MAX 0xffffffffffffffff
 typedef uint64_t LAB_Nanos;
 
-LAB_Nanos LAB_NanoSeconds();
+LAB_Nanos LAB_NanoSeconds(void);
 
 
 LAB_POINTER_CONST

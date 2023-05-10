@@ -94,6 +94,27 @@ float LAB_BuiltinOverworld_BiomeHumidity_Func(uint64_t world_seed, int x, int z)
 }
 
 
+LAB_STATIC
+size_t LAB_BuiltinOverworld_UpwardsSlopeCount(uint64_t world_seed, int x, int z, int offset_mask, int delta, int min_height, int max_height, LAB_Random* random)
+{
+    size_t count = 0;
+
+    int xz = LAB_NextRandom(random);
+    int xx = x+(xz      & offset_mask)-(xz >>  4 & offset_mask);
+    int zz = z+(xz >> 8 & offset_mask)-(xz >> 12 & offset_mask);
+    struct { int dx, dz; } points[] = {
+        { delta, 0 }, { -delta, 0 }, { 0, delta }, { 0, -delta }
+    };
+    for(size_t i = 0; i < LAB_LEN(points); ++i)
+    {
+        int dx = points[i].dx;
+        int dz = points[i].dz;
+        int height = LAB_BuiltinOverworld_SurfaceHeight_Func(world_seed, xx+dx, zz+dz);
+        if(min_height <= height && height < max_height)
+            count++;
+    }
+    return count;
+}
 
 LAB_SurfaceBiomeID LAB_BuiltinOverworld_SurfaceBiome_Func(uint64_t world_seed, int x, int z, LAB_Random* random)
 {
@@ -114,31 +135,28 @@ LAB_SurfaceBiomeID LAB_BuiltinOverworld_SurfaceBiome_Func(uint64_t world_seed, i
 
 //#define LAB_ROCKY_ALTITUDE (72)
 #define LAB_ROCKY_ALTITUDE (50)
+#define LAB_SNOWY_ALTITUDE (100)
 
+    float snow_offset = 0.5+0.5*LAB_SimplexNoiseChord2DSN(world_seed^3483554, x*0.01, z*0.01, 2);
+
+
+    if(sheight >= (int)(LAB_NextRandom(random)&7) + LAB_SNOWY_ALTITUDE + (int)(snow_offset*16))
+    {
+        int down = 1+LAB_FloorDivPow2(sheight - LAB_SNOWY_ALTITUDE + (LAB_NextRandom(random)&15u), 16);
+        int treshold = 3;
+
+        int upw_count = LAB_BuiltinOverworld_UpwardsSlopeCount(world_seed, x, z, 1, 3, sheight-down+1, INT_MAX, random);
+        if(upw_count >= treshold)
+            return LAB_SURFACE_BIOME_SNOWY_MOUNTAIN;
+        return LAB_SURFACE_BIOME_MOUNTAIN;
+    }
     if(sheight >= (int)(LAB_NextRandom(random)&31) + LAB_ROCKY_ALTITUDE)
     {
         int ry = sheight + (LAB_NextRandom(random) & 15);
         int treshold = ry > 125 ? -1 : ry > 100 ? 0 : ry > 75 ? 1 : 2;
 
-        size_t count = 0;
-
-        int xz = LAB_NextRandom(random);
-        int dd = 1;
-        int xx = x+(xz      & dd)-(xz >>  4 & dd);
-        int zz = z+(xz >> 8 & dd)-(xz >> 12 & dd);
-        int dd2 = 3;
-        struct { int dx, dz; } points[] = {
-            { dd2, 0 }, { -dd2, 0 }, { 0, dd2 }, { 0, -dd2 }
-        };
-        for(size_t i = 0; i < LAB_LEN(points); ++i)
-        {
-            int dx = points[i].dx;
-            int dz = points[i].dz;
-            if(LAB_BuiltinOverworld_SurfaceHeight_Func(world_seed, xx+dx, zz+dz) > sheight-2)
-                count++;
-        }
-
-        if(count >= LAB_LEN(points)-treshold)
+        int upw_count = LAB_BuiltinOverworld_UpwardsSlopeCount(world_seed, x, z, 1, 3, sheight-2+1, INT_MAX, random);
+        if(upw_count >= 4-treshold)
             return LAB_SURFACE_BIOME_MEADOW;
         return LAB_SURFACE_BIOME_MOUNTAIN;
     }

@@ -19,7 +19,7 @@ const char* LAB_Filename(const char* path)
     return path;
 }
 
-LAB_Nanos LAB_NanoSeconds()
+LAB_Nanos LAB_NanoSeconds(void)
 {
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);

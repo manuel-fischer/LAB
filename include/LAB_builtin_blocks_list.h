@@ -3,9 +3,9 @@
 LAB_BUILTIN_VIS
 LAB_BlockID LAB_BLOCK_OUTSIDE,
             LAB_BLOCK_AIR;
-                 
 
-LAB_BUILTIN_VIS 
+
+LAB_BUILTIN_VIS
 LAB_BlockGroupStone LAB_BLOCK_BASALT,
                     LAB_BLOCK_STONE,
                     LAB_BLOCK_MARBLE,
@@ -22,8 +22,13 @@ LAB_BlockID LAB_BLOCK_IRON_ORE,
             LAB_BLOCK_URANIUM_ORE,
             LAB_BLOCK_COAL_ORE,
 
+            LAB_BLOCK_GRASS,
+            //LAB_BLOCK_GRASS_PLAINS,
+            LAB_BLOCK_DIRT,
+            LAB_BLOCK_FOREST_SOIL,
             LAB_BLOCK_SAND,
-            LAB_BLOCK_GLASS,
+            LAB_BLOCK_SNOW,
+
             LAB_BLOCK_LEAVES,
             LAB_BLOCK_WOOD,
             LAB_BLOCK_WOOD_PLANKS,
@@ -32,9 +37,9 @@ LAB_BlockID LAB_BLOCK_IRON_ORE,
             LAB_BLOCK_BIRCH_WOOD,
             LAB_BLOCK_SPRUCE_LEAVES,
             LAB_BLOCK_SPRUCE_WOOD,
+
             LAB_BLOCK_TALLGRASS,
             LAB_BLOCK_TALLERGRASS,
-            LAB_BLOCK_GRASS,
 
             LAB_BLOCK_RED_TULIP,
             LAB_BLOCK_ORANGE_TULIP,
@@ -43,12 +48,11 @@ LAB_BlockID LAB_BLOCK_IRON_ORE,
             LAB_BLOCK_WHITE_TULIP,
 
             LAB_BLOCK_FALLEN_LEAVES,
-            //LAB_BLOCK_GRASS_PLAINS,
-            LAB_BLOCK_DIRT,
-            LAB_BLOCK_FOREST_SOIL,
-            LAB_BLOCK_METAL,
 
             LAB_BLOCK_WATER,
+
+            LAB_BLOCK_GLASS,
+            LAB_BLOCK_METAL,
 
             LAB_BLOCK_TORCH,
             LAB_BLOCK_LIGHT,
