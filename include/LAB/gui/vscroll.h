@@ -14,6 +14,8 @@ typedef struct LAB_GuiVScroll
     int viewport_height;
     int scroll_value;
 
+    int grip_pos;
+
     bool (*on_scroll)(void* ctx, int scroll_value);
     void* on_scroll_ctx;
 } LAB_GuiVScroll;

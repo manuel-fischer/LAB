@@ -3,7 +3,8 @@
 #include "LAB_attr.h"
 #include "LAB/gui/component.h"
 
-bool LAB_GetMouseCoordPtr(SDL_Event* event, int** x, int** y);
+bool LAB_Event_GetMouseCoordPtr(SDL_Event* event, int** x, int** y);
+bool LAB_Event_GetMouseCoord(SDL_Event* event, int* x, int* y);
 
 LAB_INLINE bool LAB_GuiHitTest(LAB_GuiComponent* component, int x, int y)
 {

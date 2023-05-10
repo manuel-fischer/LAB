@@ -1,6 +1,6 @@
 #include "LAB/gui/util.h"
 
-bool LAB_GetMouseCoordPtr(SDL_Event* event, int** x, int** y)
+bool LAB_Event_GetMouseCoordPtr(SDL_Event* event, int** x, int** y)
 {
     switch(event->type)
     {
@@ -18,4 +18,15 @@ bool LAB_GetMouseCoordPtr(SDL_Event* event, int** x, int** y)
         default:
             return 0;
     }
+}
+
+bool LAB_Event_GetMouseCoord(SDL_Event* event, int* x, int* y)
+{
+    int* px,* py;
+    if(!LAB_Event_GetMouseCoordPtr(event, &px, &py)) return false;
+
+    *x = *px;
+    *y = *py;
+
+    return true;
 }

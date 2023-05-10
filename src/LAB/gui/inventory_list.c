@@ -96,7 +96,7 @@ bool LAB_GuiInventoryList_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, S
     int rows = cself->h/LAB_SLOT_SIZE;
     size_t slot = -1;
     int* mx,* my;
-    if(LAB_GetMouseCoordPtr(event, &mx, &my))
+    if(LAB_Event_GetMouseCoordPtr(event, &mx, &my))
     {
         int col = *mx/LAB_SLOT_SIZE;
         int row = *my/LAB_SLOT_SIZE;
@@ -108,7 +108,7 @@ bool LAB_GuiInventoryList_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, S
     {
         case SDL_MOUSEBUTTONUP:
         {
-            int inv_slot = slot + cself->topleft_slot;
+            size_t inv_slot = slot + cself->topleft_slot;
             if(inv_slot < cself->inventory->get_size(cself->inventory_user))
             {
                 cself->inventory->take_slot(cself->inventory_user, inv_slot);

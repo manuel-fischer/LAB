@@ -160,12 +160,12 @@ bool LAB_GuiManager_HandleEvent(LAB_GuiManager* mgr, SDL_Event* event)
         }
 
         int* x,* y;
-        if(LAB_GetMouseCoordPtr(event, &x, &y))
+        if(LAB_Event_GetMouseCoordPtr(event, &x, &y))
         {
             *x /= z*s;
             *y /= z*s;
 
-            bool is_drag = event->type == SDL_MOUSEMOTION && event->motion.state;
+            bool is_drag = LAB_IsDragEvent(event);
             if(!is_drag && !LAB_GuiHitTest(mgr->component, *x, *y))
             {
                 if(event->type == SDL_MOUSEBUTTONDOWN)

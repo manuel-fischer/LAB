@@ -334,7 +334,7 @@
 @file util.h
     @locate LAB/gui/util.h
 
-    @fn bool LAB_GetMouseCoordPtr(SDL_Event* event, int** x, int** y)
+    @fn bool LAB_Event_GetMouseCoordPtr(SDL_Event* event, int** x, int** y)
         @config inline
 
         @briefx Get the mouse coordinates from the event, if it is a mouse event

@@ -11,7 +11,7 @@ bool LAB_GuiContainer_OnEvent_Mouse(LAB_GuiContainer* cself, LAB_GuiManager* mgr
 
     SDL_Event tmp_event;
 
-    bool is_drag = event->type == SDL_MOUSEMOTION && event->motion.state;
+    bool is_drag = LAB_IsDragEvent(event);
 
     if(is_drag && cself->current)
     {
@@ -61,7 +61,7 @@ bool LAB_GuiContainer_OnEvent(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_E
     bool rerender = false;
 
     int *x, *y;
-    if(LAB_GetMouseCoordPtr(event, &x, &y))
+    if(LAB_Event_GetMouseCoordPtr(event, &x, &y))
     {
         rerender |= LAB_GuiContainer_OnEvent_Mouse(cself, mgr, event, x, y);
     }

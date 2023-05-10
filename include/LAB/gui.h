@@ -38,3 +38,13 @@ void LAB_RenderRect_Scaled(SDL_Surface* surf, int scale, LAB_Box2I rect, LAB_Vec
 {
     LAB_RenderRect2(surf, scale, LAB_Box2I_Mul(scale, rect), texture);
 }
+
+
+
+LAB_INLINE
+bool LAB_IsDragEvent(SDL_Event* event)
+{
+    if(event->type == SDL_MOUSEMOTION && event->motion.state) return true;
+    if(event->type == SDL_MOUSEBUTTONUP) return true;
+    return false;
+}

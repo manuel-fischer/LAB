@@ -105,6 +105,20 @@ bool LAB_MultOverflow(size_t a, size_t b)
 
 
 
+LAB_INLINE
+LAB_VALUE_CONST
+int LAB_Sign(int i)
+{
+    return (i > 0) - (i < 0);
+}
+
+// return sign of difference
+LAB_INLINE
+LAB_VALUE_CONST
+int LAB_CompareZ(size_t a, size_t b)
+{
+    return (a > b) - (a < b);
+}
 
 LAB_INLINE
 LAB_VALUE_CONST
