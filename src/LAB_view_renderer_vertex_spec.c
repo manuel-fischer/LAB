@@ -43,6 +43,21 @@ const LAB_View_VertexSpec LAB_blocks_vertex_spec = {
     },
 };
 
+const LAB_View_VertexSpec LAB_sky_vertex_spec = {
+    .vertex_size = sizeof(LAB_SkyVertex),
+    .elements_count = 1,
+    .elements = (const LAB_View_VertexElementSpec[1]) {
+        {
+            .name = "screen_pos",
+            .type = LAB_GL_MEMBER_ELEMENT_TYPE(LAB_SkyVertex, screen_pos),
+            .dimension = 2,
+            .offset = offsetof(LAB_SkyVertex, screen_pos),
+            .normalized = false,
+            .keep_as_integer = false,
+        },
+    },
+};
+
 const LAB_View_VertexSpec LAB_line_vertex_spec = {
     .vertex_size = sizeof(LAB_LineVertex),
     .elements_count = 1,

@@ -20,6 +20,7 @@
 #include "LAB_view_renderer.h"
 #include "LAB_gl_types.h"
 #include "LAB_view_render_box.h"
+#include "LAB_view_render_sky.h"
 #include "LAB_view_render_surface.h"
 #include "LAB_view_pending_queries.h"
 
@@ -152,7 +153,9 @@ typedef struct LAB_View
 
     double fov_factor;
 
-    int on_ground;
+    bool on_ground;
+
+    uint32_t time_ms;
 
     // Cache
     //LAB_View_ChunkTBL chunks;
@@ -211,6 +214,7 @@ typedef struct LAB_View
     size_t delete_index;
 
     LAB_ViewRenderer renderer;
+    LAB_SkyRenderer sky_renderer;
     LAB_BoxRenderer box_renderer;
     LAB_SurfaceRenderer surface_renderer;
 

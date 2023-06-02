@@ -6,31 +6,22 @@
 
 
 
+#define LAB_GLSL_INCLUDE(fn) \
+    { .include_name = 7+"shaders/" fn, .filename = "shaders/" fn }
+
 const LAB_ShaderEnvironmentSpec LAB_shader_environment =
 {
-    .includes_count = 4,
-    .includes = (const LAB_ShaderIncludeSpec[4]) {
-        { .include_name = "/color_hdr.glsl", .filename = "shaders/color_hdr.glsl" },
-        { .include_name = "/tone_mapping.glsl", .filename = "shaders/tone_mapping.glsl" },
-        { .include_name = "/fog.glsl", .filename = "shaders/fog.glsl" },
-        { .include_name = "/render_pass.glsl", .filename = "shaders/render_pass.glsl" },
+    .includes_count = 6,
+    .includes = (const LAB_ShaderIncludeSpec[6]) {
+        LAB_GLSL_INCLUDE("color_hdr.glsl"),
+        LAB_GLSL_INCLUDE("tone_mapping.glsl"),
+        LAB_GLSL_INCLUDE("fog.glsl"),
+        LAB_GLSL_INCLUDE("render_pass.glsl"),
+        LAB_GLSL_INCLUDE("noise.glsl"),
+        LAB_GLSL_INCLUDE("sky/overworld.glsl"),
     }
 };
 
-
-
-#define LAB_blocks_uniforms_count 8
-static const LAB_UniformEntry LAB_blocks_uniforms[LAB_blocks_uniforms_count] =
-{
-    { "camPos",       offsetof(LAB_ViewRenderer_Blocks, uni_cam_pos) },
-    { "modelproj",    offsetof(LAB_ViewRenderer_Blocks, uni_modelproj) },
-    { "textureScale", offsetof(LAB_ViewRenderer_Blocks, uni_texture_scale) },
-    { "exposure",     offsetof(LAB_ViewRenderer_Blocks, uni_exposure) },
-    { "saturation",   offsetof(LAB_ViewRenderer_Blocks, uni_saturation) },
-    { "fogColor",     offsetof(LAB_ViewRenderer_Blocks, uni_fog_color) },
-    { "fogStart",     offsetof(LAB_ViewRenderer_Blocks, uni_fog_start) },
-    { "fogEnd",       offsetof(LAB_ViewRenderer_Blocks, uni_fog_end) },
-};
 
 
 const LAB_ProgramSpec* const LAB_blocks_shaders[LAB_RENDER_PASS_COUNT] =
@@ -41,18 +32,40 @@ const LAB_ProgramSpec* const LAB_blocks_shaders[LAB_RENDER_PASS_COUNT] =
     [LAB_RENDER_PASS_ALPHA]  = &LAB_blocks_shader_alpha,
 };
 
-const LAB_ProgramSpec LAB_blocks_shader_solid = {
-    .shaders_count = 2,
-    .shaders = (const LAB_ShaderSpec[2]) {
-        {
-            .filename = "shaders/blocks.glslv",
-            .shader_type = GL_VERTEX_SHADER,
-        },
-        {
-            .filename = "shaders/blocks.glslf",
-            .shader_type = GL_FRAGMENT_SHADER,
-        },
+
+
+#define LAB_blocks_shader_files_count 2
+static const LAB_ShaderSpec LAB_block_shader_files[2] = {
+    {
+        .filename = "shaders/blocks.glslv",
+        .shader_type = GL_VERTEX_SHADER,
     },
+    {
+        .filename = "shaders/blocks.glslf",
+        .shader_type = GL_FRAGMENT_SHADER,
+    },
+};
+
+#define LAB_blocks_uniforms_count 11
+static const LAB_UniformEntry LAB_blocks_uniforms[LAB_blocks_uniforms_count] = {
+    { "camPos",       offsetof(LAB_ViewRenderer_Blocks, uni_cam_pos) },
+    { "modelproj",    offsetof(LAB_ViewRenderer_Blocks, uni_modelproj) },
+    { "textureScale", offsetof(LAB_ViewRenderer_Blocks, uni_texture_scale) },
+    { "exposure",     offsetof(LAB_ViewRenderer_Blocks, uni_exposure) },
+    { "saturation",   offsetof(LAB_ViewRenderer_Blocks, uni_saturation) },
+
+    { "fogColor",     offsetof(LAB_ViewRenderer_Blocks, uni_fog_color) },
+    { "fogStart",     offsetof(LAB_ViewRenderer_Blocks, uni_fog_start) },
+    { "fogEnd",       offsetof(LAB_ViewRenderer_Blocks, uni_fog_end) },
+    { "fog_density",  offsetof(LAB_ViewRenderer_Blocks, uni_fog_density) },
+    { "horizon_color",offsetof(LAB_ViewRenderer_Blocks, uni_horizon_color) },
+
+    { "time",         offsetof(LAB_ViewRenderer_Blocks, uni_time) },
+};
+
+const LAB_ProgramSpec LAB_blocks_shader_solid = {
+    .shaders_count = LAB_blocks_shader_files_count,
+    .shaders = LAB_block_shader_files,
     .defines_count = 1,
     .defines = (const LAB_DefineEntry[1]) {
         { .name = "COMPILED_RENDER_PASS", .content = "LAB_RENDER_PASS_SOLID" },
@@ -66,17 +79,8 @@ const LAB_ProgramSpec LAB_blocks_shader_solid = {
 
 
 const LAB_ProgramSpec LAB_blocks_shader_masked = {
-    .shaders_count = 2,
-    .shaders = (const LAB_ShaderSpec[2]) {
-        {
-            .filename = "shaders/blocks.glslv",
-            .shader_type = GL_VERTEX_SHADER,
-        },
-        {
-            .filename = "shaders/blocks.glslf",
-            .shader_type = GL_FRAGMENT_SHADER,
-        },
-    },
+    .shaders_count = LAB_blocks_shader_files_count,
+    .shaders = LAB_block_shader_files,
     .defines_count = 1,
     .defines = (const LAB_DefineEntry[1]) {
         { .name = "COMPILED_RENDER_PASS", .content = "LAB_RENDER_PASS_MASKED" },
@@ -89,17 +93,8 @@ const LAB_ProgramSpec LAB_blocks_shader_masked = {
 };
 
 const LAB_ProgramSpec LAB_blocks_shader_blit = {
-    .shaders_count = 2,
-    .shaders = (const LAB_ShaderSpec[2]) {
-        {
-            .filename = "shaders/blocks.glslv",
-            .shader_type = GL_VERTEX_SHADER,
-        },
-        {
-            .filename = "shaders/blocks.glslf",
-            .shader_type = GL_FRAGMENT_SHADER,
-        },
-    },
+    .shaders_count = LAB_blocks_shader_files_count,
+    .shaders = LAB_block_shader_files,
     .defines_count = 1,
     .defines = (const LAB_DefineEntry[1]) {
         { .name = "COMPILED_RENDER_PASS", .content = "LAB_RENDER_PASS_BLIT" },
@@ -112,17 +107,8 @@ const LAB_ProgramSpec LAB_blocks_shader_blit = {
 };
 
 const LAB_ProgramSpec LAB_blocks_shader_alpha = {
-    .shaders_count = 2,
-    .shaders = (const LAB_ShaderSpec[2]) {
-        {
-            .filename = "shaders/blocks.glslv",
-            .shader_type = GL_VERTEX_SHADER,
-        },
-        {
-            .filename = "shaders/blocks.glslf",
-            .shader_type = GL_FRAGMENT_SHADER,
-        },
-    },
+    .shaders_count = LAB_blocks_shader_files_count,
+    .shaders = LAB_block_shader_files,
     .defines_count = 1,
     .defines = (const LAB_DefineEntry[1]) {
         { .name = "COMPILED_RENDER_PASS", .content = "LAB_RENDER_PASS_ALPHA" },
@@ -134,6 +120,36 @@ const LAB_ProgramSpec LAB_blocks_shader_alpha = {
     .uniforms = LAB_blocks_uniforms,
 };
 
+const LAB_ProgramSpec LAB_sky_overworld_shader = {
+    .shaders_count = 2,
+    .shaders = (const LAB_ShaderSpec[2]) {
+        {
+            .filename = "shaders/sky/sky.glslv",
+            .shader_type = GL_VERTEX_SHADER,
+        },
+        {
+            .filename = "shaders/sky/overworld.glslf",
+            .shader_type = GL_FRAGMENT_SHADER,
+        },
+    },
+    .defines_count = 0,
+    .defines = NULL,
+
+    .vertex_spec = &LAB_sky_vertex_spec,
+
+    .uniforms_count = 7,
+    .uniforms = (const LAB_UniformEntry[7]) {
+        { "forward",        offsetof(LAB_ViewRenderer_Sky, uni_forward) },
+        { "right",          offsetof(LAB_ViewRenderer_Sky, uni_right) },
+        { "up",             offsetof(LAB_ViewRenderer_Sky, uni_up) },
+
+        { "fog_color",      offsetof(LAB_ViewRenderer_Sky, uni_fog_color) },
+        { "horizon_color",  offsetof(LAB_ViewRenderer_Sky, uni_horizon_color) },
+        { "fog_density",    offsetof(LAB_ViewRenderer_Sky, uni_fog_density) },
+
+        { "time",           offsetof(LAB_ViewRenderer_Sky, uni_time) },
+    },
+};
 
 
 

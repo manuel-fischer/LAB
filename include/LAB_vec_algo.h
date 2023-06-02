@@ -78,3 +78,15 @@ LAB_Vec3F LAB_ProjectPoint(LAB_Mat4F matrix, LAB_Vec3F pos)
 
     return (LAB_Vec3F) { v.x/v.w, v.y/v.w, v.z/v.w };
 }
+
+
+/**
+ * matrix: model projection matrix
+ */
+LAB_INLINE
+LAB_Vec3F LAB_UnprojectPoint(LAB_Mat4F inv_matrix, LAB_Vec3F p_pos)
+{
+    LAB_Vec4F p_pos4 = LAB_Vec4F_FromPosition(p_pos);
+    LAB_Vec4F pos4 = LAB_Mat4F_RMul(inv_matrix, p_pos4);
+    return (LAB_Vec3F) { pos4.x, pos4.y, pos4.z };
+}

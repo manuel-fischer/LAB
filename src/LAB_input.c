@@ -684,7 +684,7 @@ void LAB_Input_Tick(LAB_Input* input, uint32_t delta_ms)
                 {  1,  1 },
             };
 
-            view->on_ground = 0;
+            view->on_ground = false;
             for(int i = 0; i < 2; ++i)
             //for(int yy = -2; yy <= 1; ++yy)
             {
@@ -719,7 +719,7 @@ void LAB_Input_Tick(LAB_Input* input, uint32_t delta_ms)
 
                         if(collides)
                         {
-                            /**/ if(yy < 0) { view->pos.y = by+0.4+d; view->velocity.y = LAB_MAX(view->velocity.y, 0); view->on_ground = 1; }
+                            /**/ if(yy < 0) { view->pos.y = by+0.4+d; view->velocity.y = LAB_MAX(view->velocity.y, 0); view->on_ground = true; }
                             else if(yy > 0) { view->pos.y = by+0.8-d; view->velocity.y = LAB_MIN(view->velocity.y, 0); }
 
                             frac_pos = LAB_Vec3D_Sub(view->pos, LAB_Vec3I2D(block_pos));

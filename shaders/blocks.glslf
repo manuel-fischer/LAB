@@ -2,12 +2,12 @@
 #include "/fog.glsl"
 #include "/render_pass.glsl"
 
-uniform vec4 fogColor = vec4(0.5, 0.6, 0.7, 1.0);
 uniform sampler2D textureImage;
 
 in vec4 Color;
 in vec2 TexCoord;
 in float FogFactor;
+in vec3 FogColor;
 
 layout(location = 0) out vec4 fragColor;
 
@@ -30,5 +30,5 @@ void main()
     fragColor = LAB_MapTone(fragColor);
 
 
-    fragColor.rgb = LAB_ApplyFog(fragColor.rgb, fogColor.rgb, FogFactor);
+    fragColor.rgb = LAB_ApplyFog(fragColor.rgb, FogColor.rgb, FogFactor);
 }

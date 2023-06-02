@@ -12,6 +12,8 @@ extern const LAB_ProgramSpec LAB_blocks_shader_masked;
 extern const LAB_ProgramSpec LAB_blocks_shader_blit;
 extern const LAB_ProgramSpec LAB_blocks_shader_alpha;
 
+extern const LAB_ProgramSpec LAB_sky_overworld_shader;
+
 extern const LAB_ProgramSpec LAB_line_shader;
 extern const LAB_ProgramSpec LAB_gui_shader;
 extern const LAB_ProgramSpec LAB_fps_graph_shader;

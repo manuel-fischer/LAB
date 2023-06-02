@@ -27,6 +27,9 @@ bool LAB_ViewRenderer_Obj(LAB_ViewRenderer* r, LAB_OBJ_Action action)
                 LAB_ViewProgram_CreateWithSpec(&r->blocks[i].program, on_info, LAB_blocks_shaders[i], &r->blocks[i]),
                 LAB_ViewProgram_Destroy(&r->blocks[i].program),
 
+    LAB_OBJ(LAB_ViewProgram_CreateWithSpec(&r->sky_overworld.program, on_info, &LAB_sky_overworld_shader, &r->sky_overworld),
+            LAB_ViewProgram_Destroy(&r->sky_overworld.program),
+
     LAB_OBJ(LAB_ViewProgram_CreateWithSpec(&r->lines.program, on_info, &LAB_line_shader, &r->lines),
             LAB_ViewProgram_Destroy(&r->lines.program),
 
@@ -37,7 +40,7 @@ bool LAB_ViewRenderer_Obj(LAB_ViewRenderer* r, LAB_OBJ_Action action)
             LAB_ViewProgram_Destroy(&r->fps_graph.program),
 
         LAB_YIELD_OBJ(true);
-    ););););););
+    );););););););
 
     LAB_END_OBJ(false);
 }
@@ -58,7 +61,7 @@ void LAB_ViewRenderer_Destroy(LAB_ViewRenderer* r)
 
 
 
-void LAB_ViewRenderer_Blocks_Prepare(LAB_ViewRenderer* r, LAB_RenderPass pass, LAB_TexAtlas* atlas, LAB_ShadingAttrs shading, LAB_FogAttrs fog)
+void LAB_ViewRenderer_Blocks_Prepare(LAB_ViewRenderer* r, LAB_RenderPass pass, LAB_TexAtlas* atlas, LAB_RenderBlocksAttrs attrs)
 {
     LAB_GL_CHECK();
     LAB_ViewRenderer_Blocks* b = &r->blocks[pass];
@@ -70,12 +73,15 @@ void LAB_ViewRenderer_Blocks_Prepare(LAB_ViewRenderer* r, LAB_RenderPass pass, L
     LAB_Vec2F scale_factor = LAB_TexAtlas_ScaleFactor(atlas);
     glUniform2fv(b->uni_texture_scale.id, 1, LAB_Vec2F_AsCArray(&scale_factor));
 
-    glUniform1f(b->uni_exposure.id, shading.exposure);
-    glUniform1f(b->uni_saturation.id, shading.saturation);
+    glUniform1f(b->uni_exposure.id, attrs.shading.exposure);
+    glUniform1f(b->uni_saturation.id, attrs.shading.saturation);
 
-    glUniform1f(b->uni_fog_start.id, fog.fog_start);
-    glUniform1f(b->uni_fog_end.id, fog.fog_end);
-    LAB_GL_UniformColorHDR(b->uni_fog_color, fog.fog_color);
+    glUniform1f(b->uni_fog_start.id, attrs.fog.fog_start);
+    glUniform1f(b->uni_fog_end.id, attrs.fog.fog_end);
+    LAB_GL_UniformColorHDR(b->uni_fog_color, attrs.fog.fog_color);
+    LAB_GL_UniformColorHDR(b->uni_horizon_color, attrs.fog.horizon_color);
+    glUniform1f(b->uni_fog_density.id, attrs.fog.fog_density);
+    glUniform1f(b->uni_time.id, attrs.time);
     LAB_GL_CHECK();
 }
 

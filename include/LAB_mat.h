@@ -15,6 +15,9 @@ typedef struct LAB_Mat4F
 #define LAB_Mat4F_AsArray(a) (&(a)->x.x)
 #define LAB_Mat4F_AsCArray(a) ((const float*)&(a)->x.x)
 
+#define LAB_Mat4F_AsArray2(a) ((float(*)[4])&(a)->x.x)
+#define LAB_Mat4F_AsCArray2(a) ((const float(*)[4])&(a)->x.x)
+
 // utility macro to define matrix non-transposed
 #define LAB_MAT4_DEF(type, m00, m01, m02, m03, \
                            m10, m11, m12, m13, \
@@ -27,6 +30,10 @@ typedef struct LAB_Mat4F
         { m02, m12, m22, m32 }, \
         { m03, m13, m23, m33 }, \
     }
+
+LAB_MAT_DEF
+float LAB_Mat4F_Get(LAB_Mat4F a, int i, int j) { return LAB_Mat4F_AsCArray2(&a)[j][i]; }
+
 
 LAB_MAT_DEF
 LAB_Vec4F LAB_Mat4F_RMul(LAB_Mat4F a, LAB_Vec4F b)
@@ -143,4 +150,77 @@ LAB_Mat4F LAB_Mat4F_Frustum(float left, float right,
         0, 0, c, d,
         0, 0,-1, 0,
     );
+}
+
+
+
+
+
+
+
+LAB_MAT_DEF
+LAB_Mat4F LAB_Mat4F_Transpose(LAB_Mat4F a)
+{
+    return LAB_MAT4_DEF(LAB_Mat4F,
+        a.x.x, a.x.y, a.x.z, a.x.w,
+        a.y.x, a.y.y, a.y.z, a.y.w,
+        a.z.x, a.z.y, a.z.z, a.z.w,
+        a.w.x, a.w.y, a.w.z, a.w.w,
+    );
+}
+
+
+
+
+
+LAB_MAT_DEF
+float LAB_Mat4F_InvertCell(int i, int j, LAB_Mat4F a){
+    const float (*aa)[4] = LAB_Mat4F_AsCArray2(&a);
+    int offset = 2+(j-i);
+
+    i += offset;
+    j -= offset;
+
+    #define LAB_Mat4F_ELEMENT(a,b) aa[(j+(b)) & 3][(i+(a)) & 3]
+    #define LAB_Mat4F_TERM(a0, b0, a1, b1, a2, b2) ( \
+        LAB_Mat4F_ELEMENT(a0, b0) * LAB_Mat4F_ELEMENT(a1, b1) * LAB_Mat4F_ELEMENT(a2, b2) \
+    )
+
+    float inv =
+     + LAB_Mat4F_TERM(+1,-1,   0, 0,  -1,+1)
+     + LAB_Mat4F_TERM(+1,+1,   0,-1,  -1, 0)
+     + LAB_Mat4F_TERM(-1,-1,  +1, 0,   0,+1)
+     - LAB_Mat4F_TERM(-1,-1,   0, 0,  +1,+1)
+     - LAB_Mat4F_TERM(-1,+1,   0,-1,  +1, 0)
+     - LAB_Mat4F_TERM(+1,-1,  -1, 0,   0,+1);
+
+    return ((i^j)&1) ? inv : -inv;
+
+    #undef LAB_Mat4F_TERM
+    #undef LAB_Mat4F_ELEMENT
+}
+
+
+LAB_MAT_DEF
+LAB_Mat4F LAB_Mat4F_Invert(LAB_Mat4F a)
+{
+    const float (*m)[4] = LAB_Mat4F_AsCArray2(&a);
+    LAB_Mat4F result;
+    float (*out)[4] = LAB_Mat4F_AsArray2(&result);
+
+    for(int i = 0; i < 4; ++i)
+    for(int j = 0; j < 4; ++j)
+        out[j][i] = LAB_Mat4F_InvertCell(i,j,a);
+
+    double D = 0;
+    for(int k=0;k<4;k++) D += m[0][k] * out[k][0];
+
+    D = 1.0 / D;
+
+    for(int i = 0; i < 4; ++i)
+    for(int j = 0; j < 4; ++j)
+        out[i][j] *= D;
+
+    return result;
+
 }

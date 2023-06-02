@@ -155,6 +155,9 @@ bool LAB_View_Obj(LAB_View* view, LAB_OBJ_Action action)
     LAB_OBJ(LAB_ViewRenderer_Create(&view->renderer),
             LAB_ViewRenderer_Destroy(&view->renderer),
 
+    LAB_OBJ(LAB_SkyRenderer_Create(&view->sky_renderer),
+            LAB_SkyRenderer_Destroy(&view->sky_renderer),
+
     LAB_OBJ(LAB_BoxRenderer_Create(&view->box_renderer),
             LAB_BoxRenderer_Destroy(&view->box_renderer),
 
@@ -171,7 +174,7 @@ bool LAB_View_Obj(LAB_View* view, LAB_OBJ_Action action)
         //glDeleteQueries(1, &view->upload_time_query);
         LAB_YIELD_OBJ(true);
 
-    );););););););
+    ););););););););
 
     LAB_END_OBJ(false);
 }
@@ -184,6 +187,7 @@ bool LAB_View_Create(LAB_View* view, LAB_World* world, LAB_TexAtlas* atlas)
     view->world = world;
     view->fov_factor = 1.0;
     view->atlas = atlas;
+    view->time_ms = 0;
 
     return true;
 }
@@ -670,12 +674,21 @@ LAB_STATIC bool LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_en
 
 
 LAB_STATIC
+float LAB_View_SkyVisibility(LAB_View* view)
+{
+    float f = LAB_CLAMP((view->pos.y+64+32)*(1./64.), 0, 1);
+    f*=f;
+    return f;
+}
+
+LAB_STATIC
 LAB_ColorHDR LAB_View_SkyColor(LAB_View* view)
 {
-    float f = LAB_MIN(LAB_MAX((view->pos.y+64+32)*(1./64.), 0), 1);
-    f*=f;
+    LAB_Vec3F color = { 0.4, 0.7, 1.0 };
+    //LAB_Vec3F color = { 1.0, 0.7, 0.2 };
 
-    return LAB_ColorHDR_RGB_F(0.4*f, 0.7*f, 1.0*f);
+    float f = LAB_View_SkyVisibility(view);
+    return LAB_ColorHDR_RGB_F(color.x*f, color.y*f, color.z*f);
 }
 
 LAB_STATIC
@@ -686,6 +699,8 @@ LAB_FogAttrs LAB_View_FogAttrs(LAB_View* view)
         .fog_start = (d-16)*0.5,//(d-16)*0.7,
         .fog_end = d-16,
         .fog_color = LAB_View_SkyColor(view),
+        .horizon_color = LAB_HDR_RGB_F(0.6, 0.9, 1.2),
+        .fog_density = 1-LAB_View_SkyVisibility(view),
     };
 }
 
@@ -702,10 +717,13 @@ int LAB_ViewRenderChunks(LAB_View* view, LAB_RenderPass pass)
 
     LAB_GL_CHECK();
 
-    LAB_ShadingAttrs shading = { .exposure=view->cfg.exposure, .saturation=view->cfg.saturation };
-    LAB_FogAttrs fog = LAB_View_FogAttrs(view);
+    LAB_RenderBlocksAttrs attrs = {
+        .shading = { .exposure=view->cfg.exposure, .saturation=view->cfg.saturation },
+        .fog = LAB_View_FogAttrs(view),
+        .time = view->time_ms*0.001f,
+    };
 
-    LAB_ViewRenderer_Blocks_Prepare(&view->renderer, pass, view->atlas, shading, fog);
+    LAB_ViewRenderer_Blocks_Prepare(&view->renderer, pass, view->atlas, attrs);
 
     LAB_GL_CHECK();
 
@@ -1364,11 +1382,7 @@ void LAB_ViewRender(LAB_View* view)
     LAB_ColorHDR sky_color = LAB_View_SkyColor(view);
 
     LAB_GL_CHECK();
-    glUseProgram(0); // avoid recompilation
-    LAB_GL_CHECK();
-    glClearColor(LAB_HDR_RED_VAL(sky_color), LAB_HDR_GRN_VAL(sky_color), LAB_HDR_BLU_VAL(sky_color), 1);
-    LAB_GL_CHECK();
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_DEPTH_BUFFER_BIT);
     LAB_GL_CHECK();
 
     // Setup projection matrix
@@ -1417,6 +1431,16 @@ void LAB_ViewRender(LAB_View* view)
     render_count += LAB_ViewRenderChunks(view, LAB_RENDER_PASS_MASKED);
     render_count += LAB_ViewRenderChunks(view, LAB_RENDER_PASS_BLIT);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    LAB_RenderSkyAttrs attrs = {
+        .modelproj = view->modlproj_mat,
+        .fog = LAB_View_FogAttrs(view),
+        .time = view->time_ms*0.001f,
+    };
+
+    // Render Sky
+    LAB_SkyRenderer_Prepare(&view->sky_renderer, &view->renderer, attrs);
+    LAB_SkyRenderer_Render(&view->sky_renderer);
 
 //    LAB_Nanos query_start = LAB_NanoSeconds();
     #if LAB_VIEW_ENABLE_QUERY
@@ -1671,6 +1695,8 @@ LAB_Vec3F LAB_View_GetDirection(LAB_View* view)
 
 void LAB_ViewTick(LAB_View* view, uint32_t delta_ms)
 {
+    view->time_ms += delta_ms;
+
     LAB_Vec3I pc = LAB_Pos3D2Chunk(view->pos);
     LAB_ChunkPos origin_chunk = LAB_ChunkVec2ChunkPos(pc);
     LAB_ViewArray_SetOrigin(&view->chunk_array, origin_chunk);

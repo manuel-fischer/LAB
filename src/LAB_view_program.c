@@ -130,7 +130,9 @@ bool LAB_ViewProgram_LinkLocations(LAB_ViewProgram* program, const LAB_ProgramSp
     return true;
 }
 
-/*LAB_STATIC
+#define LAB_DUMP_SHADERS 0
+#if LAB_DUMP_SHADERS
+LAB_STATIC
 void LAB_ViewProgram_DumpShaderSource(LAB_GL_Shader shader)
 {
     char buf[1<<12];
@@ -139,7 +141,8 @@ void LAB_ViewProgram_DumpShaderSource(LAB_GL_Shader shader)
     glGetShaderSource(shader.id, sizeof(buf)-1, &length, buf);
     buf[length] = '\0';
     printf("<SHADER DUMP>%s</SHADER DUMP>\n", buf);
-}*/
+}
+#endif
 
 
 LAB_STATIC
@@ -162,8 +165,10 @@ bool LAB_ViewProgram_CreateShader(LAB_ViewProgram* program, LAB_OnGLInfoLog on_i
     }
 
 
+    #if LAB_DUMP_SHADERS
     //printf("<PREAMBLE>\n%s</PREAMBLE>\n", preamble.data);
     //printf("<SHADER>\n%s</SHADER>\n", source.data);
+    #endif
 
 
     glShaderSource(shader->id, 2,
@@ -171,7 +176,9 @@ bool LAB_ViewProgram_CreateShader(LAB_ViewProgram* program, LAB_OnGLInfoLog on_i
         (const GLint[2]){ preamble.size, source.size });
     glCompileShader(shader->id);
 
-    //LAB_ViewProgram_DumpShaderSource(*shader);
+    #if LAB_DUMP_SHADERS
+    LAB_ViewProgram_DumpShaderSource(*shader);
+    #endif
 
     /*LAB_ASSERT(strncmp(spec->filename, "shaders/", strlen("shaders/")) == 0);
 
