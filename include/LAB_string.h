@@ -5,6 +5,9 @@
 #include "LAB_attr.h"
 #include <stdarg.h>
 
+// export LAB_StringBuilder*
+// export LAB_StringView*
+
 typedef struct LAB_StringBuilder
 {
     char* data; // padded by 1 for '\0'

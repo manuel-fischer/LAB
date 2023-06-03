@@ -1,7 +1,16 @@
 #pragma once
 #include "LAB_stdinc.h"
 #include "LAB_opt.h"
-#include "LAB_util.h" // -> LAB_MultOverflow
+#include "LAB_intmathlib.h" // -> LAB_MultOverflow
+
+// //export LAB_Malloc
+// //export LAB_Realloc
+// //export LAB_Calloc
+// //export LAB_Free
+// //export LAB_MallocN
+// //export LAB_ReallocN
+// //export LAB_StrDup
+
 
 #ifndef NDEBUG
 #define LAB_DEBUG_ALLOC

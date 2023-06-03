@@ -1,7 +1,7 @@
 #pragma once
 
 #include "LAB_math.h"
-#include "LAB_util.h"
+#include "LAB_select.h"
 #include "LAB_direction.h"
 #include "LAB_bits.h"
 
@@ -9,6 +9,9 @@
 #define LAB_V_MAX_INDEX3(x, y, z) LAB_SELECT_MAX3(x,0, y,1, z,2)
 
 #define LAB_VEC3_FROM(vtype, ptr) ((vtype) { (ptr)->x, (ptr)->y, (ptr)->z })
+
+// export LAB_Vec3*
+// export LAB_Box3*
 
 
 typedef struct LAB_Vec3I { int x, y, z; } LAB_Vec3I;

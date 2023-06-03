@@ -1,3 +1,5 @@
+#include "LABtestcases.h"
+
 //#define LAB_COLOR_HDR_TEST
 
 // include it here, such that headers do not need to include them

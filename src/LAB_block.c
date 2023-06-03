@@ -1,3 +1,5 @@
+#include "LAB_block.h"
+
 //#include "IXO/IXO_classdef.h"
 /*IXO_BITDEF(LAB_BlockFlags,
     (SOLID, LAB_BLOCK_SOLID),

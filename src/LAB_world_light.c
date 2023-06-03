@@ -4,6 +4,7 @@
 #include "LAB_chunk_neighborhood.h"
 #include "LAB_block.h"
 #include "LAB_world_light_defs.h"
+#include "LAB_select.h"
 
 // TODO: use pseudo chunks instead of NULL chunks -> no branching required
 //       - build chunk neighborhood with these pseudo chunks
@@ -50,7 +51,7 @@ typedef struct LAB_TickLight_State
 } LAB_TickLight_State;
 
 LAB_STATIC
-LAB_ALWAYS_INLINE LAB_HOT
+LAB_HOT
 void LAB_TickLight_ProcessBlock(LAB_TickLight_State* s, const bool c_init, const int dd[3], LAB_Chunk_Blocks* blocks_ctr, LAB_LightNbHood_Mut* light_chunks, int x, int y, int z, int quadrant)
 {
     LAB_Chunk_Light* light_ctr = light_chunks->bufs[LAB_NB_CENTER];
@@ -130,14 +131,13 @@ LAB_CCPS LAB_TickLight_ProcessQuadrant(
     int dd[3];
     int dx, dy, dz; // delta index = sign
     int x0, y0, z0; // start index
-    int xm, ym, zm; // scan kernel
 
-    if(quadrant & 1) { dd[0] = dx =  1; x0 =  0; xm = 3; }
-    else             { dd[0] = dx = -1; x0 = 15; xm = 6; }
-    if(quadrant & 2) { dd[1] = dy =  1; y0 =  0; ym = 3; }
-    else             { dd[1] = dy = -1; y0 = 15; ym = 6; }
-    if(quadrant & 4) { dd[2] = dz =  1; z0 =  0; zm = 3; }
-    else             { dd[2] = dz = -1; z0 = 15; zm = 6; }
+    if(quadrant & 1) { dd[0] = dx =  1; x0 =  0; }
+    else             { dd[0] = dx = -1; x0 = 15; }
+    if(quadrant & 2) { dd[1] = dy =  1; y0 =  0; }
+    else             { dd[1] = dy = -1; y0 = 15; }
+    if(quadrant & 4) { dd[2] = dz =  1; z0 =  0; }
+    else             { dd[2] = dz = -1; z0 = 15; }
 
 
 

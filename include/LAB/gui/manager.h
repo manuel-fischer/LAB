@@ -4,6 +4,9 @@
 #include <SDL2/SDL.h>
 #include "LAB_gl_types.h"
 #include "LAB_view_render_surface.h"
+#include "LAB_vec2.h"
+
+// export LAB_GuiManager*
 
 typedef struct LAB_GuiManager
 {

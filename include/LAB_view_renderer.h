@@ -5,6 +5,7 @@
 #include "LAB_texture_atlas.h"
 #include "LAB_mat.h"
 #include "LAB_color_hdr.h"
+#include "LAB_vec3.h"
 
 typedef struct LAB_ShadingAttrs
 {

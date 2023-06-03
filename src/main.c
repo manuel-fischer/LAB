@@ -8,6 +8,9 @@
 #include <math.h>
 #include "LAB_bits.h"
 #include "LAB_math.h"
+#include "LAB_util.h"
+#include "LAB_error.h"
+#include "LAB_vec3.h"
 
 #include "LAB_memory.h"
 

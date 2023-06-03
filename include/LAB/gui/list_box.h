@@ -2,6 +2,9 @@
 
 #include "LAB/gui/component.h"
 #include <SDL2/SDL_surface.h>
+#include "LAB_vec2.h"
+
+// export LAB_GuiListBox* LAB_GUI_LIST_BOX*
 
 #define LAB_GUI_LIST_BOX_BORDER_INSET 3
 #define LAB_GUI_LIST_BOX_ELEMENT_HEIGHT 16

@@ -15,8 +15,8 @@
 #include "LAB_view_chunk.h"
 #include "LAB_view_array.h"
 #include "LAB_htl_config.h"
+#include "LAB_timelib.h"
 
-#include "LAB_view_gamma.h"
 #include "LAB_view_renderer.h"
 #include "LAB_gl_types.h"
 #include "LAB_view_render_box.h"
@@ -25,6 +25,7 @@
 #include "LAB_view_pending_queries.h"
 
 #include "LAB_vec2.h"
+#include "LAB_vec3.h"
 
 
 /*
@@ -139,7 +140,6 @@ typedef struct LAB_ViewConfig
     uint32_t load_amount;
     uint32_t empty_load_amount;
 
-    //const LAB_View_GammaMap* gamma_map;
     float exposure, saturation;
 } LAB_ViewConfig;
 

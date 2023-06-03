@@ -5,6 +5,15 @@
 #include "LAB_debug.h"
 #include "LAB_stdinc.h"
 
+// export LAB_Random
+// export LAB_SetRandom
+// export LAB_NextRandom
+// export LAB_GetRandom
+// export LAB_NextRandomRange
+// export LAB_ChunkSeed
+// export LAB_ChunkRandom
+// export LAB_RandomBits64*
+
 // xor-shift
 typedef struct LAB_Random
 {

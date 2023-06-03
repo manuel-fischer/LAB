@@ -6,7 +6,6 @@
 #include "LAB_memory.h"
 #include "LAB_error.h"
 
-#include "LAB_stdinc.h"
 #include "LAB_opt.h"
 #include "LAB_obj.h"
 

@@ -3,7 +3,6 @@
 #include "LAB_stdinc.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
-#include "LAB_error.h"
 #include "LAB_obj.h"
 
 #include "LAB_blocks.h"

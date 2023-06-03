@@ -2,6 +2,8 @@
 
 #include "LAB_builtin_blocks.h"
 #include "LAB_simplex_noise.h"
+#include "LAB_random.h"
+#include "LAB_select.h"
 
 typedef struct LAB_Block_Ctx
 {

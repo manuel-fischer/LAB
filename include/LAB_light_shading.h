@@ -5,6 +5,8 @@
 #include <math.h>
 #include "LAB_attr.h"
 #include "LAB_opt.h"
+#include "LAB_select.h"
+#include "LAB_vec3.h"
 
 
 /*#define LAB_LIGHT_HDR_TO_RGBA(c) \

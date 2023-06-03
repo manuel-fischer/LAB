@@ -10,6 +10,20 @@
 #include "LAB_stdinc.h"
 #include <assert.h>
 
+// export LAB_PopCnt
+// export LAB_Ctz
+// export LAB_Log2Floor
+// export LAB_IsPow2
+// export LAB_Log2OfPow2
+// export LAB_Sar
+// export LAB_CeilPow2
+// export LAB_CeilPow2z
+// export LAB_Capacity
+// export LAB_StretchBits3x
+// export LAB_IntermangleBits3
+// export LAB_BITS_EACH
+
+
 #ifndef DOXYGEN
 
 #ifdef __GNUC__
@@ -209,6 +223,21 @@ LAB_INLINE uint64_t LAB_IntermangleBits3(uint32_t x, uint32_t y, uint32_t z)
 {
     return LAB_StretchBits3x(x) + LAB_StretchBits3x(y)*2 + LAB_StretchBits3x(z)*4;
 }
+
+
+
+
+#define LAB_BITS_EACH(bits, lval_bit_index, ...) do \
+{ \
+    for(int LAB_BITS_EACH_bits = (bits); LAB_BITS_EACH_bits; LAB_BITS_EACH_bits&=LAB_BITS_EACH_bits-1) \
+    { \
+        (lval_bit_index) = LAB_Ctz(LAB_BITS_EACH_bits); \
+        {__VA_ARGS__} \
+    } \
+} while(0)
+
+
+
 
 #else /* DOXYGEN SECTION */
 

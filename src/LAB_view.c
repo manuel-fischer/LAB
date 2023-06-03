@@ -4,13 +4,11 @@
 
 #include "LAB_debug_options.h"
 
-#include "LAB_memory.h"
 #include "LAB_error.h"
 #include "LAB_math.h"
 #include "LAB_debug.h"
 #include "LAB_obj.h"
 
-#include "LAB_world.h"
 #include "LAB_block.h"
 #include "LAB_window.h"
 #include "LAB_gl.h"
@@ -27,7 +25,6 @@
 
 #include "LAB_perf.h"
 #include "LAB_bits.h"
-#include "LAB_opt.h"
 #include "LAB_util.h"
 #include "LAB_attr.h"
 
@@ -42,9 +39,9 @@
 #include "LAB_image.h"
 #include "LAB_color_defs.h"
 
-#include "LAB_view_render_box.h"
-
 #include "LAB_loop.h"
+#include "LAB_functional.h"
+#include "LAB_select.h"
 
 #include "LAB_chunk_neighborhood.h" // TODO remove
 
@@ -1377,9 +1374,6 @@ void LAB_ViewRender(LAB_View* view)
     glCullFace(GL_FRONT);
 
     LAB_GL_CHECK();
-
-    // Sky color
-    LAB_ColorHDR sky_color = LAB_View_SkyColor(view);
 
     LAB_GL_CHECK();
     glClear(GL_DEPTH_BUFFER_BIT);

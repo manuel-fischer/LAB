@@ -9,6 +9,7 @@
 #include "LAB_memory.h"
 #include "LAB_debug.h"
 #include "LAB_image.h"
+#include "LAB_util.h"
 
 #include <SDL2/SDL_image.h>
 

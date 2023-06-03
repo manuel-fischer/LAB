@@ -1,6 +1,7 @@
 #include "LAB_view_vertex_spec.h"
 
 #include "LAB_gl.h"
+#include "LAB_loop.h"
 
 void LAB_View_VertexSpec_Realize(LAB_GL_Array vao, LAB_GL_Buffer vbo, const LAB_View_VertexSpec* spec)
 {

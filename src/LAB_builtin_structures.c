@@ -1,9 +1,10 @@
 #include "LAB_builtin_structures.h"
 
 #include "LAB_builtin_blocks.h"
-#include "LAB_builtin_overworld.h"
 #include "LAB_game_structure_util.h"
 #include "LAB_game_surface_dimension_placement.h"
+
+#include "LAB_ptr.h"
 
 bool LAB_BuiltinStructures_Init(LAB_SurfaceDimension* dim)
 {

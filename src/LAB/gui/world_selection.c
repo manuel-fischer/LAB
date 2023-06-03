@@ -1,6 +1,7 @@
 #include "LAB/gui/world_selection.h"
 
 #include "LAB_memory.h"
+#include "LAB_vec2.h"
 #include <limits.h>
 #include <dirent.h>
 #include <stdio.h>

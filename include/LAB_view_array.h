@@ -3,6 +3,7 @@
 #include "LAB_chunk_pos.h"
 #include "LAB_view_chunk.h"
 #include "LAB_arith.h"
+#include "LAB_bits.h"
 
 typedef LAB_ChunkPos LAB_ViewArray_ChunkOffset;
 

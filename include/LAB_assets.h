@@ -4,6 +4,7 @@
 #include "LAB_texture_atlas.h"
 #include "LAB_model_set.h"
 #include "LAB_render_item.h"
+#include "LAB_vec2.h"
 #include <SDL2/SDL_surface.h>
 
 typedef struct LAB_Assets

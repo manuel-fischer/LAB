@@ -6,6 +6,10 @@
  *  \see LAB_opt.h
  */
 
+// export LAB_AVOID_INLINING
+// // export LAB_STATIC
+// // export LAB_INLINE
+
 #ifndef DOXYGEN
 
 #if defined PROFILE || !defined NDEBUG

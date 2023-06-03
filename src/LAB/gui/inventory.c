@@ -1,5 +1,8 @@
 #include "LAB/gui/inventory.h"
 
+#include "LAB_intmathlib.h"
+#include "LAB_vec2.h"
+
 #define LAB_INVENTORY_ROWS 6
 #define LAB_INVENTORY_COLUMNS 10
 

@@ -2,6 +2,8 @@
 
 #include "LAB/gui/component.h"
 
+// export from LAB/gui/component.h
+
 #define LAB_GUI_CONTAINER_INHERIT \
     LAB_GUI_COMPONENT_INHERIT; \
     LAB_GuiComponent** components; \

@@ -9,6 +9,7 @@
 #include "LAB_color_defs.h"
 
 #include "LAB_aabb.h"
+#include "LAB_vec2.h"
 
 LAB_INLINE
 bool LAB_BlockFull_Init(LAB_Assets* assets, LAB_BlockID* bid,

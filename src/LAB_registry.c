@@ -2,6 +2,7 @@
 
 #include "LAB_image.h"
 #include "LAB_sdl.h"
+#include "LAB_bits.h"
 
 bool LAB_Registry_Create(LAB_Registry* registry)
 {

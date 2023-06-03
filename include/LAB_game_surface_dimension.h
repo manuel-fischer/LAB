@@ -5,6 +5,7 @@
 #include "LAB_game_dimension.h"
 #include "LAB_game_structure.h"
 #include "LAB_direction.h"
+#include "LAB_random.h"
 
 
 

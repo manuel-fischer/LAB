@@ -9,6 +9,8 @@
 #include "LAB_view_renderer_vertex_spec.h"
 #include "LAB_view_renderer_shaders.h"
 
+#include "LAB_vec2.h"
+
 
 
 bool LAB_ViewRenderer_Obj(LAB_ViewRenderer* r, LAB_OBJ_Action action)

@@ -5,6 +5,9 @@
 #include "LAB_simplex_noise.h"
 #include "LAB_simplex_noise_chord.h"
 #include "LAB_math.h"
+#include "LAB_ptr.h"
+#include "LAB_intmathlib.h"
+#include "LAB_select.h"
 
 int LAB_BuiltinOverworld_SurfaceHeight_Func(uint64_t world_seed, int xi, int zi)
 {

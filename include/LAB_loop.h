@@ -1,5 +1,11 @@
 #pragma once
 
+// export LAB_LOOP_*
+// export LAB_FOREACH
+// export LAB_FOREACH_INDEX
+// export LAB_CFOREACH
+// export LAB_CFOREACH_INDEX
+
 // max exclusive
 #define LAB_LOOP_FORWARD(itr_type, itr, min, max, ...) do \
 { \
@@ -46,3 +52,23 @@ while(0)
     } \
 } \
 while(0)
+
+
+
+
+#define LAB_FOREACH(element_type, iterator, prefix) \
+    for(element_type* LAB_FOREACH_BEGIN = (prefix), \
+                    * LAB_FOREACH_END = LAB_FOREACH_BEGIN + (prefix ## _count), \
+                    * iterator = LAB_FOREACH_BEGIN; \
+        iterator != LAB_FOREACH_END; ++iterator)
+
+#define LAB_FOREACH_INDEX(element_type, index_name, iterator, prefix) \
+    LAB_FOREACH(element_type, iterator, prefix) \
+    for(size_t LAB_FOREACH_TMP=1, index_name = iterator-LAB_FOREACH_BEGIN;LAB_FOREACH_TMP;LAB_FOREACH_TMP=0)
+
+#define LAB_CFOREACH(element_type, iterator, prefix) \
+    LAB_FOREACH(element_type const, iterator, prefix)
+
+#define LAB_CFOREACH_INDEX(element_type, index_name, iterator, prefix) \
+    LAB_FOREACH_INDEX(element_type const, index_name, iterator, prefix)
+

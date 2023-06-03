@@ -3,6 +3,7 @@
 #include "LAB_attr.h"
 #include "LAB_chunk.h"
 #include "LAB_blocks.h"
+#include "LAB_ptr.h"
 
 
 typedef struct LAB_LandscapeMask

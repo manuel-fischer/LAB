@@ -1,12 +1,12 @@
 #pragma once
 
 #include "LAB_stdinc.h"
-#include "LAB_util.h"
 #include "LAB_chunk_update.h"
 
 #include "LAB_text_renderer.h"
 #include "LAB_world.h"
 #include "LAB_view.h"
+#include "LAB_timelib.h"
 
 typedef struct LAB_GameServerStats
 {

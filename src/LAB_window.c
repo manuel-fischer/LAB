@@ -6,7 +6,6 @@
 
 #include <SDL2/SDL.h>
 #include "LAB_gl.h"
-#include "LAB_util.h" // nanos
 
 
 int LAB_Window_Create(LAB_Window* window, int w, int h, uint32_t sdl_flags)

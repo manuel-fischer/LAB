@@ -4,11 +4,7 @@
 #include "LAB_error.h"
 #include "LAB_math.h"
 
-#include "LAB_stdinc.h"
 #include "LAB_attr.h"
-#include "LAB_opt.h"
-#include "LAB_debug.h"
-#include "LAB_util.h"
 #include "LAB_bits.h"
 #include "LAB_world_light.h"
 #include "LAB_vec_algo.h"

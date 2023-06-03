@@ -2,6 +2,7 @@
 
 #include <SDL2/SDL_image.h>
 #include "LAB_sdl.h"
+#include "LAB_select.h"
 
 // TODO: move global state into struct
 static SDL_Surface* gui = NULL;

@@ -5,6 +5,8 @@
 #include "LAB_vec.h"
 #include "LAB_light_shading.h"
 
+#include "LAB_select.h"
+
 LAB_INLINE
 bool LAB_View_Mesh_BuildBlock(
     LAB_View_Mesh_BuildArgs* LAB_RESTRICT ctx,

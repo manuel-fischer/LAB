@@ -3,6 +3,10 @@
 #include "LAB_opt.h"
 #include "LAB_attr.h"
 #include "LAB_stdinc.h"
+
+// export LAB_NoiseFloat
+// export LAB_SimplexNoise*
+
 typedef double LAB_NoiseFloat;
 
 LAB_CONST LAB_NoiseFloat LAB_SimplexNoise2D(LAB_NoiseFloat xin, LAB_NoiseFloat yin);

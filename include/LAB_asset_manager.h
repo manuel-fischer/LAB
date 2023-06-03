@@ -6,8 +6,8 @@
 
 #include <SDL2/SDL_surface.h>
 #include <string.h>
-#include "LAB_util.h"
 #include "LAB_htl_config.h"
+#include "LAB_ptr.h"
 
 /** \def LAB_TILE_SIZE
  *

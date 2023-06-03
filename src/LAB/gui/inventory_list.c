@@ -1,6 +1,5 @@
 #include "LAB/gui/inventory_list.h"
 
-#include "LAB_render_item.h"
 #include "LAB_sdl.h"
 #include "LAB_attr.h"
 #include "LAB/gui/util.h"

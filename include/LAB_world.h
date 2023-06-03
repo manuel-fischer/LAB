@@ -13,6 +13,7 @@
 #include "LAB_blocks.h"
 
 #include "LAB_world_chunk_table.h"
+#include "LAB_vec3.h"
 
 
 

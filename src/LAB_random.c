@@ -1,7 +1,5 @@
 #include "LAB_random.h"
 
-#include "LAB_attr.h"
-
 
 void LAB_SetRandom(LAB_OUT LAB_Random* random, uint64_t seed)
 {

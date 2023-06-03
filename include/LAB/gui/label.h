@@ -2,6 +2,9 @@
 
 #include "LAB/gui/component.h"
 #include <SDL2/SDL_surface.h>
+#include "LAB_vec2.h"
+
+// export LAB_GuiLabel*
 
 typedef struct LAB_GuiLabel
 {

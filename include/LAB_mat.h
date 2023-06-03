@@ -2,6 +2,7 @@
 
 #include "LAB_vec.h"
 #include "LAB_math.h"
+#include "LAB_functional.h"
 
 #define LAB_MAT_DEF LAB_INLINE LAB_ALWAYS_INLINE LAB_VALUE_CONST
 

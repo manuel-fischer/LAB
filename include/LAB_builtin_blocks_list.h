@@ -1,5 +1,7 @@
 #ifdef LAB_BUILTIN_VIS
 
+// multi include
+
 LAB_BUILTIN_VIS
 LAB_BlockID LAB_BLOCK_OUTSIDE,
             LAB_BLOCK_AIR;

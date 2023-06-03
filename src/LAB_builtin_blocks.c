@@ -2,12 +2,13 @@
 #include "LAB_blocks.h"
 
 #include "LAB_color_defs.h"
-#include "LAB_builtin_block_types.h"
-
+#include "LAB_ptr.h"
+#include "LAB_vec2.h"
+#include "LAB_vec3.h"
 
 
 #define LAB_BUILTIN_VIS
-#include "LAB_builtin_blocks_list.h"
+    #include "LAB_builtin_blocks_list.h"
 #undef LAB_BUILTIN_VIS
 
 

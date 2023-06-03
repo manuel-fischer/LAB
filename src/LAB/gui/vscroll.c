@@ -1,5 +1,6 @@
 #include "LAB/gui/vscroll.h"
 #include "LAB/gui/util.h"
+#include "LAB_select.h"
 
 LAB_STATIC
 void LAB_GuiVScroll_Render(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf,

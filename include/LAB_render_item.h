@@ -5,6 +5,7 @@
 #include "LAB_texture_atlas.h"
 #include "LAB_stdinc.h"
 #include "LAB_util.h"
+#include "LAB_vec2.h"
 
 #define LAB_ITEM_SIZE 32
 

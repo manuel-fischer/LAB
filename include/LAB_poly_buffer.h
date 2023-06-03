@@ -3,7 +3,8 @@
 #include "LAB_stdinc.h"
 #include "LAB_attr.h"
 #include "LAB_memory.h"
-#include "LAB_util.h"
+#include "LAB_ptr.h"
+#include "LAB_intmathlib.h"
 
 typedef struct LAB_PolyBuffer
 {

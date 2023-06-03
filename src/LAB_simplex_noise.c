@@ -18,7 +18,6 @@
  * attribution is appreciated.
  *
  */
-#include "LAB_opt.h"
 #include "LAB_math.h"
 
 

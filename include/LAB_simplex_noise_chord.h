@@ -4,6 +4,7 @@
 #include <math.h>
 #include <tgmath.h>
 
+// export LAB_SimplexNoiseChord*
 
 // Functions usually output values between [-1, +1], but values up to [-2, +2] are possible
 

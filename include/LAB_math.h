@@ -4,6 +4,8 @@
 #include "LAB_opt.h"
 #include <math.h>
 
+#include "LAB_select.h"
+
 #define LAB_PI 3.14159265359
 
 
@@ -61,10 +63,48 @@ LAB_INLINE double LAB_FractD(double x)
 }
 
 
-// Compile time Newton approximation
-// [0, 255] =^= [0, 1]
-#define LAB_SQRT_I8_ITER(n, x) ((x) ? ((x)+255*(n)/(x))/2 : 0)
-#define LAB_SQRT_I8(n) LAB_SQRT_I8_ITER(n, \
-                       LAB_SQRT_I8_ITER(n, \
-                       LAB_SQRT_I8_ITER(n, \
-                       LAB_SQRT_I8_ITER(n, n))))
+
+LAB_INLINE
+LAB_VALUE_CONST
+float LAB_fMix(float a, float b, float mult)
+{
+    return a + (b-a)*mult;
+}
+
+
+LAB_INLINE
+LAB_VALUE_CONST
+float LAB_fSmoothMin(float a, float b, float k)
+{
+    float mult = 0.5f + 0.5f*(a-b)/k;
+    mult = LAB_CLAMP(mult, 0.f, 1.f);
+    return LAB_fMix(a, b, mult) - k*mult*(1.f-mult);
+}
+
+#define LAB_fSmoothMax(a, b, c) (-LAB_fSmoothMin(-(a), -(b), c))
+
+
+
+LAB_INLINE
+LAB_VALUE_CONST
+float LAB_fSmoothStep(float x, float a, float b)
+{
+    float f = (x - a) / (b - a);
+    f = LAB_CLAMP(f, 0.0, 1.0);
+    return f * f * (3 - 2 * f);
+}
+
+LAB_INLINE
+LAB_VALUE_CONST
+float LAB_fSmoothClamp(float x, float a, float b)
+{
+    return LAB_fSmoothStep(x, a, b) * (b-a) + a;
+}
+
+
+
+
+
+
+#define LAB_EPSILON (1e-5)
+#define LAB_APPROX_EQ(a, b) (fabs((a) - (b)) < LAB_EPSILON)

@@ -1,11 +1,14 @@
 #include "LAB_memory.h"
 
 #include "LAB_attr.h"
-#include "LAB_opt.h"
-#include "LAB_util.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdatomic.h>
+
+#if !defined NDEBUG && defined LAB_SHOW_DBG_MEM
+#include "LAB_filesystem.h"
+#endif
+
 
 #ifndef NDEBUG
 static atomic_size_t mem_allocs = 0;

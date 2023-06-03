@@ -22,8 +22,9 @@
 #include "LAB_sdl.h"
 
 #include "LAB_ext.h"
-#include "LAB_util.h"
 #include "LAB_debug.h"
+#include "LAB_select.h"
+#include "LAB_vec3.h"
 
 #include "LAB_game_server.h"
 

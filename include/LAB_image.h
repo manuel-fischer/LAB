@@ -4,6 +4,14 @@
 #include "LAB_color.h"
 #include "LAB_stdinc.h"
 
+// export from LAB_color.h
+// export LAB_Mem*Color*
+// export LAB_ImageLoad*
+// export LAB_ImageSave*
+// export LAB_ImageData2SDL
+// export LAB_MakeMipmap2D
+// export LAB_Fix0Alpha
+
 void LAB_MemSetColor(LAB_Color* dst, LAB_Color color, size_t size);
 void LAB_MemCpyColor(LAB_Color* dst, LAB_Color const* src, size_t size);
 void LAB_MemBltColor(LAB_Color* dst, LAB_Color const* src, LAB_Color tint, size_t size);

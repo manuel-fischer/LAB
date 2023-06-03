@@ -6,6 +6,7 @@
 #include "LAB_color_hdr.h"
 #include "LAB_vec.h"
 #include "LAB_array.h"
+#include "LAB_util.h"
 
 // TODO setting to switch between triangle rendering and quad rendering
 

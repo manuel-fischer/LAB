@@ -5,6 +5,7 @@
 
 #include "LAB_gl.h"
 #include "LAB_obj.h"
+#include "LAB_bits.h"
 
 
 static const LAB_GuiVertex surface_vertices[] = {

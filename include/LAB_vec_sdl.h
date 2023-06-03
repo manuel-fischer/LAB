@@ -3,6 +3,10 @@
 #include "LAB_vec2.h"
 #include <SDL2/SDL_rect.h>
 
+// export from LAB_vec2.h
+// export LAB_Vec2I2SDL LAB_Vec2F2SDL
+// export LAB_Box2I2SDL LAB_Box2F2SDL
+
 LAB_INLINE LAB_ALWAYS_INLINE LAB_VALUE_CONST
 SDL_Point LAB_Vec2I2SDL(LAB_Vec2I a)
 {

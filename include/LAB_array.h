@@ -2,6 +2,8 @@
 
 #include "LAB_bits.h"
 #include "LAB_memory.h"
+#include "LAB_select.h"
+#include "LAB_ptr.h"
 
 #define LAB_DEF_ARRAY(type, name_prefix) \
     type* name_prefix; \

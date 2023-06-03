@@ -1,9 +1,10 @@
 #pragma once
 #define LAB_DBG_HDR 1
 
-#include "LAB_util.h"
 #include "LAB_color.h"
 #include "LAB_bits.h"
+#include "LAB_functional.h"
+#include "LAB_select.h"
 
 #include <math.h>
 

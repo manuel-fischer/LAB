@@ -1,3 +1,4 @@
+#include "LAB_sdl.h"
 #include "LAB_opt.h"
 
 #ifndef NDEBUG

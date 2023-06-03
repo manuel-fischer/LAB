@@ -3,6 +3,7 @@
 #include "LAB_block.h"
 #include "LAB_opt.h"
 #include "LAB_attr.h"
+#include "LAB_select.h"
 
 
 typedef struct LAB_Gen_IBiome

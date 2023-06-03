@@ -1,5 +1,9 @@
 #include "LAB_game_surface_dimension_gen.h"
 
+#include "LAB_intmathlib.h"
+#include "LAB_ptr.h"
+#include "LAB_random.h"
+
 #define LAB_GEN_DIRT_SALT        0x12345
 #define LAB_GEN_UNDERGROUND_SALT 0x54321
 

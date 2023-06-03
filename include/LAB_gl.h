@@ -25,7 +25,10 @@
 #include "LAB_gl_types.h"
 #include "LAB_color.h"
 #include "LAB_color_hdr.h"
+#include "LAB_util.h"
+#include "LAB_error.h"
 
+#define LAB_SetCurrentGLError() LAB_SetError("GL Error: %s", LAB_GL_GetCurrentError())
 const char* LAB_GL_GetError(GLenum errorid);
 const char* LAB_GL_GetCurrentError(void);
 

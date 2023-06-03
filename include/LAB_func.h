@@ -7,6 +7,9 @@
 #include "LAB_poly_buffer.h"
 #include "LAB_stdinc.h" // alignof
 #include "LAB_memory_util.h"
+#include "LAB_intmathlib.h"
+#include "LAB_ptr.h"
+#include "LAB_select.h"
 
 
 #define LAB_DEF_FUNC_OBJECT_TYPE(type, signature_type) \

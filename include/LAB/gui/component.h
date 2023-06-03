@@ -10,6 +10,8 @@
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_surface.h>
 
+// export from LAB/gui/manager.h
+
 #define LAB_GUI_COMPONENT_INHERIT \
     bool (*on_event)(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Event* event); \
     void (*render)(LAB_GuiComponent* self, LAB_GuiManager* mgr, SDL_Surface* surf, int x, int y); \

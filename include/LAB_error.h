@@ -1,5 +1,9 @@
 #pragma once
 
+// export LAB_*Error*
+// export LAB_ALLOC
+// export LAB_CHECK_ALLOC
+
 /**
  *  Returns a message with information about the specific error that occurred,
  *  or an empty string if there hasn't been any error.
@@ -24,7 +28,6 @@ void LAB_AddErrorContextFmt(const char* filename, int line, const char* fmt, ...
 #define LAB_ADD_ERROR_MESSAGE_FMT(message, ...) \
     LAB_AddErrorContextFmt(__FILE__, __LINE__, message, __VA_ARGS__)
 
-#define LAB_SetCurrentGLError() LAB_SetError("GL Error: %s", LAB_GL_GetCurrentError())
 #define LAB_SetCError() LAB_SetError("Error: %s", strerror(errno))
 
 // TODO

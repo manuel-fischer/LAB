@@ -1,8 +1,6 @@
 #include "LAB_gl.h"
 #include "LAB_bits.h"
-#include "LAB_debug.h"
 #include "LAB_sdl.h"
-#include "LAB_color_hdr.h"
 
 #define LAB_GL_ERRORS_X(X) \
     X(GL_NO_ERROR, "No error") \

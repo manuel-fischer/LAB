@@ -4,6 +4,7 @@
 #include "LAB_array.h"
 #include "LAB_color.h"
 #include "LAB_vec2.h"
+#include "LAB_bits.h"
 #include "LAB_gl_types.h"
 #include <SDL2/SDL_surface.h>
 

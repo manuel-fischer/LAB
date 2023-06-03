@@ -7,6 +7,7 @@
 #include "LAB_world.h"
 #include "LAB_chunk_lock.h"
 #include "LAB_game_server_stats.h"
+#include "LAB_timelib.h"
 
 /*enum LAB_Action
 {

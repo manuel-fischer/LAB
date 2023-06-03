@@ -3,6 +3,7 @@
 #include "LAB_world.h"
 #include "LAB/gui/world_selection.h"
 #include "LAB_memory.h"
+#include "LAB_vec2.h"
 
 LAB_STATIC void LAB_GuiMenu_Resume(void* user, LAB_GuiManager* mgr);
 LAB_STATIC void LAB_GuiMenu_Save(void* user, LAB_GuiManager* mgr);

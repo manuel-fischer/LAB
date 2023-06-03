@@ -5,6 +5,8 @@
 #include <SDL2/SDL_ttf.h>
 #include "LAB_sdl.h"
 
+// export LAB_TextRenderer*
+
 struct LAB_TextRenderer_Line
 {
     size_t spacing;

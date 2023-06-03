@@ -6,7 +6,7 @@
 LAB_SurfaceDimension* LAB_builtin_overworld;
 
 #define LAB_BUILTIN_VIS
-#include "LAB_builtin_overworld_biomes_list.h"
+    #include "LAB_builtin_overworld_biomes_list.h"
 #undef LAB_BUILTIN_VIS
 
 bool LAB_BuiltinOverworld_Init(void)

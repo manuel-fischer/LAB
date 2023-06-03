@@ -5,6 +5,8 @@
 
 #include "LAB_gl.h"
 #include "LAB_obj.h"
+#include "LAB_functional.h"
+#include "LAB_ptr.h"
 
 
 static const LAB_LineVertex box_vertices[] = {

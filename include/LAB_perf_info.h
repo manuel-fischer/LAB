@@ -1,6 +1,7 @@
 #pragma once
 
 #include "LAB_fps_graph.h"
+#include "LAB_timelib.h"
 
 enum LAB_TimeGraph
 {

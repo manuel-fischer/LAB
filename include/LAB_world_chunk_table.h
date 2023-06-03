@@ -28,7 +28,7 @@ typedef struct LAB_World_ChunkEntry
 #define LAB_CHUNK_TBL_EMPTY_FUNC(e)    ((e)->chunk == NULL)
 
 #define HTL_PARAM LAB_CHUNK_TBL
-#include "HTL/hasharray.t.h"
+    #include "HTL/hasharray.t.h"
 #undef HTL_PARAM
 
 
@@ -38,12 +38,12 @@ typedef struct LAB_World_ChunkEntry
 #define LAB_CHUNKPOS_QUEUE_TYPE     LAB_ChunkPos
 
 #define HTL_PARAM LAB_CHUNKPOS_QUEUE
-#include "HTL/queue.t.h"
+    #include "HTL/queue.t.h"
 #undef HTL_PARAM*/
 
 #define LAB_CHUNK_BUF_QUEUE_NAME     LAB_ChunkBufQueue
 #define LAB_CHUNK_BUF_QUEUE_TYPE     LAB_Chunk*
 
 #define HTL_PARAM LAB_CHUNK_BUF_QUEUE
-#include "HTL/queue.t.h"
+    #include "HTL/queue.t.h"
 #undef HTL_PARAM

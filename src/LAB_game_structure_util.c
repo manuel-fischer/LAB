@@ -1,5 +1,7 @@
 #include "LAB_game_structure_util.h"
 
+#include "LAB_intmathlib.h"
+#include "LAB_random.h"
 
 
 /*LAB_Game_IStructureDensity

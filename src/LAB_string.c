@@ -3,6 +3,8 @@
 #include <stdio.h> // vsnprintf
 #include <string.h> // strnlen
 
+#include "LAB_select.h"
+
 bool LAB_StringBuilder_Create(LAB_StringBuilder* s)
 {
     *s = (LAB_StringBuilder) {.data = NULL, .size = 0, .success = true};
@@ -46,7 +48,7 @@ bool LAB_StringBuilder_VHPrintF(LAB_StringBuilder* s, const char* format, va_lis
 {
     if(!s->success) return false;
 
-    LAB_MIN_EQ(size_hint, 16);
+    size_hint = LAB_MIN(size_hint, 16);
 
     size_t insert_pos = s->size;
 
