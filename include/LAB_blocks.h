@@ -2,6 +2,7 @@
 
 #include "LAB_block.h"
 #include "LAB_array.h"
+#include "LAB_error_state.h"
 
 #define LAB_BID_NO_ITEM ((LAB_BlockID)0)
 #define LAB_BID_AIR ((LAB_BlockID)0)
@@ -33,7 +34,5 @@ extern size_t LAB_item_block_count;
 bool LAB_Blocks_Init(void);
 void LAB_Blocks_Quit(void);
 
-// return id of first block
-LAB_BlockID LAB_RegisterBlocks(size_t count);
-bool LAB_RegisterBlocksGen(LAB_BlockID* ids, size_t count);
-bool LAB_AddBlockItems(LAB_BlockID block, size_t count);
+LAB_Err LAB_RegisterBlocksGen(LAB_BlockID* ids, size_t count);
+LAB_Err LAB_AddBlockItems(LAB_BlockID block, size_t count);

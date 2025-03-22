@@ -5,6 +5,7 @@
 #include "LAB_asset_manager.h"
 #include "LAB_sdl.h"
 #include "LAB_image.h"
+#include "LAB_color_defs.h"
 
 #include <math.h>
 
@@ -26,32 +27,20 @@ static SDL_Surface* LAB_RenderBlockItem(LAB_TexAtlas* atlas, LAB_Box2Z tex, LAB_
     LAB_SDL_ALLOC(SDL_CreateRGBSurfaceWithFormat, &surf, 0, LAB_ITEM_SIZE, LAB_ITEM_SIZE, 32, SDL_PIXELFORMAT_RGBA32);
     if(!surf) return NULL;
 
-    /*SDL_Rect src_rect;
-    src_rect.x = LAB_TILE_SIZE*tex[0][0];
-    src_rect.y = LAB_TILE_SIZE*tex[0][0];
-    src_rect.w = LAB_TILE_SIZE;
-    src_rect.h = LAB_TILE_SIZE;*/
-
-    //SDL_BlitScaled(atlas->data, &src_rect, surf, NULL);
-    LAB_Color* dst = surf->pixels;
-    size_t  stride = atlas->w;
-    LAB_Color* src = atlas->data + (stride*tex.a.y + tex.a.x)*atlas->cell_size;
-    for(size_t y = 0; y < atlas->cell_size; ++y, dst+=atlas->cell_size, src+=stride)
-    {
-        LAB_MemCpyColor(dst, src, atlas->cell_size);
-    }
+    LAB_ImageView vatlas = LAB_ImageView_Create(atlas->w, atlas->h, atlas->data);
+    LAB_ImageView vsrc = LAB_ImageView_Clip(vatlas, LAB_Box2Z_Mul(atlas->cell_size, tex));
+    LAB_ImageView vdst = LAB_ImageView_CreateSDL(surf);
 
     LAB_Color block_color = tint;
-    for(size_t i = 0; i < LAB_ITEM_SIZE*LAB_ITEM_SIZE; ++i)
-    {
-        LAB_Color* c = &((LAB_Color*)surf->pixels)[i];
-        *c = LAB_MulColor_Fast(*c, block_color);
+    LAB_Image_Copy(vdst, vsrc);
+    LAB_Image_MulColor_Fast(vdst, block_color);
 
-    }
-    ((LAB_Color*)surf->pixels)[0] =
-    ((LAB_Color*)surf->pixels)[31] =
-    ((LAB_Color*)surf->pixels)[32*31] =
-    ((LAB_Color*)surf->pixels)[32*31+31] = 0; // rounded corners
+    // rounded corners
+    LAB_Image_SetPixel(vdst,  0,  0, LAB_COLOR_BLANK);
+    LAB_Image_SetPixel(vdst,  0, 31, LAB_COLOR_BLANK);
+    LAB_Image_SetPixel(vdst, 31,  0, LAB_COLOR_BLANK);
+    LAB_Image_SetPixel(vdst, 31, 31, LAB_COLOR_BLANK);
+
     return surf;
 }
 

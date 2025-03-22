@@ -5,7 +5,9 @@
 #include "LAB_model_set.h"
 #include "LAB_render_item.h"
 #include "LAB_vec2.h"
+#include "LAB_image.h"
 #include <SDL2/SDL_surface.h>
+#include "LAB_error_state.h"
 
 typedef struct LAB_Assets
 {
@@ -15,12 +17,14 @@ typedef struct LAB_Assets
     LAB_TexAtlas* atlas;
     LAB_ModelSet* models;
     LAB_ItemTexSet* items; // item textures
+
+    LAB_Err err;
 } LAB_Assets;
 
 bool LAB_Assets_Create(LAB_Assets* assets, LAB_TexAtlas* atlas, LAB_ModelSet* models, LAB_ItemTexSet* items);
 void LAB_Assets_Destroy(LAB_Assets* assets);
 
-SDL_Surface* LAB_Assets_LoadTexture(LAB_Assets* assets, const char* resource_name);
+LAB_ImageCView LAB_Assets_LoadTexture(LAB_Assets* assets, const char* resource_name);
 
 
 typedef struct LAB_TextureComposite

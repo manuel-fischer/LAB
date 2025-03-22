@@ -146,7 +146,7 @@ bool LAB_View_Obj(LAB_View* view, LAB_OBJ_Action action)
     LAB_OBJ(LAB_GuiManager_Create(&view->gui_mgr),
             LAB_GuiManager_Destroy(&view->gui_mgr),
 
-    LAB_OBJ(LAB_ViewArray_Create(&view->chunk_array, 5),
+    LAB_OBJ(LAB_ViewArray_Create(&view->chunk_array, 5), // TODO: magic value: add configuration
             LAB_ViewArray_Destroy(&view->chunk_array),
 
     LAB_OBJ(LAB_ViewRenderer_Create(&view->renderer),

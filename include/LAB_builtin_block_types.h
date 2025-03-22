@@ -7,15 +7,17 @@
 #include "LAB_blocks.h"
 #include "LAB_render_item.h"
 #include "LAB_color_defs.h"
+#include "LAB_error_state.h"
 
 #include "LAB_aabb.h"
 #include "LAB_vec2.h"
 
 LAB_INLINE
-bool LAB_BlockFull_Init(LAB_Assets* assets, LAB_BlockID* bid,
+LAB_Err LAB_BlockFull_Init(LAB_Assets* assets, LAB_BlockID* bid,
                         LAB_TexRect tex, LAB_Color tint, LAB_RenderPass render_pass)
 {
-    if(!LAB_RegisterBlocksGen(bid, 1)) return false;
+    LAB_TRY(assets->err);
+    LAB_TRY(assets->err = LAB_RegisterBlocksGen(bid, 1));
     LAB_Block* b = LAB_BlockP(*bid);
 
     b->flags = LAB_BLOCK_SOLID;
@@ -23,7 +25,7 @@ bool LAB_BlockFull_Init(LAB_Assets* assets, LAB_BlockID* bid,
     LAB_Box2F tex_f = LAB_Box2Z2F(tex);
 
     LAB_Model* m = LAB_Assets_NewModel(assets);
-    if(!m) return false;
+    LAB_TRY(assets->err);
     m->render_pass = render_pass;
     LAB_Builtin_ModelAddCubeAll(m,
         LAB_AABB_FULL_CUBE,
@@ -31,12 +33,11 @@ bool LAB_BlockFull_Init(LAB_Assets* assets, LAB_BlockID* bid,
 
     b->model = m;
     b->bounds = LAB_AABB_FULL_CUBE;
-    //b->item_texture = LAB_Assets_LoadTexture(assets, "stone");
     b->item_texture = LAB_Assets_RenderItem(assets, tex, tint);
 
-    LAB_AddBlockItems(*bid, 1);
+    LAB_TRY(assets->err = LAB_AddBlockItems(*bid, 1));
 
-    return true;
+    return LAB_OK;
 }
 
 
@@ -66,17 +67,18 @@ typedef union LAB_BlockGroupStone
     LAB_BlockID blocks[LAB_STONE_VARIANT_COUNT];
 } LAB_BlockGroupStone;
 
-bool LAB_BlockGroupStone_Init(LAB_Assets* assets,
+LAB_Err LAB_BlockGroupStone_Init(LAB_Assets* assets,
     LAB_BlockGroupStone* grp,
     LAB_Color black, LAB_Color white);
 
 
 
 LAB_INLINE
-bool LAB_BlockCross_Init(LAB_Assets* assets, LAB_BlockID* bid,
+LAB_Err LAB_BlockCross_Init(LAB_Assets* assets, LAB_BlockID* bid,
                           LAB_Box2Z tex, LAB_Color tint, LAB_RenderPass render_pass)
 {
-    if(!LAB_RegisterBlocksGen(bid, 1)) return false;
+    LAB_TRY(assets->err);
+    LAB_TRY(assets->err = LAB_RegisterBlocksGen(bid, 1));
     LAB_Block* b = LAB_BlockP(*bid);
 
     b->flags = LAB_BLOCK_INTERACTABLE|LAB_BLOCK_VISUAL|LAB_BLOCK_FLAT_SHADE;
@@ -85,7 +87,7 @@ bool LAB_BlockCross_Init(LAB_Assets* assets, LAB_BlockID* bid,
     LAB_Box2F tex_f = LAB_Box2Z2F(tex);
 
     LAB_Model* m = LAB_Assets_NewModel(assets);
-    if(!m) return false;
+    LAB_TRY(assets->err);
     m->render_pass = render_pass;
     LAB_Builtin_ModelAddCross(m,
         LAB_AABB_CROSS,
@@ -93,25 +95,26 @@ bool LAB_BlockCross_Init(LAB_Assets* assets, LAB_BlockID* bid,
 
     b->model = m;
     b->bounds = LAB_AABB_CROSS;
-    //b->item_texture = LAB_Assets_LoadTexture(assets, "stone");
     b->item_texture = LAB_Assets_RenderItem(assets, tex, tint);
 
-    LAB_AddBlockItems(*bid, 1);
+    LAB_TRY(LAB_AddBlockItems(*bid, 1));
 
-    return true;
+    return LAB_OK;
 }
 
 
 
 
 LAB_INLINE
-bool LAB_BlockLight_Init(LAB_Assets* assets, LAB_BlockID* bid,
+LAB_Err LAB_BlockLight_Init(LAB_Assets* assets, LAB_BlockID* bid,
                          LAB_Box2Z tex, LAB_ColorHDR lum)
 {
-    if(!LAB_RegisterBlocksGen(bid, 1)) return false;
+    LAB_TRY(assets->err);
+    LAB_TRY(assets->err = LAB_RegisterBlocksGen(bid, 1));
     LAB_Block* b = LAB_BlockP(*bid);
 
     LAB_Model* m = LAB_Assets_NewModel(assets);
+    LAB_TRY(assets->err);
     LAB_Box2F tex_f = LAB_Box2Z2F(tex);
     LAB_Builtin_ModelAddCubeAll(m, LAB_AABB_FULL_CUBE, tex_f, LAB_box_color_flat);
     *b = (LAB_Block) {
@@ -124,7 +127,7 @@ bool LAB_BlockLight_Init(LAB_Assets* assets, LAB_BlockID* bid,
         .bounds = LAB_AABB_FULL_CUBE,
     };
 
-    LAB_AddBlockItems(*bid, 1);
+    LAB_TRY(LAB_AddBlockItems(*bid, 1));
 
-    return true; // TODO
+    return LAB_OK;
 }

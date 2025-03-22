@@ -6,13 +6,13 @@
 
 #include "LAB_ptr.h"
 
-bool LAB_BuiltinStructures_Init(LAB_SurfaceDimension* dim)
+LAB_Err LAB_BuiltinStructures_Init(LAB_SurfaceDimension* dim)
 {
     #define REGISTER_IN_BIOME(biome) \
-        if(!LAB_SurfaceDimension_AddStructure(dim, biome, salt, &s)) return false;
+        LAB_TRY(LAB_SurfaceDimension_AddStructure(dim, biome, salt, &s));
 
     #define REGISTER_COMMON() \
-        if(!LAB_SurfaceDimension_AddStructure(dim, LAB_SurfaceBiomeID_NULL, salt, &s)) return false;
+        LAB_TRY(LAB_SurfaceDimension_AddStructure(dim, LAB_SurfaceBiomeID_NULL, salt, &s));
 
     #define ProbAndCount LAB_Game_StructureDensity_ProbAndCount
     #define PlaceOnSurface() LAB_SurfaceDimension_PlaceOnSurface(dim)
@@ -293,5 +293,5 @@ bool LAB_BuiltinStructures_Init(LAB_SurfaceDimension* dim)
         }
     }
 
-    return true;
+    return LAB_OK;
 }

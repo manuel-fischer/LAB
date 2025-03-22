@@ -24,33 +24,34 @@ void LAB_Blocks_Quit(void)
     LAB_ARRAY_DESTROY(LAB_blocks_array);
 }
 
-LAB_BlockID LAB_RegisterBlocks(size_t count)
+LAB_Err LAB_RegisterBlocks(LAB_BlockID* first_id, size_t count)
 {
-    if(LAB_block_count + count > LAB_BID_MAX) return LAB_BID_INVALID;
+    if(LAB_block_count + count > LAB_BID_MAX) return LAB_RAISE("limit of blocks reached");
     LAB_Block* start;
     LAB_ARRAY_APPEND(LAB_blocks_array, count, &start);
-    if(!start) return LAB_BID_INVALID;
+    if(!start) return LAB_RAISE_C();
 
     memset(start, 0, count*sizeof(LAB_Block));
 
-    return start-LAB_ARRAY_DATA(LAB_blocks_array);
+    *first_id = start-LAB_ARRAY_DATA(LAB_blocks_array);
+
+    return LAB_OK;
 }
 
-bool LAB_RegisterBlocksGen(LAB_BlockID* ids, size_t count)
+LAB_Err LAB_RegisterBlocksGen(LAB_BlockID* ids, size_t count)
 {
-    LAB_BlockID bid = LAB_RegisterBlocks(count);
-    if(bid == LAB_BID_INVALID) return false;
-    for(size_t i = 0; i < count; ++i) ids[i] = bid+i;
-
-    return true;
+    LAB_BlockID first_id;
+    LAB_TRY(LAB_RegisterBlocks(&first_id, count));
+    for(size_t i = 0; i < count; ++i) ids[i] = first_id+i;
+    return LAB_OK;
 }
 
-bool LAB_AddBlockItems(LAB_BlockID block, size_t count)
+LAB_Err LAB_AddBlockItems(LAB_BlockID block, size_t count)
 {
     LAB_ASSERT(count == 1);
     LAB_BlockID* ids;
     LAB_ARRAY_APPEND(LAB_item_blocks_array, count, &ids);
-    if(!ids) return false;
+    if(!ids) return LAB_RAISE_C();
     for(size_t i = 0; i < count; ++i) ids[i] = block+i;
-    return true;
+    return LAB_OK;
 }

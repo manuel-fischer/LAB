@@ -160,7 +160,7 @@ bool LAB_ViewProgram_CreateShader(LAB_ViewProgram* program, LAB_OnGLInfoLog on_i
         return (LAB_SetCurrentGLError(), false);
 
     LAB_FileContents source = LAB_ReadFile(spec->filename, "r");
-    if(!source.success)
+    if(LAB_FAILED(source.err))
     {
         LAB_GL_OBJ_FREE1(glDeleteShader, shader->id);
         return false;
@@ -212,7 +212,7 @@ bool LAB_ViewProgram_CreateShader(LAB_ViewProgram* program, LAB_OnGLInfoLog on_i
 
 
 LAB_STATIC
-bool LAB_ViewProgram_InitSpec(LAB_ViewProgram* program, LAB_OnGLInfoLog on_info, const LAB_ProgramSpec* program_spec, void* link_table)
+LAB_Err LAB_ViewProgram_InitSpec(LAB_ViewProgram* program, LAB_OnGLInfoLog on_info, const LAB_ProgramSpec* program_spec, void* link_table)
 {
     LAB_ASSERT(program_spec->shaders_count != 0);
 
@@ -225,15 +225,16 @@ bool LAB_ViewProgram_InitSpec(LAB_ViewProgram* program, LAB_OnGLInfoLog on_info,
     LAB_FOREACH(const LAB_DefineEntry, defn, program_spec->defines)
         LAB_StringBuilder_PrintF(&preamble, "#define %s %s\n", defn->name, defn->content);
 
-    if(!preamble.success) return false;
+    if(LAB_FAILED(preamble.err)) return preamble.err;
     //printf("%s\n", LAB_StringBuilder_AsCStr(&preamble));
 
     LAB_FOREACH(const LAB_ShaderSpec, spec, program_spec->shaders)
     {
         if(!LAB_ViewProgram_CreateShader(program, on_info, spec, LAB_StringBuilder_AsStringView(&preamble)))
         {
+            LAB_Err err = LAB_RAISE_CURRENT();
             LAB_StringBuilder_Destroy(&preamble);
-            return false;
+            return err;
         }
     }
 
@@ -251,20 +252,26 @@ bool LAB_ViewProgram_InitSpec(LAB_ViewProgram* program, LAB_OnGLInfoLog on_info,
 
     GLint status;
     glGetProgramiv(program->program.id, GL_LINK_STATUS, &status);
-    if(status == GL_FALSE) return (LAB_SetCurrentGLError(), LAB_ADD_ERROR_MESSAGE("Link status"), false);
+    if(status == GL_FALSE)
+    {
+        LAB_Err err = LAB_RAISE_GL();
+        err = LAB_RAISE_CTX_MSG(err, "Link status");
+        return err;
+    }
 
     LAB_GL_DBG_CHECK();
 
     if(!LAB_ViewProgram_LinkLocations(program, program_spec, link_table))
     {
+        LAB_Err err = LAB_RAISE_GL();
         LAB_FOREACH(const LAB_ShaderSpec, spec, program_spec->shaders)
-            LAB_ADD_ERROR_MESSAGE_FMT("With shader %s", spec->filename);
-        return false;
+            err = LAB_RAISE_CTX_FMT(err, "With shader %s", spec->filename);
+        return err;
     }
 
     LAB_GL_DBG_CHECK();
 
-    return true;
+    return LAB_OK;
 }
 
 bool LAB_ViewProgram_CreateWithSpec(LAB_ViewProgram* program, LAB_OnGLInfoLog on_info, const LAB_ProgramSpec* program_spec, void* link_table)
@@ -272,8 +279,8 @@ bool LAB_ViewProgram_CreateWithSpec(LAB_ViewProgram* program, LAB_OnGLInfoLog on
     LAB_OBJ(LAB_ViewProgram_Create(program),
             LAB_ViewProgram_Destroy(program),
 
-    LAB_OBJ(LAB_ViewProgram_InitSpec(program, on_info, program_spec, link_table),
-            (void)0,
+    LAB_OBJ_OK(LAB_ViewProgram_InitSpec(program, on_info, program_spec, link_table),
+               (void)0,
 
         return true;
     ););
@@ -290,18 +297,20 @@ void LAB_ViewProgram_Use(LAB_ViewProgram* program)
 
 
 
-bool LAB_SetupShaderEnvironment(const LAB_ShaderEnvironmentSpec* spec)
+LAB_Err LAB_SetupShaderEnvironment(const LAB_ShaderEnvironmentSpec* spec)
 {
-    if(!GL_ARB_shading_language_include) return false;
+    if(!GL_ARB_shading_language_include) return LAB_RAISE("'GL_ARB_shading_language_include' must be available");
 
     LAB_CFOREACH(LAB_ShaderIncludeSpec, inc, spec->includes)
     {
         LAB_FileContents contents = LAB_ReadFile(inc->filename, "r");
-        if(!contents.success) return false;
+        if(LAB_FAILED(contents.err)) return contents.err;
 
         glNamedStringARB(GL_SHADER_INCLUDE_ARB,
             strlen(inc->include_name), inc->include_name,
             contents.size, contents.data);
+
+        LAB_Free(contents.data);
     }
-    return true;
+    return LAB_OK;
 }

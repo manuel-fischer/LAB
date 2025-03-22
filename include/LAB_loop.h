@@ -72,3 +72,10 @@ while(0)
 #define LAB_CFOREACH_INDEX(element_type, index_name, iterator, prefix) \
     LAB_FOREACH_INDEX(element_type const, index_name, iterator, prefix)
 
+
+#define LAB_FOREACH_ARRAY(iterator, array) \
+    for(LAB_ARRAY_TYPE(array)* LAB_FOREACH_BEGIN = LAB_ARRAY_DATA(array), \
+                             * LAB_FOREACH_END = LAB_FOREACH_BEGIN + LAB_ARRAY_SIZE(array), \
+                             * iterator = LAB_FOREACH_BEGIN; \
+        iterator != LAB_FOREACH_END; ++iterator)
+

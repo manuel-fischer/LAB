@@ -57,6 +57,25 @@ float LAB_OverworldCloudMask(vec3 normal, float time, float density)
     return far_fade_out * near_fade_out * raw_mask;
 }
 
+float smin( float a, float b, float k )
+{
+	float h = clamp( 0.5 + 0.5*(b-a)/k, 0.0, 1.0 );
+	return mix( b, a, h ) - k*h*(1.0-h);
+}
+float smax(float a, float b, float k)
+{
+    return smin(a, b, -k);
+}
+
+
+void LAB_MixCloud(inout float depth_accum, inout vec3 cloud, vec3 color, vec3 normal, float time, float depth)
+{
+    float mask = LAB_OverworldCloudMask(normal, time, depth);
+    cloud = mix(cloud, color, mask);
+    depth_accum = 1 - (1-depth_accum) * (1-mask);
+    //depth_accum = smax(depth_accum, mask, 0.01);
+}
+
 // normal needs to be normalized already
 vec3 LAB_OverworldSky(vec3 base_sky_color, vec3 horizon_color, float depth, vec3 normal, float time, bool enable_sun)
 {
@@ -69,12 +88,14 @@ vec3 LAB_OverworldSky(vec3 base_sky_color, vec3 horizon_color, float depth, vec3
         vec3 cloud = horizon_sun;
         const float delta = 0.03;
         const vec3 mixed_cloud_color = (LAB_BASE_CLOUD_COLOR+LAB_HIGHLIGHT_CLOUD_COLOR)/2;
-        cloud = mix(cloud, LAB_HIGHLIGHT_CLOUD_COLOR, LAB_OverworldCloudMask(normal*vec3(1.0, 1.0-5.0*delta, 1.0), time, 0.9));
-        cloud = mix(cloud, LAB_HIGHLIGHT_CLOUD_COLOR, LAB_OverworldCloudMask(normal*vec3(1.0, 1.0-4.0*delta, 1.0), time, 1.0));
-        cloud = mix(cloud, LAB_HIGHLIGHT_CLOUD_COLOR, LAB_OverworldCloudMask(normal*vec3(1.0, 1.0-3.0*delta, 1.0), time, 1.1));
-        cloud = mix(cloud, LAB_HIGHLIGHT_CLOUD_COLOR, LAB_OverworldCloudMask(normal*vec3(1.0, 1.0-2.0*delta, 1.0), time, 1.1));
-        cloud = mix(cloud, mixed_cloud_color,         LAB_OverworldCloudMask(normal*vec3(1.0, 1.0-1.0*delta, 1.0), time, 1.0));
-        cloud = mix(cloud, LAB_BASE_CLOUD_COLOR,      LAB_OverworldCloudMask(normal,                               time, 0.8));
+        float depth_accum = 0;
+        LAB_MixCloud(depth_accum, cloud, LAB_HIGHLIGHT_CLOUD_COLOR, normal*vec3(1.0, 1.0-5.0*delta, 1.0), time, 0.9);
+        LAB_MixCloud(depth_accum, cloud, LAB_HIGHLIGHT_CLOUD_COLOR, normal*vec3(1.0, 1.0-4.0*delta, 1.0), time, 1.0);
+        LAB_MixCloud(depth_accum, cloud, LAB_HIGHLIGHT_CLOUD_COLOR, normal*vec3(1.0, 1.0-3.0*delta, 1.0), time, 1.1);
+        LAB_MixCloud(depth_accum, cloud, LAB_HIGHLIGHT_CLOUD_COLOR, normal*vec3(1.0, 1.0-2.0*delta, 1.0), time, 1.1);
+        LAB_MixCloud(depth_accum, cloud, mixed_cloud_color,         normal*vec3(1.0, 1.0-1.0*delta, 1.0), time, 1.0);
+        LAB_MixCloud(depth_accum, cloud, LAB_BASE_CLOUD_COLOR,      normal,                               time, 0.8);
+        cloud = mix(horizon_sun, cloud, smoothstep(0.1, 0.6, depth_accum)+-0.3*(1-depth_accum));
         horizon_sun = cloud;
     }
 

@@ -2,6 +2,8 @@
 
 #include "LAB_gl.h"
 #include "LAB_obj.h"
+#include "LAB_error.h"
+#include "LAB_error_state.h"
 
 #include "LAB_view_vertex_spec.h"
 #include "LAB_model.h" // -> LAB_Vertex
@@ -15,6 +17,8 @@
 
 bool LAB_ViewRenderer_Obj(LAB_ViewRenderer* r, LAB_OBJ_Action action)
 {
+    LAB_Err err;
+
     LAB_BEGIN_OBJ(action);
 
     LAB_OnGLInfoLog on_info = LAB_GLPrintInfoLog;
@@ -22,8 +26,8 @@ bool LAB_ViewRenderer_Obj(LAB_ViewRenderer* r, LAB_OBJ_Action action)
     LAB_OBJ(LAB_GL_OBJ_ALLOC(glCreateVertexArrays, &r->blocks_vao),
             LAB_GL_OBJ_FREE(glDeleteVertexArrays, &r->blocks_vao),
 
-    LAB_OBJ(LAB_SetupShaderEnvironment(&LAB_shader_environment),
-            (void)0,
+    LAB_OBJ_OK(err=LAB_SetupShaderEnvironment(&LAB_shader_environment),
+               (void)0,
 
     LAB_OBJ_FOR(i, LAB_RENDER_PASS_COUNT,
                 LAB_ViewProgram_CreateWithSpec(&r->blocks[i].program, on_info, LAB_blocks_shaders[i], &r->blocks[i]),

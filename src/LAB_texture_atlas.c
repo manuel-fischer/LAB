@@ -1,7 +1,6 @@
 #include "LAB_texture_atlas.h"
 #include "LAB_memory.h"
 #include "LAB_arith.h"
-#include "LAB_image.h"
 
 #include "LAB_sdl.h" // LAB_SDL_FREE -- TODO
 #include "LAB_gl.h"
@@ -78,8 +77,10 @@ LAB_STATIC void LAB_TexAlloc_DelNode(LAB_TexAlloc* alloc, size_t node)
 }
 
 
-bool LAB_TexAlloc_Add(LAB_TexAlloc* alloc, size_t side_cells, LAB_OUT size_t topleft_cell[2])
+LAB_TexAlloc_Result LAB_TexAlloc_Add(LAB_TexAlloc* alloc, size_t side_cells)
 {
+    LAB_TexAlloc_Result result;
+
     // traverse the quadtree and find empty space
     size_t required_space = side_cells*side_cells;
     size_t current_size = alloc->root_size;
@@ -167,7 +168,7 @@ bool LAB_TexAlloc_Add(LAB_TexAlloc* alloc, size_t side_cells, LAB_OUT size_t top
         if(alloc->root_node == LAB_TexAlloc_Node_NULL)
         {
             node = LAB_TexAlloc_NewNode(alloc, LAB_TexAlloc_Node_NULL);
-            if(node == LAB_TexAlloc_Node_NULL) return false;
+            if(node == LAB_TexAlloc_Node_NULL) return (result.success=false, result);
             alloc->root_node = node;
             alloc->root_size = side_cells*2u;
             NODE.states[0] = LAB_TexAlloc_FULL;
@@ -185,7 +186,7 @@ bool LAB_TexAlloc_Add(LAB_TexAlloc* alloc, size_t side_cells, LAB_OUT size_t top
             do
             {
                 size_t new_node = LAB_TexAlloc_NewNode(alloc, LAB_TexAlloc_Node_NULL);
-                if(new_node == LAB_TexAlloc_Node_NULL) return false;
+                if(new_node == LAB_TexAlloc_Node_NULL) return (result.success=false, result);
                 NODE.parent = new_node;
                 node = new_node;
 
@@ -222,7 +223,7 @@ bool LAB_TexAlloc_Add(LAB_TexAlloc* alloc, size_t side_cells, LAB_OUT size_t top
             else // its smaller than an empty quadrant
             {
                 size_t new_node = LAB_TexAlloc_NewNode(alloc, node);
-                if(new_node == LAB_TexAlloc_Node_NULL) return false;
+                if(new_node == LAB_TexAlloc_Node_NULL) return (result.success=false, result);
                 NODE.childs[NODE.iter_state] = new_node;
                 NODE.states[NODE.iter_state] = LAB_TexAlloc_MIXED;
 
@@ -265,9 +266,9 @@ bool LAB_TexAlloc_Add(LAB_TexAlloc* alloc, size_t side_cells, LAB_OUT size_t top
             alloc->root_size *= 2u;
         }
 
-        topleft_cell[0] = cur_x;
-        topleft_cell[1] = cur_y;
-        return true;
+        result.topleft_cell.x = cur_x;
+        result.topleft_cell.y = cur_y;
+        return (result.success=true, result);
     }
     #undef NODE
 }
@@ -316,6 +317,15 @@ void LAB_TexAtlas_Destroy(LAB_TexAtlas* atlas)
 }
 
 
+LAB_ImageView LAB_TexAtlas_AsImageView(LAB_TexAtlas* atlas)
+{
+    return LAB_ImageView_Create(atlas->w, atlas->h, atlas->data);
+}
+
+LAB_ImageView LAB_TexAtlas_ClipImageView(LAB_TexAtlas* atlas, LAB_Box2Z rect_cells)
+{
+    return LAB_ImageView_Clip(LAB_TexAtlas_AsImageView(atlas), LAB_Box2Z_Mul(atlas->cell_size, rect_cells));
+}
 
 LAB_INLINE bool LAB_TexAtlas_DoubleWidth(LAB_TexAtlas* atlas)
 {
@@ -352,65 +362,15 @@ LAB_INLINE bool LAB_TexAtlas_DoubleHeight(LAB_TexAtlas* atlas)
 }
 
 
-void LAB_TexAtlas_Clear(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size, LAB_Color clear)
+bool LAB_TexAtlas_Alloc(LAB_TexAtlas* atlas, LAB_Box2Z rect_cells)
 {
-    size_t i_atl = x + y*atlas->w;
+    LAB_Box2Z pixel_rect = LAB_Box2Z_Mul(atlas->cell_size, rect_cells);
 
-    for(size_t row = 0; row < size; ++row)
-    {
-        LAB_MemSetColor(atlas->data+i_atl, clear, size);
-        i_atl += atlas->w;
-    }
-}
-
-void LAB_TexAtlas_Draw(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size, LAB_Color* data)
-{
-    size_t i_src = 0;
-    size_t i_atl = x + y*atlas->w;
-
-    for(size_t row = 0; row < size; ++row)
-    {
-        LAB_MemCpyColor(atlas->data+i_atl, data+i_src, size);
-        i_src += size;
-        i_atl += atlas->w;
-    }
-}
-
-void LAB_TexAtlas_DrawBlit(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size, LAB_Color* data, LAB_Color black_tint, LAB_Color white_tint)
-{
-    size_t i_src = 0;
-    size_t i_atl = x + y*atlas->w;
-
-    for(size_t row = 0; row < size; ++row)
-    {
-        LAB_MemBltColor2(atlas->data+i_atl, data+i_src, black_tint, white_tint, size);
-        i_src += size;
-        i_atl += atlas->w;
-    }
-}
-
-bool LAB_TexAtlas_ClearAlloc(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size, LAB_Color clear)
-{
-    while(x+size > atlas->w)
+    while(pixel_rect.b.x > atlas->w)
         if(!LAB_TexAtlas_DoubleWidth(atlas)) return false;
 
-    while(y+size > atlas->h)
+    while(pixel_rect.b.y > atlas->h)
         if(!LAB_TexAtlas_DoubleHeight(atlas)) return false;
-
-    LAB_TexAtlas_Clear(atlas, x, y, size, clear);
-
-    return true;
-}
-
-bool LAB_TexAtlas_DrawAlloc(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size, LAB_Color* data)
-{
-    while(x+size > atlas->w)
-        if(!LAB_TexAtlas_DoubleWidth(atlas)) return false;
-
-    while(y+size > atlas->h)
-        if(!LAB_TexAtlas_DoubleHeight(atlas)) return false;
-
-    LAB_TexAtlas_Draw(atlas, x, y, size, data);
 
     return true;
 }
@@ -424,7 +384,7 @@ void LAB_TexAtlas_MakeMipmap(LAB_TexAtlas* atlas)
     size_t csz = atlas->cell_size/2;
     for(; csz; csz /= 2)
     {
-        if(csz) LAB_Fix0Alpha(w, h, data); // at prev layer including original!
+        if(csz) LAB_Fix0Alpha(w, h, data, w); // at prev layer including original!
 
         LAB_MakeMipmap2D(w/2, h/2, data, data+w*h);
 
@@ -503,78 +463,3 @@ LAB_Vec2F LAB_TexAtlas_ScaleFactor(LAB_TexAtlas* atlas)
 
 
 
-
-#include <stdio.h>
-void LAB_TestTextureAtlas()
-{
-    /*static const char* textures[] =
-    {
-        "assets/blocks/stone.png",
-        "assets/blocks/cobble.png",
-        "assets/blocks/bricks.png",
-        "assets/blocks/smooth_stone.png",
-        "assets/blocks/oak_log.png",
-        "assets/blocks/leaves.png",
-
-        // tst
-        //"assets/terrain.png",
-        "assets/blocks/leaves.png",
-        "assets/blocks/metal.png",
-        //"assets/gui.png",
-        NULL
-    };*/
-
-    static const char* textures[] =
-    {
-        "assets/blocks/stone.png",
-        "assets/blocks/cobble.png",
-        "assets/blocks/smooth_stone.png",
-        "assets/blocks/bricks.png",
-        "assets/blocks/oak_log.png",
-        "assets/blocks/planks.png",
-        "assets/blocks/grass.png",
-        "assets/blocks/sand.png",
-        "assets/blocks/cold_light.png",
-        "assets/blocks/warm_light.png",
-        "assets/blocks/torch.png",
-        "assets/blocks/glass.png",
-        "assets/blocks/leaves.png",
-        "assets/blocks/tall_grass.png",
-        "assets/blocks/crystal.png",
-        "assets/blocks/taller_grass.png",
-    };
-
-    LAB_DBG_PRINTF("LAB_TestTextureAtlas\n");
-
-    LAB_TexAlloc alloc;
-    LAB_ASSERT_OR_ABORT(LAB_TexAlloc_Create(&alloc));
-
-    LAB_TexAtlas atlas;
-    LAB_ASSERT_OR_ABORT(LAB_TexAtlas_Create(&atlas, 32));
-
-    //for(size_t i = 0; textures[i]; ++i)
-    for(size_t i = 0, k = 0; k < 1024; ++k, i=rand()%(sizeof(textures)/sizeof(*textures)-1))
-    {
-        SDL_Surface* surf = LAB_ImageLoad(textures[i]);
-        LAB_ASSERT_OR_ABORT(surf);
-        LAB_ASSERT_OR_ABORT(surf->w == surf->h);
-        LAB_ASSERT_OR_ABORT(LAB_IsPow2(surf->w));
-
-        //#define CELL_SIZE 32
-        #define CELL_SIZE 1
-
-        size_t pos[2];
-        LAB_ASSERT_OR_ABORT(LAB_TexAlloc_Add(&alloc, surf->w/CELL_SIZE, pos));
-        LAB_DBG_PRINTF("%s at %zu, %zu\n", textures[i], pos[0], pos[1]);
-        //LAB_MemSetColor((LAB_Color*)surf->pixels, LAB_RGBX(0000ff), i);
-        LAB_ASSERT_OR_ABORT(LAB_TexAtlas_DrawAlloc(&atlas, pos[0]*CELL_SIZE, pos[1]*CELL_SIZE, surf->w, (LAB_Color*)surf->pixels));
-
-        LAB_SDL_FREE(SDL_FreeSurface, &surf);
-    }
-
-    LAB_ImageSave(atlas.w, atlas.h, atlas.data, "dbg_TestTextureAtlas.png");
-
-    LAB_TexAtlas_Destroy(&atlas);
-    LAB_TexAlloc_Destroy(&alloc);
-
-}

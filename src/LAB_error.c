@@ -8,6 +8,7 @@
 
 #define LAB_ERROR_BUFFER_SIZE 1024
 
+// TODO: thread local
 static char LAB_error_buffer[LAB_ERROR_BUFFER_SIZE] = {0};
 
 static void LAB_LoadError()
@@ -29,6 +30,12 @@ static void LAB_LoadError()
             SDL_ClearError();
         }
     }
+}
+
+void LAB_SetSDLError(void)
+{
+    LAB_SetError("SDL error: %s", SDL_GetError());
+    SDL_ClearError();
 }
 
 
@@ -87,7 +94,10 @@ void LAB_AppendError(const char* fmt, ...)
 
 void LAB_AddErrorContext(const char* filename, int line, const char* expression)
 {
-    LAB_AppendError("    at %s:%d:\n        %s", filename, line, expression);
+    if(expression == NULL)
+        LAB_AppendError("    at %s:%d", filename, line);
+    else
+        LAB_AppendError("    at %s:%d:\n        %s", filename, line, expression);
 }
 
 void LAB_AddErrorContextFmt(const char* filename, int line, const char* fmt, ...)

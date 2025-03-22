@@ -3,41 +3,29 @@
 #include "LAB_memory.h"
 #include "LAB_vec2.h"
 #include <limits.h>
-#include <dirent.h>
+#include <dirent.h> // remove
 #include <stdio.h>
 #include <stdlib.h>
+#include "LAB_filesystem.h"
 
 #define LAB_WORLD_DIRECTORY "./worlds"
 
 LAB_STATIC
 void LAB_GuiWorldSelection_Destroy(LAB_GuiComponent* self);
 
+LAB_STATIC int LAB_GuiWorldSelection_CompareEntry(const void* a, const void* b)
+{
+    return strcmp(*(const char*const*)a, *(const char*const*)b);
+}
+
 LAB_STATIC bool LAB_GuiWorldSelection_InitList(LAB_GuiWorldSelection* gui)
 {
-    DIR* d = opendir(LAB_WORLD_DIRECTORY);
-    if(d == NULL) return false;
-
-    bool success = true;
-    struct dirent * dir;
-    while((dir = readdir(d)) != NULL)
-    {
-        if(dir->d_name[0] != '.')
-        {
-            char** entry = LAB_ARRAY_APPEND_SOME(LAB_GuiWorldSelection_worlds(gui), 1);
-            if(entry == NULL) { success = false; goto cleanup; }
-            *entry = LAB_StrDup(dir->d_name);
-            if(*entry == NULL) {
-                gui->worlds_count--;
-                success = false;
-                goto cleanup;
-            }
-        }
-    }
-cleanup:
-    closedir(d);
-
-    return success;
-
+    LAB_DirEntries entries = LAB_ListDir(LAB_WORLD_DIRECTORY, LAB_FilterDotFiles, NULL);
+    if(LAB_FAILED(entries.err)) return false;
+    gui->worlds = entries.data;
+    gui->worlds_count = entries.count;
+    qsort(gui->worlds, gui->worlds_count, sizeof(char*), LAB_GuiWorldSelection_CompareEntry);
+    return true;
 }
 
 LAB_STATIC void LAB_GuiWorldSelection_lstWorlds_OnSelect(void* user, size_t entry);

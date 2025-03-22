@@ -20,6 +20,12 @@ void LAB_MemCpyColor(LAB_Color* dst, LAB_Color const* src, size_t size)
     memcpy(dst, src, size*sizeof(LAB_Color));
 }
 
+void LAB_MemBlendColor(LAB_Color* dst, LAB_Color const* src, size_t size)
+{
+    for(size_t i = 0; i < size; ++i)
+        dst[i] = LAB_BlendColor(dst[i], src[i]);
+}
+
 void LAB_MemBltColor(LAB_Color* dst, LAB_Color const* src, LAB_Color tint, size_t size)
 {
     for(size_t i = 0; i < size; ++i)
@@ -33,12 +39,25 @@ void LAB_MemBltColor2(LAB_Color* dst, LAB_Color const* src, LAB_Color black_tint
         dst[i] = LAB_BlendColor(dst[i], LAB_LerpColor(black_tint, white_tint, src[i]));
 }
 
+void LAB_MemTintColor2(LAB_Color* dst, LAB_Color const* src, LAB_Color black_tint, LAB_Color white_tint, size_t size)
+{
+    black_tint &= ~LAB_ALP_MASK; // TODO?
+    for(size_t i = 0; i < size; ++i)
+        dst[i] = LAB_LerpColor(black_tint, white_tint, src[i]);
+}
+
 void LAB_MemNoColor(LAB_Color* dst, size_t size)
 {
     LAB_MemSetColor(dst, LAB_RGBX(ff0000), size);
     //return;
     //for(size_t i = 0; i < size; ++i)
     //    dst[i] = LAB_PopCnt(i)&1 ? LAB_RGBX(ff0000) : LAB_RGBX(ff4020);
+}
+
+void LAB_MemMulColor_Fast(LAB_Color* dst, LAB_Color color, size_t size)
+{
+    for(size_t i = 0; i < size; ++i)
+        dst[i] = LAB_MulColor_Fast(dst[i], color);
 }
 
 
@@ -140,17 +159,21 @@ void LAB_MakeMipmap2D(size_t w, size_t h, const LAB_Color* in_data, LAB_OUT LAB_
 }
 
 
-void LAB_Fix0Alpha(size_t w, size_t h, LAB_Color* data)
+void LAB_Fix0Alpha(size_t w, size_t h, LAB_Color* data, size_t stride)
 {
+    LAB_ASSERT(LAB_IsPow2(stride));
+    LAB_ASSERT((w&1) == 0);
+    LAB_ASSERT((h&1) == 0);
+
     // Fix fully transparent pixels
     for(size_t x = 0;         x < w; ++x)
-    for(size_t y = 0, yi = 0; y < h; ++y, yi+=w)
+    for(size_t y = 0, yi = 0; y < h; ++y, yi+=stride)
     {
         if(LAB_ALP(data[x+yi]) == 0)
         {
-            LAB_Color b = data[(x^1) +  yi   ];
-            LAB_Color c = data[ x    + (yi^w)];
-            LAB_Color d = data[(x^1) + (yi^w)];
+            LAB_Color b = data[(x^1) +  yi        ];
+            LAB_Color c = data[ x    + (yi^stride)];
+            LAB_Color d = data[(x^1) + (yi^stride)];
 
             int sum_alp = LAB_ALP(b)+LAB_ALP(c)+LAB_ALP(d);
             if(sum_alp != 0)
@@ -165,4 +188,112 @@ void LAB_Fix0Alpha(size_t w, size_t h, LAB_Color* data)
             }
         }
     }
+}
+
+
+void LAB_Image_FillColor(LAB_ImageView vdst, LAB_Color color)
+{
+    if(vdst.stride == vdst.w)
+    {
+        LAB_MemSetColor(vdst.data, color, vdst.w*vdst.h);
+        return;
+    }
+
+    LAB_Color* dst = vdst.data;
+    for(size_t y = 0; y < vdst.h; ++y, dst+=vdst.stride)
+        LAB_MemSetColor(dst, color, vdst.w);
+}
+
+void LAB_Image_Copy(LAB_ImageView vdst, LAB_ImageCView vsrc)
+{
+    LAB_ASSERT(vdst.w == vsrc.w);
+    LAB_ASSERT(vdst.h == vsrc.h);
+
+    LAB_Color* dst = vdst.data;
+    const LAB_Color* src = vsrc.data;
+    for(size_t y = 0; y < vdst.h; ++y, dst+=vdst.stride, src+=vsrc.stride)
+        LAB_MemCpyColor(dst, src, vdst.w);
+}
+
+void LAB_Image_Blend(LAB_ImageView vdst, LAB_ImageCView vsrc)
+{
+    LAB_ASSERT(vdst.w == vsrc.w);
+    LAB_ASSERT(vdst.h == vsrc.h);
+
+    LAB_Color* dst = vdst.data;
+    const LAB_Color* src = vsrc.data;
+    for(size_t y = 0; y < vdst.h; ++y, dst+=vdst.stride, src+=vsrc.stride)
+        LAB_MemBlendColor(dst, src, vdst.w);
+}
+
+void LAB_Image_Blit(LAB_ImageView vdst, LAB_ImageCView vsrc, LAB_Color tint)
+{
+    LAB_ASSERT(vdst.w == vsrc.w);
+    LAB_ASSERT(vdst.h == vsrc.h);
+
+    LAB_Color* dst = vdst.data;
+    const LAB_Color* src = vsrc.data;
+    for(size_t y = 0; y < vdst.h; ++y, dst+=vdst.stride, src+=vsrc.stride)
+        LAB_MemBltColor(dst, src, tint, vdst.w);
+}
+
+void LAB_Image_Blit2(LAB_ImageView vdst, LAB_ImageCView vsrc, LAB_Color black_tint, LAB_Color white_tint)
+{
+    if((black_tint & LAB_COL_MASK) == 0 && white_tint == LAB_RGBI(0xffffff))
+    {
+        LAB_Image_Blend(vdst, vsrc);
+        return;
+    }
+
+    LAB_ASSERT(vdst.w == vsrc.w);
+    LAB_ASSERT(vdst.h == vsrc.h);
+
+    LAB_Color* dst = vdst.data;
+    const LAB_Color* src = vsrc.data;
+    for(size_t y = 0; y < vdst.h; ++y, dst+=vdst.stride, src+=vsrc.stride)
+        LAB_MemBltColor2(dst, src, black_tint, white_tint, vdst.w);
+}
+
+void LAB_Image_Tint2(LAB_ImageView vdst, LAB_ImageCView vsrc, LAB_Color black_tint, LAB_Color white_tint)
+{
+    if((black_tint & LAB_COL_MASK) == 0 && white_tint == LAB_RGBI(0xffffff))
+    {
+        LAB_Image_Copy(vdst, vsrc);
+        return;
+    }
+
+    LAB_ASSERT(vdst.w == vsrc.w);
+    LAB_ASSERT(vdst.h == vsrc.h);
+
+    LAB_Color* dst = vdst.data;
+    const LAB_Color* src = vsrc.data;
+    for(size_t y = 0; y < vdst.h; ++y, dst+=vdst.stride, src+=vsrc.stride)
+        LAB_MemTintColor2(dst, src, black_tint, white_tint, vdst.w);
+}
+
+
+void LAB_Image_MarkNoColor(LAB_ImageView vdst)
+{
+    if(vdst.stride == vdst.w)
+    {
+        LAB_MemNoColor(vdst.data, vdst.w*vdst.h);
+        return;
+    }
+
+    LAB_Color* dst = vdst.data;
+    for(size_t y = 0; y < vdst.h; ++y, dst+=vdst.stride)
+        LAB_MemNoColor(dst, vdst.w);
+}
+
+void LAB_Image_MulColor_Fast(LAB_ImageView vdst, LAB_Color color)
+{
+    if(vdst.stride == vdst.w)
+    {
+        LAB_MemMulColor_Fast(vdst.data, color, vdst.w*vdst.h);
+        return;
+    }
+
+    LAB_Color* dst = vdst.data;
+    for(size_t y = 0; y < vdst.h; ++y, dst+=vdst.stride)
+        LAB_MemMulColor_Fast(dst, color, vdst.w);
 }

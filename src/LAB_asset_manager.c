@@ -19,7 +19,7 @@
 #undef HTL_PARAM
 
 
-bool LAB_AssetMgr_Create(LAB_AssetMgr* mgr, const LAB_AssetMgr_Behavior* behavior, void* user)
+LAB_Err LAB_AssetMgr_Create(LAB_AssetMgr* mgr, const LAB_AssetMgr_Behavior* behavior, void* user)
 {
     mgr->behavior = behavior;
     mgr->user = user;
@@ -27,7 +27,7 @@ bool LAB_AssetMgr_Create(LAB_AssetMgr* mgr, const LAB_AssetMgr_Behavior* behavio
     mgr->resource_capacity = 0;
     mgr->resource_vector   = NULL;
 
-    return true;
+    return LAB_OK;
 }
 
 void LAB_AssetMgr_Destroy(LAB_AssetMgr* mgr)
@@ -48,8 +48,11 @@ void LAB_AssetMgr_Destroy(LAB_AssetMgr* mgr)
     LAB_Free(mgr->resource_vector);
 }
 
-void* LAB_AssetMgr_GetByName(LAB_AssetMgr* mgr, const char* resource_name)
+void* LAB_AssetMgr_GetByName(LAB_Err* err, LAB_AssetMgr* mgr, const char* resource_name)
 {
+    if(LAB_FAILED(*err)) return NULL;
+
+
     LAB_AssetMgrKey key;
     key.hash = LAB_StrHash(resource_name);
     key.str  = resource_name;
@@ -81,7 +84,8 @@ void* LAB_AssetMgr_GetByName(LAB_AssetMgr* mgr, const char* resource_name)
             mgr->resource_vector = new_data;
         }
 
-        if(!mgr->behavior->load_resource(mgr->user, resource_name, LAB_AssetMgr_GetByIndex(mgr, index)))
+        *err = mgr->behavior->load_resource(mgr->user, resource_name, LAB_AssetMgr_GetByIndex(mgr, index));
+        if(LAB_FAILED(*err))
             goto fail;
 
         // SUCCESS

@@ -8,6 +8,7 @@
 #include <string.h>
 #include "LAB_htl_config.h"
 #include "LAB_ptr.h"
+#include "LAB_error_state.h"
 
 /** \def LAB_TILE_SIZE
  *
@@ -60,7 +61,7 @@ typedef struct LAB_AssetMgrEntry
 typedef struct LAB_AssetMgr_Behavior
 {
     size_t resource_size;
-    bool (*load_resource)(void* user, const char* resource_name, void* resource);
+    LAB_Err (*load_resource)(void* user, const char* resource_name, void* resource);
     void (*destroy_resource)(void* user, void* resource);
 } LAB_AssetMgr_Behavior;
 
@@ -109,10 +110,10 @@ typedef struct LAB_AssetMgr
 
 
 
-bool LAB_AssetMgr_Create(LAB_AssetMgr* mgr, const LAB_AssetMgr_Behavior* behavior, void* user);
+LAB_Err LAB_AssetMgr_Create(LAB_AssetMgr* mgr, const LAB_AssetMgr_Behavior* behavior, void* user);
 void LAB_AssetMgr_Destroy(LAB_AssetMgr* mgr);
 
-void* LAB_AssetMgr_GetByName(LAB_AssetMgr* mgr, const char* resource_name);
+void* LAB_AssetMgr_GetByName(LAB_Err* err, LAB_AssetMgr* mgr, const char* resource_name);
 
 #define LAB_AssetMgr_GetByIndex(mgr, index) LAB_PTR_OFFSET((mgr)->resource_vector, index, (mgr)->behavior->resource_size)
 

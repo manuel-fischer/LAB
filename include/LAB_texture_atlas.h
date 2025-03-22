@@ -6,6 +6,7 @@
 #include "LAB_vec2.h"
 #include "LAB_bits.h"
 #include "LAB_gl_types.h"
+#include "LAB_image.h"
 #include <SDL2/SDL_surface.h>
 
 // With the help of a quadtree, the most optimal arrangement for
@@ -46,7 +47,14 @@ bool LAB_TexAlloc_Create(LAB_TexAlloc* alloc);
 void LAB_TexAlloc_Destroy(LAB_TexAlloc* alloc);
 
 // size, topleft_cell -- unit: cells
-bool LAB_TexAlloc_Add(LAB_TexAlloc* alloc, size_t size, LAB_OUT size_t topleft_cell[2]);
+
+typedef struct LAB_TexAlloc_Result
+{
+    LAB_Vec2Z topleft_cell;
+    bool success;
+} LAB_TexAlloc_Result;
+
+LAB_TexAlloc_Result LAB_TexAlloc_Add(LAB_TexAlloc* alloc, size_t size);
 
 
 typedef struct LAB_TexAtlas
@@ -63,11 +71,10 @@ typedef struct LAB_TexAtlas
 // pixel in the lowest mip-map level, use 1 to disable mipmaps
 bool LAB_TexAtlas_Create(LAB_TexAtlas* atlas, size_t cell_size);
 void LAB_TexAtlas_Destroy(LAB_TexAtlas* atlas);
-void LAB_TexAtlas_Clear(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size, LAB_Color clear);
-void LAB_TexAtlas_Draw(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size, LAB_Color* data);
-void LAB_TexAtlas_DrawBlit(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size, LAB_Color* data, LAB_Color black_tint, LAB_Color white_tint);
-bool LAB_TexAtlas_ClearAlloc(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size, LAB_Color clear);
-bool LAB_TexAtlas_DrawAlloc(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size, LAB_Color* data);
+LAB_ImageView LAB_TexAtlas_AsImageView(LAB_TexAtlas* atlas);
+LAB_ImageView LAB_TexAtlas_CellImageView(LAB_TexAtlas* atlas, size_t x, size_t y, size_t size);
+LAB_ImageView LAB_TexAtlas_ClipImageView(LAB_TexAtlas* atlas, LAB_Box2Z rect_cells);
+bool LAB_TexAtlas_Alloc(LAB_TexAtlas* atlas, LAB_Box2Z rect_cells);
 void LAB_TexAtlas_MakeMipmap(LAB_TexAtlas* atlas);
 bool LAB_TexAtlas_Upload2GL(LAB_TexAtlas* atlas);
 #define LAB_TexAtlas_Levels(atlas) (1 + LAB_Log2OfPow2((atlas)->cell_size))
@@ -76,5 +83,3 @@ bool LAB_TexAtlas_DbgDumpToFile(LAB_TexAtlas* atlas, const char* prefix);
 #endif
 LAB_Vec2F LAB_TexAtlas_ScaleFactor(LAB_TexAtlas* atlas);
 
-
-void LAB_TestTextureAtlas();

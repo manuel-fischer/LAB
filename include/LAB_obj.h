@@ -99,3 +99,7 @@ typedef int LAB_OBJ_Action;
         LAB_AddErrorContext(__FILE__, __LINE__, #init); \
     } \
 } while(0)
+
+
+#define LAB_OBJ_OK(init, defer, ...) \
+    LAB_OBJ(LAB_ISOK(init), defer, __VA_ARGS__)

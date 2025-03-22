@@ -20,7 +20,7 @@ void LAB_ClearError(void);
 void LAB_SetError(const char* fmt, ...) __attribute__((format(printf, 1, 2)));
 void LAB_AppendError(const char* fmt, ...) __attribute__((format(printf, 1, 2)));
 void LAB_AddErrorContext(const char* filename, int line, const char* expression);
-void LAB_AddErrorContextFmt(const char* filename, int line, const char* fmt, ...);
+void LAB_AddErrorContextFmt(const char* filename, int line, const char* fmt, ...) __attribute__((format(printf, 3, 4)));
 
 #define LAB_ADD_ERROR_MESSAGE(message) \
     LAB_AddErrorContext(__FILE__, __LINE__, message)
@@ -29,6 +29,7 @@ void LAB_AddErrorContextFmt(const char* filename, int line, const char* fmt, ...
     LAB_AddErrorContextFmt(__FILE__, __LINE__, message, __VA_ARGS__)
 
 #define LAB_SetCError() LAB_SetError("Error: %s", strerror(errno))
+void LAB_SetSDLError(void);
 
 // TODO
 #define LAB_CHECK_ALLOC(ptr, on_error)

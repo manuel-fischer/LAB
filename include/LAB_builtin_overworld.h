@@ -1,5 +1,6 @@
 #pragma once
 
+#include "LAB_error_state.h"
 #include "LAB_game_surface_dimension.h"
 
 extern LAB_SurfaceDimension* LAB_builtin_overworld;
@@ -10,4 +11,4 @@ extern LAB_SurfaceDimension* LAB_builtin_overworld;
 
 #include "LAB_builtin_overworld_funcs.h"
 
-bool LAB_BuiltinOverworld_Init(void);
+LAB_Err LAB_BuiltinOverworld_Init(void);

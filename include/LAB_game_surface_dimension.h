@@ -6,6 +6,7 @@
 #include "LAB_game_structure.h"
 #include "LAB_direction.h"
 #include "LAB_random.h"
+#include "LAB_error_state.h"
 
 
 
@@ -55,8 +56,8 @@ LAB_MUT_Game_Dimension
 LAB_SurfaceDimension* LAB_SurfaceDimension_CreateRegister(void);
 
 
-bool LAB_SurfaceDimension_CreateBiome(LAB_SurfaceDimension* dim, LAB_OUT LAB_SurfaceBiomeID* out_biome_id, LAB_SurfaceBiome_Blocks def);
-bool LAB_SurfaceDimension_AddStructure(LAB_SurfaceDimension* dim, LAB_SurfaceBiomeID biome, uint64_t salt, const LAB_Game_Structure* structure);
+LAB_Err LAB_SurfaceDimension_CreateBiome(LAB_SurfaceDimension* dim, LAB_OUT LAB_SurfaceBiomeID* out_biome_id, LAB_SurfaceBiome_Blocks def);
+LAB_Err LAB_SurfaceDimension_AddStructure(LAB_SurfaceDimension* dim, LAB_SurfaceBiomeID biome, uint64_t salt, const LAB_Game_Structure* structure);
 
 LAB_INLINE
 int LAB_SurfaceDimension_SurfaceHeight(const LAB_SurfaceDimension* dim, uint64_t world_seed, int x, int z)
@@ -98,7 +99,7 @@ size_t LAB_SurfaceDimension_EnumerateBiomes(const LAB_SurfaceDimension* dim, uin
         for(size_t i = 0; i < count; ++i)
             if(biomes[i] == id)
                 goto found;
-        
+
         if(count < biomes_count)
             biomes[count++] = id;
         found:;

@@ -2,6 +2,7 @@
 
 #include "LAB_stdinc.h"
 #include "LAB_gl_types.h"
+#include "LAB_error_state.h"
 
 #include "LAB_view_vertex_spec.h"
 
@@ -86,4 +87,4 @@ bool LAB_ViewProgram_CreateWithSpec(LAB_ViewProgram* program, LAB_OnGLInfoLog on
 void LAB_ViewProgram_Use(LAB_ViewProgram* program);
 
 
-bool LAB_SetupShaderEnvironment(const LAB_ShaderEnvironmentSpec* spec);
+LAB_Err LAB_SetupShaderEnvironment(const LAB_ShaderEnvironmentSpec* spec);

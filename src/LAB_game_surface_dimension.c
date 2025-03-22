@@ -91,24 +91,25 @@ LAB_SurfaceDimension* LAB_SurfaceDimension_CreateRegister(void)
 
 
 
-bool LAB_SurfaceDimension_CreateBiome(LAB_SurfaceDimension* dim, LAB_OUT LAB_SurfaceBiomeID* out_biome_id, LAB_SurfaceBiome_Blocks def)
+LAB_Err LAB_SurfaceDimension_CreateBiome(LAB_SurfaceDimension* dim, LAB_OUT LAB_SurfaceBiomeID* out_biome_id, LAB_SurfaceBiome_Blocks def)
 {
     LAB_SurfaceBiome_Entry* biome;
     LAB_ARRAY_APPEND(LAB_SurfaceDimension_biomes(dim), 1, &biome);
-    if(!biome) return false;
-    
+    if(!biome) return LAB_RAISE_C();
+
     biome->blocks = def;
 
-    LAB_Game_StructureArray_Create(&biome->structures);
+    LAB_Game_StructureArray_Create(&biome->structures); // always suceeds
 
     *out_biome_id = biome - dim->biomes;
-    return true;
+    return LAB_OK;
 }
 
 
-bool LAB_SurfaceDimension_AddStructure(LAB_SurfaceDimension* dim, LAB_SurfaceBiomeID biome, uint64_t salt, const LAB_Game_Structure* structure)
+LAB_Err LAB_SurfaceDimension_AddStructure(LAB_SurfaceDimension* dim, LAB_SurfaceBiomeID biome, uint64_t salt, const LAB_Game_Structure* structure)
 {
-    if(structure->span.cx == 0) return false;
+    //if(structure->span.cx == 0) return false;
+    LAB_ASSERT(structure->span.cx != 0);
 
     LAB_Game_StructureArray* array = biome == LAB_SurfaceBiomeID_NULL
                                    ? &dim->common_structures
@@ -116,8 +117,7 @@ bool LAB_SurfaceDimension_AddStructure(LAB_SurfaceDimension* dim, LAB_SurfaceBio
 
     LAB_Game_Structure_Opt* s_opt;
     LAB_ARRAY_APPEND(LAB_Game_StructureArray_structures(array), 1, &s_opt);
-    
-    if(!s_opt) return false;
+    if(!s_opt) return LAB_RAISE_C();
 
     s_opt->span = LAB_Game_StructureSpanID(&dim->spans, structure->span);
     s_opt->salt = salt;
@@ -126,7 +126,7 @@ bool LAB_SurfaceDimension_AddStructure(LAB_SurfaceDimension* dim, LAB_SurfaceBio
     success &= LAB_OPTIMIZE_FUNC(&dim->structure_args, structure->placement, &s_opt->placement);
     success &= LAB_OPTIMIZE_FUNC(&dim->structure_args, structure->structure, &s_opt->structure);
 
-    return success;
+    return success ? LAB_OK : LAB_RAISE_C();
 }
 
 

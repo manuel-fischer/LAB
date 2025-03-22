@@ -2,6 +2,7 @@
 
 #include "LAB_model.h"
 #include <stdbool.h>
+#include "LAB_error_state.h"
 
 
 #include "LAB_memory.h"
@@ -40,10 +41,11 @@ void LAB_ModelSet_Destroy(LAB_ModelSet* s)
 }
 
 LAB_INLINE
-LAB_Model* LAB_ModelSet_NewModel(LAB_ModelSet* s)
+LAB_Model* LAB_ModelSet_NewModel(LAB_Err* err, LAB_ModelSet* s)
 {
+    if(LAB_FAILED(*err)) return NULL;
     struct LAB_ModelNode* n = LAB_Malloc(sizeof(*n));
-    if(n == NULL) return NULL;
+    if(n == NULL) return (*err=LAB_RAISE_C(), NULL);
     LAB_ObjClear(&n->model);
     n->next = s->head;
     s->head = n;
