@@ -13,6 +13,13 @@ layout(location = 0) out vec4 fragColor;
 
 void main()
 {
+    // For debugging
+    /*if(FogFactor >= 0.9995) {
+        fragColor = vec4(1, 0, 0, 1);
+        return;
+    }*/
+    if(FogFactor >= 0.9995) discard;
+
     fragColor = texture(textureImage, TexCoord) * Color;
 
 #if COMPILED_RENDER_PASS == LAB_RENDER_PASS_ALPHA

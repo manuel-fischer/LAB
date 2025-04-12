@@ -48,19 +48,19 @@ static const LAB_ShaderSpec LAB_block_shader_files[2] = {
 
 #define LAB_blocks_uniforms_count 11
 static const LAB_UniformEntry LAB_blocks_uniforms[LAB_blocks_uniforms_count] = {
-    { "camPos",       offsetof(LAB_ViewRenderer_Blocks, uni_cam_pos) },
-    { "modelproj",    offsetof(LAB_ViewRenderer_Blocks, uni_modelproj) },
-    { "textureScale", offsetof(LAB_ViewRenderer_Blocks, uni_texture_scale) },
-    { "exposure",     offsetof(LAB_ViewRenderer_Blocks, uni_exposure) },
-    { "saturation",   offsetof(LAB_ViewRenderer_Blocks, uni_saturation) },
+    { "camPos",         offsetof(LAB_ViewRenderer_Blocks, uni_cam_pos) },
+    { "modelproj",      offsetof(LAB_ViewRenderer_Blocks, uni_modelproj) },
+    { "textureScale",   offsetof(LAB_ViewRenderer_Blocks, uni_texture_scale) },
+    { "exposure",       offsetof(LAB_ViewRenderer_Blocks, uni_exposure) },
+    { "saturation",     offsetof(LAB_ViewRenderer_Blocks, uni_saturation) },
 
-    { "fogColor",     offsetof(LAB_ViewRenderer_Blocks, uni_fog_color) },
-    { "fogStart",     offsetof(LAB_ViewRenderer_Blocks, uni_fog_start) },
-    { "fogEnd",       offsetof(LAB_ViewRenderer_Blocks, uni_fog_end) },
-    { "fog_density",  offsetof(LAB_ViewRenderer_Blocks, uni_fog_density) },
-    { "horizon_color",offsetof(LAB_ViewRenderer_Blocks, uni_horizon_color) },
+    { "fogColor",       offsetof(LAB_ViewRenderer_Blocks, uni_fog_color) },
+    { "fogStart",       offsetof(LAB_ViewRenderer_Blocks, uni_fog_start) },
+    { "fogEnd",         offsetof(LAB_ViewRenderer_Blocks, uni_fog_end) },
+    { "sky_visibility", offsetof(LAB_ViewRenderer_Blocks, uni_sky_visibility) },
+    { "horizon_color",  offsetof(LAB_ViewRenderer_Blocks, uni_horizon_color) },
 
-    { "time",         offsetof(LAB_ViewRenderer_Blocks, uni_time) },
+    { "time",           offsetof(LAB_ViewRenderer_Blocks, uni_time) },
 };
 
 const LAB_ProgramSpec LAB_blocks_shader_solid = {
@@ -145,7 +145,7 @@ const LAB_ProgramSpec LAB_sky_overworld_shader = {
 
         { "fog_color",      offsetof(LAB_ViewRenderer_Sky, uni_fog_color) },
         { "horizon_color",  offsetof(LAB_ViewRenderer_Sky, uni_horizon_color) },
-        { "fog_density",    offsetof(LAB_ViewRenderer_Sky, uni_fog_density) },
+        { "sky_visibility", offsetof(LAB_ViewRenderer_Sky, uni_sky_visibility) },
 
         { "time",           offsetof(LAB_ViewRenderer_Sky, uni_time) },
     },

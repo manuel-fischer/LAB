@@ -11,7 +11,7 @@ uniform float saturation;
 
 uniform vec4 fogColor = vec4(0.5, 0.6, 0.7, 1.0);
 uniform vec4 horizon_color;
-uniform float fog_density = 0.0;
+uniform float sky_visibility = 0.0;
 
 uniform float time;
 
@@ -44,13 +44,15 @@ void main()
     Color = color * LAB_ColorSaturation(vec4(shade, 1.0), saturation);
     TexCoord = textureScale * tex;
 
-    const float fadeTreshold = 0.7;
-    if(FogFactor > fadeTreshold)
+    float fadeStart = max(min(fogEnd-2, 64), fogEnd*0.7);
+    if(sky_visibility != 0 && camDistance > fadeStart)
     {
-        float vertexDepth1 = smoothstep(0.05, 0.10, 6/camDistance + fog_density);
-        float vertexDepth2 = 1-(FogFactor-fadeTreshold)*(1.0/(1.0-fadeTreshold));
-        float vertexDepth = max(vertexDepth1, vertexDepth2);
-        FogColor = LAB_OverworldSky(fogColor.rgb, horizon_color.rgb,vertexDepth, relPos/camDistance, time, false);
+        // interpolation between fog and sky
+        // fadeFogToSky = 0 --> use fog color
+        // fadeFogToSky = 1 --> use sky color
+        float fadeFogToSky = clamp((camDistance-fadeStart)*(1.0/(fogEnd-fadeStart)), 0, 1);
+        float vertexDepth = 1 - fadeFogToSky*sky_visibility;
+        FogColor = LAB_OverworldSky(fogColor.rgb, horizon_color.rgb,vertexDepth, relPos/camDistance, time, true);
     }
     else
         FogColor = fogColor.rgb;

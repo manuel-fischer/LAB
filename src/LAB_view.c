@@ -673,7 +673,10 @@ LAB_STATIC bool LAB_ViewRenderChunk(LAB_View* view, LAB_ViewChunkEntry* chunk_en
 LAB_STATIC
 float LAB_View_SkyVisibility(LAB_View* view)
 {
-    float f = LAB_CLAMP((view->pos.y+64+32)*(1./64.), 0, 1);
+    const float solid_y = -64.f;
+    const float sky_y   = -32.f;
+    float visibility = ((float)view->pos.y-solid_y)*(1.f/(sky_y-solid_y));
+    float f = LAB_CLAMP(visibility, 0.f, 1.f);
     f*=f;
     return f;
 }
@@ -697,7 +700,7 @@ LAB_FogAttrs LAB_View_FogAttrs(LAB_View* view)
         .fog_end = d-16,
         .fog_color = LAB_View_SkyColor(view),
         .horizon_color = LAB_HDR_RGB_F(0.6, 0.9, 1.2),
-        .fog_density = 1-LAB_View_SkyVisibility(view),
+        .sky_visibility = LAB_View_SkyVisibility(view),
     };
 }
 

@@ -17,7 +17,7 @@ typedef struct LAB_FogAttrs
     float fog_start, fog_end;
     LAB_ColorHDR fog_color;
     LAB_ColorHDR horizon_color;
-    float fog_density; // visibility of horizon
+    float sky_visibility; // visibility of horizon
 } LAB_FogAttrs;
 
 typedef struct LAB_ViewRenderer_Blocks
@@ -33,7 +33,7 @@ typedef struct LAB_ViewRenderer_Blocks
     LAB_GL_Uniform uni_fog_color;
     LAB_GL_Uniform uni_fog_start;
     LAB_GL_Uniform uni_fog_end;
-    LAB_GL_Uniform uni_fog_density;
+    LAB_GL_Uniform uni_sky_visibility;
     LAB_GL_Uniform uni_horizon_color;
 
     LAB_GL_Uniform uni_time;
@@ -52,7 +52,7 @@ typedef struct LAB_ViewRenderer_Sky
 
     LAB_GL_Uniform uni_fog_color;
     LAB_GL_Uniform uni_horizon_color;
-    LAB_GL_Uniform uni_fog_density;
+    LAB_GL_Uniform uni_sky_visibility;
 
     LAB_GL_Uniform uni_time;
 } LAB_ViewRenderer_Sky;

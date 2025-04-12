@@ -86,7 +86,7 @@ void LAB_SkyRenderer_Prepare(LAB_SkyRenderer* r, LAB_ViewRenderer* renderer, LAB
 
     LAB_GL_UniformColorHDR(sk->uni_fog_color, attrs.fog.fog_color);
     LAB_GL_UniformColorHDR(sk->uni_horizon_color, attrs.fog.horizon_color);
-    glUniform1f(sk->uni_fog_density.id, attrs.fog.fog_density);
+    glUniform1f(sk->uni_sky_visibility.id, attrs.fog.sky_visibility);
     glUniform1f(sk->uni_time.id, attrs.time);
 }
 
